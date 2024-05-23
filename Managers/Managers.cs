@@ -32,6 +32,7 @@ public class Managers : MonoBehaviour
     private ResourceManager _resource = new();
     private SoundManager _sound = new();
     private SceneManagerEx _scene = new();
+    private TokenManager _token = new();
     private UIManager _ui = new();
 
     public static DataManager Data => Instance._data;
@@ -40,6 +41,7 @@ public class Managers : MonoBehaviour
     public static ResourceManager Resource => Instance._resource;
     public static SoundManager Sound => Instance._sound;
     public static SceneManagerEx Scene => Instance._scene;
+    public static TokenManager Token => Instance._token;
     public static UIManager UI => Instance._ui;
 
     #endregion

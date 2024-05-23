@@ -59,10 +59,13 @@ public class UI_Login : UI_Scene
             account = "";
             password = "";
             
-            if (!response.LoginOk) return;
+            if (response.LoginOk == false) return;
             SceneManager.LoadScene("Scenes/MainLobby");
             Managers.Clear();
             Managers.User.UserAccount = userAccount;
+            Managers.User.UserId = response.UserId;
+            // Managers.Token.SaveAccessToken(response.AccessToken);
+            // Managers.Token.SaveRefreshToken(response.RefreshToken);
         });
     }
 

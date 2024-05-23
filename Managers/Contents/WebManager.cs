@@ -5,13 +5,15 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SocialPlatforms;
 
 public class WebManager
 {
+    private const string LocalPort = "7270";
     private const string DevPort = "499";
     private const string StagePort = "";
     
-    public string BaseUrl { get; set; } = $"https://localhost:{DevPort}/api";
+    public string BaseUrl { get; set; } = $"https://localhost:{LocalPort}/api";
     
     public void SendPostRequest<T>(string url, object obj, Action<T> responseAction)
     {

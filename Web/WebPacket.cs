@@ -35,16 +35,23 @@ public class LoginUserAccountPacketRequired
     public string Password;
 }
 
-public class ServerInfo
-{
-    public string Name;
-    public string IP;
-    public int CrowdedLevel;
-}
-
 public class LoginUserAccountPacketResponse
 {
     public bool LoginOk;
+    public int UserId;
+    public string AccessToken;
+    public string RefreshToken;
+}
+
+public class RefreshTokenRequest
+{
+    public string RefreshToken { get; set; }
+}
+
+public class RefreshTokenResponse
+{
+    public string AccessToken { get; set; }
+    public string RefreshToken { get; set; }
 }
 
 public class GetOwnedCardsPacketRequired
