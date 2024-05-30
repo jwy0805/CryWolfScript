@@ -11,11 +11,12 @@ public abstract class BaseController : MonoBehaviour
     private DestVector _destVec = new();
 
     protected double MoveDir;
-    protected const float SendTick = 0.099f;
-    protected const float Tolerance = 0.005f;
+    // protected const float Tolerance = 0.005f;
     protected SkillSubject SkillSubject;
     protected Animator Anim;
     protected readonly int AnimAttackSpeed = Animator.StringToHash("AttackSpeed");
+    protected Queue<Vector3> PathQueue  = new();
+    protected Queue<double> DirQueue  = new();
     
     public int Id { get; set; }
     public SpawnWay Way { get; set; }
@@ -23,8 +24,6 @@ public abstract class BaseController : MonoBehaviour
     public Vector3 DestPos { get; set; }
     public State NextState { get; set; }
     public bool SetKnockBackDest { get; set; }
-    public Queue<Vector3> DestQueue { get; set; }
-    public Queue<double> DirQueue { get; set; }
     public DestVector DestVec // Client에서 new 를 이용한 객체 생성 불가
     {
         get => _destVec;

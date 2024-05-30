@@ -59,8 +59,19 @@ public class CreatureController : BaseController, ISkillObserver
 
     protected override void UpdateIdle()
     {
-        DestQueue?.Clear();
+        PathQueue?.Clear();
         DirQueue?.Clear();
+    }
+
+    public virtual void OnPathReceived(S_SetPath packet)
+    {
+        var pathQueue = new Queue<Vector3>();
+        var dirQueue = new Queue<double>();
+        foreach (var v in packet.Path) pathQueue.Enqueue(new Vector3(v.X, v.Y, v.Z));
+        foreach (var v in packet.Dir) dirQueue.Enqueue(v);
+        TotalMoveSpeed = packet.MoveSpeed;
+        PathQueue = pathQueue;
+        DirQueue = dirQueue;
     }
 
     public virtual void OnDead()
@@ -73,7 +84,7 @@ public class CreatureController : BaseController, ISkillObserver
     // Animation Event
     protected virtual void OnHitEvent()
     {
-        Managers.Network.Send(new C_Attack { ObjectId = Id, AttackMethod = AttackMethod.NormalAttack });
+        // Managers.Network.Send(new C_Attack { ObjectId = Id, AttackMethod = AttackMethod.NormalAttack });
     }
     
     protected virtual void OnSkillEvent() { }

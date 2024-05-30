@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -112,46 +113,56 @@ public class PacketHandler
         if (cc != null) cc.NextState = statePacket.State;
     }
     
-    public static void S_SetDestHandler(PacketSession session, IMessage packet)
+    public static void S_SetPathHandler(PacketSession session, IMessage packet)
     {
-        S_SetDest destPacket = (S_SetDest)packet;
-        GameObject go = Managers.Object.FindById(destPacket.ObjectId);
+        S_SetPath pathPacket = (S_SetPath)packet;
+        GameObject go = Managers.Object.FindById(pathPacket.ObjectId);
         if (go == null) return;
 
-        GameObjectType type = ObjectManager.GetObjectTypeById(destPacket.ObjectId);
+        GameObjectType type = ObjectManager.GetObjectTypeById(pathPacket.ObjectId);
         if (type != GameObjectType.Projectile)
         {
-            go.TryGetComponent(out CreatureController cc);
+            if (go.TryGetComponent(out CreatureController cc) == false) return;
             if (cc == null) return;
-            if (destPacket.Dest == null) return;
-
-            Queue<Vector3> destQueue = new Queue<Vector3>();
-            Queue<double> dirQueue = new Queue<double>();
-            if (destPacket.Dest.Count == 0)
-            {
-                cc.TotalMoveSpeed = destPacket.MoveSpeed;
-                cc.DestQueue = destQueue;
-                cc.DirQueue = dirQueue;
-                return;
-            }
-
-            foreach (var dest in destPacket.Dest) destQueue.Enqueue(new Vector3(dest.X, dest.Y, dest.Z));
-            foreach (var dir in destPacket.Dir) dirQueue.Enqueue(dir);
-
-            cc.TotalMoveSpeed = destPacket.MoveSpeed;
-            cc.DestQueue = destQueue;
-            cc.DirQueue = dirQueue;
+            cc.OnPathReceived(pathPacket);
         }
         else
         {
-            go.TryGetComponent(out ProjectileController pc);
-            if (pc == null) return;
-            if (destPacket.Dest == null) return;
-            if (destPacket.Dest.Count == 0) return;
-
-            Vector3 destPos = new Vector3(destPacket.Dest[0].X, destPacket.Dest[0].Y, destPacket.Dest[0].Z);
-            pc.destPos = destPos;
+            
         }
+        // if (type != GameObjectType.Projectile)
+        // {
+        //     go.TryGetComponent(out CreatureController cc);
+        //     if (cc == null) return;
+        //     if (destPacket.Dest == null) return;
+        //
+        //     Queue<Vector3> destQueue = new Queue<Vector3>();
+        //     Queue<double> dirQueue = new Queue<double>();
+        //     if (destPacket.Dest.Count == 0)
+        //     {
+        //         cc.TotalMoveSpeed = destPacket.MoveSpeed;
+        //         cc.DestQueue = destQueue;
+        //         cc.DirQueue = dirQueue;
+        //         return;
+        //     }
+        //
+        //     foreach (var dest in destPacket.Dest) destQueue.Enqueue(new Vector3(dest.X, dest.Y, dest.Z));
+        //     foreach (var dir in destPacket.Dir) dirQueue.Enqueue(dir);
+        //
+        //     cc.TotalMoveSpeed = destPacket.MoveSpeed;
+        //     cc.DestQueue = destQueue;
+        //     cc.DirQueue = dirQueue;
+        // }
+        // else
+        // {
+        //     go.TryGetComponent(out ProjectileController pc);
+        //     if (pc == null) return;
+        //     if (destPacket.Dest == null) return;
+        //     if (destPacket.Dest.Count == 0) return;
+        //
+        //     Vector3 destPos = new Vector3(destPacket.Dest[0].X, destPacket.Dest[0].Y, destPacket.Dest[0].Z);
+        //     pc.destPos = destPos;
+        // }
     }
 
     public static void S_SetKnockBackHandler(PacketSession session, IMessage packet)
@@ -324,6 +335,15 @@ public class PacketHandler
         if (cc != null) cc.Mp = mpPacket.Mp;
     }
 
+    public static void S_ChangeSpeedHandler(PacketSession session, IMessage packet)
+    {
+        var speedPacket = (S_ChangeSpeed)packet;
+        var go = Managers.Object.FindById(speedPacket.ObjectId);
+        if (go == null) return;
+        if (go.TryGetComponent(out CreatureController cc) == false) return;
+        cc.TotalMoveSpeed = speedPacket.MoveSpeed;
+    }
+    
     public static void S_DieHandler(PacketSession session, IMessage packet)
     {
         S_Die diePacket = (S_Die)packet;

@@ -42,14 +42,6 @@ public class CreeperController : LurkerController
             });
             SetKnockBackDest = false;
         }
-        
-        if (Time.time > LastSendTime + SendTick)
-        {
-            LastSendTime = Time.time;
-            CellPos = transform.position;
-            C_Move movePacket = new C_Move { ObjectId = Id, PosX = CellPos.x, PosY = CellPos.y, PosZ = CellPos.z};
-            Managers.Network.Send(movePacket);
-        }
     }
 
     protected override void OnHitEvent()

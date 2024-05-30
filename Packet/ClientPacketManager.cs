@@ -39,8 +39,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SMove, PacketHandler.S_MoveHandler);		
 		_onRecv.Add((ushort)MessageId.SState, MakePacket<S_State>);
 		_handler.Add((ushort)MessageId.SState, PacketHandler.S_StateHandler);		
-		_onRecv.Add((ushort)MessageId.SSetDest, MakePacket<S_SetDest>);
-		_handler.Add((ushort)MessageId.SSetDest, PacketHandler.S_SetDestHandler);		
+		_onRecv.Add((ushort)MessageId.SSetPath, MakePacket<S_SetPath>);
+		_handler.Add((ushort)MessageId.SSetPath, PacketHandler.S_SetPathHandler);		
 		_onRecv.Add((ushort)MessageId.SSetKnockBack, MakePacket<S_SetKnockBack>);
 		_handler.Add((ushort)MessageId.SSetKnockBack, PacketHandler.S_SetKnockBackHandler);		
 		_onRecv.Add((ushort)MessageId.SSetDestSkill, MakePacket<S_SetDestSkill>);
@@ -67,6 +67,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SChangeMaxHp, PacketHandler.S_ChangeMaxHpHandler);		
 		_onRecv.Add((ushort)MessageId.SChangeMp, MakePacket<S_ChangeMp>);
 		_handler.Add((ushort)MessageId.SChangeMp, PacketHandler.S_ChangeMpHandler);		
+		_onRecv.Add((ushort)MessageId.SChangeSpeed, MakePacket<S_ChangeSpeed>);
+		_handler.Add((ushort)MessageId.SChangeSpeed, PacketHandler.S_ChangeSpeedHandler);		
 		_onRecv.Add((ushort)MessageId.SDie, MakePacket<S_Die>);
 		_handler.Add((ushort)MessageId.SDie, PacketHandler.S_DieHandler);		
 		_onRecv.Add((ushort)MessageId.SConnected, MakePacket<S_Connected>);
