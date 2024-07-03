@@ -13,15 +13,4 @@ public class TargetDummyController : PracticeDummyController
         base.Init();
         UnitId = UnitId.TargetDummy;
     }
-    
-    protected override void OnSkillEvent()
-    {
-        Managers.Network.Send(new C_Skill
-        {
-            ObjectId = Id, 
-            AttackMethod = AttackMethod.NoAttack, 
-            Effect = EffectId.None,
-            Projectile = ProjectileId.None
-        });
-    }
 }

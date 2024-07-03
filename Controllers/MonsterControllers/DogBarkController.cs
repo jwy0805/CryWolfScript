@@ -9,18 +9,6 @@ public class DogBarkController : DogPupController
     {
         base.Init();
         UnitId = UnitId.DogBark;
-    }
-    
-    protected override void UpdateSkill()
-    {
-        base.UpdateAttack();
-    }
-
-    protected override void OnSkillEvent()
-    {
-        Managers.Network.Send(new C_Attack
-        {
-            ObjectId = Id, AttackMethod = AttackMethod.AdditionalAttack
-        });
+        AttackAnimValue = 5 / 6f;
     }
 }

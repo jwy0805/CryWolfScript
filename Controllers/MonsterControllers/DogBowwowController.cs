@@ -9,6 +9,7 @@ public class DogBowwowController : DogBarkController
     {
         base.Init();
         UnitId = UnitId.DogBowwow;
+        AttackAnimValue = 5 / 6f;
     }
 
     protected override void Update()
@@ -34,17 +35,9 @@ public class DogBowwowController : DogBarkController
             case State.Skill2:
                 UpdateSkill2();
                 break;
-            case State.KnockBack:
-                UpdateKnockBack();
-                break;
             case State.Faint:
                 break;
         }
-    }
-
-    protected override void OnSkillEvent()
-    {
-        Managers.Network.Send(new C_Attack { ObjectId = Id, AttackMethod = AttackMethod.AdditionalAttack });
     }
 }
     

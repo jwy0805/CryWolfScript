@@ -8,6 +8,5 @@ public class OneTimeEffectController : EffectController
     {
         StartTime = Time.time;
         Duration = 2.0f;
-        DamageTime = 30f;
     }
 }

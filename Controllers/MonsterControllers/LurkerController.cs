@@ -15,15 +15,4 @@ public class LurkerController : MonsterController
         UnitId = UnitId.Lurker;
         CurrentAttack = ProjectileId.BasicProjectile;
     }
-
-    protected override void OnHitEvent()
-    {
-        Managers.Network.Send(new C_Attack
-        {
-            ObjectId = Id,
-            AttackMethod = AttackMethod.ProjectileAttack,
-            Effect = EffectId.None,
-            Projectile = CurrentAttack
-        });
-    }
 }

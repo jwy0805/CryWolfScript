@@ -8,34 +8,23 @@ using UnityEngine.Serialization;
 
 public class ProjectileController : MonoBehaviour
 {
-    public Vector3 destPos = Vector3.zero;
-    protected float Speed = 10f;
-    
     public int Id { get; set; }
+    public float Speed { get; set; }
+    public Vector3 DestPos { get; set; } = Vector3.zero;
 
     protected virtual void Start()
     {
         Init();
     }
 
-    protected virtual void Init()
-    {
-        Managers.Network.Send(new C_SetDest { ObjectId = Id });
-    }
+    protected virtual void Init() { }
     
     protected virtual void FixedUpdate()
     {
-        if (destPos == Vector3.zero) return;
-        Vector3 dir = destPos - transform.position;
-        if (dir.magnitude < 0.1f)
+        Vector3 dir = DestPos - transform.position;
+        if (dir.sqrMagnitude < 0.01f)
         {
-            Managers.Network.Send(new C_Attack
-            {
-                ObjectId = Id, AttackMethod = AttackMethod.NormalAttack, Projectile = ProjectileId.BasicProjectile
-            });
-            
             Managers.Object.Remove(Id);
-            Managers.Network.Send(new C_Leave { ObjectId = Id });
             Managers.Resource.Destroy(gameObject);
         }
         else

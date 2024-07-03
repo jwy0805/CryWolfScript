@@ -7,14 +7,15 @@ using UnityEngine.Serialization;
 
 public abstract class BaseController : MonoBehaviour
 { 
-    private PositionInfo _positionInfo = new();
-    private DestVector _destVec = new();
+    private readonly PositionInfo _positionInfo = new();
+    private readonly DestVector _destVector = new();
+    private readonly int _animAttackSpeed = Animator.StringToHash("AttackSpeed");
 
     protected double MoveDir;
-    // protected const float Tolerance = 0.005f;
     protected SkillSubject SkillSubject;
     protected Animator Anim;
-    protected readonly int AnimAttackSpeed = Animator.StringToHash("AttackSpeed");
+    protected float AttackAnimValue = 5 / 6f;
+    protected float SkillAnimValue = 5 / 6f;
     protected Queue<Vector3> PathQueue  = new();
     protected Queue<double> DirQueue  = new();
     
@@ -22,18 +23,9 @@ public abstract class BaseController : MonoBehaviour
     public SpawnWay Way { get; set; }
     public GameObjectType ObjectType { get; protected set; } = GameObjectType.None;
     public Vector3 DestPos { get; set; }
-    public State NextState { get; set; }
+    public Vector3 SyncPos { get; set; } = new(0, 0, 0);
     public bool SetKnockBackDest { get; set; }
-    public DestVector DestVec // Client에서 new 를 이용한 객체 생성 불가
-    {
-        get => _destVec;
-        set
-        {
-            _destVec.X = value.X;
-            _destVec.Y = value.Y;
-            _destVec.Z = value.Z;
-        }
-    }
+    
     public Vector3 CellPos
     {
         get => new(PosInfo.PosX, PosInfo.PosY, PosInfo.PosZ);
@@ -50,6 +42,7 @@ public abstract class BaseController : MonoBehaviour
             PosInfo.PosZ = v.z;
         }
     }
+    
     public PositionInfo PosInfo
     {
         get => _positionInfo;
@@ -61,6 +54,7 @@ public abstract class BaseController : MonoBehaviour
             _positionInfo.Dir = value.Dir;
         }
     }
+    
     public virtual State State
     {
         get => PosInfo.State;
@@ -160,11 +154,13 @@ public abstract class BaseController : MonoBehaviour
     
     protected virtual void UpdateSkill()
     {
-        Quaternion quaternion = Quaternion.Euler(new Vector3(0, PosInfo.Dir, 0));
-        transform.rotation = Quaternion.Lerp(transform.rotation, quaternion, 20 * Time.deltaTime);
+        UpdateAttack();
     }
-    
-    protected virtual void UpdateSkill2() { }
+
+    protected virtual void UpdateSkill2()
+    {
+        UpdateAttack();
+    }
     protected virtual void UpdateKnockBack() { }
     protected virtual void UpdateFaint() { }
 
@@ -176,6 +172,7 @@ public abstract class BaseController : MonoBehaviour
 
     public virtual void OnAnimSpeedUpdated(float param)
     {
-        Anim.SetFloat(AnimAttackSpeed, param);
+        var animSpeed = param * AttackAnimValue;
+        Anim.SetFloat(_animAttackSpeed, animSpeed);
     }
 }

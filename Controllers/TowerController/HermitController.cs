@@ -11,6 +11,5 @@ public class HermitController : SpikeController
     {
         base.Init();
         UnitId = UnitId.Hermit;
-        CurrentAttack = ProjectileId.HermitProjectile;
     }
 }

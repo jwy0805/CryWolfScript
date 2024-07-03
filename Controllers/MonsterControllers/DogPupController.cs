@@ -9,5 +9,6 @@ public class DogPupController : MonsterController
     {
         base.Init();
         UnitId = UnitId.DogPup;
+        AttackAnimValue = 5 / 6f;
     }
 }

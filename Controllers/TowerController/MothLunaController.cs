@@ -13,10 +13,4 @@ public class MothLunaController : TowerController
         ObjectType = GameObjectType.Tower;
         UnitId = UnitId.MothLuna;
     }
-    
-    protected override void OnHitEvent()
-    {
-        Managers.Network.Send(new C_Attack 
-            { ObjectId = Id, AttackMethod = AttackMethod.NormalAttack});
-    }
 }

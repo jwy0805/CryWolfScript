@@ -17,7 +17,7 @@ public class PacketHandler
 {
     public static void S_EnterGameHandler(PacketSession session, IMessage packet)
     {
-        S_EnterGame enterGamePacket = (S_EnterGame)packet;
+        var enterGamePacket = (S_EnterGame)packet;
         if (enterGamePacket != null)
         {
             Managers.Object.Add(enterGamePacket.Player, myPlayer: true);
@@ -26,8 +26,8 @@ public class PacketHandler
     
     public static void S_LeaveGameHandler(PacketSession session, IMessage packet)
     {
-        S_LeaveGame leaveGamePacket = (S_LeaveGame)packet;
-        GameObjectType type = ObjectManager.GetObjectTypeById(leaveGamePacket.ObjectId);
+        var leaveGamePacket = (S_LeaveGame)packet;
+        var type = ObjectManager.GetObjectTypeById(leaveGamePacket.ObjectId);
         switch (type)
         {
             case GameObjectType.Effect:
@@ -44,25 +44,33 @@ public class PacketHandler
     
     public static void S_SpawnHandler(PacketSession session, IMessage packet)
     {
-        S_Spawn spawnPacket = (S_Spawn)packet;
+        var spawnPacket = (S_Spawn)packet;
         foreach (var obj in spawnPacket.Objects)
         {
             Managers.Object.Add(obj);
         }
     }
 
-    public static void S_SpawnParentHandler(PacketSession session, IMessage packet)
+    public static void S_SpawnProjectileHandler(PacketSession session, IMessage packet)
     {
-        S_SpawnParent spawnPacket = (S_SpawnParent)packet;
-        Managers.Object.Add(spawnPacket.Object, spawnPacket.ParentId);
+        var spawnPacket = (S_SpawnProjectile)packet;
+        Managers.Object.AddProjectile(
+            spawnPacket.Object, spawnPacket.ParentId, spawnPacket.DestPos, spawnPacket.MoveSpeed);
+    }
+    
+    public static void S_SpawnEffectHandler(PacketSession session, IMessage packet)
+    {
+        var spawnPacket = (S_SpawnEffect)packet;
+        Managers.Object.AddEffect(
+            spawnPacket.Object, spawnPacket.ParentId, spawnPacket.TrailingParent, spawnPacket.Duration);
     }
     
     public static void S_DespawnHandler(PacketSession session, IMessage packet)
     {
-        S_Despawn despawnPacket = (S_Despawn)packet;
+        var despawnPacket = (S_Despawn)packet;
         foreach (var id in despawnPacket.ObjectIds)
         {
-            GameObjectType type = ObjectManager.GetObjectTypeById(id);
+            var type = ObjectManager.GetObjectTypeById(id);
             var go = Managers.Object.FindById(id);
             Managers.Object.Remove(id);
             Managers.Resource.Destroy(go);
@@ -85,120 +93,87 @@ public class PacketHandler
     
     public static void S_PlayerMoveHandler(PacketSession session, IMessage packet)
     {
-        S_PlayerMove playerMovePacket = (S_PlayerMove)packet;
-        GameObject go = Managers.Object.FindById(playerMovePacket.ObjectId);
+        var playerMovePacket = (S_PlayerMove)packet;
+        var go = Managers.Object.FindById(playerMovePacket.ObjectId);
         if (go == null) return;
-        go.TryGetComponent(out MyPlayerController pc);
-        if (pc == null) return;
+        if (go.TryGetComponent(out MyPlayerController pc) == false) return;
 
-        pc.DestVec = playerMovePacket.DestPos;
+        pc.DestPos = new Vector3(playerMovePacket.DestPos.X, playerMovePacket.DestPos.Y, playerMovePacket.DestPos.Z);
         pc.State = playerMovePacket.State;
     }
     
     public static void S_MoveHandler(PacketSession session, IMessage packet)
     {
-        S_Move movePacket = (S_Move)packet;
-        GameObject go = Managers.Object.FindById(movePacket.ObjectId);
+        var movePacket = (S_Move)packet;
+        var go = Managers.Object.FindById(movePacket.ObjectId);
         if (go == null) return;
-        go.TryGetComponent(out BaseController bc);
-        if (bc != null) bc.PosInfo = movePacket.PosInfo;
+        if (go.TryGetComponent(out BaseController bc) == false) return;
+        
+        bc.PosInfo = movePacket.PosInfo;
     }
 
     public static void S_StateHandler(PacketSession session, IMessage packet)
     {
-        S_State statePacket = (S_State)packet;
-        GameObject go = Managers.Object.FindById(statePacket.ObjectId);
+        var statePacket = (S_State)packet;
+        var go = Managers.Object.FindById(statePacket.ObjectId);
         if (go == null) return;
-        go.TryGetComponent(out CreatureController cc);
-        if (cc != null) cc.NextState = statePacket.State;
+        if (go.TryGetComponent(out CreatureController cc) == false) return;
+        
+        cc.State = statePacket.State;
     }
+
+    public static void S_SyncHandler(PacketSession session, IMessage packet)
+    {
+        var syncPacket = (S_Sync)packet;
+        var go = Managers.Object.FindById(syncPacket.ObjectId);
+        if (go == null) return;
+        if (go.TryGetComponent(out CreatureController cc) == false) return;
+
+        cc.State = syncPacket.PosInfo.State;
+        cc.SyncPos = new Vector3(syncPacket.PosInfo.PosX, syncPacket.PosInfo.PosY, syncPacket.PosInfo.PosZ);
+        cc.PosInfo.Dir = syncPacket.PosInfo.Dir;
+    }    
     
     public static void S_SetPathHandler(PacketSession session, IMessage packet)
     {
-        S_SetPath pathPacket = (S_SetPath)packet;
-        GameObject go = Managers.Object.FindById(pathPacket.ObjectId);
+        var pathPacket = (S_SetPath)packet;
+        var go = Managers.Object.FindById(pathPacket.ObjectId);
         if (go == null) return;
-
-        GameObjectType type = ObjectManager.GetObjectTypeById(pathPacket.ObjectId);
-        if (type != GameObjectType.Projectile)
-        {
-            if (go.TryGetComponent(out CreatureController cc) == false) return;
-            if (cc == null) return;
-            cc.OnPathReceived(pathPacket);
-        }
-        else
-        {
-            
-        }
-        // if (type != GameObjectType.Projectile)
-        // {
-        //     go.TryGetComponent(out CreatureController cc);
-        //     if (cc == null) return;
-        //     if (destPacket.Dest == null) return;
-        //
-        //     Queue<Vector3> destQueue = new Queue<Vector3>();
-        //     Queue<double> dirQueue = new Queue<double>();
-        //     if (destPacket.Dest.Count == 0)
-        //     {
-        //         cc.TotalMoveSpeed = destPacket.MoveSpeed;
-        //         cc.DestQueue = destQueue;
-        //         cc.DirQueue = dirQueue;
-        //         return;
-        //     }
-        //
-        //     foreach (var dest in destPacket.Dest) destQueue.Enqueue(new Vector3(dest.X, dest.Y, dest.Z));
-        //     foreach (var dir in destPacket.Dir) dirQueue.Enqueue(dir);
-        //
-        //     cc.TotalMoveSpeed = destPacket.MoveSpeed;
-        //     cc.DestQueue = destQueue;
-        //     cc.DirQueue = dirQueue;
-        // }
-        // else
-        // {
-        //     go.TryGetComponent(out ProjectileController pc);
-        //     if (pc == null) return;
-        //     if (destPacket.Dest == null) return;
-        //     if (destPacket.Dest.Count == 0) return;
-        //
-        //     Vector3 destPos = new Vector3(destPacket.Dest[0].X, destPacket.Dest[0].Y, destPacket.Dest[0].Z);
-        //     pc.destPos = destPos;
-        // }
+        if (go.TryGetComponent(out CreatureController cc) == false) return;
+        
+        cc.OnPathReceived(pathPacket);
     }
-
+    
     public static void S_SetKnockBackHandler(PacketSession session, IMessage packet)
     {
-        S_SetKnockBack knockBackPacket = (S_SetKnockBack)packet;
-        GameObject go = Managers.Object.FindById(knockBackPacket.ObjectId);
+        var knockBackPacket = (S_SetKnockBack)packet;
+        var go = Managers.Object.FindById(knockBackPacket.ObjectId);
         if (go == null) return;
-
-        if (go.TryGetComponent(out BaseController bc))
-        {
-            Vector3 v = new Vector3(knockBackPacket.Dest.X, knockBackPacket.Dest.Y, knockBackPacket.Dest.Z);
-            bc.DestPos = v;
-            bc.SetKnockBackDest = true;
-        }
+        if (go.TryGetComponent(out BaseController bc) == false) return;
+        
+        Vector3 v = new Vector3(knockBackPacket.Dest.X, knockBackPacket.Dest.Y, knockBackPacket.Dest.Z);
+        bc.DestPos = v;
+        bc.SetKnockBackDest = true;
     }
     
     public static void S_SetDestSkillHandler(PacketSession session, IMessage packet)
     {
-        S_SetDestSkill destSkillPacket = (S_SetDestSkill)packet;
-        GameObject go = Managers.Object.FindById(destSkillPacket.ObjectId);
+        var destSkillPacket = (S_SetDestSkill)packet;
+        var go = Managers.Object.FindById(destSkillPacket.ObjectId);
         if (go == null) return;
-        go.TryGetComponent(out ProjectileController pc);
-        if (pc == null) return;
+        if (go.TryGetComponent(out ProjectileController pc) == false) return;
         if (destSkillPacket.Dest == null) return;
 
         Vector3 dest = new Vector3(destSkillPacket.Dest.X, destSkillPacket.Dest.Y, destSkillPacket.Dest.Z);
-        pc.destPos = dest;
+        pc.DestPos = dest;
     }
 
     public static void S_SetDestResourceHandler(PacketSession session, IMessage packet)
     {
-        S_SetDestResource resourceDestPacket = (S_SetDestResource)packet;
-        GameObject go = Managers.Object.FindById(resourceDestPacket.ObjectId);
+        var resourceDestPacket = (S_SetDestResource)packet;
+        var go = Managers.Object.FindById(resourceDestPacket.ObjectId);
         if (go == null) return;
-        go.TryGetComponent(out ResourceController rc);
-        if (rc == null) return;
+        if (go.TryGetComponent(out ResourceController rc) == false) return;
         if (resourceDestPacket.Dest == null) return;
 
         Vector3 dest = new Vector3(resourceDestPacket.Dest.X, resourceDestPacket.Dest.Y, resourceDestPacket.Dest.Z);
@@ -209,18 +184,12 @@ public class PacketHandler
 
     public static void S_SetAnimSpeedHandler(PacketSession session, IMessage packet)
     {
-        S_SetAnimSpeed animPacket = (S_SetAnimSpeed)packet;
-        GameObject go = GameObject.FindWithTag("SkillSubject");
-        if (go.TryGetComponent(out SkillSubject subject))
-        {
-            List<ISkillObserver> observers = subject.Observers;
-            if (observers.Count == 0) return;
-            foreach (var observer in observers)
-            {
-                BaseController creature = observer as BaseController;
-                if (creature.Id == animPacket.ObjectId) creature.OnAnimSpeedUpdated(animPacket.Param);
-            }
-        }
+        var animSpeedPacket = (S_SetAnimSpeed)packet;
+        var go = Managers.Object.FindById(animSpeedPacket.ObjectId);
+        if (go == null) return;
+        if (go.TryGetComponent(out BaseController bc) == false) return;
+        
+        bc.OnAnimSpeedUpdated(animSpeedPacket.SpeedParam);
     }
     
     public static void S_SkillHandler(PacketSession session, IMessage packet)
@@ -230,9 +199,9 @@ public class PacketHandler
 
     public static void S_SkillUpgradeHandler(PacketSession session, IMessage packet)
     {
-        S_SkillUpgrade upgradePacket = (S_SkillUpgrade)packet;
-        GameObject uigo = GameObject.FindWithTag("UI");
-        if (!uigo.TryGetComponent(out UI_Game ui)) return;
+        var upgradePacket = (S_SkillUpgrade)packet;
+        var uiGo = GameObject.FindWithTag("UI");
+        if (uiGo.TryGetComponent(out UI_Game ui) == false) return;
         
         var skillButton = Util.FindChild(ui.gameObject,
             string.Concat(upgradePacket.Skill.ToString(), "Button"), true);
@@ -241,12 +210,12 @@ public class PacketHandler
     
     public static void S_SkillUpdateHandler(PacketSession session, IMessage packet)
     {
-        S_SkillUpdate updatePacket = (S_SkillUpdate)packet;
-        GameObject go = GameObject.FindWithTag("SkillSubject");
-        if (go.TryGetComponent(out SkillSubject subject))
-        {
-            subject.SkillUpdated(updatePacket.ObjectEnumId, updatePacket.ObjectType, updatePacket.SkillType, updatePacket.Step);
-        }    
+        var updatePacket = (S_SkillUpdate)packet;
+        var go = GameObject.FindWithTag("SkillSubject");
+        if (go.TryGetComponent(out SkillSubject subject) == false) return;
+        
+        subject.SkillUpdated(
+            updatePacket.ObjectEnumId, updatePacket.ObjectType, updatePacket.SkillType, updatePacket.Step);
     }
 
     public static void S_PortraitUpgradeHandler(PacketSession session, IMessage packet)
@@ -272,14 +241,14 @@ public class PacketHandler
 
     public static void S_GetDamageHandler(PacketSession session, IMessage packet)
     {   
-        S_GetDamage damagePacket = (S_GetDamage)packet;
-        GameObject go = Managers.Object.FindById(damagePacket.ObjectId);
+        var damagePacket = (S_GetDamage)packet;
+        var go = Managers.Object.FindById(damagePacket.ObjectId);
         if (go == null) return;
         // Floating text instantiate
-        GameObject floatingText = Managers.Resource.Instantiate("WorldObjects/DmgText");
-        floatingText.transform.position = go.transform.position + Vector3.up;
-        floatingText.GetComponentInChildren<TextAnimatorPlayer>().ShowText($"{damagePacket.Damage}");
-        var text = floatingText.GetComponentInChildren<TextMeshPro>();
+        var floatingTextObject = Managers.Resource.Instantiate("WorldObjects/DmgText");
+        floatingTextObject.transform.position = go.transform.position + Vector3.up;
+        floatingTextObject.GetComponentInChildren<TextAnimatorPlayer>().ShowText($"{damagePacket.Damage}");
+        var text = floatingTextObject.GetComponentInChildren<TextMeshPro>();
         switch (damagePacket.DamageType)
         {
             case Damage.Normal:
@@ -302,37 +271,31 @@ public class PacketHandler
                 text.outlineColor = Color.black;
                 break;
         }
-        
         go.TryGetComponent(out CreatureController cc);
         if (cc != null) cc.Hp -= damagePacket.Damage;
     }
     
     public static void S_ChangeHpHandler(PacketSession session, IMessage packet)
     {
-        S_ChangeHp hpPacket = (S_ChangeHp)packet;
-        GameObject go = Managers.Object.FindById(hpPacket.ObjectId);
+        var hpPacket = (S_ChangeHp)packet;
+        var go = Managers.Object.FindById(hpPacket.ObjectId);
         if (go == null) return;
         // Change hp bar
-        go.TryGetComponent(out CreatureController cc);
-        if (cc != null) cc.Hp = hpPacket.Hp;
+        if (go.TryGetComponent(out CreatureController cc) == false) return;
+
+        cc.Hp = hpPacket.Hp;
+        cc.MaxHp = hpPacket.MaxHp;
     }
 
-    public static void S_ChangeMaxHpHandler(PacketSession session, IMessage packet)
-    {
-        S_ChangeMaxHp maxHpPacket = (S_ChangeMaxHp)packet;
-        GameObject go = Managers.Object.FindById(maxHpPacket.ObjectId);
-        if (go == null) return;
-        go.TryGetComponent(out CreatureController cc);
-        if (cc != null) cc.MaxHp = maxHpPacket.MaxHp;
-    }
-    
     public static void S_ChangeMpHandler(PacketSession session, IMessage packet)
     {
-        S_ChangeMp mpPacket = (S_ChangeMp)packet;
-        GameObject go = Managers.Object.FindById(mpPacket.ObjectId);
+        var mpPacket = (S_ChangeMp)packet;
+        var go = Managers.Object.FindById(mpPacket.ObjectId);
         if (go == null) return;
-        go.TryGetComponent(out CreatureController cc);
-        if (cc != null) cc.Mp = mpPacket.Mp;
+        if (go.TryGetComponent(out CreatureController cc) == false) return;
+
+        cc.Mp = mpPacket.Mp;
+        cc.MaxMp = mpPacket.MaxMp;
     }
 
     public static void S_ChangeSpeedHandler(PacketSession session, IMessage packet)
@@ -341,20 +304,19 @@ public class PacketHandler
         var go = Managers.Object.FindById(speedPacket.ObjectId);
         if (go == null) return;
         if (go.TryGetComponent(out CreatureController cc) == false) return;
+        
         cc.TotalMoveSpeed = speedPacket.MoveSpeed;
     }
     
     public static void S_DieHandler(PacketSession session, IMessage packet)
     {
-        S_Die diePacket = (S_Die)packet;
-
-        GameObject go = Managers.Object.FindById(diePacket.ObjectId);
+        var diePacket = (S_Die)packet;
+        var go = Managers.Object.FindById(diePacket.ObjectId);
         if (go == null) return;
-        go.GetComponent<CreatureController>().State = State.Die;
+        if (go.TryGetComponent(out CreatureController cc) == false) return;
 
-        go.TryGetComponent(out CreatureController cc);
-        if (cc == null) return;
         cc.Hp = 0;
+        cc.State = State.Die;
         if (diePacket.Revive == false) cc.OnDead();
     }
     
@@ -365,7 +327,7 @@ public class PacketHandler
 
     public static void S_UnitSpawnPosHandler(PacketSession session, IMessage packet)
     {
-        S_UnitSpawnPos spawnPacket = (S_UnitSpawnPos)packet;
+        var spawnPacket = (S_UnitSpawnPos)packet;
         Managers.Game.PickedButton.GetComponent<Image>().color = spawnPacket.CanSpawn == false ? Color.red : Color.white;
         
         var dragPortrait = Managers.Game.PickedButton.GetComponent<UI_DragPortrait>();
@@ -374,9 +336,9 @@ public class PacketHandler
         Managers.Game.PickedButton.GetComponent<Image>().color = Color.white;
         if (spawnPacket.CanSpawn == false) return;
         
-        Vector3 pos = Util.NearestCell(dragPortrait.position);
-        bool register = spawnPacket.ObjectType == GameObjectType.Tower;
-        string unitName = Managers.Game.PickedButton.GetComponent<Image>().sprite.name;
+        var pos = Util.NearestCell(dragPortrait.position);
+        var register = spawnPacket.ObjectType == GameObjectType.Tower;
+        var unitName = Managers.Game.PickedButton.GetComponent<Image>().sprite.name;
         C_Spawn cSpawnPacket = new()
         {
             Type = spawnPacket.ObjectType,
@@ -391,8 +353,8 @@ public class PacketHandler
     
     public static void S_TimeHandler(PacketSession session, IMessage packet)
     {
-        S_Time timePacket = (S_Time)packet;
-        UI_Game ui = GameObject.FindWithTag("UI").GetComponent<UI_Game>();
+        var timePacket = (S_Time)packet;
+        var ui = GameObject.FindWithTag("UI").GetComponent<UI_Game>();
         var hourHand = Util.FindChild<RotateHourHand>(ui.gameObject, "HourHandImage", true);
         var roundText = Util.FindChild<TextMeshProUGUI>(ui.gameObject, "RoundText", true);
         var timeText = Util.FindChild<TextMeshProUGUI>(ui.gameObject, "TimeText", true);

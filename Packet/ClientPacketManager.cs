@@ -29,8 +29,10 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SLeaveGame, PacketHandler.S_LeaveGameHandler);		
 		_onRecv.Add((ushort)MessageId.SSpawn, MakePacket<S_Spawn>);
 		_handler.Add((ushort)MessageId.SSpawn, PacketHandler.S_SpawnHandler);		
-		_onRecv.Add((ushort)MessageId.SSpawnParent, MakePacket<S_SpawnParent>);
-		_handler.Add((ushort)MessageId.SSpawnParent, PacketHandler.S_SpawnParentHandler);		
+		_onRecv.Add((ushort)MessageId.SSpawnProjectile, MakePacket<S_SpawnProjectile>);
+		_handler.Add((ushort)MessageId.SSpawnProjectile, PacketHandler.S_SpawnProjectileHandler);		
+		_onRecv.Add((ushort)MessageId.SSpawnEffect, MakePacket<S_SpawnEffect>);
+		_handler.Add((ushort)MessageId.SSpawnEffect, PacketHandler.S_SpawnEffectHandler);		
 		_onRecv.Add((ushort)MessageId.SDespawn, MakePacket<S_Despawn>);
 		_handler.Add((ushort)MessageId.SDespawn, PacketHandler.S_DespawnHandler);		
 		_onRecv.Add((ushort)MessageId.SPlayerMove, MakePacket<S_PlayerMove>);
@@ -39,6 +41,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SMove, PacketHandler.S_MoveHandler);		
 		_onRecv.Add((ushort)MessageId.SState, MakePacket<S_State>);
 		_handler.Add((ushort)MessageId.SState, PacketHandler.S_StateHandler);		
+		_onRecv.Add((ushort)MessageId.SSync, MakePacket<S_Sync>);
+		_handler.Add((ushort)MessageId.SSync, PacketHandler.S_SyncHandler);		
 		_onRecv.Add((ushort)MessageId.SSetPath, MakePacket<S_SetPath>);
 		_handler.Add((ushort)MessageId.SSetPath, PacketHandler.S_SetPathHandler);		
 		_onRecv.Add((ushort)MessageId.SSetKnockBack, MakePacket<S_SetKnockBack>);
@@ -63,8 +67,6 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SGetDamage, PacketHandler.S_GetDamageHandler);		
 		_onRecv.Add((ushort)MessageId.SChangeHp, MakePacket<S_ChangeHp>);
 		_handler.Add((ushort)MessageId.SChangeHp, PacketHandler.S_ChangeHpHandler);		
-		_onRecv.Add((ushort)MessageId.SChangeMaxHp, MakePacket<S_ChangeMaxHp>);
-		_handler.Add((ushort)MessageId.SChangeMaxHp, PacketHandler.S_ChangeMaxHpHandler);		
 		_onRecv.Add((ushort)MessageId.SChangeMp, MakePacket<S_ChangeMp>);
 		_handler.Add((ushort)MessageId.SChangeMp, PacketHandler.S_ChangeMpHandler);		
 		_onRecv.Add((ushort)MessageId.SChangeSpeed, MakePacket<S_ChangeSpeed>);

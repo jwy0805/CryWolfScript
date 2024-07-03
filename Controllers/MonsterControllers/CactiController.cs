@@ -9,5 +9,6 @@ public class CactiController : MonsterController
     {
         base.Init();
         UnitId = UnitId.Cacti;
+        AttackAnimValue = 5 / 6f;
     }
 }

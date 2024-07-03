@@ -10,14 +10,4 @@ public class SkeletonMageController : SkeletonGiantController
         base.Init();
         UnitId = UnitId.SkeletonMage;
     }
-
-    protected override void OnHitEvent()
-    {
-        Managers.Network.Send(new C_Attack
-        {
-            ObjectId = Id,
-            AttackMethod = AttackMethod.ProjectileAttack,
-            Projectile = ProjectileId.SkeletonMageProjectile
-        });
-    }
 }

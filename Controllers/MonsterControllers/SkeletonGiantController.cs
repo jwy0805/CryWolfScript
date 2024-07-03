@@ -11,13 +11,53 @@ public class SkeletonGiantController : SkeletonController
         UnitId = UnitId.SkeletonGiant;
     }
     
-    protected override void OnHitEvent()
-    {   // 일반 공격
-        Managers.Network.Send(new C_Attack { ObjectId = Id, AttackMethod = AttackMethod.NormalAttack, });
-    }
-
-    protected override void OnSkillEvent()
-    {   // 방어력 디버프 이펙트
-        Managers.Network.Send(new C_Skill { ObjectId = Id });
+    public override State State
+    {
+        get => PosInfo.State;
+        set
+        {
+            PosInfo.State = value;
+            if (TryGetComponent(out Animator anim) == false) return;
+            Anim = anim;
+            switch (PosInfo.State)
+            {
+                case State.Die:
+                    Anim.CrossFade("DIE", 0.01f);
+                    break;
+                case State.Revive:
+                    Anim.CrossFade("REVIVE", 0.01f);
+                    break;
+                case State.Idle:
+                    Anim.CrossFade("IDLE", 0.01f);
+                    break;
+                case State.Moving:
+                    Anim.CrossFade("RUN", 0.01f);
+                    break;
+                case State.Rush:
+                    Anim.CrossFade("RUSH", 0.01f);
+                    break;
+                case State.Attack:
+                    Anim.CrossFade("ATTACK", 0.01f, -1, 0.0f);
+                    break;
+                case State.Attack2:
+                    Anim.CrossFade("ATTACK2", 0.01f, -1, 0.0f);
+                    break;
+                case State.Skill:
+                    Anim.CrossFade("SKILL", 0.01f, -1, 0.0f);
+                    break;
+                case State.Skill2:
+                    Anim.CrossFade("SKILL2", 0.01f, -1, 0.0f);
+                    break;
+                case State.KnockBack:
+                    Anim.CrossFade("RUSH", 0.01f);
+                    break;
+                case State.Faint:
+                    Anim.CrossFade("FAINT", 0.01f);
+                    break;
+                case State.Standby:
+                default:
+                    break;
+            }
+        }
     }
 }

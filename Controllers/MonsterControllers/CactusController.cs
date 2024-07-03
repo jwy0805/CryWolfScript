@@ -9,5 +9,6 @@ public class CactusController : CactiController
     {
         base.Init();
         UnitId = UnitId.Cactus;
+        AttackAnimValue = 5 / 6f;
     }
 }

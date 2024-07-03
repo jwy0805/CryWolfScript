@@ -10,5 +10,6 @@ public class WolfController : WolfPupController
     {
         base.Init();
         UnitId = UnitId.Wolf;
+        AttackAnimValue = 2 / 3f;
     }
 }

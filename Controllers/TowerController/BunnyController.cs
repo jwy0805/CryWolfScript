@@ -9,15 +9,6 @@ public class BunnyController : TowerController
     {
         base.Init();
         UnitId = UnitId.Bunny;
-    }
-
-    protected override void OnHitEvent()
-    {
-        Managers.Network.Send(new C_Attack
-        {
-            ObjectId = Id,
-            AttackMethod = AttackMethod.ProjectileAttack,
-            Projectile = ProjectileId.BasicProjectile2
-        });
+        AttackAnimValue = 5 / 6f;
     }
 }

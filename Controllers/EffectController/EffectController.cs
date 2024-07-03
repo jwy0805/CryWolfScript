@@ -6,15 +6,14 @@ using UnityEngine.Serialization;
 
 public class EffectController : MonoBehaviour
 {
-    public GameObject parent;
     protected float LastSendTime = 0;
     protected readonly float SendTick = 0.099f;
-    protected bool IsHit = false;
     protected float StartTime;
-    protected float DamageTime;
-    protected float Duration;
     
     public int Id { get; set; }
+    public GameObject Parent { get; set; }
+    public bool TrailingParent { get; set; }
+    public float Duration { get; set; } = 2.0f;
     
     protected virtual void Start()
     {
@@ -23,27 +22,13 @@ public class EffectController : MonoBehaviour
 
     protected virtual void Update()
     {
-        if (Time.time > StartTime + DamageTime && IsHit == false)
-        {
-            SendSkillPacket();
-            IsHit = true;
-        }
-        
-        if (Time.time > StartTime + Duration)
-        {
-            Managers.Resource.Destroy(gameObject);
-            Managers.Object.Remove(Id);
-        }
+        if (Time.time < StartTime + Duration) return;
+        Managers.Object.Remove(Id);
+        Managers.Resource.Destroy(gameObject);
     }
 
     protected virtual void Init()
     {
-        
+        StartTime = Time.time;
     }
-
-    protected virtual void SendSkillPacket()
-    {
-        Managers.Network.Send(new C_EffectActivate { ObjectId = Id });
-    }
-
 }

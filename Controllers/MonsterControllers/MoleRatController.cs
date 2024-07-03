@@ -9,5 +9,6 @@ public class MoleRatController : BurrowController
     {
         base.Init();
         UnitId = UnitId.MoleRat;
+        AttackAnimValue = 2 / 3f;
     }
 }

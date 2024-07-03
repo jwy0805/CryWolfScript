@@ -11,16 +11,6 @@ public class PracticeDummyController : TowerController
     {
         base.Init();
         UnitId = UnitId.PracticeDummy;
-    }
-    
-    protected override void OnSkillEvent()
-    {
-        Managers.Network.Send(new C_Skill
-        {
-            ObjectId = Id, 
-            AttackMethod = AttackMethod.NoAttack, 
-            Effect = EffectId.None,
-            Projectile = ProjectileId.None
-        });
+        AttackAnimValue = 5 / 6f;
     }
 }

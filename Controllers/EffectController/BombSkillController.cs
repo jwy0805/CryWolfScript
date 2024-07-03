@@ -14,26 +14,12 @@ public class BombSkillController : ProjectileController
 
     private string[] _effects;
     
-    protected override void Init()
-    {
-        Speed = 10f;
-        Managers.Network.Send(new C_SetDest { ObjectId = Id });
-    }
-    
     protected override void FixedUpdate ()
     {
-        if (destPos == Vector3.zero) return;
-        Vector3 dir = destPos - transform.position;
-        if (dir.magnitude < 0.2f)
+        Vector3 dir = DestPos - transform.position;
+        if (dir.sqrMagnitude < 0.01f)
         {
-            Managers.Network.Send(new C_Attack
-            {
-                ObjectId = Id, AttackMethod = AttackMethod.NormalAttack, Projectile = ProjectileId.BombSkill
-            });
             HitEffect();
-            Managers.Object.Remove(Id);
-            Managers.Network.Send(new C_Leave { ObjectId = Id });
-            Managers.Resource.Destroy(gameObject);
         }
         else
         {
@@ -43,7 +29,7 @@ public class BombSkillController : ProjectileController
         }
     }
     
-    public void HitEffect()
+    private void HitEffect()
     {
         #region Effect
          

@@ -14,16 +14,6 @@ public class SpikeController : ShellController
     {
         base.Init();
         UnitId = UnitId.Spike;
-    }
-
-    protected override void OnHitEvent()
-    {
-        Managers.Network.Send(new C_Attack
-        {
-            ObjectId = Id,
-            AttackMethod = AttackMethod.ProjectileAttack,
-            Effect = EffectId.None,
-            Projectile = CurrentAttack
-        });
+        AttackAnimValue = 5 / 6f;
     }
 }

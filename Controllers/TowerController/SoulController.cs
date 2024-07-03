@@ -11,6 +11,6 @@ public class SoulController : TowerController
     {
         base.Init();
         UnitId = UnitId.Soul;
-        Managers.Network.Send(new C_SetDest { ObjectId = Id });
+        AttackAnimValue = 5 / 6f;
     }
 }

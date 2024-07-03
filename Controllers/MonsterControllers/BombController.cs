@@ -24,6 +24,9 @@ public class BombController : MonsterController
                 case State.Moving:
                     Anim.CrossFade("RUN", 0.01f);
                     break;
+                case State.Rush:
+                    Anim.CrossFade("RUN", 0.01f);
+                    break;
                 case State.Attack:
                     Anim.CrossFade("ATTACK", 0.01f, -1, 0.0f);
                     break;
@@ -52,25 +55,8 @@ public class BombController : MonsterController
         UnitId = UnitId.Bomb;
     }
 
-    protected override void OnSkillEvent()
+    protected override void UpdateRush()
     {
-        Managers.Network.Send(new C_Attack
-        {
-            ObjectId = Id,
-            AttackMethod = AttackMethod.ProjectileAttack,
-            Effect = EffectId.None,
-            Projectile = ProjectileId.BombSkill
-        });
-    }
-
-    protected override void OnHitEvent()
-    {
-        Managers.Network.Send(new C_Attack
-        {
-            ObjectId = Id,
-            AttackMethod = AttackMethod.ProjectileAttack,
-            Effect = EffectId.None,
-            Projectile = ProjectileId.BombProjectile
-        });
+        UpdateMoving();
     }
 }

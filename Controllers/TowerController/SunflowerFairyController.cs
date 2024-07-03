@@ -14,13 +14,7 @@ public class SunflowerFairyController : SunBlossomController
     
     protected override  void OnSkillEvent()
     {
-        Managers.Network.Send(new C_Skill
-        {
-            ObjectId = Id, 
-            AttackMethod = AttackMethod.NoAttack, 
-            Effect = EffectId.None,
-            Projectile = ProjectileId.None
-        });
+        
     }
 
     protected override void OnEndEvent()

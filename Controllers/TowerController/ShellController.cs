@@ -5,41 +5,12 @@ using System.Linq;
 using UnityEngine;
 using Google.Protobuf.Protocol;
 
-public class ShellController : MonsterController
+public class ShellController : TowerController
 {
-    private float _rollingSpeed;
-
     protected override void Init()
     {
         base.Init();
         UnitId = UnitId.Shell;
+        AttackAnimValue = 2 / 3f;
     }
-
-    protected override void UpdateRush()
-    {
-        
-    }
-
-    protected override void UpdateKnockBack()
-    {
-        
-    }
-
-    protected override void UpdateSkill()
-    {
-        
-    }
-
-    protected override void OnSkillEvent()
-    {
-        Managers.Network.Send(new C_Skill
-        {
-            ObjectId = Id, 
-            AttackMethod = AttackMethod.NoAttack, 
-            Effect = EffectId.None,
-            Projectile = ProjectileId.None
-        });
-    }
-    
-    public override void OnAnimSpeedUpdated(float param) { }
 }

@@ -80,35 +80,30 @@ public class ObjectManager
             case GameObjectType.Tower:
                 go = Managers.Game.Spawn(GameObjectType.Tower, $"Towers/{info.Name}");
                 _objects.Add(info.ObjectId, go);
-                PositionInfo towerPos = info.PosInfo;
+                var towerPos = info.PosInfo;
                 go.transform.position = new Vector3(towerPos.PosX, towerPos.PosY, towerPos.PosZ);
-                TowerController tc = go.GetComponent<TowerController>();
+                if (go.TryGetComponent(out TowerController tc) == false) return;
                 tc.Id = info.ObjectId;
-                tc.State = info.PosInfo.State;
+                tc.PosInfo = towerPos;
                 tc.Stat = info.StatInfo; 
-                StatInfo stat = tc.Stat;
-                Managers.Network.Send(new C_SkillInit { ObjectId = tc.Id });
-                tc.OnAnimSpeedUpdated(stat.AttackSpeed);
                 // if (go.TryGetComponent(out UI_HealthCircle healthCircle)) healthCircle.TowerSpawned(stat.SizeX);
                 // if (go.TryGetComponent(out UI_CanSpawn canSpawn))
                 // {
                 //     canSpawn.background.color = Color.clear;
                 //     canSpawn.enabled = false;
                 // }
-                if (go.TryGetComponent(out Drag drag)) drag.enabled = false;
+                // if (go.TryGetComponent(out Drag drag)) drag.enabled = false;
                 break;
             
             case GameObjectType.Monster:
                 go = Managers.Game.Spawn(GameObjectType.Monster, $"Monsters/{info.Name}");
                 _objects.Add(info.ObjectId, go);
-                PositionInfo monPos = info.PosInfo;
+                var monPos = info.PosInfo;
                 go.transform.position = new Vector3(monPos.PosX, monPos.PosY, monPos.PosZ);
-                MonsterController mc = go.GetComponent<MonsterController>();
+                if (go.TryGetComponent(out MonsterController mc) == false) return; 
                 mc.Id = info.ObjectId;
-                mc.PosInfo = info.PosInfo;
+                mc.PosInfo = monPos;
                 mc.Stat = info.StatInfo;
-                Managers.Network.Send(new C_SkillInit { ObjectId = mc.Id });
-                mc.OnAnimSpeedUpdated(info.StatInfo.AttackSpeed);
                 break;
             
             case GameObjectType.MonsterStatue:
@@ -186,23 +181,34 @@ public class ObjectManager
                 break;
         }
     }
+    
+    public void AddProjectile(ObjectInfo info, int parentId, DestVector destVector, float speed)
+    {   // ?? 왜 부모 transform에 붙이는지 모르겠음
+        var parent = FindById(parentId);
+        if (parent == null) return;
+        // var go = Managers.Game.Spawn(
+        //     GameObjectType.Projectile, $"Effects/{info.Name}", parent.transform);
+        var go = Managers.Game.Spawn(
+            GameObjectType.Projectile, $"Effects/{info.Name}");
+        _objects.Add(info.ObjectId, go);
+        if (go.TryGetComponent(out ProjectileController prc) == false) return;
+        prc.Id = info.ObjectId;
+        prc.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
+        prc.DestPos = new Vector3(destVector.X, destVector.Y, destVector.Z);
+        prc.Speed = speed;
+    }
 
-    public void Add(ObjectInfo info, int parentId, bool myPlayer = false)
+    public void AddEffect(ObjectInfo info, int parentId, bool trailingParent, int duration)
     {
-        GameObjectType objectType = GetObjectTypeById(info.ObjectId);
-        GameObject parent = FindById(parentId);
-
-        switch (objectType)
-        {
-            case GameObjectType.Effect:
-                GameObject go = Managers.Game.Spawn(GameObjectType.Effect, $"Effects/{info.Name}");
-                _objects.Add(info.ObjectId, go);
-                EffectController ec = go.GetComponent<EffectController>();
-                ec.Id = info.ObjectId;
-                ec.parent = parent;
-                go.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
-                break;
-        }
+        var parent = FindById(parentId);
+        GameObject go = Managers.Game.Spawn(GameObjectType.Effect, $"Effects/{info.Name}");
+        _objects.Add(info.ObjectId, go);
+        if (go.TryGetComponent(out EffectController ec) == false) return; 
+        ec.Id = info.ObjectId;
+        ec.Parent = parent;
+        ec.TrailingParent = trailingParent;
+        ec.Duration = duration / (float)1000;
+        go.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
     }
 
     public void Remove(int id)

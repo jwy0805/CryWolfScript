@@ -37,7 +37,7 @@ public class CactusBossController : CactusController
                     Anim.CrossFade("SMASH", 0.01f, -1, 0.0f);
                     break;
                 case State.Skill:
-                    Anim.CrossFade("SKILL", 0.01f, -1, 0.0f);
+                    Anim.CrossFade("BREATH", 0.01f, -1, 0.0f);
                     break;
                 case State.Skill2:
                     Anim.CrossFade("BREATH", 0.01f, -1, 0.0f);
@@ -59,54 +59,11 @@ public class CactusBossController : CactusController
     {
         base.Init();
         UnitId = UnitId.CactusBoss;
-    }
-    
-    protected override void Update()
-    {
-        switch (State)
-        {
-            case State.Die:
-                UpdateDie();
-                break;
-            case State.Moving:
-                UpdateMoving();
-                break;
-            case State.Idle:
-                UpdateIdle();
-                break;
-            case State.Rush:
-                UpdateRush();
-                break;
-            case State.Attack:
-                UpdateAttack();
-                break;
-            case State.Skill:
-                UpdateSkill();
-                break;
-            case State.Skill2:
-                UpdateSkill2();
-                break;
-            case State.KnockBack:
-                UpdateKnockBack();
-                break;
-            case State.Faint:
-                break;
-            
-        }
+        AttackAnimValue = 5 / 6f;
     }
 
     protected override void UpdateRush()
     {
         base.UpdateMoving();
-    }
-
-    private void OnSmashEvent()
-    {
-        OnSkillEvent();
-    }
-    
-    protected override void OnSkillEvent()
-    {
-        Managers.Network.Send(new C_Attack { ObjectId = Id, AttackMethod = AttackMethod.AdditionalAttack });
     }
 }

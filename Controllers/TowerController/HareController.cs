@@ -10,13 +10,4 @@ public class HareController : RabbitController
         base.Init();
         UnitId = UnitId.Hare;
     }
-
-    protected override void OnSkillEvent()
-    {
-        Managers.Network.Send(new C_Attack
-        {
-            ObjectId = Id,
-            
-        });
-    }
 }

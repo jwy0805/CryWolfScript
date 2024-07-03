@@ -6,13 +6,6 @@ public class WerewolfController : WolfController
     {
         base.Init();
         UnitId = UnitId.Werewolf;
-    }
-    
-    protected override void OnSkillEvent()
-    {
-        Managers.Network.Send(new C_Attack
-        {
-            ObjectId = Id, AttackMethod = AttackMethod.EffectAttack, Effect = EffectId.LightningStrike
-        });
+        AttackAnimValue = 5 / 6f;
     }
 }

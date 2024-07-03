@@ -9,18 +9,7 @@ public class MosquitoStingerController : MosquitoPesterController
     protected override void Init()
     {
         base.Init();
-        ObjectType = GameObjectType.Monster;
         UnitId = UnitId.MosquitoStinger;
-    }
-    
-    protected override void OnSkillEvent()
-    {
-        Managers.Network.Send(new C_Attack
-        {
-            ObjectId = Id, 
-            AttackMethod = AttackMethod.ProjectileAttack, 
-            Effect = EffectId.None,
-            Projectile = ProjectileId.MosquitoStingerProjectile
-        });
+        AttackAnimValue = 5 / 6f;
     }
 }

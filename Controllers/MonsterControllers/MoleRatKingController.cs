@@ -25,6 +25,8 @@ public class MoleRatKingController : MoleRatController
                 UpdateIdle();
                 break;
             case State.Underground:
+                UpdateUnderground();
+                break;
             case State.Rush:
                 UpdateRush();
                 break;
@@ -43,5 +45,10 @@ public class MoleRatKingController : MoleRatController
             case State.Faint:
                 break;
         }
+    }
+
+    private void UpdateUnderground()
+    {
+        UpdateMoving();
     }
 }

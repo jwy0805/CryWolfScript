@@ -10,28 +10,5 @@ public class SoulMageController : HauntController
     {
         base.Init();
         UnitId = UnitId.SoulMage;
-        CurrentAttack = ProjectileId.SoulMageProjectile;
-    }
-
-    protected override void OnHitEvent()
-    {
-        Managers.Network.Send(new C_Attack
-        {
-            ObjectId = Id,
-            AttackMethod = AttackMethod.ProjectileAttack,
-            Effect = EffectId.None,
-            Projectile = CurrentAttack
-        });
-    }
-
-    protected override void OnSkillEvent()
-    {
-        Managers.Network.Send(new C_Attack
-        {
-            ObjectId = Id,
-            AttackMethod = AttackMethod.EffectAttack,
-            Effect = EffectId.SoulMagePunch,
-            Projectile = ProjectileId.None
-        });
     }
 }

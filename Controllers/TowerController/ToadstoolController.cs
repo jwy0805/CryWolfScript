@@ -1,18 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
+using Google.Protobuf.Protocol;
 using UnityEngine;
 
-public class ToadstoolController : MonoBehaviour
+public class ToadstoolController : FungiController
 {
-    // Start is called before the first frame update
-    void Start()
+    protected override void Init()
     {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
+        base.Init();
+        UnitId = UnitId.Toadstool;
     }
 }

@@ -36,9 +36,6 @@ public class BurrowController : MonsterController
                 case State.Skill:
                     Anim.CrossFade("SKILL", 0.01f, -1, 0.0f);
                     break;
-                case State.Skill2:
-                    Anim.CrossFade("SKILL2", 0.01f, -1, 0.0f);
-                    break;
                 case State.KnockBack:
                     Anim.CrossFade("RUSH", 0.01f);
                     break;
@@ -60,21 +57,19 @@ public class BurrowController : MonsterController
                 case State.Underground:
                     Anim.CrossFade("UNDERGROUND", 0.01f);
                     break;
-                case State.Standby:
-                default:
-                    break;
             }
         }
-    }
-    
-    protected override void Init()
-    {
-        base.Init();
-        UnitId = UnitId.Burrow;
     }
 
     protected override void UpdateRush()
     {
-        base.UpdateMoving();
+        UpdateMoving();
+    }
+
+    protected override void Init()
+    {
+        base.Init();
+        UnitId = UnitId.Burrow;
+        AttackAnimValue = 2 / 3f;
     }
 }

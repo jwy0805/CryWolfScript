@@ -7,7 +7,6 @@ using UnityEngine.Serialization;
 public class CreatureController : BaseController, ISkillObserver
 {
     private readonly StatInfo _stat = new();
-    protected float LastSendTime;
     
     public UnitId UnitId { get; protected set; }
 
@@ -24,11 +23,10 @@ public class CreatureController : BaseController, ISkillObserver
             _stat.Hp = value.Hp;
             _stat.MaxHp = value.MaxHp;
             _stat.Level = value.Level;
-            _stat.AttackSpeed = value.AttackSpeed;
             _stat.MoveSpeed = value.MoveSpeed;
         }
-    }
-
+    } 
+    
     public int MaxHp 
     {
         get => Stat.MaxHp;
@@ -41,6 +39,16 @@ public class CreatureController : BaseController, ISkillObserver
         set => Stat.Hp = value;
     }
 
+    public int ShieldMax { get; set; }
+    
+    public int Shield { get; set; }
+    
+    public int MaxMp
+    {
+        get => Stat.MaxMp;
+        set => Stat.MaxMp = value;
+    }
+    
     public int Mp
     {
         get => Stat.Mp;
@@ -63,39 +71,26 @@ public class CreatureController : BaseController, ISkillObserver
         DirQueue?.Clear();
     }
 
-    public virtual void OnPathReceived(S_SetPath packet)
+    public virtual void OnPathReceived(S_SetPath pathPacket)
     {
         var pathQueue = new Queue<Vector3>();
         var dirQueue = new Queue<double>();
-        foreach (var v in packet.Path) pathQueue.Enqueue(new Vector3(v.X, v.Y, v.Z));
-        foreach (var v in packet.Dir) dirQueue.Enqueue(v);
-        TotalMoveSpeed = packet.MoveSpeed;
+        foreach (var v in pathPacket.Path) pathQueue.Enqueue(new Vector3(v.X, v.Y, v.Z));
+        foreach (var v in pathPacket.Dir) dirQueue.Enqueue(v);
+        TotalMoveSpeed = pathPacket.MoveSpeed;
         PathQueue = pathQueue;
         DirQueue = dirQueue;
     }
 
-    public virtual void OnDead()
+    public virtual void OnDead(float time = 2f)
     {
-        StartCoroutine(base.Despawn(gameObject, 2f));
+        StartCoroutine(Despawn(gameObject, time));
     }
     
     public virtual void OnSkillUpdated(int id, GameObjectType type, SkillType skillType, int step) { }
     
     // Animation Event
-    protected virtual void OnHitEvent()
-    {
-        // Managers.Network.Send(new C_Attack { ObjectId = Id, AttackMethod = AttackMethod.NormalAttack });
-    }
-    
+    protected virtual void OnHitEvent() { }
     protected virtual void OnSkillEvent() { }
-
-    protected virtual void OnMotionEvent()
-    {
-        Managers.Network.Send(new C_Motion { ObjectId = Id, State = State });
-    }
-
-    protected virtual void OnEndEvent()
-    {
-        State = NextState;
-    }
+    protected virtual void OnEndEvent() { }
 }

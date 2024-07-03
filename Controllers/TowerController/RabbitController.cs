@@ -10,14 +10,4 @@ public class RabbitController : BunnyController
         base.Init();
         UnitId = UnitId.Rabbit;
     }
-
-    protected override void OnSkillEvent()
-    {
-        Managers.Network.Send(new C_Attack
-        {
-            ObjectId = Id,
-            AttackMethod = AttackMethod.AdditionalProjectileAttack,
-            
-        });
-    }
 }
