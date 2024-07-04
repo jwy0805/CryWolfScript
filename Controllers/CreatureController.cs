@@ -39,9 +39,9 @@ public class CreatureController : BaseController, ISkillObserver
         set => Stat.Hp = value;
     }
 
-    public int ShieldMax { get; set; }
+    public int ShieldAdd { get; set; }
     
-    public int Shield { get; set; }
+    public int ShieldRemain { get; set; }
     
     public int MaxMp
     {
@@ -63,6 +63,9 @@ public class CreatureController : BaseController, ISkillObserver
         base.Init();
         SkillSubject = GameObject.Find("Subject").GetComponent<SkillSubject>();
         SkillSubject.AddObserver(this);
+        // Instantiate Health bar
+        Instantiate(Resources.Load<GameObject>("Prefabs/WorldObjects/HealthCircle"), transform);
+        Util.GetOrAddComponent<UI_HealthCircle>(gameObject);
     }
 
     protected override void UpdateIdle()

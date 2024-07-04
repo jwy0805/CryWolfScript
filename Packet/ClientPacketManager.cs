@@ -67,6 +67,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SGetDamage, PacketHandler.S_GetDamageHandler);		
 		_onRecv.Add((ushort)MessageId.SChangeHp, MakePacket<S_ChangeHp>);
 		_handler.Add((ushort)MessageId.SChangeHp, PacketHandler.S_ChangeHpHandler);		
+		_onRecv.Add((ushort)MessageId.SChangeShield, MakePacket<S_ChangeShield>);
+		_handler.Add((ushort)MessageId.SChangeShield, PacketHandler.S_ChangeShieldHandler);		
 		_onRecv.Add((ushort)MessageId.SChangeMp, MakePacket<S_ChangeMp>);
 		_handler.Add((ushort)MessageId.SChangeMp, PacketHandler.S_ChangeMpHandler);		
 		_onRecv.Add((ushort)MessageId.SChangeSpeed, MakePacket<S_ChangeSpeed>);

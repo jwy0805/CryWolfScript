@@ -28,7 +28,7 @@ public class MyPlayerController : PlayerController
         C_Spawn spawnPacket = new()
         {
             Type = GameObjectType.Monster,
-            Num = (int)UnitId.Snake,
+            Num = (int)UnitId.MosquitoPester,
             PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 18, Dir = 180 },
             Way = SpawnWay.North
         };
@@ -37,16 +37,16 @@ public class MyPlayerController : PlayerController
         // C_Spawn spawnPacket1 = new()
         // {
         //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.Horror,
+        //     Num = (int)UnitId.Wolf,
         //     PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 22, Dir = 180 },
         //     Way = SpawnWay.North,
         // };
         // Managers.Network.Send(spawnPacket1);
-        //
+        
         // C_Spawn spawnPacket2 = new()
         // {
         //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.PoisonBomb,
+        //     Num = (int)UnitId.Snake,
         //     PosInfo = new PositionInfo { State = State.Idle, PosX = 1, PosY = 6, PosZ = 22, Dir = 180 },
         //     Way = SpawnWay.North,
         // };
@@ -61,19 +61,19 @@ public class MyPlayerController : PlayerController
         // };
         // Managers.Network.Send(spawnPacket3);
         
-        // C_Spawn spawnPacket4 = new()
-        // {
-        //     Type = GameObjectType.Tower,
-        //     Num = (int)UnitId.SoulMage,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 3.5f, Dir = 180 },
-        //     Way = SpawnWay.North,
-        // };
-        // Managers.Network.Send(spawnPacket4);
+        C_Spawn spawnPacket4 = new()
+        {
+            Type = GameObjectType.Tower,
+            Num = (int)UnitId.SunflowerFairy,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 3.5f, Dir = 180 },
+            Way = SpawnWay.North,
+        };
+        Managers.Network.Send(spawnPacket4);
         
         C_Spawn spawnPacket5 = new()
         {
             Type = GameObjectType.Tower,
-            Num = (int)UnitId.Hermit,
+            Num = (int)UnitId.Bloom,
             PosInfo = new PositionInfo { State = State.Idle, PosX = 1, PosY = 6, PosZ = 6f, Dir = 180 },
             Way = SpawnWay.North,
         };

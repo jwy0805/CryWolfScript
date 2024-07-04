@@ -7,8 +7,6 @@ public class SheepController : CreatureController
     protected override void Init()
     {
         base.Init();
-        
-        // Managers.Network.Send(new C_SetDest { ObjectId = Id });
         ObjectType = GameObjectType.Sheep;
     }
     

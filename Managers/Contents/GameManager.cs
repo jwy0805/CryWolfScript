@@ -28,17 +28,6 @@ public class GameManager
     public GameObject Spawn(GameObjectType type, string path, Transform parent = null)
     {
         var go = Managers.Resource.Instantiate(path, parent);
-
-        switch (type)
-        {
-            case GameObjectType.Tower:
-                if (OnSpawnEvent != null) 
-                {
-                    OnSpawnEvent.Invoke(1);
-                }                
-                break;
-        }
-
         return go;
     }
 

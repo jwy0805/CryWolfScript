@@ -283,10 +283,21 @@ public class PacketHandler
         // Change hp bar
         if (go.TryGetComponent(out CreatureController cc) == false) return;
 
-        cc.Hp = hpPacket.Hp;
         cc.MaxHp = hpPacket.MaxHp;
+        cc.Hp = hpPacket.Hp;
     }
 
+    public static void S_ChangeShieldHandler(PacketSession session, IMessage packet)
+    {
+        var shieldPacket = (S_ChangeShield)packet;
+        var go = Managers.Object.FindById(shieldPacket.ObjectId);
+        if (go == null) return;
+        if (go.TryGetComponent(out CreatureController cc) == false) return;
+        
+        cc.ShieldAdd = shieldPacket.ShieldAdd;
+        cc.ShieldRemain = shieldPacket.ShieldRemain;
+    }
+    
     public static void S_ChangeMpHandler(PacketSession session, IMessage packet)
     {
         var mpPacket = (S_ChangeMp)packet;
@@ -294,8 +305,8 @@ public class PacketHandler
         if (go == null) return;
         if (go.TryGetComponent(out CreatureController cc) == false) return;
 
-        cc.Mp = mpPacket.Mp;
         cc.MaxMp = mpPacket.MaxMp;
+        cc.Mp = mpPacket.Mp;
     }
 
     public static void S_ChangeSpeedHandler(PacketSession session, IMessage packet)

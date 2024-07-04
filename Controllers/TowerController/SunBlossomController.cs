@@ -10,12 +10,6 @@ public class SunBlossomController : TowerController
     {
         base.Init();
         UnitId = UnitId.SunBlossom;
+        AttackAnimValue = 2 / 3f;
     }
-
-    protected override void OnEndEvent()
-    {
-        State = State.Idle;
-    }
-    
-    public override void OnAnimSpeedUpdated(float param) { }
 }

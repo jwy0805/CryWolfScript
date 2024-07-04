@@ -6,39 +6,73 @@ using UnityEngine.UI;
 
 public class UI_HealthBar : MonoBehaviour
 {
-    private Slider _slider; 
-    private Image _sliderFill;
-    private StatInfo _stat;
-    private Transform _healthSlider;
+    private Transform _slider;
+    private Slider _hpSlider;
+    private Slider _shieldSlider;
+    private Image _hpSliderFill;
+    private Image _shieldSliderFill;
+    private CreatureController _cc;
+    private RectTransform _hpRect;
+    private RectTransform _shieldRect;
     private Camera _camera;
     
     void Start()
     {
-        GameObject go = gameObject;
-        _stat = go.GetComponent<CreatureController>().Stat;
-        _healthSlider = Util.FindChild(go, "HealthSlider", false, true).transform;
-        _slider = Util.FindChild(_healthSlider.gameObject, "Slider", true, true).GetComponent<Slider>();
-        _sliderFill = _slider.fillRect.gameObject.GetComponent<Image>();
+        _slider = Util.FindChild(gameObject, "HealthSlider(Clone)", true, true).transform;
+        _hpSlider = Util.FindChild<Slider>(_slider.gameObject, "HpSlider", true, true);
+        _shieldSlider = Util.FindChild<Slider>(_slider.gameObject, "ShieldSlider", true, true);
+        _hpSliderFill = Util.FindChild<Image>(_hpSlider.gameObject, "Fill", true, true);
+        _shieldSliderFill = Util.FindChild<Image>(_shieldSlider.gameObject, "Fill", true, true);
+        
+        _cc = gameObject.GetComponent<CreatureController>();
+        _hpRect = _hpSlider.GetComponent<RectTransform>();
+        _shieldRect = _shieldSlider.GetComponent<RectTransform>();
         _camera = Camera.main;
+
+        var type = _cc.ObjectType;
+        switch (type)
+        {
+            case GameObjectType.Fence:
+                var sizeX = gameObject.GetComponent<BoxCollider>().size.x;
+                _hpRect.localScale = new Vector3(0.001f * sizeX, 0.01f, 0.01f);
+                _shieldRect.localScale = new Vector3(0.001f * sizeX, 0.01f, 0.01f);
+                break;
+            default:
+                var radius = gameObject.GetComponent<CapsuleCollider>().radius;
+                _hpRect.localScale = new Vector3(0.001f * radius * 2f, 0.01f, 0.01f);
+                _shieldRect.localScale = new Vector3(0.001f * radius * 2f, 0.01f, 0.01f);
+                break;
+        }
     }
 
     void Update()
     {
-        float ratio = (_stat.Hp / (float)_stat.MaxHp) * 100;
-        _slider.value = ratio;
-        _healthSlider.rotation = _camera.transform.rotation;
-        _healthSlider.gameObject.SetActive(!(ratio >= 99.8f));
+        if (_cc.ShieldAdd <= 0)
+        {
+            _shieldSlider.value = 0;
+        }
+        else
+        {
+            float shieldRatio = _cc.ShieldRemain / (float)_cc.ShieldAdd * 100;
+            _shieldSlider.value = shieldRatio;
+            _shieldSliderFill.color = Color.blue;
+        }
+        
+        _slider.rotation = _camera.transform.rotation;
+        float ratio = (_cc.Hp / (float)_cc.MaxHp) * 100;
+        _hpSlider.value = ratio;
+        _slider.gameObject.SetActive(ratio <= 99.8f || _shieldSlider.value > 0);
 
         switch (ratio)
         {
             case > 70.0f:
-                _sliderFill.color = Color.green;
+                _hpSliderFill.color = Color.green;
                 break;
             case < 30.0f:
-                _sliderFill.color = Color.red;
+                _hpSliderFill.color = Color.red;
                 break;
             default:
-                _sliderFill.color = Color.yellow;
+                _hpSliderFill.color = Color.yellow;
                 break;
         }
     }
