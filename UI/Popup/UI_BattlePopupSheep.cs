@@ -32,13 +32,16 @@ public class UI_BattlePopupSheep : UI_Popup
 
     private void OnRankGameClicked(PointerEventData data)
     {
-        SceneManager.LoadScene("Scenes/Game/Game");
+        Managers.Map.MapId = 1;
+        Managers.Scene.LoadScene(Define.Scene.Game);
         Managers.Clear();
     }
 
     private void OnExhibitionGameClicked(PointerEventData data)
     {
-        
+        Managers.Map.MapId = 2;
+        Managers.Scene.LoadScene(Define.Scene.Game);
+        Managers.Clear();
     }
 
     protected override void BindObjects()

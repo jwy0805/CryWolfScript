@@ -1,8 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
-using Google.Protobuf.Protocol;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class UI_HealthCircle : MonoBehaviour
@@ -29,7 +25,7 @@ public class UI_HealthCircle : MonoBehaviour
         _hpRect.localScale = new Vector3(radius * 2f, radius * 2f, 1);
         _shieldRect.localScale = new Vector3(radius * 2f, radius * 2f, 1);
     }
-
+    
     private void Update()
     {
         if (_cc.ShieldAdd <= 0)

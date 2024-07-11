@@ -271,8 +271,6 @@ public class PacketHandler
                 text.outlineColor = Color.black;
                 break;
         }
-        go.TryGetComponent(out CreatureController cc);
-        if (cc != null) cc.Hp -= damagePacket.Damage;
     }
     
     public static void S_ChangeHpHandler(PacketSession session, IMessage packet)

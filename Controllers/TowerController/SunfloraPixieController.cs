@@ -15,6 +15,7 @@ public class SunfloraPixieController : SunflowerFairyController
         base.Init();
         UnitId = UnitId.SunfloraPixie;
         _currentAttack = _originalAttack;
+        AttackAnimValue = 2 / 3f;
     }
     
     public override void OnSkillUpdated(int id, GameObjectType type, SkillType skillType, int step)

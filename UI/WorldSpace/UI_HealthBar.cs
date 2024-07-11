@@ -7,13 +7,12 @@ using UnityEngine.UI;
 public class UI_HealthBar : MonoBehaviour
 {
     private Transform _slider;
+    private RectTransform _sliderRect;
     private Slider _hpSlider;
     private Slider _shieldSlider;
     private Image _hpSliderFill;
     private Image _shieldSliderFill;
     private CreatureController _cc;
-    private RectTransform _hpRect;
-    private RectTransform _shieldRect;
     private Camera _camera;
     
     void Start()
@@ -25,8 +24,7 @@ public class UI_HealthBar : MonoBehaviour
         _shieldSliderFill = Util.FindChild<Image>(_shieldSlider.gameObject, "Fill", true, true);
         
         _cc = gameObject.GetComponent<CreatureController>();
-        _hpRect = _hpSlider.GetComponent<RectTransform>();
-        _shieldRect = _shieldSlider.GetComponent<RectTransform>();
+        _sliderRect = _slider.GetComponent<RectTransform>();
         _camera = Camera.main;
 
         var type = _cc.ObjectType;
@@ -34,13 +32,11 @@ public class UI_HealthBar : MonoBehaviour
         {
             case GameObjectType.Fence:
                 var sizeX = gameObject.GetComponent<BoxCollider>().size.x;
-                _hpRect.localScale = new Vector3(0.001f * sizeX, 0.01f, 0.01f);
-                _shieldRect.localScale = new Vector3(0.001f * sizeX, 0.01f, 0.01f);
+                _sliderRect.localScale = new Vector3(0.005f * sizeX, 0.01f, 0.01f);
                 break;
             default:
                 var radius = gameObject.GetComponent<CapsuleCollider>().radius;
-                _hpRect.localScale = new Vector3(0.001f * radius * 2f, 0.01f, 0.01f);
-                _shieldRect.localScale = new Vector3(0.001f * radius * 2f, 0.01f, 0.01f);
+                _sliderRect.localScale = new Vector3(0.005f * radius, 0.01f, 0.01f);
                 break;
         }
     }
@@ -50,16 +46,18 @@ public class UI_HealthBar : MonoBehaviour
         if (_cc.ShieldAdd <= 0)
         {
             _shieldSlider.value = 0;
+            _shieldSlider.gameObject.SetActive(false);
         }
         else
         {
+            _shieldSlider.gameObject.SetActive(true);
             float shieldRatio = _cc.ShieldRemain / (float)_cc.ShieldAdd * 100;
             _shieldSlider.value = shieldRatio;
             _shieldSliderFill.color = Color.blue;
         }
         
         _slider.rotation = _camera.transform.rotation;
-        float ratio = (_cc.Hp / (float)_cc.MaxHp) * 100;
+        float ratio = _cc.Hp / (float)_cc.MaxHp * 100;
         _hpSlider.value = ratio;
         _slider.gameObject.SetActive(ratio <= 99.8f || _shieldSlider.value > 0);
 

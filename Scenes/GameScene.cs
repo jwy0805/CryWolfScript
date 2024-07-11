@@ -2,15 +2,15 @@ using UnityEngine;
 
 public class GameScene : BaseScene
 {
-    protected override void Init()
+    protected override void Awake()
     {
         base.Init();
         SceneType = Define.Scene.Game;
-        
-        Managers.Map.LoadMap();
-        Managers.UI.ShowSceneUI<UI_Game>();
+
+        var mapNumber = Managers.Map.MapId;
+        Managers.Map.LoadMap(mapNumber);
         InitObjects();
-        Managers.Network.ConnectGameSession();
+        Managers.Network.ConnectGameSession();    
     }
     
     public override void Clear()

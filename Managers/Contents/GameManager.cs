@@ -30,6 +30,12 @@ public class GameManager
         var go = Managers.Resource.Instantiate(path, parent);
         return go;
     }
+    
+    public GameObject Spawn(GameObjectType type, string path, Vector3 position)
+    {
+        var go = Managers.Resource.Instantiate(path, position);
+        return go;
+    }
 
     public void Despawn(GameObject go, float time = 0.0f)
     {

@@ -184,17 +184,15 @@ public class ObjectManager
     }
     
     public void AddProjectile(ObjectInfo info, int parentId, DestVector destVector, float speed)
-    {   // ?? 왜 부모 transform에 붙이는지 모르겠음
+    {   
         var parent = FindById(parentId);
         if (parent == null) return;
-        // var go = Managers.Game.Spawn(
-        //     GameObjectType.Projectile, $"Effects/{info.Name}", parent.transform);
-        var go = Managers.Game.Spawn(
-            GameObjectType.Projectile, $"Effects/{info.Name}");
+        var go = Managers.Game.Spawn(GameObjectType.Projectile, $"Effects/{info.Name}", 
+            new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ));
         _objects.Add(info.ObjectId, go);
         if (go.TryGetComponent(out ProjectileController prc) == false) return;
         prc.Id = info.ObjectId;
-        prc.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
+        // prc.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
         prc.DestPos = new Vector3(destVector.X, destVector.Y, destVector.Z);
         prc.Speed = speed;
     }

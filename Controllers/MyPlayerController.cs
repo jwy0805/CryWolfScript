@@ -25,59 +25,95 @@ public class MyPlayerController : PlayerController
         _mediator = GameObject.FindWithTag("UI").GetComponent<UI_Mediator>();
 
         // Test - Unit Spawn
-        C_Spawn spawnPacket = new()
-        {
-            Type = GameObjectType.Monster,
-            Num = (int)UnitId.MosquitoPester,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 18, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(spawnPacket);
-        
+        // C_Spawn spawnPacket = new()
+        // {
+        //     Type = GameObjectType.Monster,
+        //     Num = (int)UnitId.CactusBoss,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 18, Dir = 180 },
+        //     Way = SpawnWay.North
+        // };
+        // Managers.Network.Send(spawnPacket);
+        //
         // C_Spawn spawnPacket1 = new()
         // {
         //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.Wolf,
+        //     Num = (int)UnitId.Horror,
         //     PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 22, Dir = 180 },
         //     Way = SpawnWay.North,
         // };
         // Managers.Network.Send(spawnPacket1);
-        
+        //
         // C_Spawn spawnPacket2 = new()
         // {
         //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.Snake,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 1, PosY = 6, PosZ = 22, Dir = 180 },
+        //     Num = (int)UnitId.Werewolf,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 2, PosY = 6, PosZ = 18, Dir = 180 },
         //     Way = SpawnWay.North,
         // };
         // Managers.Network.Send(spawnPacket2);
-        
+        //
         // C_Spawn spawnPacket3 = new()
         // {
         //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.Wolf,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 2.5f, PosY = 6, PosZ = 22, Dir = 180 },
+        //     Num = (int)UnitId.SnakeNaga,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 2, PosY = 6, PosZ = 20, Dir = 180 },
         //     Way = SpawnWay.North,
         // };
         // Managers.Network.Send(spawnPacket3);
         
-        C_Spawn spawnPacket4 = new()
+        C_Spawn spawnPacket30 = new()
         {
-            Type = GameObjectType.Tower,
-            Num = (int)UnitId.SunflowerFairy,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 3.5f, Dir = 180 },
+            Type = GameObjectType.Monster,
+            Num = (int)UnitId.CactusBoss,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 20, Dir = 180 },
             Way = SpawnWay.North,
         };
-        Managers.Network.Send(spawnPacket4);
+        Managers.Network.Send(spawnPacket30);
+        
+        // C_Spawn spawnPacket4 = new()
+        // {
+        //     Type = GameObjectType.Tower,
+        //     Num = (int)UnitId.SoulMage,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 3.5f, Dir = 180 },
+        //     Way = SpawnWay.North,
+        // };
+        // Managers.Network.Send(spawnPacket4);
+        
+        // C_Spawn spawnPacket6 = new()
+        // {
+        //     Type = GameObjectType.Tower,
+        //     Num = (int)UnitId.Hermit,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 6f, Dir = 180 },
+        //     Way = SpawnWay.North,
+        // };
+        // Managers.Network.Send(spawnPacket6);
         
         C_Spawn spawnPacket5 = new()
         {
             Type = GameObjectType.Tower,
-            Num = (int)UnitId.Bloom,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 1, PosY = 6, PosZ = 6f, Dir = 180 },
+            Num = (int)UnitId.MothCelestial,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 7, PosZ = 3f, Dir = 180 },
             Way = SpawnWay.North,
         };
         Managers.Network.Send(spawnPacket5);
+        
+        // C_Spawn spawnPacket50 = new()
+        // {
+        //     Type = GameObjectType.Tower,
+        //     Num = (int)UnitId.SunfloraPixie,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 2, PosY = 6, PosZ = 3, Dir = 180 },
+        //     Way = SpawnWay.North,
+        // };
+        // Managers.Network.Send(spawnPacket50); 
+        
+        // C_Spawn spawnPacket51 = new()
+        // {
+        //     Type = GameObjectType.Tower,
+        //     Num = (int)UnitId.Blossom,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 3, PosY = 6, PosZ = 3, Dir = 180 },
+        //     Way = SpawnWay.North,
+        // };
+        // Managers.Network.Send(spawnPacket51);
     }
 
     private void OnMouseEvent(Define.MouseEvent evt)

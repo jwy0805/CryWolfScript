@@ -37,6 +37,24 @@ public class ResourceManager
         go.name = original.name;
         return go;
     }
+    
+    public GameObject Instantiate(string path, Vector3 position)
+    {
+        GameObject original = Load<GameObject>($"Prefabs/{path}");
+        
+        if (original == null)
+        {
+            Debug.Log($"Failed to load Prefab : {path}");
+            return null;
+        }
+
+        if (original.GetComponent<Poolable>() != null)
+            return Managers.Pool.Pop(original).gameObject;
+
+        GameObject go = Object.Instantiate(original, position, Quaternion.identity);
+        go.name = original.name;
+        return go;
+    }
 
     public void Destroy(GameObject go, float time)
     {

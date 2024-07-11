@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Google.Protobuf;
+using Google.Protobuf.Protocol;
 using UnityEngine;
 
 public class NetworkManager

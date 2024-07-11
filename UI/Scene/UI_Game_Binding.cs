@@ -12,29 +12,29 @@ public partial class UI_Game
 {
     #region UIDictionaray
     
-    private readonly Dictionary<string, GameObject> _dictCommonBtn = new();
-    private readonly Dictionary<string, GameObject> _dictCommonImg = new();
-    private readonly Dictionary<string, GameObject> _dictCommonTxt = new();
-    private readonly Dictionary<string, GameObject> _dictUnitBtn = new();
-    private readonly Dictionary<string, GameObject> _dictControlBtn = new();
+    protected readonly Dictionary<string, GameObject> DictCommonBtn = new();
+    protected readonly Dictionary<string, GameObject> DictCommonImg = new();
+    protected readonly Dictionary<string, GameObject> DictCommonTxt = new();
+    protected readonly Dictionary<string, GameObject> DictUnitBtn = new();
+    protected readonly Dictionary<string, GameObject> DictControlBtn = new();
     
     // 활성화될 오브젝트
     private readonly Dictionary<string, GameObject> _dictBtn = new();
     private readonly Dictionary<string, GameObject> _dictImg = new();
     private Dictionary<string, GameObject> _dictTxt = new();
     private readonly Dictionary<string, GameObject> _dictSkillPanel = new();
-    private readonly Dictionary<string, GameObject> _dictSkillBtn = new();
+    protected readonly Dictionary<string, GameObject> DictSkillBtn = new();
     private readonly Dictionary<string, GameObject> _dictLine = new();
     
     #endregion
     
     protected override void BindObjects()
     {
-        BindData<Button>(typeof(CommonButtons), _dictCommonBtn);
-        BindData<Image>(typeof(CommonImages), _dictCommonImg);
-        BindData<TextMeshProUGUI>(typeof(CommonTexts), _dictCommonTxt);
-        BindData<Button>(typeof(UnitButtons), _dictUnitBtn);
-        BindData<Button>(typeof(UnitControlButtons), _dictControlBtn);
+        BindData<Button>(typeof(CommonButtons), DictCommonBtn);
+        BindData<Image>(typeof(CommonImages), DictCommonImg);
+        BindData<TextMeshProUGUI>(typeof(CommonTexts), DictCommonTxt);
+        BindData<Button>(typeof(UnitButtons), DictUnitBtn);
+        BindData<Button>(typeof(UnitControlButtons), DictControlBtn);
         
         SetLog();               // 가져온 덱에 따라 통나무 UI 세팅
         BringSkillPanels();     // 가져온 덱에 따라 스킬 패널 미리 가져오기
@@ -42,16 +42,17 @@ public partial class UI_Game
     }
 
     private void SetLog()
-    {
+    {   // Set the selected units in the main lobby to the log bar
         for (int i = 0; i < Util.Deck.UnitsOnDeck.Length; i++)
         {
             var prefab = Managers.Resource.Instantiate(
-                "UI/InGame/Portrait", _dictCommonImg[$"UnitPanel{i}"].transform);
+                "UI/InGame/Portrait", DictCommonImg[$"UnitPanel{i}"].transform);
             var level = Util.Deck.UnitsOnDeck[i].Level;
             var initPortraitId = (int)Util.Deck.UnitsOnDeck[i].Id - (level - 1);
             var portrait = prefab.GetComponent<UI_Portrait>();
             portrait.UnitId = (UnitId)initPortraitId;
-            prefab.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>($"Sprites/Portrait/{portrait.UnitId}");
+            prefab.GetComponent<Image>().sprite = 
+                Managers.Resource.Load<Sprite>($"Sprites/Portrait/{portrait.UnitId}");
             prefab.GetComponent<Button>().onClick.AddListener(OnPortraitClicked);
         }
     }
@@ -65,7 +66,7 @@ public partial class UI_Game
                 var unitId = (int)unit.Id - i;
                 var unitName = ((UnitId)unitId).ToString();
                 var skillPanel = Managers.Resource.Instantiate($"UI/InGame/{unitName}SkillPanel");
-                skillPanel.transform.SetParent(_dictCommonImg["SkillPanel"].transform);
+                skillPanel.transform.SetParent(DictCommonImg["SkillPanel"].transform);
                 _dictSkillPanel.Add($"{unitName}SkillPanel", skillPanel);
                 SetSkillButtons(skillPanel);
             }
@@ -80,7 +81,7 @@ public partial class UI_Game
     private void SetBaseSkillPanelByCamp(Camp camp, string path)
     {
         var panel = Managers.Resource.Instantiate(path + $"/{camp.ToString()}BaseSkillPanel");
-        panel.transform.SetParent(_dictCommonImg["SubResourceWindow"].transform);
+        panel.transform.SetParent(DictCommonImg["SubResourceWindow"].transform);
         SetBaseSkillButtons(panel);
     }
 
@@ -90,7 +91,7 @@ public partial class UI_Game
         foreach (var skillButton in skillButtons)
         {
             skillButton.onClick.AddListener(OnSkillClicked);
-            _dictSkillBtn.Add(skillButton.name, skillButton.gameObject);
+            DictSkillBtn.Add(skillButton.name, skillButton.gameObject);
             SetObjectSize(skillButton.gameObject, 0.22f);
             Util.SetAlpha(skillButton.gameObject.GetComponent<Image>(), 0.6f);
         }
@@ -102,7 +103,7 @@ public partial class UI_Game
         foreach (var skillButton in skillButtons)
         {
             skillButton.onClick.AddListener(OnSkillClicked);
-            _dictSkillBtn.Add(skillButton.name, skillButton.gameObject);
+            DictSkillBtn.Add(skillButton.name, skillButton.gameObject);
             SetObjectSize(skillButton.gameObject, 0.3f);
         }
     }
@@ -157,7 +158,7 @@ public partial class UI_Game
     public void SetUpgradeButton(GameObject portrait)
     {
         var level = GetLevelFromUIObject(portrait);
-        var tf = _dictCommonBtn["UpgradeButton"].transform;
+        var tf = DictCommonBtn["UpgradeButton"].transform;
         var btn = tf.GetComponent<Button>();
         var go = Util.FindChild(tf.gameObject, "GoldPanel", true, true);
 
@@ -178,38 +179,38 @@ public partial class UI_Game
 
     public void SetUpgradeButtonText(int cost)
     {
-        var btn = _dictCommonBtn["UpgradeButton"];
+        var btn = DictCommonBtn["UpgradeButton"];
         btn.gameObject.SetActive(true);
         var txt = Util.FindChild(btn, "GoldText", true, true).GetComponent<TextMeshProUGUI>();
         txt.text = cost.ToString();
     }
     
-    private void SetTexts()
+    protected virtual void SetTexts()
     {
-        _dictCommonTxt["ResourceText"].GetComponent<TextMeshProUGUI>().text = "0";
+        DictCommonTxt["ResourceText"].GetComponent<TextMeshProUGUI>().text = "0";
     }
     
     protected override void SetUI()
     {
         SetPanel();
         
-        _dictCommonImg["MenuItemPanel"].SetActive(false);
-        _dictCommonImg["SkillWindow"].SetActive(false);
-        _dictCommonImg["CapacityWindow"].SetActive(false);
-        _dictCommonImg["SubResourceWindow"].SetActive(false);
-        _dictCommonImg["UnitControlWindow"].SetActive(false);
+        DictCommonImg["MenuItemPanel"].SetActive(false);
+        DictCommonImg["SkillWindow"].SetActive(false);
+        DictCommonImg["CapacityWindow"].SetActive(false);
+        DictCommonImg["SubResourceWindow"].SetActive(false);
+        DictCommonImg["UnitControlWindow"].SetActive(false);
         
-        SetObjectSize(_dictCommonBtn["UpgradeButton"], 0.95f); 
+        SetObjectSize(DictCommonBtn["UpgradeButton"], 0.95f); 
     }
     
     private void SetPanel()
     {
-        foreach (var value in _dictUnitBtn.Values)
+        foreach (var value in DictUnitBtn.Values)
         {
             SetObjectSize(value.transform.parent.parent.gameObject, 0.4f);
         }
 
-        foreach (var value in _dictControlBtn.Values)
+        foreach (var value in DictControlBtn.Values)
         {
             SetObjectSize(value.transform.parent.parent.gameObject, 0.3f);
         }
@@ -234,6 +235,6 @@ public partial class UI_Game
     
     public void SetMenu(bool activate)
     {
-        _dictCommonImg["MenuItemPanel"].SetActive(activate);
+        DictCommonImg["MenuItemPanel"].SetActive(activate);
     }
 }
