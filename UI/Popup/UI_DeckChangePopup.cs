@@ -70,7 +70,7 @@ public class UI_DeckChangePopup : UI_Popup
         var deck = Util.Camp == Camp.Sheep ? Managers.User.DeckSheep : Managers.User.DeckWolf;
         foreach (var unit in deck.UnitsOnDeck)
         {
-            var cardFrame = Util.GetCardResources(unit, parent, OnChangeDeck);
+            var cardFrame = Util.GetCardResources(unit, parent, 0, OnChangeDeck);
             cardFrame.TryGetComponent(out RectTransform rectTransform);
             rectTransform.anchorMax = new Vector2(1, 1);
             rectTransform.anchorMin = new Vector2(0, 0);
@@ -80,7 +80,7 @@ public class UI_DeckChangePopup : UI_Popup
     private void SetCardInPopup()
     {
         var parent = GetImage((int)Images.CardPanel).transform;
-        var cardFrame = Util.GetCardResources(SelectedCard.UnitInfo, parent, OnCardClickedOnDeck);
+        var cardFrame = Util.GetCardResources(SelectedCard.UnitInfo, parent, 0, OnCardClickedOnDeck);
         cardFrame.TryGetComponent(out RectTransform rectTransform);
         rectTransform.anchorMax = new Vector2(1, 1);
         rectTransform.anchorMin = new Vector2(0, 0);

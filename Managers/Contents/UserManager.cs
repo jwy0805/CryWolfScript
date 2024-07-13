@@ -54,6 +54,22 @@ public class UserManager
         else AllDeckWolf.Add(deck);
     }
 
+    public void SaveDeck(DeckInfo deckInfo)
+    {   // 클라이언트 조작 방지용, 메치메이킹, 게임 시작 시 덱 검증을 위해 사용
+        var deck = new Deck
+        {
+            DeckId = deckInfo.DeckId,
+            UnitsOnDeck = deckInfo.UnitInfo,
+            DeckNumber = deckInfo.DeckNumber,
+            Camp = (Camp)deckInfo.Camp,
+            LastPicked = deckInfo.LastPicked,
+        };
+        deck.UnitsOnDeck = deck.UnitsOnDeck.OrderBy(unit => unit.Class).ToArray();
+
+        if (deck.Camp == Camp.Sheep) DeckSheep = deck;
+        else DeckWolf = deck;
+    }
+
     public void BindDeck()
     {
         DeckSheep = AllDeckSheep.Any(deck => deck.LastPicked) 

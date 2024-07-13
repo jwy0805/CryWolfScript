@@ -59,7 +59,7 @@ public class UI_Login : UI_Scene
             password = "";
             
             if (response.LoginOk == false) return;
-            SceneManager.LoadScene("Scenes/MainLobby");
+            Managers.Scene.LoadScene(Define.Scene.MainLobby);
             Managers.Clear();
             Managers.Token.SaveAccessToken(response.AccessToken);
             Managers.Token.SaveRefreshToken(response.RefreshToken);

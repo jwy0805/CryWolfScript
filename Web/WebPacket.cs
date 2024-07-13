@@ -32,6 +32,17 @@ public class LoginUserAccountPacketResponse
     public string RefreshToken { get; set; }
 }
 
+public class ChangeActPacketRequired
+{
+    public string AccessToken { get; set; }
+    public UserAct Act { get; set; }
+}
+
+public class ChangeActPacketResponse
+{
+    public bool ChangeOk { get; set; }
+}
+
 public class RefreshTokenRequired
 {
     public string RefreshToken { get; set; }
@@ -83,6 +94,19 @@ public class GetInitDeckPacketResponse
 {
     public bool GetDeckOk { get; set; }
     public List<DeckInfo> DeckList { get; set; }
+}
+
+public class GetSelectedDeckRequired
+{
+    public string AccessToken { get; set; }
+    public int Camp { get; set; }
+    public int DeckNumber { get; set; }
+}
+
+public class GetSelectedDeckResponse
+{
+    public bool GetSelectedDeckOk { get; set; }
+    public DeckInfo Deck { get; set; }
 }
 
 public class UpdateDeckPacketRequired

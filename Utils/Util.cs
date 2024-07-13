@@ -87,7 +87,7 @@ public class Util
         }
     }
     
-    public static GameObject GetCardResources(UnitInfo unitInfo, Transform parent, Action<PointerEventData> action = null)
+    public static GameObject GetCardResources(UnitInfo unitInfo, Transform parent, float cardSize = 0, Action<PointerEventData> action = null)
     {
         var cardFrame = Managers.Resource.Instantiate("UI/Deck/CardFrame", parent);
         var unitInCard = cardFrame.transform.Find("CardUnit").gameObject;
@@ -97,6 +97,13 @@ public class Util
         
         cardFrame.GetComponent<Image>().sprite = SetCardFrame(unitInfo.Class);
         unitInCard.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>($"Sprites/Portrait/{unitInfo.Id.ToString()}");
+
+        if (cardSize != 0)
+        {
+            var unitRect = unitInCard.GetComponent<RectTransform>();
+            unitRect.sizeDelta = new Vector2(cardSize, cardSize);
+        }
+        
         if (action != null) cardFrame.BindEvent(action);
 
         return cardFrame;

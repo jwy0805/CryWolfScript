@@ -22,8 +22,8 @@ public class ServerSession : PacketSession
     
     public override void OnConnected(EndPoint endPoint)
     {
-        // var mapIdPacket = new C_SetMapId { MapId = Managers.Map.MapId };
-        // Send(mapIdPacket);
+        var mapIdPacket = new C_SetMapId { MapId = Managers.Map.MapId };
+        Send(mapIdPacket);
         Debug.Log($"OnConnected : {endPoint}");
         PacketManager.Instance.CustomHandler = (s, m, i) =>
         {

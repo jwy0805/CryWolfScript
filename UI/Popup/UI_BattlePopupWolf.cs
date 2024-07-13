@@ -35,18 +35,52 @@ public class UI_BattlePopupWolf : UI_Popup
         Managers.UI.CloseAllPopupUI();
     }
 
-    private void OnRankGameClicked(PointerEventData data)
+    private async void OnRankGameClicked(PointerEventData data)
     {
-        Managers.Map.MapId = 1;
-        Managers.Scene.LoadScene(Define.Scene.Game);
-        Managers.Clear();
+        var deckPacket = new GetSelectedDeckRequired
+        {
+            AccessToken = Managers.User.AccessToken,
+            Camp = (int)Managers.User.DeckSheep.Camp,
+            DeckNumber = Managers.User.DeckSheep.DeckNumber,
+        };
+        var task = Managers.Web.SendPostRequestAsync<GetSelectedDeckResponse>("Collection/GetSelectedDeck", deckPacket);
+        var response = await task;
+
+        if (response.GetSelectedDeckOk == false)
+        {
+            Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        }
+        else
+        {
+            Managers.User.SaveDeck(response.Deck);
+            Managers.Map.MapId = 2;
+            Managers.Scene.LoadScene(Define.Scene.MatchMaking);
+            Managers.Clear();
+        }
     }
 
-    private void OnExhibitionGameClicked(PointerEventData data)
+    private async void OnExhibitionGameClicked(PointerEventData data)
     {
-        Managers.Map.MapId = 2;
-        Managers.Scene.LoadScene(Define.Scene.Game);
-        Managers.Clear();
+        var deckPacket = new GetSelectedDeckRequired
+        {
+            AccessToken = Managers.User.AccessToken,
+            Camp = (int)Managers.User.DeckSheep.Camp,
+            DeckNumber = Managers.User.DeckSheep.DeckNumber,
+        };
+        var task = Managers.Web.SendPostRequestAsync<GetSelectedDeckResponse>("Collection/GetSelectedDeck", deckPacket);
+        var response = await task;
+
+        if (response.GetSelectedDeckOk == false)
+        {
+            Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        }
+        else
+        {
+            Managers.User.SaveDeck(response.Deck);
+            Managers.Map.MapId = 1;
+            Managers.Scene.LoadScene(Define.Scene.MatchMaking);
+            Managers.Clear();
+        }
     }
     
     protected override void BindObjects()

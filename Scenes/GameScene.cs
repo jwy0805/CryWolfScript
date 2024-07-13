@@ -10,7 +10,6 @@ public class GameScene : BaseScene
         var mapNumber = Managers.Map.MapId;
         Managers.Map.LoadMap(mapNumber);
         InitObjects();
-        Managers.Network.ConnectGameSession();    
     }
     
     public override void Clear()

@@ -11,8 +11,8 @@ public class WebManager
     private const string LocalPort = "7270";
     private const string DevPort = "499";
     private const string StagePort = "";
-    
-    public string BaseUrl { get; set; } = $"https://localhost:{LocalPort}/api";
+
+    private string BaseUrl { get; } = $"https://localhost:{LocalPort}/api";
     
     public void SendPostRequest<T>(string url, object obj, Action<T> responseAction)
     {

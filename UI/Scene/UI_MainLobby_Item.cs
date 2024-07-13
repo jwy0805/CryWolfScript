@@ -72,7 +72,7 @@ public partial class UI_MainLobby
     {
         var deck = camp == Camp.Sheep ? Managers.User.DeckSheep : Managers.User.DeckWolf;
         var parent = Util.FindChild(gameObject, _deck.name, true, true).transform;
-        foreach (var unit in deck.UnitsOnDeck) Util.GetCardResources(unit, parent, OnCardClickedOnDeck);
+        foreach (var unit in deck.UnitsOnDeck) Util.GetCardResources(unit, parent, 0, OnCardClickedOnDeck);
     }
     
     private void SetCollection(Camp camp)
@@ -93,7 +93,7 @@ public partial class UI_MainLobby
 
         foreach (var unit in ownedUnits)
         {
-            Util.GetCardResources(unit, ownedParent, OnCardClickedOnDeck);
+            Util.GetCardResources(unit, ownedParent, 0, OnCardClickedOnDeck);
         }
 
         foreach (var unit in notOwnedUnits)

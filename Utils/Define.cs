@@ -14,10 +14,11 @@ public class Define
         Unknown,
         Start,
         Login,
-        Lobby,
+        MainLobby,
         Game,
         Result,
         Store,
+        MatchMaking
     }
     
     public enum Sound
@@ -49,6 +50,13 @@ public class Define
     public enum PopupType
     {
         UpgradePopup
+    }
+
+    public enum ServerType
+    {
+        Api,
+        MatchMaking,
+        Socket
     }
 }
 
