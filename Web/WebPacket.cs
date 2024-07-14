@@ -36,6 +36,7 @@ public class ChangeActPacketRequired
 {
     public string AccessToken { get; set; }
     public UserAct Act { get; set; }
+    public Camp Camp { get; set; }
 }
 
 public class ChangeActPacketResponse

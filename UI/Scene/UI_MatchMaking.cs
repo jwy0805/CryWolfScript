@@ -53,6 +53,7 @@ public class UI_MatchMaking : UI_Scene
         var changeActPacket = new ChangeActPacketRequired
         {
             AccessToken = Managers.User.AccessToken,
+            Camp = Util.Camp,
             Act = UserAct.MatchMaking
         };
         
