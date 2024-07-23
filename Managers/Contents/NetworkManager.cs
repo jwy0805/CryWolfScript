@@ -11,7 +11,7 @@ using UnityEngine;
 
 public class NetworkManager
 {
-    private ServerSession _session = new();
+    private readonly ServerSession _session = new();
     // private readonly int _environment = 0;    // 0 => Local, 1 => Server
 
     public void Send(IMessage packet)
@@ -29,15 +29,20 @@ public class NetworkManager
         }
     }
 
-    public async void ConnectGameSession()
+    public async void ConnectGameSession(bool test = false)
     {
         // DNS (Domain Name System)
         var host = Dns.GetHostName();
-        var ipHost = await Dns.GetHostEntryAsync(host);
+        var ipHost = await Dns.GetHostEntryAsync(host); 
         var ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.ToString().Contains("172."));
         if (ipAddress == null) return;
         Debug.Log(ipAddress);
         var endPointLocal = new IPEndPoint(ipAddress, 7777);
-        new Connector().Connect(endPointLocal, () => _session);
+        new Connector().Connect(endPointLocal, () => _session, test);
+    }
+    
+    public void Disconnect()
+    {
+        _session.Disconnect();
     }
 }

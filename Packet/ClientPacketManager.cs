@@ -39,6 +39,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SPlayerMove, PacketHandler.S_PlayerMoveHandler);		
 		_onRecv.Add((ushort)MessageId.SMove, MakePacket<S_Move>);
 		_handler.Add((ushort)MessageId.SMove, PacketHandler.S_MoveHandler);		
+		_onRecv.Add((ushort)MessageId.SMoveForwardObject, MakePacket<S_MoveForwardObject>);
+		_handler.Add((ushort)MessageId.SMoveForwardObject, PacketHandler.S_MoveForwardObjectHandler);		
 		_onRecv.Add((ushort)MessageId.SState, MakePacket<S_State>);
 		_handler.Add((ushort)MessageId.SState, PacketHandler.S_StateHandler);		
 		_onRecv.Add((ushort)MessageId.SSync, MakePacket<S_Sync>);

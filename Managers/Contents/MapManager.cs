@@ -13,7 +13,7 @@ using Vector3 = UnityEngine.Vector3;
 public class MapManager
 {
     public Grid CurrentGrid { get; private set; }
-    public int MapId { get; set; }
+    public int MapId { get; set; } = 1;
 
     public enum UIType
     {
@@ -56,10 +56,10 @@ public class MapManager
         switch (uiType)
         {
             case UIType.UIGameSingleWay:
-                Managers.UI.ShowSceneUI<UI_GameDoubleWay>();
+                Managers.UI.ShowSceneUI<UI_GameSingleWay>();
                 break;
             case UIType.UIGameDoubleWay:
-                Managers.UI.ShowSceneUI<UI_GameSingleWay>();
+                Managers.UI.ShowSceneUI<UI_GameDoubleWay>();
                 break;
             default:
                 break;

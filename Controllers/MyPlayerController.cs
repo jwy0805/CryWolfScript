@@ -61,14 +61,14 @@ public class MyPlayerController : PlayerController
         // };
         // Managers.Network.Send(spawnPacket3);
         
-        C_Spawn spawnPacket30 = new()
-        {
-            Type = GameObjectType.Monster,
-            Num = (int)UnitId.CactusBoss,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 20, Dir = 180 },
-            Way = SpawnWay.North,
-        };
-        Managers.Network.Send(spawnPacket30);
+        // C_Spawn spawnPacket30 = new()
+        // {
+        //     Type = GameObjectType.Monster,
+        //     Num = (int)UnitId.Creeper,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 15, Dir = 180 },
+        //     Way = SpawnWay.North,
+        // };
+        // Managers.Network.Send(spawnPacket30);
         
         // C_Spawn spawnPacket4 = new()
         // {
@@ -88,14 +88,14 @@ public class MyPlayerController : PlayerController
         // };
         // Managers.Network.Send(spawnPacket6);
         
-        C_Spawn spawnPacket5 = new()
-        {
-            Type = GameObjectType.Tower,
-            Num = (int)UnitId.MothCelestial,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 7, PosZ = 3f, Dir = 180 },
-            Way = SpawnWay.North,
-        };
-        Managers.Network.Send(spawnPacket5);
+        // C_Spawn spawnPacket5 = new()
+        // {
+        //     Type = GameObjectType.Tower,
+        //     Num = (int)UnitId.MothCelestial,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 7, PosZ = 3f, Dir = 180 },
+        //     Way = SpawnWay.North,
+        // };
+        // Managers.Network.Send(spawnPacket5);
         
         // C_Spawn spawnPacket50 = new()
         // {
@@ -109,8 +109,8 @@ public class MyPlayerController : PlayerController
         // C_Spawn spawnPacket51 = new()
         // {
         //     Type = GameObjectType.Tower,
-        //     Num = (int)UnitId.Blossom,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 3, PosY = 6, PosZ = 3, Dir = 180 },
+        //     Num = (int)UnitId.Bloom,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 1, PosY = 6, PosZ = -9, Dir = 180 },
         //     Way = SpawnWay.North,
         // };
         // Managers.Network.Send(spawnPacket51);

@@ -43,7 +43,7 @@ public abstract class Session
     private SocketAsyncEventArgs _sendArgs = new SocketAsyncEventArgs();
     private SocketAsyncEventArgs _recvArgs = new SocketAsyncEventArgs();
 
-    public abstract void OnConnected(EndPoint endPoint);
+    public abstract void OnConnected(EndPoint endPoint, bool test = false);
     public abstract void OnDisconnected(EndPoint endPoint); 
     public abstract int OnRecv(ArraySegment<byte> buffer);
     public abstract void OnSend(int numOfBytes);

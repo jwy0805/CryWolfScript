@@ -48,10 +48,19 @@ public partial class UI_MainLobby
     
     private async Task SetCards()
     {
-        var cardPacket = new GetOwnedCardsPacketRequired { AccessToken = Managers.User.AccessToken };
-        var cardTask = Managers.Web.SendPostRequestAsync<GetOwnedCardsPacketResponse>("Collection/GetCards", cardPacket);
+        var cardPacket = new GetOwnedCardsPacketRequired
+        {
+            AccessToken = Managers.User.AccessToken,
+            Environment = Managers.Web.Environment
+        };
         
-        var deckPacket = new GetInitDeckPacketRequired { AccessToken = Managers.User.AccessToken };
+        var deckPacket = new GetInitDeckPacketRequired 
+        {
+            AccessToken = Managers.User.AccessToken,
+            Environment = Managers.Web.Environment
+        };
+        
+        var cardTask = Managers.Web.SendPostRequestAsync<GetOwnedCardsPacketResponse>("Collection/GetCards", cardPacket);
         var deckTask = Managers.Web.SendPostRequestAsync<GetInitDeckPacketResponse>("Collection/GetDecks", deckPacket);
         
         await Task.WhenAll(cardTask, deckTask);
@@ -59,6 +68,11 @@ public partial class UI_MainLobby
         var cardResponse = cardTask.Result;
         var deckResponse = deckTask.Result;
         if (cardResponse.GetCardsOk == false || deckResponse.GetDeckOk == false) return;
+        if (cardResponse.AccessToken != null)
+        {   // Test 에서 뒤늦게 토큰을 받는 경우
+            Managers.Token.SaveAccessToken(cardResponse.AccessToken);
+            Managers.Token.SaveRefreshToken(cardResponse.RefreshToken);
+        }
         
         foreach (var unitInfo in cardResponse.OwnedCardList) Managers.User.LoadOwnedUnit(unitInfo);
         foreach (var unitInfo in cardResponse.NotOwnedCardList) Managers.User.LoadNotOwnedUnit(unitInfo);

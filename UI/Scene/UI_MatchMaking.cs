@@ -13,6 +13,7 @@ public class UI_MatchMaking : UI_Scene
     private Transform _enemyDeck;
     private RectTransform _loadingMark;
     private bool _loadingMarkActive;
+    private bool _cancelClicked;
 
     private enum Buttons
     {
@@ -46,6 +47,7 @@ public class UI_MatchMaking : UI_Scene
     protected void Update()
     {
         if (_loadingMarkActive) _loadingMark.Rotate(0, 0, 180 * Time.deltaTime);
+        if (_cancelClicked) GetButton((int)Buttons.CancelButton).interactable = false;
     }
 
     private void StartMatchMaking()
@@ -54,7 +56,8 @@ public class UI_MatchMaking : UI_Scene
         {
             AccessToken = Managers.User.AccessToken,
             Camp = Util.Camp,
-            Act = UserAct.MatchMaking
+            Act = UserAct.MatchMaking,
+            MapId = Managers.Map.MapId
         };
         
         Managers.Web.SendPutRequest<ChangeActPacketResponse>(
@@ -120,6 +123,8 @@ public class UI_MatchMaking : UI_Scene
 
     private void OnCancelClicked(PointerEventData data)
     {
+        _cancelClicked = true;
+        
         var changeActPacket = new ChangeActPacketRequired
         {
             AccessToken = Managers.User.AccessToken,
@@ -129,13 +134,10 @@ public class UI_MatchMaking : UI_Scene
         Managers.Web.SendPutRequest<ChangeActPacketResponse>(
             "UserAccount/ChangeAct", changeActPacket, response =>
             {
-                if (response.ChangeOk)
-                {
-                    Managers.Network.ConnectGameSession();
-                }
+                if (response.ChangeOk == false) return;
+                Managers.Network.Disconnect();
+                Managers.Scene.LoadScene(Define.Scene.MainLobby);
+                Managers.Clear();
             });
-        
-        Managers.Scene.LoadScene(Define.Scene.MainLobby);
-        Managers.Clear();
     }
 }

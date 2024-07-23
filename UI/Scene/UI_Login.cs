@@ -61,6 +61,8 @@ public class UI_Login : UI_Scene
             if (response.LoginOk == false) return;
             Managers.Scene.LoadScene(Define.Scene.MainLobby);
             Managers.Clear();
+            
+            Managers.User.UserAccount = account;
             Managers.Token.SaveAccessToken(response.AccessToken);
             Managers.Token.SaveRefreshToken(response.RefreshToken);
         });

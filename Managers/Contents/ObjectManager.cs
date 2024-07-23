@@ -27,19 +27,9 @@ public class ObjectManager
                 Managers.Network.Send(new C_EnterGame { IsSheep = isSheep });
                 if (myPlayer)
                 {
-                    if (isSheep)
-                    {
-                        go = Managers.Game.Spawn(GameObjectType.Player, "PlayerCharacter");
-                        go.AddComponent<MyPlayerController>();
-                        go.transform.position = new Vector3(0, 6, 0);
-                    }
-                    else
-                    {
-                        go = Managers.Game.Spawn(GameObjectType.Player, "PlayerCharacter");
-                        go.AddComponent<MyPlayerController>();
-                        go.transform.position = new Vector3(0, 6, 15);
-                    }
-                    
+                    go = Managers.Game.Spawn(GameObjectType.Player, "PlayerCharacter");
+                    go.AddComponent<MyPlayerController>();
+                    go.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
                     go.name = info.Name;
                     _objects.Add(info.ObjectId, go);
                     
@@ -59,14 +49,24 @@ public class ObjectManager
                     
                     GameObject virtualCamera = GameObject.Find("FollowCam");
                     CinemachineVirtualCamera followCam = virtualCamera.GetComponent<CinemachineVirtualCamera>();
-                    var tf = MyPlayer.transform;
+                    
+                    GameObject cameraFocus = Managers.Resource.Instantiate("CameraFocus");
+                    cameraFocus.transform.position = new Vector3(pos.x, pos.y, pos.z < 0 ? pos.z + 10 : pos.z - 10);
+                    
+                    var tf = cameraFocus.transform;
                     followCam.Follow = tf;
                     followCam.LookAt = tf;
+                    
+                    if (Util.Camp == Camp.Wolf)
+                    {
+                        MyPlayer.transform.rotation = Quaternion.Euler(0, 180, 0);
+                        var cinemachineTransposer = followCam.GetCinemachineComponent<CinemachineTransposer>();
+                        cinemachineTransposer.m_FollowOffset = new Vector3(0, 15, 10);
+                    }
                 }
                 else
                 {
-                    go = Managers.Game.Spawn(GameObjectType.Player,
-                        Util.Camp == Camp.Sheep ? "PoisonBomb" : "PlayerCharacter");
+                    go = Managers.Game.Spawn(GameObjectType.Player, "PlayerCharacter");
                     go.AddComponent<PlayerController>();
                     go.name = info.Name;
                     _objects.Add(info.ObjectId, go);

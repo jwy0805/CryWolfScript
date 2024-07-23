@@ -20,15 +20,19 @@ public class ServerSession : PacketSession
         Send(new ArraySegment<byte>(sendBuffer));
     }
     
-    public override void OnConnected(EndPoint endPoint)
+    public override void OnConnected(EndPoint endPoint, bool test = false)
     {
-        var mapIdPacket = new C_SetMapId { MapId = Managers.Map.MapId };
-        Send(mapIdPacket);
         Debug.Log($"OnConnected : {endPoint}");
         PacketManager.Instance.CustomHandler = (s, m, i) =>
         {
-            PacketQueue.Instance.Push(i, m);
+            PacketQueue.Instance.Push(i, m); 
         };
+        
+        var sessionPacket = new C_SetSession
+        {
+            UserAccount = Managers.User.UserAccount, Camp = Util.Camp, Test = test
+        };
+        Send(sessionPacket);
     }
 
     public override void OnDisconnected(EndPoint endPoint)
@@ -45,5 +49,4 @@ public class ServerSession : PacketSession
     {
         
     }
-
 }

@@ -60,7 +60,7 @@ public class UI_HealthBar : MonoBehaviour
         float ratio = _cc.Hp / (float)_cc.MaxHp * 100;
         _hpSlider.value = ratio;
         _slider.gameObject.SetActive(ratio <= 99.8f || _shieldSlider.value > 0);
-
+        
         switch (ratio)
         {
             case > 70.0f:

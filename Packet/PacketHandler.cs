@@ -112,6 +112,16 @@ public class PacketHandler
         bc.PosInfo = movePacket.PosInfo;
     }
 
+    public static void S_MoveForwardObjectHandler(PacketSession session, IMessage packet)
+    {
+        var movePacket = (S_MoveForwardObject)packet;
+        var go = Managers.Object.FindById(movePacket.ObjectId);
+        if (go == null) return;
+        if (go.TryGetComponent(out BaseController bc) == false) return;
+
+        bc.transform.position = new Vector3(movePacket.Dest.X, movePacket.Dest.Y, movePacket.Dest.Z);
+    }
+    
     public static void S_StateHandler(PacketSession session, IMessage packet)
     {
         var statePacket = (S_State)packet;

@@ -1,5 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Google.Protobuf.Protocol;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -14,6 +17,7 @@ public class UI_BattlePopupWolf : UI_Popup
         ExitButton,
         RankGameButton,
         ExhibitionGameButton,
+        TestButton
     }
 
     private enum Images
@@ -53,7 +57,7 @@ public class UI_BattlePopupWolf : UI_Popup
         else
         {
             Managers.User.SaveDeck(response.Deck);
-            Managers.Map.MapId = 2;
+            Managers.Map.MapId = 1;
             Managers.Scene.LoadScene(Define.Scene.MatchMaking);
             Managers.Clear();
         }
@@ -77,11 +81,19 @@ public class UI_BattlePopupWolf : UI_Popup
         else
         {
             Managers.User.SaveDeck(response.Deck);
-            Managers.Map.MapId = 1;
+            Managers.Map.MapId = 2;
             Managers.Scene.LoadScene(Define.Scene.MatchMaking);
             Managers.Clear();
         }
     }
+    
+    private void OnTestClicked(PointerEventData data)
+    {
+        Managers.Map.MapId = 1;
+        Managers.Scene.LoadScene(Define.Scene.Game);    
+        Managers.Network.ConnectGameSession(true);
+    }
+
     
     protected override void BindObjects()
     {
@@ -94,6 +106,7 @@ public class UI_BattlePopupWolf : UI_Popup
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(OnExitClicked);
         GetButton((int)Buttons.RankGameButton).gameObject.BindEvent(OnRankGameClicked);
         GetButton((int)Buttons.ExhibitionGameButton).gameObject.BindEvent(OnExhibitionGameClicked);
+        GetButton((int)Buttons.TestButton).gameObject.BindEvent(OnTestClicked);
     }
 
     protected override void SetUI()

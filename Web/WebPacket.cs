@@ -37,6 +37,7 @@ public class ChangeActPacketRequired
     public string AccessToken { get; set; }
     public UserAct Act { get; set; }
     public Camp Camp { get; set; }
+    public int MapId { get; set; }
 }
 
 public class ChangeActPacketResponse
@@ -58,6 +59,7 @@ public class RefreshTokenResponse
 public class GetOwnedCardsPacketRequired
 {
     public string AccessToken { get; set; }
+    public Env Environment { get; set; }
 }
 
 public class UnitInfo
@@ -75,11 +77,14 @@ public class GetOwnedCardsPacketResponse
     public bool GetCardsOk { get; set; }
     public List<UnitInfo> OwnedCardList { get; set; }
     public List<UnitInfo> NotOwnedCardList { get; set; }
+    public string AccessToken { get; set; }
+    public string RefreshToken { get; set; }
 }
 
 public class GetInitDeckPacketRequired
 {
     public string AccessToken { get; set; }
+    public Env Environment { get; set; }
 }
 
 public class DeckInfo

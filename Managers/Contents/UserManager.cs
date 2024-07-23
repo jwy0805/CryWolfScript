@@ -6,6 +6,7 @@ using UnityEngine;
 
 public class UserManager
 { 
+    public string UserAccount { get; set; } = "temp";
     public string AccessToken => Managers.Token.GetAccessToken();
     public string RefreshToken => Managers.Token.GetRefreshToken();
     public List<UnitInfo> OwnedCardListSheep { get; set; } = new();

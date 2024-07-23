@@ -6,33 +6,66 @@ using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
 
+public enum Env
+{
+    Local,
+    Dev,
+    Stage,
+    Prod
+}
+
 public class WebManager
 {
     private const string LocalPort = "7270";
     private const string DevPort = "499";
     private const string StagePort = "";
+    
+    public Env Environment { get; set; } = Env.Local;
 
-    private string BaseUrl { get; } = $"https://localhost:{LocalPort}/api";
+    private string BaseUrl
+    {
+        get
+        {
+            return Environment switch
+            {
+                Env.Local => $"https://localhost:{LocalPort}/api",
+                Env.Dev => $"https://localhost:{DevPort}/api",
+                Env.Stage => $"https://localhost:{StagePort}/api",
+                Env.Prod => $"https://localhost:{StagePort}/api",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
+    }
     
     public void SendPostRequest<T>(string url, object obj, Action<T> responseAction)
     {
-        Managers.Instance.StartCoroutine(CoSendWebRequest(url, UnityWebRequest.kHttpVerbPOST, obj, responseAction));
+        Managers.Instance.StartCoroutine(
+            CoSendWebRequest(url, UnityWebRequest.kHttpVerbPOST, obj, responseAction));
     }
     
     public void SendPutRequest<T>(string url, object obj, Action<T> responseAction)
     {
-        Managers.Instance.StartCoroutine(CoSendWebRequest(url, UnityWebRequest.kHttpVerbPUT, obj, responseAction));
+        Managers.Instance.StartCoroutine(
+            CoSendWebRequest(url, UnityWebRequest.kHttpVerbPUT, obj, responseAction));
     }
     
     public void SendGetRequest<T>(string url, object obj, Action<T> responseAction)
     {
-        Managers.Instance.StartCoroutine(CoSendWebRequest(url, UnityWebRequest.kHttpVerbGET, obj, responseAction));
+        Managers.Instance.StartCoroutine(
+            CoSendWebRequest(url, UnityWebRequest.kHttpVerbGET, obj, responseAction));
     }
 
     public Task<T> SendPostRequestAsync<T>(string url, object obj)
     {
         var tcs = new TaskCompletionSource<T>();
         SendPostRequest<T>(url, obj, response => tcs.SetResult(response));
+        return tcs.Task;
+    }
+    
+    public Task<T> SendPutRequestAsync<T>(string url, object obj)
+    {
+        var tcs = new TaskCompletionSource<T>();
+        SendPutRequest<T>(url, obj, response => tcs.SetResult(response));
         return tcs.Task;
     }
     
@@ -63,5 +96,4 @@ public class WebManager
             responseAction?.Invoke(resObj);
         }
     }
-    
 }

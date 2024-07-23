@@ -7,7 +7,7 @@ public class Connector
 {
     private Func<Session> _sessionFactory;
 
-    public void Connect(IPEndPoint endPoint, Func<Session> sessionFactory, int count = 1)
+    public void Connect(IPEndPoint endPoint, Func<Session> sessionFactory, bool test, int count = 1)
     {   // 이 시점에서 서버에 연결 시도
         for (int i = 0; i < count; i++)
         {
@@ -17,15 +17,14 @@ public class Connector
             SocketAsyncEventArgs args = new SocketAsyncEventArgs();
             args.Completed += OnConnectedCompleted;
             args.RemoteEndPoint = endPoint;
-            args.UserToken = socket;
-
+            args.UserToken = new Tuple<Socket, bool>(socket, test);
             RegisterConnect(args);
         }
     }
 
     void RegisterConnect(SocketAsyncEventArgs args)
     {
-        Socket socket = args.UserToken as Socket;
+        Socket socket = ((Tuple<Socket, bool>)args.UserToken).Item1;
         if (socket == null) return;
 
         bool pending = socket.ConnectAsync(args);
@@ -34,11 +33,15 @@ public class Connector
 
     void OnConnectedCompleted(object sender, SocketAsyncEventArgs args)
     {
+        Tuple<Socket, bool> userToken = args.UserToken as Tuple<Socket, bool>;
+        Socket socket = userToken?.Item1;
+        bool test = userToken?.Item2 ?? false;
+        
         if (args.SocketError == SocketError.Success)
         {
             Session session = _sessionFactory.Invoke();
             session.Start(args.ConnectSocket);
-            session.OnConnected(args.RemoteEndPoint);
+            session.OnConnected(args.RemoteEndPoint, test);
         }
         else
         {

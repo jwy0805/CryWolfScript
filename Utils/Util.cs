@@ -12,7 +12,7 @@ using Object = UnityEngine.Object;
 
 public class Util
 {
-    public static Camp Camp;
+    public static Camp Camp = Camp.Sheep;
     public static UserManager.Deck Deck = new();
     
     public static T GetOrAddComponent<T>(GameObject go) where T : Component
