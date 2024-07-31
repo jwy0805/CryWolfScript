@@ -9,12 +9,12 @@ public class MosquitoBugController : MonsterController
 {
     protected override void Init()
     {
-        base.Init();
+        SkillSubject = GameObject.Find("Subject").GetComponent<SkillSubject>();
+        SkillSubject.AddObserver(this);
+        ObjectType = GameObjectType.Tower;
+        
         // Instantiate Health bar
-        Destroy(GetComponent<UI_HealthCircle>());
-        var healthCircle = Util.FindChild(gameObject, "HealthCircle(Clone)", true, true);
-        Managers.Game.Despawn(healthCircle);
-        Instantiate(Resources.Load<GameObject>("Prefabs/WorldObjects/HealthSlider"), transform);
+        Managers.Resource.Instantiate("WorldObjects/HealthSlider", transform);
         Util.GetOrAddComponent<UI_HealthBar>(gameObject);
         
         UnitId = UnitId.MosquitoBug;

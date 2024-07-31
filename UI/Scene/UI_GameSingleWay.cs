@@ -15,6 +15,19 @@ public class UI_GameSingleWay : UI_Game
     private UI_Portrait _isActive;
     private List<int> _northSlots = new();
 
+    protected override void BindObjects()
+    {
+        BindData<Button>(typeof(CommonButtonsS), DictCommonBtn);
+        BindData<Image>(typeof(CommonImagesS), DictCommonImg);
+        BindData<TextMeshProUGUI>(typeof(CommonTextsS), DictCommonTxt);
+        BindData<Button>(typeof(UnitButtonsS), DictUnitBtn);
+        BindData<Button>(typeof(UnitControlButtonsS), DictControlBtn);
+        
+        SetLog();
+        BringSkillPanels();
+        BringBaseSkillPanels();
+    }
+    
     public override void RegisterInSlot(S_RegisterInSlot packet)
     {
         int objectId = packet.ObjectId;

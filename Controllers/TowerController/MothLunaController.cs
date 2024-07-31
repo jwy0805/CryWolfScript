@@ -14,7 +14,7 @@ public class MothLunaController : TowerController
         ObjectType = GameObjectType.Tower;
         
         // Instantiate Health bar
-        Instantiate(Resources.Load<GameObject>("Prefabs/WorldObjects/HealthSlider"), transform);
+        Managers.Resource.Instantiate("WorldObjects/HealthSlider", transform);
         Util.GetOrAddComponent<UI_HealthBar>(gameObject);
         
         ObjectType = GameObjectType.Tower;

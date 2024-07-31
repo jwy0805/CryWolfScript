@@ -62,6 +62,7 @@ public abstract class BaseController : MonoBehaviour
         {
             PosInfo.State = value;
             if (TryGetComponent(out Animator anim) == false) return;
+
             Anim = anim;
             switch (PosInfo.State)
             {

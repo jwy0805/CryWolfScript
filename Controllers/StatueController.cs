@@ -6,12 +6,19 @@ using UnityEngine;
 
 public class StatueController : CreatureController
 {
+    private readonly float _destroySpeed = 2f;
+    
     // 개별 UnitTest
     protected override void Init()
     {
         ObjectType = GameObjectType.MonsterStatue;
         // Instantiate Health bar
-        Instantiate(Resources.Load<GameObject>("Prefabs/WorldObjects/HealthSlider"), transform);
+        Managers.Resource.Instantiate("WorldObjects/HealthSlider", transform);
         Util.GetOrAddComponent<UI_HealthBar>(gameObject);
+    }
+    
+    protected override void UpdateDie()
+    {
+        transform.position += Vector3.down * (_destroySpeed * Time.deltaTime);
     }
 }

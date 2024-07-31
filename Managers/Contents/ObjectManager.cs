@@ -86,14 +86,6 @@ public class ObjectManager
                 tc.Id = info.ObjectId;
                 tc.PosInfo = towerPos;
                 tc.Stat = info.StatInfo; 
-                
-                // if (go.TryGetComponent(out UI_HealthCircle healthCircle)) healthCircle.TowerSpawned(stat.SizeX);
-                // if (go.TryGetComponent(out UI_CanSpawn canSpawn))
-                // {
-                //     canSpawn.background.color = Color.clear;
-                //     canSpawn.enabled = false;
-                // }
-                // if (go.TryGetComponent(out Drag drag)) drag.enabled = false;
                 break;
             
             case GameObjectType.Monster:

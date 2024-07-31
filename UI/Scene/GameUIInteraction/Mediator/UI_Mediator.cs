@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Google.Protobuf.Protocol;
 using UnityEngine;
 
 public class UI_Mediator : MonoBehaviour
@@ -20,11 +21,18 @@ public class UI_Mediator : MonoBehaviour
     private GameObject _currentSelectedSkill;
     private GameObject _currentSelectedSlot;
 
+    private GameObject _attackRangeRing;
+    private GameObject _skillRangeRing;
+
     public GameObject CurrentSelectedObject
     {
         get => _currentSelectedObject;
         set
-        {
+        {   
+            // Remove Rings
+            HideRings();
+            
+            // Double Click Setting
             if (_currentSelectedObject != null) PreSelectedObject = _currentSelectedObject;
             _currentSelectedObject = value;
 
@@ -48,6 +56,10 @@ public class UI_Mediator : MonoBehaviour
         {
             _currentSelectedUnit = value;
             CurrentSelectedObject = _currentSelectedUnit;
+            if (_currentSelectedUnit.TryGetComponent(out CreatureController cc))
+            {
+                if (cc.ObjectType is GameObjectType.Tower or GameObjectType.Monster) ShowRings(cc);
+            }
         }
     }
     
@@ -193,6 +205,36 @@ public class UI_Mediator : MonoBehaviour
         foreach (var colleague in _portraitList)
         {
             colleague.SetPortrait(go);
+        }
+    }
+
+    private void ShowRings(CreatureController cc)
+    {
+        if (cc.AttackRange > 0)
+        {
+            _attackRangeRing = Managers.Resource.Instantiate("WorldObjects/RangeRing", cc.transform);
+            if (_attackRangeRing.TryGetComponent(out UI_RangeRing ring)) ring.AboutAttack = true;
+        }
+
+        if (cc.SkillRange > 0)
+        {
+            _skillRangeRing = Managers.Resource.Instantiate("WorldObjects/RangeRing", cc.transform);
+            if (_skillRangeRing.TryGetComponent(out UI_RangeRing ring)) ring.AboutSkill = true;
+        }
+    }
+    
+    private void HideRings()
+    {
+        if (_attackRangeRing != null)
+        {
+            Managers.Resource.Destroy(_attackRangeRing);
+            _attackRangeRing = null;
+        }
+
+        if (_skillRangeRing != null)
+        {
+            Managers.Resource.Destroy(_skillRangeRing);
+            _skillRangeRing = null;
         }
     }
 }

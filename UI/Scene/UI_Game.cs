@@ -55,15 +55,10 @@ public partial class UI_Game : UI_Scene
         DictCommonBtn["MenuButton"].GetComponent<Button>().onClick.AddListener(OnUIObjectClicked);
         DictCommonBtn["CapacityButton"].GetComponent<Button>().onClick.AddListener(OnUIObjectClicked);
         DictCommonBtn["SubResourceButton"].GetComponent<Button>().onClick.AddListener(OnUIObjectClicked);
-        DictCommonBtn["MenuEmotionButton"].BindEvent(OnEmotionClicked);
-        DictCommonBtn["MenuChatButton"].BindEvent(OnChatClicked);
-        DictCommonBtn["MenuOptionButton"].BindEvent(OnOptionClicked);
-        DictCommonBtn["MenuExitButton"].BindEvent(OnExitClicked);
         DictCommonBtn["CameraButton"].BindEvent(OnCameraClicked);
         DictCommonBtn["UpgradeButton"].BindEvent(OnUpgradeClicked);
         
         DictControlBtn["UnitUpgradeButton"].BindEvent(OnUpgradeUnitClicked);
-        DictControlBtn["UnitMoveButton"].BindEvent(OnMoveUnitClicked);
         DictControlBtn["UnitDeleteButton"].BindEvent(OnDeleteUnitClicked);
     }
     
@@ -110,34 +105,9 @@ public partial class UI_Game : UI_Scene
         Mediator.CurrentWindow = null;
     }
     
-    protected virtual void OnMoveUnitClicked(PointerEventData data)
-    {
-        
-    }
-
     protected virtual void OnDeleteUnitClicked(PointerEventData data)
     {
         DeleteSlot();
-    }
-    
-    protected virtual void OnEmotionClicked(PointerEventData data)
-    {
-        
-    }
-    
-    protected virtual void OnChatClicked(PointerEventData data)
-    {
-        
-    }
-    
-    protected virtual void OnOptionClicked(PointerEventData data)
-    {
-        
-    }
-    
-    protected virtual void OnExitClicked(PointerEventData data)
-    {
-        
     }
     
     protected virtual void OnCameraClicked(PointerEventData data)

@@ -6,7 +6,7 @@ public partial class UI_Game
 {
     #region Enum
 
-    private enum CommonButtons
+    protected enum CommonButtonsD
     {
         CapacityButton,
         ResourceButton,
@@ -19,7 +19,7 @@ public partial class UI_Game
         CameraButton,
         UpgradeButton,
     }
-    private enum CommonImages
+    protected enum CommonImagesD
     {
         UnitPanel0,
         UnitPanel1,
@@ -36,7 +36,7 @@ public partial class UI_Game
         
         MenuItemPanel,
     }
-    private enum CommonTexts
+    protected enum CommonTextsD
     {
         CurrentName,
         CurrentPercent,
@@ -47,7 +47,7 @@ public partial class UI_Game
         SouthCapacityText,
     }
 
-    private enum UnitButtons
+    protected enum UnitButtonsD
     {
         NorthUnitButton0,
         NorthUnitButton1,
@@ -75,11 +75,67 @@ public partial class UI_Game
         SouthUnitButton11,
     }
 
-    private enum UnitControlButtons
+    protected enum UnitControlButtonsD
     {
         UnitUpgradeButton,
         UnitMoveButton,
         UnitInactivateButton,
+        UnitDeleteButton
+    }   
+    
+    protected enum CommonButtonsS
+    {
+        CapacityButton,
+        ResourceButton,
+        SubResourceButton,
+        MenuButton,
+        CameraButton,
+        UpgradeButton,
+    }
+    protected enum CommonImagesS
+    {
+        UnitPanel0,
+        UnitPanel1,
+        UnitPanel2,
+        UnitPanel3,
+        UnitPanel4,
+        UnitPanel5,
+        
+        SkillPanel,
+        SkillWindow,
+        CapacityWindow,
+        SubResourceWindow,
+        UnitControlWindow,
+    }
+    protected enum CommonTextsS
+    {
+        CurrentName,
+        CurrentPercent,
+        
+        ResourceText,
+        SubResourceText,
+        NorthCapacityText,
+    }
+
+    protected enum UnitButtonsS
+    {
+        NorthUnitButton0,
+        NorthUnitButton1,
+        NorthUnitButton2,
+        NorthUnitButton3,
+        NorthUnitButton4,
+        NorthUnitButton5,
+        NorthUnitButton6,
+        NorthUnitButton7,
+        NorthUnitButton8,
+        NorthUnitButton9,
+        NorthUnitButton10,
+        NorthUnitButton11,
+    }
+
+    protected enum UnitControlButtonsS
+    {
+        UnitUpgradeButton,
         UnitDeleteButton
     }
     

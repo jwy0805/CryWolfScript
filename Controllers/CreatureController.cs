@@ -22,8 +22,12 @@ public class CreatureController : BaseController, ISkillObserver
             _stat.SizeZ = value.SizeZ;
             _stat.Hp = value.Hp;
             _stat.MaxHp = value.MaxHp;
+            _stat.Mp = value.Mp;
+            _stat.MaxMp = value.MaxMp;
             _stat.Level = value.Level;
             _stat.MoveSpeed = value.MoveSpeed;
+            _stat.AttackRange = value.AttackRange;
+            _stat.SkillRange = value.SkillRange;
         }
     } 
     
@@ -55,6 +59,18 @@ public class CreatureController : BaseController, ISkillObserver
         set => Stat.Mp = value;
     }
 
+    public float AttackRange
+    {
+        get => Stat.AttackRange;
+        set => Stat.AttackRange = value;
+    }
+    
+    public float SkillRange
+    {
+        get => Stat.SkillRange;
+        set => Stat.SkillRange = value;
+    }
+    
     public int Level => Stat.Level;
     public float TotalMoveSpeed { get; set; }
 
@@ -64,7 +80,7 @@ public class CreatureController : BaseController, ISkillObserver
         SkillSubject = GameObject.Find("Subject").GetComponent<SkillSubject>();
         SkillSubject.AddObserver(this);
         // Instantiate Health bar
-        Instantiate(Resources.Load<GameObject>("Prefabs/WorldObjects/HealthCircle"), transform);
+        Managers.Resource.Instantiate("WorldObjects/HealthCircle", transform);
         Util.GetOrAddComponent<UI_HealthCircle>(gameObject);
     }
 

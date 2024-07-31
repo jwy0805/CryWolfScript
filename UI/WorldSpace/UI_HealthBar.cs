@@ -17,7 +17,7 @@ public class UI_HealthBar : MonoBehaviour
     
     void Start()
     {
-        _slider = Util.FindChild(gameObject, "HealthSlider(Clone)", true, true).transform;
+        _slider = Util.FindChild(gameObject, "HealthSlider", true, true).transform;
         _hpSlider = Util.FindChild<Slider>(_slider.gameObject, "HpSlider", true, true);
         _shieldSlider = Util.FindChild<Slider>(_slider.gameObject, "ShieldSlider", true, true);
         _hpSliderFill = Util.FindChild<Image>(_hpSlider.gameObject, "Fill", true, true);

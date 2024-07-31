@@ -6,17 +6,6 @@ using Enum = System.Enum;
 public class UI_Portrait : UI_PortraitColleague
 {
     public UnitId UnitId { get; set; }
-    private bool _isActive;
-    
-    public bool IsActive
-    {
-        get => _isActive;
-        set
-        {
-            _isActive = value;
-            ActivePortrait(_isActive);
-        }
-    }
 
     public override void SetPortrait(GameObject go)
     {
@@ -57,28 +46,5 @@ public class UI_Portrait : UI_PortraitColleague
         glow.Selected = active;
         bounce.Selected = active;
         UI.SetSkillPanel(go, active);
-    }
-    
-    private void ActivePortrait(bool active)
-    {
-        gameObject.TryGetComponent(out UI_Portrait uiPortrait);
-        var level = (int)uiPortrait.UnitId % 3;
-        if (level == 0) level = 3;
-        gameObject.SetActive(false);
-
-        switch (level.ToString())
-        {
-            case "1":
-                gameObject.SetActive(true);
-                var img = gameObject.GetComponent<Image>();
-                img.color = active == false 
-                    ? new Color(img.color.r, img.color.g, img.color.b, 0.6f) 
-                    : new Color(img.color.r, img.color.g, img.color.b, 1.0f);
-                break;
-            
-            default:
-                if (active) gameObject.SetActive(true);
-                break;
-        }
     }
 }

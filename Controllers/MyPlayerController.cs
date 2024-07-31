@@ -28,17 +28,17 @@ public class MyPlayerController : PlayerController
         // C_Spawn spawnPacket = new()
         // {
         //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.CactusBoss,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 18, Dir = 180 },
+        //     Num = (int)UnitId.WolfPup,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 1, PosY = 6, PosZ = 16, Dir = 180 },
         //     Way = SpawnWay.North
         // };
         // Managers.Network.Send(spawnPacket);
-        //
+        
         // C_Spawn spawnPacket1 = new()
         // {
         //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.Horror,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 22, Dir = 180 },
+        //     Num = (int)UnitId.WolfPup,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = -1, PosY = 6, PosZ = 16, Dir = 180 },
         //     Way = SpawnWay.North,
         // };
         // Managers.Network.Send(spawnPacket1);
@@ -46,12 +46,12 @@ public class MyPlayerController : PlayerController
         // C_Spawn spawnPacket2 = new()
         // {
         //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.Werewolf,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 2, PosY = 6, PosZ = 18, Dir = 180 },
+        //     Num = (int)UnitId.WolfPup,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 3, PosY = 6, PosZ = 16, Dir = 180 },
         //     Way = SpawnWay.North,
         // };
         // Managers.Network.Send(spawnPacket2);
-        //
+
         // C_Spawn spawnPacket3 = new()
         // {
         //     Type = GameObjectType.Monster,
@@ -115,7 +115,7 @@ public class MyPlayerController : PlayerController
         // };
         // Managers.Network.Send(spawnPacket51);
     }
-
+    
     private void OnMouseEvent(Define.MouseEvent evt)
     {
         OnMouseEvent_IdleRun(evt);
@@ -144,7 +144,7 @@ public class MyPlayerController : PlayerController
                 break;
             case var _ when layer == LayerMask.NameToLayer("Tower"):
             case var _ when layer == LayerMask.NameToLayer("Monster"):
-                ProcessUnitControlWindow(go, layer);
+                ProcessUnitControlWindow(go);
                 break;
             case var _ when layer == LayerMask.NameToLayer("Sheep") || layer == LayerMask.NameToLayer("Fence"):
                 if (Camp == Camp.Sheep) _mediator.CurrentWindow = _mediator.WindowDictionary["SubResourceWindow"];
@@ -152,13 +152,33 @@ public class MyPlayerController : PlayerController
         }
     }
 
-    private void ProcessUnitControlWindow(GameObject go, int layer)
+    private void ProcessUnitControlWindow(GameObject go)
     {
         _mediator.CurrentSelectedUnit = go;
-        _mediator.CurrentWindow = _mediator.WindowDictionary["UnitControlWindow"];
+        
         if (go.TryGetComponent(out CreatureController creatureController))
         {
             SelectedUnitId = creatureController.Id;
+            
+            // // Range Ring
+            // if (creatureController.AttackRange != 0 || creatureController.SkillRange != 0)
+            // {
+            //     var attackRangeRing = Instantiate(
+            //         Resources.Load<GameObject>("Prefabs/WorldObjects/RangeRing"), go.transform);
+            //     var skillRangeRing = Instantiate(
+            //         Resources.Load<GameObject>("Prefabs/WorldObjects/RangeRing"), go.transform);
+            //     var attackRangeRingScript = Util.GetOrAddComponent<UI_RangeRing>(attackRangeRing);
+            //     var skillRangeRingScript = Util.GetOrAddComponent<UI_RangeRing>(skillRangeRing);
+            //     attackRangeRingScript.AboutAttack = true;
+            //     skillRangeRingScript.AboutSkill = true;
+            // }
+            
+            // Control Window
+            if ((Util.Camp == Camp.Sheep && creatureController.ObjectType == GameObjectType.Tower)
+                || (Util.Camp == Camp.Wolf && creatureController.ObjectType == GameObjectType.Monster))
+            {
+                _mediator.CurrentWindow = _mediator.WindowDictionary["UnitControlWindow"];
+            }
         }
     }
 }

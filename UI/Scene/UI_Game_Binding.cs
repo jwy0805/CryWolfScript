@@ -30,18 +30,29 @@ public partial class UI_Game
     
     protected override void BindObjects()
     {
-        BindData<Button>(typeof(CommonButtons), DictCommonBtn);
-        BindData<Image>(typeof(CommonImages), DictCommonImg);
-        BindData<TextMeshProUGUI>(typeof(CommonTexts), DictCommonTxt);
-        BindData<Button>(typeof(UnitButtons), DictUnitBtn);
-        BindData<Button>(typeof(UnitControlButtons), DictControlBtn);
+        if (gameObject.name == "UI_GameDoubleWay")
+        {
+            BindData<Button>(typeof(CommonButtonsD), DictCommonBtn);
+            BindData<Image>(typeof(CommonImagesD), DictCommonImg);
+            BindData<TextMeshProUGUI>(typeof(CommonTextsD), DictCommonTxt);
+            BindData<Button>(typeof(UnitButtonsD), DictUnitBtn);
+            BindData<Button>(typeof(UnitControlButtonsD), DictControlBtn);
+        }
+        else
+        {
+            BindData<Button>(typeof(CommonButtonsS), DictCommonBtn);
+            BindData<Image>(typeof(CommonImagesS), DictCommonImg);
+            BindData<TextMeshProUGUI>(typeof(CommonTextsS), DictCommonTxt);
+            BindData<Button>(typeof(UnitButtonsS), DictUnitBtn);
+            BindData<Button>(typeof(UnitControlButtonsS), DictControlBtn);
+        }
         
         SetLog();               // 가져온 덱에 따라 통나무 UI 세팅
         BringSkillPanels();     // 가져온 덱에 따라 스킬 패널 미리 가져오기
         BringBaseSkillPanels();
     }
 
-    private void SetLog()
+    protected void SetLog()
     {   // Set the selected units in the main lobby to the log bar
         for (int i = 0; i < Util.Deck.UnitsOnDeck.Length; i++)
         {
@@ -57,7 +68,7 @@ public partial class UI_Game
         }
     }
     
-    private void BringSkillPanels()
+    protected void BringSkillPanels()
     {
         foreach (var unit in Util.Deck.UnitsOnDeck)
         {
@@ -73,7 +84,7 @@ public partial class UI_Game
         }
     }
 
-    private void BringBaseSkillPanels()
+    protected void BringBaseSkillPanels()
     {
         SetBaseSkillPanelByCamp(Camp == Camp.Sheep ? Camp.Sheep : Camp.Wolf, "UI/InGame");
     }
@@ -116,7 +127,7 @@ public partial class UI_Game
         }
     }
 
-    private void BindData<T>(Type enumType, Dictionary<string, GameObject> dict) where T : Object
+    protected void BindData<T>(Type enumType, Dictionary<string, GameObject> dict) where T : Object
     {
         Bind<T>(enumType);
         
@@ -194,7 +205,6 @@ public partial class UI_Game
     {
         SetPanel();
         
-        DictCommonImg["MenuItemPanel"].SetActive(false);
         DictCommonImg["SkillWindow"].SetActive(false);
         DictCommonImg["CapacityWindow"].SetActive(false);
         DictCommonImg["SubResourceWindow"].SetActive(false);

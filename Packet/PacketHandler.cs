@@ -70,24 +70,9 @@ public class PacketHandler
         var despawnPacket = (S_Despawn)packet;
         foreach (var id in despawnPacket.ObjectIds)
         {
-            var type = ObjectManager.GetObjectTypeById(id);
             var go = Managers.Object.FindById(id);
             Managers.Object.Remove(id);
             Managers.Resource.Destroy(go);
-            
-            // switch (type)
-            // {
-            //     case GameObjectType.Tower:
-            //     case GameObjectType.Monster:
-            //     case GameObjectType.Sheep:
-            //         go = Managers.Object.FindById(id);
-            //         Managers.Object.Remove(id);
-            //         go.GetComponent<CreatureController>().();
-            //         break;
-            //     default:
-            //         
-            //         break;
-            // }
         }
     }
     
@@ -139,7 +124,6 @@ public class PacketHandler
         if (go == null) return;
         if (go.TryGetComponent(out CreatureController cc) == false) return;
 
-        cc.State = syncPacket.PosInfo.State;
         cc.SyncPos = new Vector3(syncPacket.PosInfo.PosX, syncPacket.PosInfo.PosY, syncPacket.PosInfo.PosZ);
         cc.PosInfo.Dir = syncPacket.PosInfo.Dir;
     }    
@@ -336,7 +320,10 @@ public class PacketHandler
 
         cc.Hp = 0;
         cc.State = State.Die;
-        if (diePacket.Revive == false) cc.OnDead();
+        if (diePacket.Revive == false && go.GetComponent<BaseController>().ObjectType != GameObjectType.Tower)
+        {
+            cc.OnDead();
+        }
     }
     
     public static void S_ConnectedHandler(PacketSession session, IMessage packet)
@@ -363,11 +350,21 @@ public class PacketHandler
             Type = spawnPacket.ObjectType,
             Num = (int)Enum.Parse(typeof(UnitId), unitName),
             PosInfo = new PositionInfo { State = State.Idle, PosX = pos.x, PosY = pos.y, PosZ = pos.z },
-            Way = pos.z > 0 ? SpawnWay.North : SpawnWay.South,
+            Way = Managers.Map.MapId == 1 ? SpawnWay.North : pos.z > 0 ? SpawnWay.North : SpawnWay.South,
             Register = register
         };
-        
         Managers.Network.Send(cSpawnPacket);
+    }
+
+    public static void S_GetRangesHandler(PacketSession session, IMessage packet)
+    {
+        var rangePacket = (S_GetRanges)packet;
+        var ui = GameObject.FindWithTag("UI").GetComponent<UI_Game>();
+        var mediator = ui.Mediator;
+        var portrait = mediator.DraggingObject;
+        var uiDragPortrait = portrait.GetComponent<UI_DragPortrait>();
+        
+        uiDragPortrait.ShowRing(rangePacket.AttackRange, rangePacket.SkillRange);
     }
     
     public static void S_TimeHandler(PacketSession session, IMessage packet)
@@ -387,7 +384,10 @@ public class PacketHandler
     public static void S_SetTextUIHandler(PacketSession session, IMessage packet)
     {
         var uiPacket = (S_SetTextUI)packet;
-        var ui = GameObject.FindWithTag("UI").GetComponent<UI_Game>();
+        var mapId = Managers.Map.MapId; 
+        UI_Game ui = mapId == 1 
+            ? GameObject.FindWithTag("UI").GetComponent<UI_GameSingleWay>() 
+            : GameObject.FindWithTag("UI").GetComponent<UI_GameDoubleWay>();
         var textName = uiPacket.TextUI.ToString();
         var textUI = Util.FindChild(ui.gameObject, textName, true).GetComponent<TextMeshProUGUI>();
         if (textUI.text.Contains("/"))
