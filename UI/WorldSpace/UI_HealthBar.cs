@@ -35,8 +35,11 @@ public class UI_HealthBar : MonoBehaviour
                 _sliderRect.localScale = new Vector3(0.005f * sizeX, 0.01f, 0.01f);
                 break;
             default:
-                var radius = gameObject.GetComponent<CapsuleCollider>().radius;
-                _sliderRect.localScale = new Vector3(0.005f * radius, 0.01f, 0.01f);
+                var unitCollider = gameObject.GetComponent<CapsuleCollider>();
+                var radius = unitCollider.radius;
+                var height = unitCollider.height;
+                _sliderRect.localScale = new Vector3(0.012f * radius, 0.01f, 0.01f);
+                _sliderRect.transform.position += Vector3.up * height * 0.6f;
                 break;
         }
     }

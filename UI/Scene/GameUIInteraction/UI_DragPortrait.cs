@@ -4,14 +4,16 @@ using Google.Protobuf.Protocol;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using C_UnitSpawnPos = Google.Protobuf.Protocol.C_UnitSpawnPos;
 using Enum = System.Enum;
 
 public class UI_DragPortrait : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    public Vector3 position;
-    public bool endDrag;
+    public Vector3 Position { get; set; }
+    public bool CanSpawn { get; set; }
+    public GameObjectType ObjectType { get; set; }
     private Vector3 _originalTransform;
     private UI_Mediator _mediator;
     private float _lastSendTime;
@@ -28,11 +30,10 @@ public class UI_DragPortrait : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        ButtonBounce bounce = GetComponent<ButtonBounce>();
-        bounce.Selected = false;
-
         var go = gameObject;
         var tf = transform;
+        var bounce = GetComponent<ButtonBounce>();
+        bounce.Selected = false;
 
         // Drag start
         Managers.Game.PickedButton = go;
@@ -40,7 +41,6 @@ public class UI_DragPortrait : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         _lastSendTime = 0;
         _mediator.DraggingObject = go;
         _name = gameObject.GetComponent<Image>().sprite.name;
-        endDrag = false;
         
         // Send packet to show the range rings
         if (go.TryGetComponent(out UI_Portrait portrait))
@@ -56,11 +56,11 @@ public class UI_DragPortrait : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (Camera.main != null)
         {
             var ray = Camera.main.ScreenPointToRay(Input.mousePosition); 
-            position = Vector3.zero;
+            Position = Vector3.zero;
             if (Physics.Raycast(ray, out _, Mathf.Infinity, LayerMask.GetMask("UI"))) return;
             if (Physics.Raycast(ray, out var hit, Mathf.Infinity, LayerMask.GetMask("Ground")))
             {
-                position = hit.point;
+                Position = hit.point;
                 _hitPoint = hit.point;
             }        
         }
@@ -81,7 +81,7 @@ public class UI_DragPortrait : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         _lastSendTime = Time.time;
 
         var unitId = (UnitId)Enum.Parse(typeof(UnitId), _name);
-        var destVector = new DestVector {X = position.x, Y = position.y, Z = position.z};
+        var destVector = new DestVector {X = Position.x, Y = Position.y, Z = Position.z};
         Managers.Network.Send(new C_UnitSpawnPos { UnitId = (int)unitId, DestVector = destVector });
     }
 
@@ -91,13 +91,17 @@ public class UI_DragPortrait : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         HideRing();
         
         // Drag ended
-        endDrag = true;
         transform.position = _originalTransform;
         GetComponent<Image>().color = Color.white;
         _mediator.CurrentWindow = null;
         _mediator.DraggingObject = null;
-        var unitId = (UnitId)Enum.Parse(typeof(UnitId), _name);
-        Managers.Game.Spawn(unitId, new DestVector {X = position.x, Y = position.y, Z = position.z});
+
+        if (CanSpawn)
+        {
+            // var unitId = (UnitId)Enum.Parse(typeof(UnitId), _name);
+            Managers.Game.Spawn(ObjectType);
+            CanSpawn = false;
+        }
     }
 
     public void ShowRing(float attackRange, float skillRange)

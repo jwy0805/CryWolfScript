@@ -3,16 +3,20 @@ using System.IO;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.Serialization;
 
 public class MyPlayerController : PlayerController
 {
+    [SerializeField] private bool axisYInversion;
+
     private int _resource;
     private bool _arrived;
     private float _lastSendTime;
     private UI_Mediator _mediator;
-    
+
+    private bool _isDragging;
+    private Vector3 _lastMousePos;
+    private GameObject _cameraObject;
+
     public Camp Camp { get; set; }
     public int SelectedUnitId { get; set; }
 
@@ -23,13 +27,14 @@ public class MyPlayerController : PlayerController
         Managers.Input.MouseAction -= OnMouseEvent;
         Managers.Input.MouseAction += OnMouseEvent;
         _mediator = GameObject.FindWithTag("UI").GetComponent<UI_Mediator>();
+        _cameraObject = GameObject.FindWithTag("CameraFocus");
 
         // Test - Unit Spawn
         // C_Spawn spawnPacket = new()
         // {
         //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.WolfPup,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 1, PosY = 6, PosZ = 16, Dir = 180 },
+        //     Num = (int)UnitId.Creeper,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 1, PosY = 8, PosZ = 16, Dir = 180 },
         //     Way = SpawnWay.North
         // };
         // Managers.Network.Send(spawnPacket);
@@ -51,103 +56,66 @@ public class MyPlayerController : PlayerController
         //     Way = SpawnWay.North,
         // };
         // Managers.Network.Send(spawnPacket2);
-
-        // C_Spawn spawnPacket3 = new()
-        // {
-        //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.SnakeNaga,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 2, PosY = 6, PosZ = 20, Dir = 180 },
-        //     Way = SpawnWay.North,
-        // };
-        // Managers.Network.Send(spawnPacket3);
-        
-        // C_Spawn spawnPacket30 = new()
-        // {
-        //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.Creeper,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 15, Dir = 180 },
-        //     Way = SpawnWay.North,
-        // };
-        // Managers.Network.Send(spawnPacket30);
-        
-        // C_Spawn spawnPacket4 = new()
-        // {
-        //     Type = GameObjectType.Tower,
-        //     Num = (int)UnitId.SoulMage,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 3.5f, Dir = 180 },
-        //     Way = SpawnWay.North,
-        // };
-        // Managers.Network.Send(spawnPacket4);
-        
-        // C_Spawn spawnPacket6 = new()
-        // {
-        //     Type = GameObjectType.Tower,
-        //     Num = (int)UnitId.Hermit,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 6f, Dir = 180 },
-        //     Way = SpawnWay.North,
-        // };
-        // Managers.Network.Send(spawnPacket6);
-        
-        // C_Spawn spawnPacket5 = new()
-        // {
-        //     Type = GameObjectType.Tower,
-        //     Num = (int)UnitId.MothCelestial,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 7, PosZ = 3f, Dir = 180 },
-        //     Way = SpawnWay.North,
-        // };
-        // Managers.Network.Send(spawnPacket5);
-        
-        // C_Spawn spawnPacket50 = new()
-        // {
-        //     Type = GameObjectType.Tower,
-        //     Num = (int)UnitId.SunfloraPixie,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 2, PosY = 6, PosZ = 3, Dir = 180 },
-        //     Way = SpawnWay.North,
-        // };
-        // Managers.Network.Send(spawnPacket50); 
-        
-        // C_Spawn spawnPacket51 = new()
-        // {
-        //     Type = GameObjectType.Tower,
-        //     Num = (int)UnitId.Bloom,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 1, PosY = 6, PosZ = -9, Dir = 180 },
-        //     Way = SpawnWay.North,
-        // };
-        // Managers.Network.Send(spawnPacket51);
     }
     
     private void OnMouseEvent(Define.MouseEvent evt)
     {
-        OnMouseEvent_IdleRun(evt);
-    }
-
-    private void OnMouseEvent_IdleRun(Define.MouseEvent evt)
-    {
         var ray = Camera.main!.ScreenPointToRay(Input.mousePosition);
         bool raycastHit = Physics.Raycast(ray, out var hit, 100.0f);
-
-        if (evt != Define.MouseEvent.PointerDown) return;
-        if (!raycastHit) return;
         
-        var go = hit.collider.gameObject;
-        var layer = go.layer;
-
-        if (go.TryGetComponent(out UI_Skill _) == false)
+        switch (evt)
         {
-            Managers.UI.CloseUpgradePopup();
-        }
+            case Define.MouseEvent.Click:
+                break;
+            
+            case Define.MouseEvent.PointerDown:
+                if (!raycastHit) return;
+        
+                var go = hit.collider.gameObject;
+                var layer = go.layer;
 
-        switch (layer)
-        {
-            case var _ when layer == LayerMask.NameToLayer("Ground"):
-                _mediator.InitState(go);
+                if (go.TryGetComponent(out UI_Skill _) == false)
+                {
+                    Managers.UI.CloseUpgradePopup();
+                }
+
+                switch (layer)
+                {
+                    case var _ when layer == LayerMask.NameToLayer("Ground"):
+                        _mediator.InitState(go);
+                        break;
+                    case var _ when layer == LayerMask.NameToLayer("Tower"):
+                    case var _ when layer == LayerMask.NameToLayer("Monster"):
+                        ProcessUnitControlWindow(go);
+                        break;
+                    case var _ when layer == LayerMask.NameToLayer("Sheep") || layer == LayerMask.NameToLayer("Fence"):
+                        if (Camp == Camp.Sheep)
+                        {
+                            _mediator.CurrentWindow = _mediator.WindowDictionary["SubResourceWindow"];
+                        }
+                        break;
+                }
+
+                _isDragging = true;
+                _lastMousePos = Input.mousePosition;
                 break;
-            case var _ when layer == LayerMask.NameToLayer("Tower"):
-            case var _ when layer == LayerMask.NameToLayer("Monster"):
-                ProcessUnitControlWindow(go);
+            
+            case Define.MouseEvent.PointerUp:
+                _isDragging = false;
                 break;
-            case var _ when layer == LayerMask.NameToLayer("Sheep") || layer == LayerMask.NameToLayer("Fence"):
-                if (Camp == Camp.Sheep) _mediator.CurrentWindow = _mediator.WindowDictionary["SubResourceWindow"];
+            
+            case Define.MouseEvent.Press:
+                if (_isDragging)
+                {
+                    var currentMousePos = Input.mousePosition;
+                    var pressedY = _lastMousePos.y;
+                    var direction = axisYInversion ? currentMousePos.y - pressedY : pressedY - currentMousePos.y;
+                    var moveZ = direction * Time.deltaTime * 0.08f;
+
+                    if (_cameraObject.transform.position.z < -12.1f && moveZ < 0) return;
+                    if (_cameraObject.transform.position.z > 12.1f && moveZ > 0) return;
+                    _cameraObject.transform.Translate(0, 0, moveZ);
+                }
                 break;
         }
     }
@@ -159,19 +127,6 @@ public class MyPlayerController : PlayerController
         if (go.TryGetComponent(out CreatureController creatureController))
         {
             SelectedUnitId = creatureController.Id;
-            
-            // // Range Ring
-            // if (creatureController.AttackRange != 0 || creatureController.SkillRange != 0)
-            // {
-            //     var attackRangeRing = Instantiate(
-            //         Resources.Load<GameObject>("Prefabs/WorldObjects/RangeRing"), go.transform);
-            //     var skillRangeRing = Instantiate(
-            //         Resources.Load<GameObject>("Prefabs/WorldObjects/RangeRing"), go.transform);
-            //     var attackRangeRingScript = Util.GetOrAddComponent<UI_RangeRing>(attackRangeRing);
-            //     var skillRangeRingScript = Util.GetOrAddComponent<UI_RangeRing>(skillRangeRing);
-            //     attackRangeRingScript.AboutAttack = true;
-            //     skillRangeRingScript.AboutSkill = true;
-            // }
             
             // Control Window
             if ((Util.Camp == Camp.Sheep && creatureController.ObjectType == GameObjectType.Tower)

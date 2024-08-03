@@ -334,28 +334,15 @@ public class PacketHandler
     public static void S_UnitSpawnPosHandler(PacketSession session, IMessage packet)
     {
         var spawnPacket = (S_UnitSpawnPos)packet;
-        Managers.Game.PickedButton.GetComponent<Image>().color = spawnPacket.CanSpawn == false ? Color.red : Color.white;
+        Managers.Game.PickedButton.GetComponent<Image>().color = spawnPacket.CanSpawn == false
+            ? Color.red 
+            : Color.white; 
         
         var dragPortrait = Managers.Game.PickedButton.GetComponent<UI_DragPortrait>();
-        if (dragPortrait.endDrag == false) return;
-        
-        Managers.Game.PickedButton.GetComponent<Image>().color = Color.white;
-        if (spawnPacket.CanSpawn == false) return;
-        
-        var pos = Util.NearestCell(dragPortrait.position);
-        var register = spawnPacket.ObjectType == GameObjectType.Tower;
-        var unitName = Managers.Game.PickedButton.GetComponent<Image>().sprite.name;
-        C_Spawn cSpawnPacket = new()
-        {
-            Type = spawnPacket.ObjectType,
-            Num = (int)Enum.Parse(typeof(UnitId), unitName),
-            PosInfo = new PositionInfo { State = State.Idle, PosX = pos.x, PosY = pos.y, PosZ = pos.z },
-            Way = Managers.Map.MapId == 1 ? SpawnWay.North : pos.z > 0 ? SpawnWay.North : SpawnWay.South,
-            Register = register
-        };
-        Managers.Network.Send(cSpawnPacket);
+        dragPortrait.CanSpawn = spawnPacket.CanSpawn;
+        dragPortrait.ObjectType = spawnPacket.ObjectType;
     }
-
+    
     public static void S_GetRangesHandler(PacketSession session, IMessage packet)
     {
         var rangePacket = (S_GetRanges)packet;
