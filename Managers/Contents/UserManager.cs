@@ -40,7 +40,8 @@ public class UserManager
     }
 
     public void LoadDeck(DeckInfo deckInfo)
-    {   // 유저의 덱 정보를 받아서 Manager에 저장
+    {   
+        // 유저의 덱 정보를 받아서 Manager에 저장
         var deck = new Deck
         {
             DeckId = deckInfo.DeckId,
@@ -56,7 +57,8 @@ public class UserManager
     }
 
     public void SaveDeck(DeckInfo deckInfo)
-    {   // 클라이언트 조작 방지용, 메치메이킹, 게임 시작 시 덱 검증을 위해 사용
+    {   
+        // 클라이언트 조작 방지용, 메치메이킹, 게임 시작 시 덱 검증을 위해 사용
         var deck = new Deck
         {
             DeckId = deckInfo.DeckId,

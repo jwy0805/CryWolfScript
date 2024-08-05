@@ -1,20 +1,13 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public enum Env
-{
-    Local,
-    Dev,
-    Stage,
-    Prod
-}
-
-public class WebManager
+public class WebService : IWebService
 {
     private const string LocalPort = "7270";
     private const string DevPort = "499";
@@ -37,36 +30,18 @@ public class WebManager
         }
     }
     
-    public void SendPostRequest<T>(string url, object obj, Action<T> responseAction)
-    {
-        Managers.Instance.StartCoroutine(
-            CoSendWebRequest(url, UnityWebRequest.kHttpVerbPOST, obj, responseAction));
-    }
-    
-    public void SendPutRequest<T>(string url, object obj, Action<T> responseAction)
-    {
-        Managers.Instance.StartCoroutine(
-            CoSendWebRequest(url, UnityWebRequest.kHttpVerbPUT, obj, responseAction));
-    }
-
-    public Task<T> SendPostRequestAsync<T>(string url, object obj)
+    public virtual async Task<T> SendWebRequestAsync<T>(string url, string method, object obj)
     {
         var tcs = new TaskCompletionSource<T>();
-        SendPostRequest<T>(url, obj, response => tcs.SetResult(response));
-        return tcs.Task;
+        await SendWebRequest<T>(url, method, obj, response => tcs.SetResult(response));
+        return await tcs.Task;
     }
     
-    public Task<T> SendPutRequestAsync<T>(string url, object obj)
-    {
-        var tcs = new TaskCompletionSource<T>();
-        SendPutRequest<T>(url, obj, response => tcs.SetResult(response));
-        return tcs.Task;
-    }
-    
-    private IEnumerator CoSendWebRequest<T>(string url, string method, object obj, Action<T> responseAction)
+    public virtual async Task SendWebRequest<T>(string url, string method, object obj, Action<T> responseAction)
     {
         var sendUrl = $"{BaseUrl}/{url}";
         byte[] jsonBytes = null;
+        
         if (obj != null)
         {
             var jsonStr = JsonConvert.SerializeObject(obj);
@@ -77,8 +52,13 @@ public class WebManager
         uwr.uploadHandler = new UploadHandlerRaw(jsonBytes);
         uwr.downloadHandler = new DownloadHandlerBuffer();
         uwr.SetRequestHeader("Content-Type", "application/json");
-        
-        yield return uwr.SendWebRequest();
+
+        var operation = uwr.SendWebRequest();
+
+        while (operation.isDone == false)
+        {
+            await Task.Yield();
+        }
         
         if (uwr.result is UnityWebRequest.Result.ConnectionError or UnityWebRequest.Result.ProtocolError)
         {

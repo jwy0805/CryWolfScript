@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Google.Protobuf.Protocol;
-using TMPro.Examples;
 
 public class BudController : TowerController
 {

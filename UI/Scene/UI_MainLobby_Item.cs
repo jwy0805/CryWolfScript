@@ -7,7 +7,6 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Image = UnityEngine.UI.Image;
-using Object = UnityEngine.Object;
 
 public partial class UI_MainLobby
 {
@@ -69,7 +68,8 @@ public partial class UI_MainLobby
         var deckResponse = deckTask.Result;
         if (cardResponse.GetCardsOk == false || deckResponse.GetDeckOk == false) return;
         if (cardResponse.AccessToken != null)
-        {   // Test 에서 뒤늦게 토큰을 받는 경우
+        {   
+            // Test(Main Lobby부터 시작) 에서 뒤늦게 토큰을 받는 경우
             Managers.Token.SaveAccessToken(cardResponse.AccessToken);
             Managers.Token.SaveRefreshToken(cardResponse.RefreshToken);
         }
