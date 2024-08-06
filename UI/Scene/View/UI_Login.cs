@@ -3,12 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class UI_Login : UI_Scene
 {
+    private LoginViewModel _viewModel;
+    
     private enum Buttons
     {
         LoginButton,
@@ -37,6 +40,12 @@ public class UI_Login : UI_Scene
     {
         base.Init();
         
+        // Initialize ViewModel
+        _viewModel = new LoginViewModel
+        {
+            OnLoginFailed = ClearPasswordText
+        };
+        
         BindObjects();
         SetButtonEvents();
         SetUI();
@@ -44,34 +53,37 @@ public class UI_Login : UI_Scene
 
     private void OnSignUpClicked(PointerEventData data)
     {
-        Managers.UI.ShowPopupUI<UI_SignUpPopup>();
+        _viewModel.SignUp();
     }
     
     private void OnLoginClicked(PointerEventData data)
     {
-        string account = GetTextInput((int)TextInputs.Email).text;
-        string password = GetTextInput((int)TextInputs.Password).text;
-        
-        var packet = new LoginUserAccountPacketRequired { UserAccount = account, Password = password };
-        Managers.Web.SendPostRequest<LoginUserAccountPacketResponse>("UserAccount/Login", packet, response =>
-        {
-            account = "";
-            password = "";
-            
-            if (response.LoginOk == false) return;
-            Managers.Scene.LoadScene(Define.Scene.MainLobby);
-            Managers.Clear();
-            
-            Managers.User.UserAccount = account;
-            Managers.Token.SaveAccessToken(response.AccessToken);
-            Managers.Token.SaveRefreshToken(response.RefreshToken);
-        });
+        _viewModel.UserAccount = GetTextInput((int)TextInputs.Email).text;
+        _viewModel.Password = GetTextInput((int)TextInputs.Password).text;
+        _viewModel.TryDirectLogin();
     }
 
     private void OnGoogleClicked(PointerEventData data)
     {
         
     }
+    
+    private void OnAppleClicked(PointerEventData data)
+    {
+        
+    }
+    
+    private void OnFacebookClicked(PointerEventData data)
+    {
+        
+    }
+    
+    private void ClearPasswordText()
+    {
+        GetTextInput((int)TextInputs.Password).text = "";
+    }
+
+    #region SetUiSize
 
     protected override void SetBackgroundSize(RectTransform rectTransform)
     {
@@ -109,4 +121,6 @@ public class UI_Login : UI_Scene
         SetObjectSize(GetImage((int)Images.GoogleImage).gameObject, 1.0f);
         SetObjectSize(GetImage((int)Images.FacebookImage).gameObject, 1.0f);
     }
+
+    #endregion
 }
