@@ -7,6 +7,7 @@ using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Zenject;
 
 public class UI_Login : UI_Scene
 {
@@ -36,19 +37,25 @@ public class UI_Login : UI_Scene
         FacebookImage,
     }
 
+    [Inject] // Initialize ViewModel
+    public void Construct(LoginViewModel viewModel)
+    {
+        _viewModel = viewModel;
+        _viewModel.OnLoginFailed = ClearPasswordText;
+    }
+    
     protected override void Init()
     {
         base.Init();
         
-        // Initialize ViewModel
-        _viewModel = new LoginViewModel
-        {
-            OnLoginFailed = ClearPasswordText
-        };
-        
         BindObjects();
         SetButtonEvents();
         SetUI();
+        
+        if (_viewModel == null)
+        {
+            Debug.LogError("ViewModel is null");
+        }
     }
 
     private void OnSignUpClicked(PointerEventData data)

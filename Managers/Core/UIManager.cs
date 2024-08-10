@@ -2,11 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Zenject;
 
 public class UIManager
 {
     public readonly List<UI_Popup> PopupList = new();
-
+    
     private int _order = 10;
     private UI_Scene _sceneUI = null;
     
@@ -81,13 +82,14 @@ public class UIManager
             name = typeof(T).Name;
         }
 
-        GameObject gameObject = Managers.Resource.Instantiate($"UI/Scene/{name}");
-        T sceneUI = Util.GetOrAddComponent<T>(gameObject);
-        _sceneUI = sceneUI;
+        var sceneUI = Managers.Resource.InstantiateFromContainer($"UI/Scene/{name}", Root.transform);
+        // GameObject gameObject = Managers.Resource.Instantiate($"UI/Scene/{name}");
+        // T sceneUI = Util.GetOrAddComponent<T>(gameObject);
+        _sceneUI = sceneUI.GetComponent<T>();
         
-        gameObject.transform.SetParent(Root.transform);
+        // gameObject.transform.SetParent(Root.transform);
 
-        return sceneUI;
+        return sceneUI.GetComponent<T>();
     }
     
     public T ShowPopupUI<T>(string name = null) where T : UI_Popup

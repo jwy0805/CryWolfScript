@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Zenject;
 
 public class ResourceManager
 {
@@ -54,6 +55,24 @@ public class ResourceManager
         GameObject go = Object.Instantiate(original, position, Quaternion.identity);
         go.name = original.name;
         return go;
+    }
+
+    public GameObject InstantiateFromContainer(string path, Transform parent = null)
+    {
+        var original = Load<GameObject>($"Prefabs/{path}");
+        if (original == null)
+        {
+            Debug.Log($"Failed to load Prefab : {path}");
+            return null;
+        }
+        
+        var container = ProjectContext.Instance.Container;
+        container.Bind<IUserService>().To<UserService>().AsSingle();
+        container.Bind<IWebService>().To<WebService>().AsSingle();
+        container.Bind<ITokenService>().To<TokenService>().AsSingle();
+        container.Bind<LoginViewModel>().AsTransient();
+        var instance = container.InstantiatePrefab(original, parent);
+        return instance;
     }
 
     public void Destroy(GameObject go, float time)

@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using Zenject;
 
 public class LoginScene : BaseScene
 {
-    private UI_Login _sceneUI;
     
     private float _verticalSpeed = 500.0f;
     private float _destPos;
@@ -15,9 +15,9 @@ public class LoginScene : BaseScene
     protected override void Init()
     {
         base.Init();
-
+        
         SceneType = Define.Scene.Login;
-        _sceneUI = Managers.UI.ShowSceneUI<UI_Login>();
+        Managers.UI.ShowSceneUI<UI_Login>();
         
         _rtBoard = GameObject.Find("LoginBoard").GetComponent<RectTransform>();
         _destPos = _rtBoard.anchoredPosition.y;
@@ -31,7 +31,7 @@ public class LoginScene : BaseScene
             _rtBoard.anchoredPosition += Vector2.down * (_verticalSpeed * Time.deltaTime);
         }
     }
-
+    
     public override void Clear()
     {
         
