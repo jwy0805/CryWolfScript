@@ -6,9 +6,16 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Zenject;
+
+/* Last Modified : 24. 08. 14
+ * Version : 1.0
+ */
 
 public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
 {
+    private DeckViewModel _deckVm;
+    
     private UI_MainLobby _mainLobby;
     private Card[] _deck;
     private UI_CardClickPopup _cardPopup;
@@ -64,11 +71,17 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
 
     #endregion
     
+    [Inject]
+    public void Construct(DeckViewModel deckVm)
+    {
+        _deckVm = deckVm;
+    }
+    
     protected override void Init()
     {
         base.Init();
         
-        _mainLobby = GameObject.Find("UI_MainLobby").GetComponent<UI_MainLobby>();
+        _mainLobby = GameObject.Find("UI_MainLobby(Clone)").GetComponent<UI_MainLobby>();
         BindObjects();
         SetButtonEvents();
         SetUI();
@@ -115,9 +128,8 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         var parent = GetImage((int)Images.Deck).transform;
         foreach (Transform child in parent) Destroy(child.gameObject);
         
-        var deck = Util.Camp == Camp.Sheep ? Managers.User.DeckSheep : Managers.User.DeckWolf;
-        
-        foreach (var unit in deck.UnitsOnDeck)
+        var deck = _deckVm.GetDeck(Util.Camp).UnitsOnDeck;
+        foreach (var unit in deck)
         {
             var cardFrame = Util.GetCardResources(unit, parent, 0, OnDeckCardClicked);
             cardFrame.TryGetComponent(out RectTransform rectTransform);
@@ -131,8 +143,10 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         var parent = GetImage((int)Images.CollectionPanel).transform;
         foreach (Transform child in parent) Destroy(child.gameObject);
         
-        var collection = Util.Camp == Camp.Sheep ? Managers.User.OwnedCardListSheep : Managers.User.OwnedCardListWolf;
-        var deck = Util.Camp == Camp.Sheep ? Managers.User.DeckSheep : Managers.User.DeckWolf;
+        var collection = Util.Camp == Camp.Sheep 
+            ? User.Instance.OwnedCardListSheep 
+            : User.Instance.OwnedCardListWolf;
+        var deck = _deckVm.GetDeck(Util.Camp);
         var units = collection
             .Where(unitInfo => deck.UnitsOnDeck.All(u => u.Id != unitInfo.Id)).ToList();
         
@@ -156,8 +170,13 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
 
         if (Changing)
         {
-            ChangeCard(SelectedCard, card);
-            _mainLobby.UpdateDeck(SelectedCard, card);
+            // 실제 덱 정보 변경
+            _deckVm.UpdateDeck(SelectedCard, card);
+            
+            // Scroll Popup 내 UI 변경
+            SetDeckInPopup();
+            SetCollectionInPopup();
+            
             Changing = false;
         }
         else
@@ -185,15 +204,6 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
     {
         _mainLobby.ResetDeckUI(Util.Camp);
         if (CardPopup != null) Managers.UI.ClosePopupUI(CardPopup);
-    }
-    
-    // Methods for event methods
-    private void ChangeCard(Card cardOnDeck, Card cardOnCollection)
-    {   // 실제 덱 정보 변경
-        _mainLobby.UpdateDeck(cardOnDeck, cardOnCollection);
-        // Scroll Popup 내 UI 변경
-        SetDeckInPopup();
-        SetCollectionInPopup();
     }
     
     private void SetCardPopupUI(Card card)

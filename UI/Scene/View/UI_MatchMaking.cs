@@ -6,9 +6,15 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Zenject;
 
 public class UI_MatchMaking : UI_Scene
 {
+    private IUserService _userService;
+    private ITokenService _tokenService;
+    private MatchMakingViewModel _matchMakingVm;
+    private DeckViewModel _deckVm;
+    
     private Transform _myDeck;
     private Transform _enemyDeck;
     private RectTransform _loadingMark;
@@ -33,6 +39,25 @@ public class UI_MatchMaking : UI_Scene
         InfoText,
     }
     
+    [Inject]
+    public void Construct(
+        IUserService userService,
+        ITokenService tokenService,
+        MatchMakingViewModel matchMakingVm,
+        DeckViewModel deckVm)
+    {
+        _userService = userService;
+        _tokenService = tokenService;
+        _matchMakingVm = matchMakingVm;
+        _deckVm = deckVm;
+    }
+
+    private void Awake()
+    {
+        _matchMakingVm.OnMatchMakingStarted -= SetDeckInfo;
+        _matchMakingVm.OnMatchMakingStarted += SetDeckInfo;
+    }
+
     protected override void Init()
     {
         base.Init();
@@ -41,7 +66,7 @@ public class UI_MatchMaking : UI_Scene
         SetButtonEvents();
         SetUI();
         
-        StartMatchMaking();
+        _matchMakingVm.StartMatchMaking();
     }
 
     protected void Update()
@@ -50,32 +75,10 @@ public class UI_MatchMaking : UI_Scene
         if (_cancelClicked) GetButton((int)Buttons.CancelButton).interactable = false;
     }
 
-    private void StartMatchMaking()
-    {
-        var changeActPacket = new ChangeActPacketRequired
-        {
-            AccessToken = Managers.User.AccessToken,
-            Camp = Util.Camp,
-            Act = UserAct.MatchMaking,
-            MapId = Managers.Map.MapId
-        };
-        
-        Managers.Web.SendPutRequest<ChangeActPacketResponse>(
-            "UserAccount/ChangeAct", changeActPacket, response =>
-            {
-                if (response.ChangeOk)
-                {
-                    Managers.Network.ConnectGameSession();
-                }
-            });
-        
-        SetDeckInfo();
-    }
-
     private void SetDeckInfo()
     {
         _myDeck = GetImage((int)Images.MyDeckPanel).transform;
-        var deck = Util.Camp == Camp.Sheep ? Managers.User.DeckSheep : Managers.User.DeckWolf;
+        var deck = _deckVm.GetDeck(Util.Camp);
         foreach (var unit in deck.UnitsOnDeck)
         {
             Util.GetCardResources(unit, _myDeck, 150);
@@ -99,6 +102,14 @@ public class UI_MatchMaking : UI_Scene
         Managers.Clear();
     }
     
+    // Button Events
+    private void OnCancelClicked(PointerEventData data)
+    {
+        _cancelClicked = true;
+        _matchMakingVm.CancelMatchMaking();
+    }
+    
+    // UI Setting
     protected override void BindObjects()
     {
         Bind<Button>(typeof(Buttons));
@@ -119,25 +130,5 @@ public class UI_MatchMaking : UI_Scene
         
         _loadingMark = GetImage((int)Images.LoadingMarkImage).rectTransform;
         _loadingMarkActive = true;
-    }
-
-    private void OnCancelClicked(PointerEventData data)
-    {
-        _cancelClicked = true;
-        
-        var changeActPacket = new ChangeActPacketRequired
-        {
-            AccessToken = Managers.User.AccessToken,
-            Act = UserAct.InLobby
-        };
-        
-        Managers.Web.SendPutRequest<ChangeActPacketResponse>(
-            "UserAccount/ChangeAct", changeActPacket, response =>
-            {
-                if (response.ChangeOk == false) return;
-                Managers.Network.Disconnect();
-                Managers.Scene.LoadScene(Define.Scene.MainLobby);
-                Managers.Clear();
-            });
     }
 }

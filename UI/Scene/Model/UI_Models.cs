@@ -5,9 +5,9 @@ using UnityEngine;
 
 public class User
 {
+    public static User Instance { get; } = new();
+    
     public string UserAccount { get; set; } = "temp";
-    public string AccessToken => Managers.Token.GetAccessToken();
-    public string RefreshToken => Managers.Token.GetRefreshToken();
     public List<UnitInfo> OwnedCardListSheep { get; set; } = new();
     public List<UnitInfo> OwnedCardListWolf { get; set; } = new();
     public List<UnitInfo> NotOwnedCardListSheep { get; set; } = new();

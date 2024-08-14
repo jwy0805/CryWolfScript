@@ -10,7 +10,7 @@ public class UI_Colleague : MonoBehaviour
     protected virtual void Start()
     {
         GameObject ui = GameObject.FindWithTag("UI");
-        UI = ui.GetComponent<UI_Game>();
+        UI = ui.GetComponent<UI_GameSingleWay>();
         Mediator = ui.GetComponent<UI_Mediator>();
         Mediator.AddToUIList(this);
     }

@@ -7,11 +7,15 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
+using Zenject;
 using Button = UnityEngine.UI.Button;
 using Image = UnityEngine.UI.Image;
 
 public class UI_BattlePopupWolf : UI_Popup
 {
+    private IUserService _userService;
+    private ITokenService _tokenService;
+    
     private enum Buttons
     {
         ExitButton,
@@ -23,6 +27,13 @@ public class UI_BattlePopupWolf : UI_Popup
     private enum Images
     {
         WolfIcon,
+    }
+    
+    [Inject]
+    public void Construct(IUserService userService, ITokenService tokenService)
+    {
+        _userService = userService;
+        _tokenService = tokenService;
     }
 
     protected override void Init()
@@ -43,10 +54,11 @@ public class UI_BattlePopupWolf : UI_Popup
     {
         var deckPacket = new GetSelectedDeckRequired
         {
-            AccessToken = Managers.User.AccessToken,
-            Camp = (int)Managers.User.DeckSheep.Camp,
-            DeckNumber = Managers.User.DeckSheep.DeckNumber,
+            AccessToken = _tokenService.GetAccessToken(),
+            Camp = (int)User.Instance.DeckSheep.Camp,
+            DeckNumber = User.Instance.DeckSheep.DeckNumber,
         };
+        
         var task = Managers.Web.SendPostRequestAsync<GetSelectedDeckResponse>("Collection/GetSelectedDeck", deckPacket);
         var response = await task;
 
@@ -56,7 +68,7 @@ public class UI_BattlePopupWolf : UI_Popup
         }
         else
         {
-            Managers.User.SaveDeck(response.Deck);
+            _userService.SaveDeck(response.Deck); 
             Managers.Map.MapId = 1;
             Managers.Scene.LoadScene(Define.Scene.MatchMaking);
             Managers.Clear();
@@ -67,10 +79,11 @@ public class UI_BattlePopupWolf : UI_Popup
     {
         var deckPacket = new GetSelectedDeckRequired
         {
-            AccessToken = Managers.User.AccessToken,
-            Camp = (int)Managers.User.DeckSheep.Camp,
-            DeckNumber = Managers.User.DeckSheep.DeckNumber,
+            AccessToken = _tokenService.GetAccessToken(),
+            Camp = (int)User.Instance.DeckSheep.Camp,
+            DeckNumber = User.Instance.DeckSheep.DeckNumber,
         };
+        
         var task = Managers.Web.SendPostRequestAsync<GetSelectedDeckResponse>("Collection/GetSelectedDeck", deckPacket);
         var response = await task;
 
@@ -80,7 +93,7 @@ public class UI_BattlePopupWolf : UI_Popup
         }
         else
         {
-            Managers.User.SaveDeck(response.Deck);
+            _userService.SaveDeck(response.Deck); 
             Managers.Map.MapId = 2;
             Managers.Scene.LoadScene(Define.Scene.MatchMaking);
             Managers.Clear();

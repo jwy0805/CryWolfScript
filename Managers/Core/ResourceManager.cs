@@ -65,13 +65,19 @@ public class ResourceManager
             Debug.Log($"Failed to load Prefab : {path}");
             return null;
         }
+
+        var installer = new ServiceInstaller();
+
+        // Services that are needed for the entire project are registered
+        var projectContext = ProjectContext.Instance.Container;
+        installer.CreateFactoryOnProjectContext(projectContext);
         
-        var container = ProjectContext.Instance.Container;
-        container.Bind<IUserService>().To<UserService>().AsSingle();
-        container.Bind<IWebService>().To<WebService>().AsSingle();
-        container.Bind<ITokenService>().To<TokenService>().AsSingle();
-        container.Bind<LoginViewModel>().AsTransient();
-        var instance = container.InstantiatePrefab(original, parent);
+        // Services that are needed for the scene are registered (especially view models)
+        var sceneContext = Object.FindObjectOfType<SceneContext>().Container;
+        installer.CreateFactory(path, sceneContext);
+        
+        var instance = sceneContext.InstantiatePrefab(original, parent);
+        
         return instance;
     }
 

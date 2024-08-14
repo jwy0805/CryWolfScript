@@ -1,11 +1,21 @@
+using System;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Zenject;
+
+/*
+ * Last Modified : 24. 08. 14
+ * Version : 1.0
+ */
 
 public class UI_DeckChangePopup : UI_Popup
 {
+    private DeckViewModel _deckVm;
+    private IUserService _userService;
+
     private UI_MainLobby _mainLobby;
     
     public Card SelectedCard { get; set; }
@@ -31,6 +41,13 @@ public class UI_DeckChangePopup : UI_Popup
     private enum Texts
     {
         
+    }
+    
+    [Inject]
+    public void Construct(IUserService userService, DeckViewModel deckVm)
+    {
+        _userService = userService;
+        _deckVm = deckVm;
     }
     
     protected override void Init()
@@ -67,7 +84,7 @@ public class UI_DeckChangePopup : UI_Popup
     private void SetDeckUiInPopup()
     {
         var parent = GetImage((int)Images.Deck).transform;
-        var deck = Util.Camp == Camp.Sheep ? Managers.User.DeckSheep : Managers.User.DeckWolf;
+        var deck = _deckVm.GetDeck(Util.Camp);
         foreach (var unit in deck.UnitsOnDeck)
         {
             var cardFrame = Util.GetCardResources(unit, parent, 0, OnChangeDeck);
@@ -88,9 +105,10 @@ public class UI_DeckChangePopup : UI_Popup
     
     // Event Methods
     private void OnChangeDeck(PointerEventData data)
-    {   // 실제 덱이 수정되고, DeckChangeScrollPopup으로 넘어감
+    {   
+        // 실제 덱이 수정되고, DeckChangeScrollPopup으로 넘어감
         if (data.pointerPress.TryGetComponent(out Card card) == false) return;
-        _mainLobby.UpdateDeck(card, SelectedCard);
+        _deckVm.UpdateDeck(card, SelectedCard);
         Managers.UI.ShowPopupUI<UI_DeckChangeScrollPopup>();
     }
     

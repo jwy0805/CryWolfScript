@@ -11,7 +11,7 @@ public class ResultScene : BaseScene
         base.Init();
 
         SceneType = Define.Scene.Result;
-        _sceneUI = Managers.UI.ShowSceneUI<UI_Result>();
+        Managers.UI.ShowSceneUI<UI_Result>();
     }
 
     public override void Clear()

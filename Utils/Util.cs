@@ -13,7 +13,7 @@ using Object = UnityEngine.Object;
 public class Util
 {
     public static Camp Camp = Camp.Sheep;
-    public static UserManager.Deck Deck = new();
+    public static Deck Deck = new();
     
     public static T GetOrAddComponent<T>(GameObject go) where T : Component
     {
@@ -87,7 +87,8 @@ public class Util
         }
     }
     
-    public static GameObject GetCardResources(UnitInfo unitInfo, Transform parent, float cardSize = 0, Action<PointerEventData> action = null)
+    public static GameObject GetCardResources(
+        UnitInfo unitInfo, Transform parent, float cardSize = 0, Action<PointerEventData> action = null)
     {
         var cardFrame = Managers.Resource.Instantiate("UI/Deck/CardFrame", parent);
         var unitInCard = cardFrame.transform.Find("CardUnit").gameObject;
@@ -96,7 +97,8 @@ public class Util
         card.UnitInfo = unitInfo;
         
         cardFrame.GetComponent<Image>().sprite = SetCardFrame(unitInfo.Class);
-        unitInCard.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>($"Sprites/Portrait/{unitInfo.Id.ToString()}");
+        unitInCard.GetComponent<Image>().sprite = 
+            Managers.Resource.Load<Sprite>($"Sprites/Portrait/{unitInfo.Id.ToString()}");
 
         if (cardSize != 0)
         {

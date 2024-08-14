@@ -11,12 +11,12 @@ public class LoginViewModel
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
     
-    public Action OnLoginFailed;
+    public event Action OnLoginFailed;
 
     public string UserAccount
     {
-        get => _userService.UserAccount;
-        set => _userService.UserAccount = value;
+        get => User.Instance.UserAccount;
+        set => User.Instance.UserAccount = value;
     }
     public string Password { get; set; }
     

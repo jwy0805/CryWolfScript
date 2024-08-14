@@ -6,10 +6,17 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Zenject;
 using Image = UnityEngine.UI.Image;
+
+/* Last Modified : 24. 08. 14
+   * Version : 1.0
+   */
 
 public class UI_CardClickPopup : UI_Popup
 {
+    private IUserService _userService;
+    
     private Card _selectedCard;
     public Vector3 CardPosition { get; set; }
     public Vector2 Size { get; set; }
@@ -45,6 +52,12 @@ public class UI_CardClickPopup : UI_Popup
     {
         UnitNameText,
         UnitSelectText,
+    }
+    
+    [Inject]
+    public void Construct(IUserService userService)
+    {
+        _userService = userService;
     }
     
     protected override void Init()
@@ -83,8 +96,8 @@ public class UI_CardClickPopup : UI_Popup
         if (SelectedCard.transform.parent.name == "Deck") unitSelectText.text = "CHANGE";
         
         var deck = Util.Camp == Camp.Sheep 
-            ? Managers.User.DeckSheep.UnitsOnDeck 
-            : Managers.User.DeckWolf.UnitsOnDeck;
+            ? User.Instance.DeckSheep.UnitsOnDeck 
+            : User.Instance.DeckWolf.UnitsOnDeck;
         var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == UnitInfo.Id);
         GetButton((int)Buttons.UnitSelectButton).interactable = index == -1 || FromDeck;
     }

@@ -1,15 +1,17 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Zenject;
+using Object = UnityEngine.Object;
 
 public class UIManager
 {
     public readonly List<UI_Popup> PopupList = new();
     
     private int _order = 10;
-    private UI_Scene _sceneUI = null;
+    // private UI_Scene _sceneUI = null;
     
     public GameObject Root
     {
@@ -75,21 +77,27 @@ public class UIManager
         return Util.GetOrAddComponent<T>(gameObject);
     }
 
-    public T ShowSceneUI<T>(string name = null) where T : UI_Scene
+    public void ShowSceneUI<T>(string name = null) where T : UI_Scene
     {
         if (string.IsNullOrEmpty(name))
         {
             name = typeof(T).Name;
         }
-
-        var sceneUI = Managers.Resource.InstantiateFromContainer($"UI/Scene/{name}", Root.transform);
-        // GameObject gameObject = Managers.Resource.Instantiate($"UI/Scene/{name}");
-        // T sceneUI = Util.GetOrAddComponent<T>(gameObject);
-        _sceneUI = sceneUI.GetComponent<T>();
         
-        // gameObject.transform.SetParent(Root.transform);
+        Managers.Resource.InstantiateFromContainer($"UI/Scene/{name}", Root.transform);
+    }
+    
+    private Type GetType<T>()
+    {
+        var name = typeof(T).Name;
 
-        return sceneUI.GetComponent<T>();
+        switch (name)
+        {
+            case "UI_Login":
+                return typeof(LoginViewModel);
+        }
+
+        return null;
     }
     
     public T ShowPopupUI<T>(string name = null) where T : UI_Popup
@@ -104,6 +112,9 @@ public class UIManager
         PopupList.Add(popup);
         
         gameObject.transform.SetParent(Root.transform);
+
+        var sceneContext = Object.FindObjectOfType<SceneContext>().Container;
+        sceneContext.Inject(popup);
 
         return popup;
     }
@@ -165,6 +176,6 @@ public class UIManager
     public void Clear()
     {
         CloseAllPopupUI();
-        _sceneUI = null;
+        // _sceneUI = null;
     }
 }

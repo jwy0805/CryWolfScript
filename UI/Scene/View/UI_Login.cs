@@ -41,7 +41,8 @@ public class UI_Login : UI_Scene
     public void Construct(LoginViewModel viewModel)
     {
         _viewModel = viewModel;
-        _viewModel.OnLoginFailed = ClearPasswordText;
+        _viewModel.OnLoginFailed -= ClearPasswordText;
+        _viewModel.OnLoginFailed += ClearPasswordText;
     }
     
     protected override void Init()

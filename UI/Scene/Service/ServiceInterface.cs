@@ -1,15 +1,19 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 public interface IUserService
 {
-    string UserAccount { get; set; }
-    string AccessToken { get; }
-    string RefreshToken { get; }
+    void LoadOwnedUnit(UnitInfo unitInfo);
+    void LoadNotOwnedUnit(UnitInfo unitInfo);
+    void LoadDeck(DeckInfo deckInfo);
+    void SaveDeck(DeckInfo deckInfo);
+    void BindDeck();
 }
 
 public interface IWebService
 {
+    Env Environment { get; set; }
     Task<T> SendWebRequestAsync<T>(string url, string method, object obj);
     Task SendWebRequest<T>(string url, string method, object obj, Action<T> responseAction);
 }
