@@ -31,8 +31,8 @@ public class UI_NotifyPopup : UI_Popup
         base.Init();
         
         BindObjects();
-        SetButtonEvents();
-        SetUI();
+        InitButtonEvents();
+        InitUI();
     }
     
     private void OnNotifyButtonClicked(PointerEventData data)
@@ -48,12 +48,12 @@ public class UI_NotifyPopup : UI_Popup
         Bind<Image>(typeof(Images));
     }
 
-    protected override void SetButtonEvents()
+    protected override void InitButtonEvents()
     {
         GetButton((int)Buttons.NotifyButton).gameObject.BindEvent(OnNotifyButtonClicked);
     }
     
-    protected override void SetUI()
+    protected override void InitUI()
     {
         SetObjectSize(GetImage((int)Images.WolfIcon).gameObject, 0.25f);
         GetText((int)Texts.NotifyText).text = Failed ? "Create Failed" : "Create Success";

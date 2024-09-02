@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Zenject;
 
 public class UI_SignUpPopup : UI_Popup
 {
@@ -20,12 +21,20 @@ public class UI_SignUpPopup : UI_Popup
         PasswordConfirm,
     }
 
+    private IWebService _webService;
+    
+    [Inject]
+    public void Construct(IWebService webService)
+    {
+        _webService = webService;
+    }
+    
     protected override void Init()
     {
         base.Init();
         
         BindObjects();
-        SetButtonEvents();
+        InitButtonEvents();
     }
 
     private void OnExitClicked(PointerEventData data)
@@ -51,8 +60,8 @@ public class UI_SignUpPopup : UI_Popup
             notify.Failed = false;
             
             var createAccountPacket = new CreateUserAccountPacketRequired { UserAccount = account, Password = password };
-            var response = await Managers.Web.SendPostRequestAsync<CreateUserAccountPacketResponse>(
-                "UserAccount/CreateAccount", createAccountPacket);
+            var response = await _webService.SendWebRequestAsync<CreateUserAccountPacketResponse>(
+                "UserAccount/CreateAccount", "POST", createAccountPacket);
             if (response.CreateOk == false) Debug.LogError("유저 정보 초기화 오류");
         }
     }
@@ -63,7 +72,7 @@ public class UI_SignUpPopup : UI_Popup
         Bind<TMP_InputField>(typeof(TextInputs));
     }
     
-    protected override void SetButtonEvents()
+    protected override void InitButtonEvents()
     {
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(OnExitClicked);
         GetButton((int)Buttons.SignUpButton).gameObject.BindEvent(OnSignUpClicked);

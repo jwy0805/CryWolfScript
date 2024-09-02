@@ -23,17 +23,17 @@ public class Util
         return component;
     }
     
-    public static T FindChild<T>(GameObject gameObject, string name = null, bool recursive = false, bool includeInactive = false)
+    public static T FindChild<T>(GameObject go, string name = null, bool recursive = false, bool includeInactive = false)
         where T : Object
     {
-        if (gameObject == null)
+        if (go == null)
             return null;
 
         if (recursive == false)
         {
-            for (int i = 0; i < gameObject.transform.childCount; i++)
+            for (var i = 0; i < go.transform.childCount; i++)
             {
-                var transform = gameObject.transform.GetChild(i);
+                var transform = go.transform.GetChild(i);
                 if (!string.IsNullOrEmpty(name) && transform.name != name) continue;
                 var component = transform.GetComponent<T>();
                 if (component != null) return component;
@@ -41,7 +41,7 @@ public class Util
         }
         else
         {
-            return gameObject.GetComponentsInChildren<T>(includeInactive)
+            return go.GetComponentsInChildren<T>(includeInactive)
                 .FirstOrDefault(component => string.IsNullOrEmpty(name) || component.name == name);
         }
 
@@ -54,6 +54,19 @@ public class Util
         return transform == null ? null : transform.gameObject;
     }
 
+    public static List<GameObject> FindChildren(GameObject go, string name = null)
+    {
+        var foundObjects = new List<GameObject>();
+        for (var i = 0; i < go.transform.childCount; i++)
+        {
+            var transform = go.transform.GetChild(i);
+            if (!string.IsNullOrEmpty(name) && transform.name != name) continue;
+            foundObjects.Add(transform.gameObject);
+        }
+
+        return foundObjects;
+    }
+    
     public static Vector3 NearestCell(Vector3 worldPosition)
     {
         Vector3 cellPos = Managers.Map.CurrentGrid.CellToWorld(Managers.Map.CurrentGrid.WorldToCell(worldPosition));

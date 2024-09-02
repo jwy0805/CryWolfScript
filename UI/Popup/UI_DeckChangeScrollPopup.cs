@@ -72,9 +72,9 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
     #endregion
     
     [Inject]
-    public void Construct(DeckViewModel deckVm)
+    public void Construct(DeckViewModel deckViewModel)
     {
-        _deckVm = deckVm;
+        _deckVm = deckViewModel;
     }
     
     protected override void Init()
@@ -83,8 +83,8 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         
         _mainLobby = GameObject.Find("UI_MainLobby(Clone)").GetComponent<UI_MainLobby>();
         BindObjects();
-        SetButtonEvents();
-        SetUI();
+        InitButtonEvents();
+        InitUI();
         SetCollectionInPopup();
         SetDeckInPopup();
     }
@@ -96,7 +96,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         Bind<TextMeshProUGUI>(typeof(Texts));
     }
 
-    protected override void SetButtonEvents()
+    protected override void InitButtonEvents()
     {
         GetImage((int)Images.PopupPanel).gameObject.BindEvent(OnPointerClick);
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(CloseAllPopup);
@@ -109,7 +109,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         GetButton((int)Buttons.DeckButton5).gameObject.BindEvent(OnDeckButtonClicked);
     }
 
-    protected override void SetUI()
+    protected override void InitUI()
     {
         GetButton((int)Buttons.DeckButton1).GetComponent<DeckButtonInfo>().DeckIndex = 1;
         GetButton((int)Buttons.DeckButton2).GetComponent<DeckButtonInfo>().DeckIndex = 2;

@@ -65,8 +65,8 @@ public class UI_CardClickPopup : UI_Popup
         base.Init();
         
         BindObjects();
-        SetButtonEvents();
-        SetUI();
+        InitButtonEvents();
+        InitUI();
         SetCardInPopup();
     }
 
@@ -77,7 +77,7 @@ public class UI_CardClickPopup : UI_Popup
         Bind<TextMeshProUGUI>(typeof(Texts));
     }
 
-    protected override void SetButtonEvents()
+    protected override void InitButtonEvents()
     {
         GetButton((int)Buttons.UnitInfoButton).gameObject.BindEvent(OnInfoClicked);
         var selectButton = GetButton((int)Buttons.UnitSelectButton);
@@ -86,7 +86,7 @@ public class UI_CardClickPopup : UI_Popup
         GetText((int)Texts.UnitNameText).gameObject.BindEvent(ClosePopup);
     }
     
-    protected override void SetUI()
+    protected override void InitUI()
     {
         GetImage((int)Images.CardClickPanel).TryGetComponent(out RectTransform rt);
         rt.position = CardPosition;

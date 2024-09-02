@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using Zenject;
 using Object = UnityEngine.Object;
 
@@ -68,7 +69,7 @@ public class UIManager
             name = typeof(T).Name;
         }
 
-        GameObject gameObject = Managers.Resource.Instantiate($"UI/SubItem/{name}");
+        GameObject gameObject = Managers.Resource.Instantiate($"UI/InGame/SubItem/{name}");
         if (parent != null)
         {
             gameObject.transform.SetParent(parent);
@@ -107,8 +108,27 @@ public class UIManager
             name = typeof(T).Name;
         }
 
-        GameObject gameObject = Managers.Resource.Instantiate($"UI/Popup/{name}");
-        T popup = Util.GetOrAddComponent<T>(gameObject);
+        var gameObject = Managers.Resource.Instantiate($"UI/Popup/{name}");
+        var popup = Util.GetOrAddComponent<T>(gameObject);
+        PopupList.Add(popup);
+        
+        gameObject.transform.SetParent(Root.transform);
+
+        var sceneContext = Object.FindObjectOfType<SceneContext>().Container;
+        sceneContext.Inject(popup);
+
+        return popup;
+    }
+    
+    public T ShowPopupUiInGame<T>(string name = null) where T : UI_Popup
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            name = typeof(T).Name;
+        }
+
+        var gameObject = Managers.Resource.Instantiate($"UI/InGame/Popup/{name}");
+        var popup = Util.GetOrAddComponent<T>(gameObject);
         PopupList.Add(popup);
         
         gameObject.transform.SetParent(Root.transform);
@@ -142,6 +162,17 @@ public class UIManager
         popup = null;
         _order--;
     }
+
+    public void ClosePopupUI<T>()
+    {
+        if (PopupList.Count == 0) return;
+        
+        var popup = PopupList.FirstOrDefault(pop => pop is T);
+        if (popup == null) return;
+        PopupList.Remove(popup);
+        Managers.Resource.Destroy(popup.gameObject);
+        _order--;
+    }
     
     public void ClosePopupUI(UI_Popup popup, int delay)
     {
@@ -172,7 +203,7 @@ public class UIManager
             ClosePopupUI();
         }
     }
-
+    
     public void Clear()
     {
         CloseAllPopupUI();

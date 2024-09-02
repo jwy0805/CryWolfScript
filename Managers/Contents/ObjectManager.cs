@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using Cinemachine;
 using Google.Protobuf.Protocol;
 using UnityEngine;
+using Zenject;
+using Object = UnityEngine.Object;
 
 public class ObjectManager
 {
     public MyPlayerController MyPlayer { get; set; }
-    private Dictionary<int, GameObject> _objects = new();
+    private readonly Dictionary<int, GameObject> _objects = new();
 
     public static GameObjectType GetObjectTypeById(int id)
     {
@@ -27,8 +29,10 @@ public class ObjectManager
                 Managers.Network.Send(new C_EnterGame { IsSheep = isSheep });
                 if (myPlayer)
                 {
-                    go = Managers.Game.Spawn(GameObjectType.Player, "PlayerCharacter");
-                    go.AddComponent<MyPlayerController>();
+                    go = Managers.Game.Spawn("PlayerCharacter");
+                    var controller = go.AddComponent<MyPlayerController>();
+                    Object.FindObjectOfType<SceneContext>().Container.Inject(controller);
+                    
                     go.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
                     go.name = info.Name;
                     _objects.Add(info.ObjectId, go);
@@ -42,15 +46,14 @@ public class ObjectManager
                     MyPlayer.PosInfo.PosX = pos.x;
                     MyPlayer.PosInfo.PosY = pos.y;
                     MyPlayer.PosInfo.PosZ = pos.z;
-                    
-                    UI_Game ui = GameObject.FindWithTag("UI").GetComponent<UI_Game>();
+
+                    var obj = GameObject.FindWithTag("UI");
+                    var ui = obj.GetComponent<UI_GameSingleWay>();
                     ui.Player = MyPlayer;
                     Managers.Network.Send(new C_SetTextUI { Init = true });
                     
-                    GameObject virtualCamera = GameObject.Find("FollowCam");
-                    CinemachineVirtualCamera followCam = virtualCamera.GetComponent<CinemachineVirtualCamera>();
-                    
-                    GameObject cameraFocus = Managers.Resource.Instantiate("CameraFocus");
+                    var followCam = GameObject.Find("FollowCam").GetComponent<CinemachineVirtualCamera>();
+                    var cameraFocus = Managers.Resource.Instantiate("CameraFocus");
                     cameraFocus.transform.position = new Vector3(pos.x, pos.y, pos.z < 0 ? pos.z + 10 : pos.z - 10);
                     
                     var tf = cameraFocus.transform;
@@ -66,7 +69,7 @@ public class ObjectManager
                 }
                 else
                 {
-                    go = Managers.Game.Spawn(GameObjectType.Player, "PlayerCharacter");
+                    go = Managers.Game.Spawn("PlayerCharacter");
                     go.AddComponent<PlayerController>();
                     go.name = info.Name;
                     _objects.Add(info.ObjectId, go);
@@ -78,7 +81,7 @@ public class ObjectManager
                 break;
             
             case GameObjectType.Tower:
-                go = Managers.Game.Spawn(GameObjectType.Tower, $"Towers/{info.Name}");
+                go = Managers.Game.Spawn($"Towers/{info.Name}");
                 _objects.Add(info.ObjectId, go);
                 var towerPos = info.PosInfo;
                 go.transform.position = new Vector3(towerPos.PosX, towerPos.PosY, towerPos.PosZ);
@@ -89,7 +92,7 @@ public class ObjectManager
                 break;
             
             case GameObjectType.Monster:
-                go = Managers.Game.Spawn(GameObjectType.Monster, $"Monsters/{info.Name}");
+                go = Managers.Game.Spawn($"Monsters/{info.Name}");
                 _objects.Add(info.ObjectId, go);
                 var monPos = info.PosInfo;
                 go.transform.position = new Vector3(monPos.PosX, monPos.PosY, monPos.PosZ);
@@ -100,7 +103,7 @@ public class ObjectManager
                 break;
             
             case GameObjectType.MonsterStatue:
-                go = Managers.Game.Spawn(GameObjectType.MonsterStatue, $"Statues/{info.Name}");
+                go = Managers.Game.Spawn($"Statues/{info.Name}");
                 _objects.Add(info.ObjectId, go);
                 PositionInfo statuePos = info.PosInfo;
                 go.transform.position = new Vector3(statuePos.PosX, statuePos.PosY, statuePos.PosZ);
@@ -112,7 +115,7 @@ public class ObjectManager
                 break;
             
             case GameObjectType.Fence:
-                go = Managers.Game.Spawn(GameObjectType.Fence, $"{info.Name}");
+                go = Managers.Game.Spawn($"{info.Name}");
                 _objects.Add(info.ObjectId, go);
                 PositionInfo fencePos = info.PosInfo;
                 go.transform.position = new Vector3(fencePos.PosX, fencePos.PosY, fencePos.PosZ);
@@ -124,7 +127,7 @@ public class ObjectManager
                 break;
             
             case GameObjectType.Sheep:
-                go = Managers.Game.Spawn(GameObjectType.Sheep, $"{info.Name}");
+                go = Managers.Game.Spawn($"{info.Name}");
                 _objects.Add(info.ObjectId, go);
                 PositionInfo sheepPos = info.PosInfo;
                 go.transform.position = new Vector3(sheepPos.PosX, sheepPos.PosY, sheepPos.PosZ);
@@ -136,13 +139,13 @@ public class ObjectManager
                 break;
             
             case GameObjectType.Effect:
-                go = Managers.Game.Spawn(GameObjectType.Effect, $"Effects/{info.Name}");
+                go = Managers.Game.Spawn($"Effects/{info.Name}");
                 _objects.Add(info.ObjectId, go);
                 go.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
                 break;
             
             case GameObjectType.Projectile:
-                go = Managers.Game.Spawn(GameObjectType.Projectile, $"Effects/{info.Name}");
+                go = Managers.Game.Spawn($"Effects/{info.Name}");
                 _objects.Add(info.ObjectId, go);
                 if (go.TryGetComponent(out ProjectileController prc))
                 {
@@ -152,7 +155,7 @@ public class ObjectManager
                 break;
             
             case GameObjectType.Resource:
-                go = Managers.Game.Spawn(GameObjectType.Resource, $"Items/{info.Name}");
+                go = Managers.Game.Spawn($"Items/{info.Name}");
                 _objects.Add(info.ObjectId, go);
                 ResourceController rc = go.GetComponent<ResourceController>();
                 rc.Id = info.ObjectId;
@@ -160,7 +163,7 @@ public class ObjectManager
                 break;
             
             case GameObjectType.Portal:
-                go = Managers.Game.Spawn(GameObjectType.Portal, $"{info.Name}");
+                go = Managers.Game.Spawn($"{info.Name}");
                 _objects.Add(info.ObjectId, go);
                 PositionInfo portalPos = info.PosInfo;
                 go.transform.position = new Vector3(portalPos.PosX, portalPos.PosY, portalPos.PosZ);
@@ -179,7 +182,7 @@ public class ObjectManager
     {   
         var parent = FindById(parentId);
         if (parent == null) return;
-        var go = Managers.Game.Spawn(GameObjectType.Projectile, $"Effects/{info.Name}", 
+        var go = Managers.Game.Spawn($"Effects/{info.Name}", 
             new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ));
         _objects.Add(info.ObjectId, go);
         if (go.TryGetComponent(out ProjectileController prc) == false) return;
@@ -192,7 +195,7 @@ public class ObjectManager
     public void AddEffect(ObjectInfo info, int parentId, bool trailingParent, int duration)
     {
         var parent = FindById(parentId);
-        GameObject go = Managers.Game.Spawn(GameObjectType.Effect, $"Effects/{info.Name}");
+        GameObject go = Managers.Game.Spawn($"Effects/{info.Name}");
         _objects.Add(info.ObjectId, go);
         if (go.TryGetComponent(out EffectController ec) == false) return; 
         ec.Id = info.ObjectId;

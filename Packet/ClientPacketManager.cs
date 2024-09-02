@@ -95,8 +95,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SUpgradeSlot, PacketHandler.S_UpgradeSlotHandler);		
 		_onRecv.Add((ushort)MessageId.SSetUpgradePopup, MakePacket<S_SetUpgradePopup>);
 		_handler.Add((ushort)MessageId.SSetUpgradePopup, PacketHandler.S_SetUpgradePopupHandler);		
-		_onRecv.Add((ushort)MessageId.SSetUpgradeButton, MakePacket<S_SetUpgradeButton>);
-		_handler.Add((ushort)MessageId.SSetUpgradeButton, PacketHandler.S_SetUpgradeButtonHandler);		
+		_onRecv.Add((ushort)MessageId.SSetUpgradeButtonCost, MakePacket<S_SetUpgradeButtonCost>);
+		_handler.Add((ushort)MessageId.SSetUpgradeButtonCost, PacketHandler.S_SetUpgradeButtonCostHandler);		
 		_onRecv.Add((ushort)MessageId.SSendWarningInGame, MakePacket<S_SendWarningInGame>);
 		_handler.Add((ushort)MessageId.SSendWarningInGame, PacketHandler.S_SendWarningInGameHandler);		
 		_onRecv.Add((ushort)MessageId.SShowResultScene, MakePacket<S_ShowResultScene>);

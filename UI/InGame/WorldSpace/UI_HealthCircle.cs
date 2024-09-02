@@ -52,19 +52,13 @@ public class UI_HealthCircle : MonoBehaviour
         // Hp
         float hpRatio = _cc.Hp / (float)_cc.MaxHp * 100;
         _hpSlider.value = hpRatio;
-        switch (hpRatio)
+        _hpSliderFill.color = hpRatio switch
         {
-            case > 70.0f:
-                _hpSliderFill.color = Color.green;
-                break;
-            case < 30.0f:
-                _hpSliderFill.color = Color.red;
-                break;
-            default:
-                _hpSliderFill.color = Color.yellow;
-                break;
-        }
-        
+            > 70.0f => Color.green,
+            < 30.0f => Color.red,
+            _ => Color.yellow
+        };
+
         // Mp
         float mpRatio = _cc.MaxMp != 1 ? _cc.Mp / (float)_cc.MaxMp * 100 : 0;
         _mpSlider.value = mpRatio;

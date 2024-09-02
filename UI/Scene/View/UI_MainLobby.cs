@@ -152,10 +152,10 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         base.Init();
 
         BindObjects();
-        SetButtonEvents();
+        InitButtonEvents();
 
         Util.Camp = Camp.Sheep;
-        SetUI();
+        InitUI();
         _lobbyVm.SetCurrentPage(2);
     }
 
@@ -365,7 +365,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         Bind<Image>(typeof(Images));
     }
 
-    protected override void SetButtonEvents()
+    protected override void InitButtonEvents()
     {
         GetButton((int)Buttons.CampButton).gameObject.BindEvent(OnCampButtonClicked);
         GetButton((int)Buttons.SingleButton).gameObject.BindEvent(OnSingleClicked);
@@ -381,7 +381,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         GetButton((int)Buttons.CollectionTabButton).gameObject.BindEvent(OnCollectionTabClicked);
     }
     
-    protected override void SetUI()
+    protected override void InitUI()
     {
         SetObjectSize(GetButton((int)Buttons.CampButton).gameObject, 1.0f);
         SetObjectSize(GetImage((int)Images.GoldImage).gameObject, 1.2f);

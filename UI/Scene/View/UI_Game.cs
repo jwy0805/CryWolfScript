@@ -1,11 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+using Google.Protobuf.Protocol;
 
-public partial class UI_Game
+public partial class UI_Game : UI_Scene
 {
     #region Enum
-
+    
     protected enum CommonButtonsD
     {
         CapacityButton,
@@ -83,61 +81,13 @@ public partial class UI_Game
         UnitDeleteButton
     }   
     
-    protected enum CommonButtonsS
-    {
-        CapacityButton,
-        ResourceButton,
-        SubResourceButton,
-        MenuButton,
-        CameraButton,
-        UpgradeButton,
-    }
-    protected enum CommonImagesS
-    {
-        UnitPanel0,
-        UnitPanel1,
-        UnitPanel2,
-        UnitPanel3,
-        UnitPanel4,
-        UnitPanel5,
-        
-        SkillPanel,
-        SkillWindow,
-        CapacityWindow,
-        SubResourceWindow,
-        UnitControlWindow,
-    }
-    protected enum CommonTextsS
-    {
-        CurrentName,
-        CurrentPercent,
-        
-        ResourceText,
-        SubResourceText,
-        NorthCapacityText,
-    }
-
-    protected enum UnitButtonsS
-    {
-        NorthUnitButton0,
-        NorthUnitButton1,
-        NorthUnitButton2,
-        NorthUnitButton3,
-        NorthUnitButton4,
-        NorthUnitButton5,
-        NorthUnitButton6,
-        NorthUnitButton7,
-        NorthUnitButton8,
-        NorthUnitButton9,
-        NorthUnitButton10,
-        NorthUnitButton11,
-    }
-
-    protected enum UnitControlButtonsS
-    {
-        UnitUpgradeButton,
-        UnitDeleteButton
-    }
-    
     #endregion
+    
+    public virtual void RegisterInSlot(S_RegisterInSlot packet) { }
+    
+    public virtual void RegisterMonsterInSlot(S_RegisterMonsterInSlot packet) { }
+
+    protected virtual void DeleteSlot(bool inactive = false) { }
+    
+    public virtual void UpgradeSlot(S_UpgradeSlot packet) { }
 }

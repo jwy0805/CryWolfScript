@@ -40,7 +40,6 @@ public class DeckViewModel
         
         var deckTask = _webService.SendWebRequestAsync<GetInitDeckPacketResponse>(
             "Collection/GetDecks", "POST", deckPacket);
-        
         await deckTask;
         
         var deckResponse = deckTask.Result;

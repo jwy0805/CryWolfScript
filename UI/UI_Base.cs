@@ -9,13 +9,13 @@ using Object = UnityEngine.Object;
 
 public abstract class UI_Base : MonoBehaviour
 {
-    protected readonly Dictionary<Type, Object[]> Objects = new Dictionary<Type, Object[]>();
+    protected readonly Dictionary<Type, Object[]> Objects = new();
 
     protected abstract void Init();
     protected virtual void BindObjects() { }
-    protected virtual void SetButtonEvents() { }
-    protected virtual void SetBackgroundSize(RectTransform rectTransform) { }
-    protected virtual void SetUI() { }
+    protected virtual void InitButtonEvents() { }
+    protected virtual void InitBackgroundSize(RectTransform rectTransform) { }
+    protected virtual void InitUI() { }
     
     private void Start()
     {
@@ -45,8 +45,41 @@ public abstract class UI_Base : MonoBehaviour
             }
         }
     }
+    
+    // If needed to use both methods - BindData<T> and Bind<T> - BindData<T> should be called first
+    protected virtual void BindData<T>(Type enumType, Dictionary<string, GameObject> dict) where T : Object
+    {
+        Bind<T>(enumType);
+        
+        if (typeof(T) == typeof(Button))
+        {
+            for (int i = 0; i < Objects[typeof(T)].Length; i++)
+            {
+                GameObject btn = GetButton(i).gameObject;
+                dict.Add(btn.name, btn);
+            }
+        }
+        else if (typeof(T) == typeof(Image))
+        {
+            for (int i = 0; i < Objects[typeof(T)].Length; i++)
+            {
+                GameObject img = GetImage(i).gameObject;
+                dict.Add(img.name, img);
+            }
+        }
+        else if (typeof(T) == typeof(TextMeshProUGUI))
+        {
+            for (int i = 0; i < Objects[typeof(T)].Length; i++)
+            {
+                GameObject txt = GetText(i).gameObject;
+                dict.Add(txt.name, txt);
+            }
+        }
+        
+        Objects.Clear();
+    }
 
-    protected T Get<T>(int idx) where T : Object
+    private T Get<T>(int idx) where T : Object
     {
         if (Objects.TryGetValue(typeof(T), out var objects) == false)
         {
@@ -118,7 +151,7 @@ public abstract class UI_Base : MonoBehaviour
     }
     
     // Rectangular
-    protected void SetObjectSize(GameObject go, float xParam = 1.0f, float yParam = 1.0f)
+    protected void SetObjectSize(GameObject go, float xParam, float yParam)
     {
         Transform parent = go.transform.parent;
         RectTransform rt = go.GetComponent<RectTransform>();

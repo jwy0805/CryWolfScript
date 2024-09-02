@@ -14,28 +14,25 @@ public class Managers : MonoBehaviour
     private readonly MapManager _map = new();
     private readonly ObjectManager _obj = new();
     private readonly NetworkManager _network = new();
-    private readonly WebManager _web = new();
-    private readonly UserManager _user = new();
+    private readonly EventManager _event = new();
 
     public static GameManager Game => Instance._game;
     public static MapManager Map => Instance._map;
     public static ObjectManager Object => Instance._obj;
     public static NetworkManager Network => Instance._network;
-    public static WebManager Web => Instance._web;
-    public static UserManager User => Instance._user;
+    public static EventManager Event => Instance._event;
 
     #endregion
     
     #region Core
 
-    private DataManager _data = new();
-    private InputManager _input = new();
-    private PoolManager _pool = new();
-    private ResourceManager _resource = new();
-    private SoundManager _sound = new();
-    private SceneManagerEx _scene = new();
-    private TokenManager _token = new();
-    private UIManager _ui = new();
+    private readonly DataManager _data = new();
+    private readonly InputManager _input = new();
+    private readonly PoolManager _pool = new();
+    private readonly ResourceManager _resource = new();
+    private readonly SoundManager _sound = new();
+    private readonly SceneManagerEx _scene = new();
+    private readonly UIManager _ui = new();
 
     public static DataManager Data => Instance._data;
     public static InputManager Input => Instance._input;
@@ -43,7 +40,6 @@ public class Managers : MonoBehaviour
     public static ResourceManager Resource => Instance._resource;
     public static SoundManager Sound => Instance._sound;
     public static SceneManagerEx Scene => Instance._scene;
-    public static TokenManager Token => Instance._token;
     public static UIManager UI => Instance._ui;
 
     #endregion

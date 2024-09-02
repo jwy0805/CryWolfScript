@@ -22,6 +22,12 @@ public class ServiceInstaller
             case "UI/Scene/UI_MainLobby":
                 new MainLobbyServiceFactory().Bind(container);
                 break;
+            case "UI/Scene/UI_MatchMaking":
+                new MatchMakingServiceFactory().Bind(container);
+                break;
+            case "UI/Scene/UI_GameSingleWay":
+                new GameServiceFactory().Bind(container);
+                break;
         }
     }
 
@@ -52,5 +58,22 @@ public class MainLobbyServiceFactory : IServiceFactory
         container.Bind<MainLobbyViewModel>().AsTransient();
         container.Bind<DeckViewModel>().AsTransient();
         container.Bind<CollectionViewModel>().AsTransient();
+    }
+}
+
+public class MatchMakingServiceFactory : IServiceFactory
+{
+    public void Bind(DiContainer container)
+    {
+        container.Bind<MatchMakingViewModel>().AsTransient();
+        container.Bind<DeckViewModel>().AsTransient();
+    }
+}
+
+public class GameServiceFactory : IServiceFactory
+{
+    public void Bind(DiContainer container)
+    {
+        container.Bind<GameViewModel>().AsSingle();
     }
 }

@@ -194,12 +194,13 @@ public class PacketHandler
     public static void S_SkillUpgradeHandler(PacketSession session, IMessage packet)
     {
         var upgradePacket = (S_SkillUpgrade)packet;
-        var uiGo = GameObject.FindWithTag("UI");
-        if (uiGo.TryGetComponent(out UI_Game ui) == false) return;
+        var uiObject = GameObject.FindWithTag("UI");
+        if (uiObject.TryGetComponent(out UI_GameSingleWay ui) == false) return;
+        ui.UpgradeSkill(upgradePacket.Skill);
         
-        var skillButton = Util.FindChild(ui.gameObject,
-            string.Concat(upgradePacket.Skill.ToString(), "Button"), true);
-        Util.SetAlpha(skillButton.GetComponent<Image>(), 1.0f);
+        // var skillButton = Util.FindChild(ui.gameObject,
+        //     string.Concat(upgradePacket.Skill.ToString(), "Button"), true);
+        // Util.SetAlpha(skillButton.GetComponent<Image>(), 1.0f);
     }
     
     public static void S_SkillUpdateHandler(PacketSession session, IMessage packet)
@@ -215,17 +216,8 @@ public class PacketHandler
     public static void S_PortraitUpgradeHandler(PacketSession session, IMessage packet)
     {
         var upgradePacket = (S_PortraitUpgrade)packet;
-        var unitName = upgradePacket.UnitId.ToString();
-        var ui = GameObject.FindWithTag("UI").GetComponent<UI_Game>();
-        var mediator = ui.Mediator;
-        var portrait = mediator.CurrentSelectedPortrait;
-        var uiPortrait = portrait.GetComponent<UI_Portrait>();
-        
-        uiPortrait.InitSkillPanel(portrait);
-        uiPortrait.UnitId = upgradePacket.UnitId;
-        uiPortrait.InitSkillPanel(portrait, true);
-        ui.SetUpgradeButton(portrait);
-        portrait.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>($"Sprites/Portrait/{unitName}");
+        var ui = GameObject.FindWithTag("UI").GetComponent<UI_GameSingleWay>();
+        ui.UpgradePortrait(upgradePacket.UnitId.ToString());
     }
 
     public static void S_UnitUpgradeHandler(PacketSession session, IMessage packet)
@@ -333,25 +325,12 @@ public class PacketHandler
 
     public static void S_UnitSpawnPosHandler(PacketSession session, IMessage packet)
     {
-        var spawnPacket = (S_UnitSpawnPos)packet;
-        Managers.Game.PickedButton.GetComponent<Image>().color = spawnPacket.CanSpawn == false
-            ? Color.red 
-            : Color.white; 
-        
-        var dragPortrait = Managers.Game.PickedButton.GetComponent<UI_DragPortrait>();
-        dragPortrait.CanSpawn = spawnPacket.CanSpawn;
-        dragPortrait.ObjectType = spawnPacket.ObjectType;
+        Managers.Event.TriggerEvent("CanSpawn", packet);
     }
     
     public static void S_GetRangesHandler(PacketSession session, IMessage packet)
     {
-        var rangePacket = (S_GetRanges)packet;
-        var ui = GameObject.FindWithTag("UI").GetComponent<UI_Game>();
-        var mediator = ui.Mediator;
-        var portrait = mediator.DraggingObject;
-        var uiDragPortrait = portrait.GetComponent<UI_DragPortrait>();
-        
-        uiDragPortrait.ShowRing(rangePacket.AttackRange, rangePacket.SkillRange);
+        Managers.Event.TriggerEvent("ShowRings", packet);
     }
     
     public static void S_TimeHandler(PacketSession session, IMessage packet)
@@ -435,11 +414,11 @@ public class PacketHandler
         }
     }
 
-    public static void S_SetUpgradeButtonHandler(PacketSession session, IMessage packet)
+    public static void S_SetUpgradeButtonCostHandler(PacketSession session, IMessage packet)
     {
-        var upgradePacket = (S_SetUpgradeButton)packet;
-        var ui = GameObject.FindWithTag("UI").GetComponent<UI_Game>();
-        ui.SetUpgradeButtonText(upgradePacket.Cost);
+        var upgradePacket = (S_SetUpgradeButtonCost)packet;
+        var ui = GameObject.FindWithTag("UI").GetComponent<UI_GameSingleWay>();
+        ui.UpdateUpgradeCost(upgradePacket.Cost);
     }
     
     public static void S_SendWarningInGameHandler(PacketSession session, IMessage packet)

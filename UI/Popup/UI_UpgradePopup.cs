@@ -10,15 +10,18 @@ using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+using Zenject;
 
 public class UI_UpgradePopup : UI_Popup
 {
+    private GameViewModel _gameVm;
+    
     private string _skillName;
-    // private SkillSubject _skillSubject;
     private GameObject _currentSkillButton;
     private int _cost;
 
     public Define.PopupType PopupType { get; set; }
+    
     private enum Buttons
     {
         AcceptButton,
@@ -30,13 +33,19 @@ public class UI_UpgradePopup : UI_Popup
         SkillInfoText,
         CostText,
     }
+
+    [Inject]
+    public void Construct(GameViewModel gameViewModel)
+    {
+        _gameVm = gameViewModel;
+    }
     
     protected override void Init()
     {
         base.Init();
         
         BindObjects();
-        SetButtonEvents();
+        InitButtonEvents();
         PopupType = Define.PopupType.UpgradePopup;
     }
 
@@ -46,7 +55,7 @@ public class UI_UpgradePopup : UI_Popup
         Bind<TextMeshProUGUI>(typeof(Texts));
     }
 
-    protected override void SetButtonEvents()
+    protected override void InitButtonEvents()
     {
         GetButton((int)Buttons.AcceptButton).gameObject.BindEvent(OnAcceptClicked);
         GetButton((int)Buttons.DenyButton).gameObject.BindEvent(OnDenyClicked);
@@ -60,12 +69,7 @@ public class UI_UpgradePopup : UI_Popup
 
     private void OnAcceptClicked(PointerEventData data)
     {
-        var ui = GameObject.FindWithTag("UI").GetComponent<UI_Mediator>();
-        var currentSkillButton = ui.CurrentSelectedSkill;
-        _skillName = currentSkillButton.name.Replace("Button", "");
-        var skill = (Skill)Enum.Parse(typeof(Skill), _skillName);
-        Managers.Network.Send(new C_SkillUpgrade { Skill = skill });
-        Managers.UI.ClosePopupUI();
+        _gameVm.UpgradeSkill();
     }
     
     private void OnDenyClicked(PointerEventData data)

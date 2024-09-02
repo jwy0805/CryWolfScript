@@ -1,32 +1,46 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Google.Protobuf.Protocol;
+using ModestTree;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using Zenject;
 
 public class MyPlayerController : PlayerController
 {
     [SerializeField] private bool axisYInversion;
 
+    private GameViewModel _gameVm;
+    
     private int _resource;
     private bool _arrived;
     private float _lastSendTime;
-    private UI_Mediator _mediator;
 
+    private float _lastClickTime;
+    private const float DoubleClickThreshold = 0.35f;
+    private Vector3 _lastClickPos;
     private bool _isDragging;
     private Vector3 _lastMousePos;
     private GameObject _cameraObject;
 
     public Camp Camp { get; set; }
     public int SelectedUnitId { get; set; }
-
+    
+    [Inject]
+    public void Construct(GameViewModel gameVm)
+    {
+        _gameVm = gameVm;
+    }
+    
     protected override void Init()
     {
         base.Init();
         ObjectType = GameObjectType.Player;
         Managers.Input.MouseAction -= OnMouseEvent;
         Managers.Input.MouseAction += OnMouseEvent;
-        _mediator = GameObject.FindWithTag("UI").GetComponent<UI_Mediator>();
         _cameraObject = GameObject.FindWithTag("CameraFocus");
 
         // Test - Unit Spawn
@@ -62,42 +76,16 @@ public class MyPlayerController : PlayerController
     {
         var ray = Camera.main!.ScreenPointToRay(Input.mousePosition);
         bool raycastHit = Physics.Raycast(ray, out var hit, 100.0f);
-        
+
         switch (evt)
         {
             case Define.MouseEvent.Click:
                 break;
             
             case Define.MouseEvent.PointerDown:
-                if (!raycastHit) return;
-        
+                if (raycastHit == false) { return; }
                 var go = hit.collider.gameObject;
-                var layer = go.layer;
-
-                if (go.TryGetComponent(out UI_Skill _) == false)
-                {
-                    Managers.UI.CloseUpgradePopup();
-                }
-
-                switch (layer)
-                {
-                    case var _ when layer == LayerMask.NameToLayer("Ground"):
-                        _mediator.InitState(go);
-                        break;
-                    case var _ when layer == LayerMask.NameToLayer("Tower"):
-                    case var _ when layer == LayerMask.NameToLayer("Monster"):
-                        ProcessUnitControlWindow(go);
-                        break;
-                    case var _ when layer == LayerMask.NameToLayer("Sheep") || layer == LayerMask.NameToLayer("Fence"):
-                        if (Camp == Camp.Sheep)
-                        {
-                            _mediator.CurrentWindow = _mediator.WindowDictionary["SubResourceWindow"];
-                        }
-                        break;
-                }
-
-                _isDragging = true;
-                _lastMousePos = Input.mousePosition;
+                HandleSingleOrDoubleClick(go);
                 break;
             
             case Define.MouseEvent.PointerUp:
@@ -119,21 +107,155 @@ public class MyPlayerController : PlayerController
                 break;
         }
     }
-
-    private void ProcessUnitControlWindow(GameObject go)
+    
+    private void HandleSingleOrDoubleClick(GameObject go)
     {
-        _mediator.CurrentSelectedUnit = go;
-        
-        if (go.TryGetComponent(out CreatureController creatureController))
+        var currentTime = Time.time;
+        var timeSinceLastClick = currentTime - _lastClickTime;
+
+        if (timeSinceLastClick <= DoubleClickThreshold && Vector3.Distance(_lastClickPos, Input.mousePosition) < 2f)
         {
-            SelectedUnitId = creatureController.Id;
+            OnDoubleClick(go);
+        }
+        else
+        {
+            OnClick(go);
+        }
+
+        _lastClickTime = currentTime;
+        _lastClickPos = Input.mousePosition;
+    }
+
+    private void OnClick(GameObject go)
+    {
+        var layer = go.layer;
+
+        if (go.TryGetComponent(out UI_Skill _) == false)
+        {
+            Managers.UI.CloseUpgradePopup();
+        }
+
+        go.TryGetComponent(out CreatureController cc);
+        switch (layer)
+        {
+            case var _ when layer == LayerMask.NameToLayer("Ground"):
+                Managers.UI.CloseAllPopupUI();
+                _gameVm.TurnOffSelectRing();
+                break;
+                    
+            case var _ when layer == LayerMask.NameToLayer("Tower"):
+                if (Camp == Camp.Sheep)
+                {
+                    AdjustUI(go, GameObjectType.Tower);
+                }
+                break;
+                    
+            case var _ when layer == LayerMask.NameToLayer("Monster"):
+                if (Camp == Camp.Wolf)
+                {
+                    if (_gameVm.CapacityWindow is { ObjectType: GameObjectType.Monster })
+                    {
+                        _gameVm.TurnOnSelectRing(cc.Id);
+                    }
+                    else
+                    {
+                        var window = Managers.UI.ShowPopupUiInGame<UnitControlWindow>();
+                        window.SelectedUnit = go;
+                    }
+                }                
+                break;
             
-            // Control Window
-            if ((Util.Camp == Camp.Sheep && creatureController.ObjectType == GameObjectType.Tower)
-                || (Util.Camp == Camp.Wolf && creatureController.ObjectType == GameObjectType.Monster))
+            case var _ when layer == LayerMask.NameToLayer("MonsterStatue"):
+                if (Camp == Camp.Wolf)
+                {
+                    AdjustUI(go, GameObjectType.MonsterStatue);
+                }
+                break;
+            
+            case var _ when layer == LayerMask.NameToLayer("Fence"):
+                if (Camp == Camp.Sheep)
+                {
+                    if (_gameVm.CapacityWindow is { ObjectType: GameObjectType.Fence })
+                    {
+                        _gameVm.TurnOnSelectRing(cc.Id);
+                    }
+                    else
+                    {
+                        Managers.UI.ShowPopupUiInGame<SkillWindow>();
+                    }
+                }
+                break;
+            
+            case var _ when layer == LayerMask.NameToLayer("Sheep"):
+                if (Camp == Camp.Sheep)
+                {
+                    _gameVm.TurnOffSelectRing();
+                    _gameVm.TurnOnSelectRing(cc.Id);
+                    Managers.UI.ShowPopupUiInGame<SubResourceWindow>();
+                }
+                break;
+        }
+
+        _isDragging = true;
+        _lastMousePos = Input.mousePosition;
+    }
+    
+    private void OnDoubleClick(GameObject go)
+    {
+        Managers.UI.CloseAllPopupUI();
+        CapacityWindow window = null;
+        
+        if (Camp == Camp.Sheep)
+        {
+            switch (go.layer)
             {
-                _mediator.CurrentWindow = _mediator.WindowDictionary["UnitControlWindow"];
+                case var _ when go.layer == LayerMask.NameToLayer("Tower"):
+                    window = Managers.UI.ShowPopupUiInGame<CapacityWindow>();
+                    window.ObjectType = GameObjectType.Tower;
+                    break;
+                case var _ when go.layer == LayerMask.NameToLayer("Fence"):
+                    window = Managers.UI.ShowPopupUiInGame<CapacityWindow>();
+                    window.ObjectType = GameObjectType.Fence;
+                    break;
             }
+        }
+        else if (Camp == Camp.Wolf)
+        {
+            switch (go.layer)
+            {
+                case var _ when go.layer == LayerMask.NameToLayer("MonsterStatue"):
+                    window = Managers.UI.ShowPopupUiInGame<CapacityWindow>();
+                    ObjectType = GameObjectType.MonsterStatue;
+                    break;
+            }
+        }
+
+        if (window != null && go.TryGetComponent(out CreatureController cc))
+        {
+            _gameVm.TurnOnSelectRing(cc.Id);
+        }
+    }
+
+    private void AdjustUI(GameObject go, GameObjectType type)
+    {
+        var cc = go.GetComponent<CreatureController>();
+        UnitControlWindow window;
+        if (_gameVm.CapacityWindow != null && _gameVm.CapacityWindow.ObjectType == type)
+        {
+            if (_gameVm.SelectedObjectIds.Contains(cc.Id))
+            {
+                // _gameVm.TurnOffSelectRing();
+                window = Managers.UI.ShowPopupUiInGame<UnitControlWindow>();
+                window.SelectedUnit = go;
+            }
+            _gameVm.TurnOnSelectRing(cc.Id);
+        }
+        else
+        {
+            _gameVm.TurnOffSelectRing();
+            _gameVm.TurnOnSelectRing(cc.Id);
+            window = Managers.UI.ShowPopupUiInGame<UnitControlWindow>();
+            window.SelectedUnit = go;
         }
     }
 }

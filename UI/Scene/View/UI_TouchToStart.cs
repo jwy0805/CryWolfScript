@@ -8,10 +8,10 @@ public class UI_TouchToStart : UI_Scene
    {
       base.Init();
 
-      SetUI();
+      InitUI();
    }
    
-   protected override void SetBackgroundSize(RectTransform rectTransform)
+   protected override void InitBackgroundSize(RectTransform rectTransform)
    {
       Rect rect = GameObject.Find("UI_TouchToStart").GetComponent<RectTransform>().rect;
       float canvasWidth = rect.width;
@@ -26,8 +26,8 @@ public class UI_TouchToStart : UI_Scene
       rtNightSky.sizeDelta = new Vector2(canvasWidth, nightSkyHeight);
    }
 
-   protected override void SetUI()
+   protected override void InitUI()
    {
-      SetBackgroundSize(gameObject.GetComponent<RectTransform>());
+      InitBackgroundSize(gameObject.GetComponent<RectTransform>());
    }
 }

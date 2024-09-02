@@ -8,7 +8,6 @@ using UnityEngine.UI;
 
 public class GameManager
 {
-    public GameObject PickedButton;
     public Action<int> OnSpawnEvent;
     public bool GameResult { get; set; }
     
@@ -16,43 +15,45 @@ public class GameManager
     private GameObject _sheep;
     private readonly Dictionary<UnitId, GameObject> _units = new();
     
-    public void Spawn(GameObjectType type)
+    public void Spawn(UnitId unitId, Vector3 spawnPos)
     {
         var eventData = new PointerEventData(EventSystem.current) { position = Input.mousePosition };
         var results = new List<RaycastResult>();
         EventSystem.current.RaycastAll(eventData, results);
         if (results.Any(result => result.gameObject.layer == LayerMask.NameToLayer("UI"))) return;
         
-        var dragPortrait = PickedButton.GetComponent<UI_DragPortrait>();
-        if (dragPortrait == null) return;
-        
-        var pos = Util.NearestCell(dragPortrait.Position);
-        var register = type == GameObjectType.Tower;
-        var unitName = Managers.Game.PickedButton.GetComponent<Image>().sprite.name;
-        
-        C_Spawn cSpawnPacket = new()
+        // Distinction between Tower and MonsterStatue
+        var type = unitId - 500 < 0 ? GameObjectType.Tower : GameObjectType.MonsterStatue;
+        C_Spawn spawnPacket = new()
         {
             Type = type,
-            Num = (int)Enum.Parse(typeof(UnitId), unitName),
-            PosInfo = new PositionInfo { State = State.Idle, PosX = pos.x, PosY = pos.y, PosZ = pos.z },
-            Way = Managers.Map.MapId == 1 ? SpawnWay.North : pos.z > 0 ? SpawnWay.North : SpawnWay.South,
-            Register = register
+            Num = (int)unitId,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = spawnPos.x, PosY = spawnPos.y, PosZ = spawnPos.z },
+            Way = Managers.Map.MapId == 1 ? SpawnWay.North : spawnPos.z > 0 ? SpawnWay.North : SpawnWay.South,
+            Register = true
         };
-        Managers.Network.Send(cSpawnPacket);
+        
+        Managers.Network.Send(spawnPacket);
     }
     
-    public GameObject Spawn(GameObjectType type, string path, Transform parent = null)
+    public GameObject Spawn(string path, Transform parent = null)
     {
         var go = Managers.Resource.Instantiate(path, parent);
         return go;
     }
     
-    public GameObject Spawn(GameObjectType type, string path, Vector3 position)
+    public GameObject Spawn(string path, Vector3 position)
     {
         var go = Managers.Resource.Instantiate(path, position);
         return go;
     }
 
+    public GameObject SpawnFromContainer(string path, Transform parent = null)
+    {
+        var go = Managers.Resource.InstantiateFromContainer(path, parent);
+        return go;
+    }
+    
     public void Despawn(GameObject go, float time = 0.0f)
     {
         GameObjectType type = GetWorldObjectType(go);

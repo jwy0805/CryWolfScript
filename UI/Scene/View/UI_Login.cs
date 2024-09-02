@@ -50,8 +50,8 @@ public class UI_Login : UI_Scene
         base.Init();
         
         BindObjects();
-        SetButtonEvents();
-        SetUI();
+        InitButtonEvents();
+        InitUI();
         
         if (_viewModel == null)
         {
@@ -93,7 +93,7 @@ public class UI_Login : UI_Scene
 
     #region SetUiSize
 
-    protected override void SetBackgroundSize(RectTransform rectTransform)
+    protected override void InitBackgroundSize(RectTransform rectTransform)
     {
         Rect rect = rectTransform.rect;
         float canvasWidth = rect.width;
@@ -115,15 +115,15 @@ public class UI_Login : UI_Scene
         Bind<Image>(typeof(Images));
     }
 
-    protected override void SetButtonEvents()
+    protected override void InitButtonEvents()
     {
         GetButton((int)Buttons.LoginButton).gameObject.BindEvent(OnLoginClicked);
         GetButton((int)Buttons.SignUpButton).gameObject.BindEvent(OnSignUpClicked);
     }
     
-    protected override void SetUI()
+    protected override void InitUI()
     {
-        SetBackgroundSize(gameObject.GetComponent<RectTransform>());
+        InitBackgroundSize(gameObject.GetComponent<RectTransform>());
         
         SetObjectSize(GetImage((int)Images.AppleImage).gameObject, 1.0f);
         SetObjectSize(GetImage((int)Images.GoogleImage).gameObject, 1.0f);

@@ -56,8 +56,8 @@ public class UI_DeckChangePopup : UI_Popup
         
         _mainLobby = GameObject.Find("UI_MainLobby").GetComponent<UI_MainLobby>();
         BindObjects();
-        SetButtonEvents();
-        SetUI();
+        InitButtonEvents();
+        InitUI();
         SetCardInPopup();
         SetDeckUiInPopup();
     }
@@ -69,14 +69,14 @@ public class UI_DeckChangePopup : UI_Popup
         Bind<TextMeshProUGUI>(typeof(Texts));
     }
 
-    protected override void SetButtonEvents()
+    protected override void InitButtonEvents()
     {
         GetImage((int)Images.PopupPanel).gameObject.BindEvent(ClosePopup);
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(ClosePopup);
         GetButton((int)Buttons.EnterButton).gameObject.BindEvent(ClosePopup);
     }
 
-    protected override void SetUI()
+    protected override void InitUI()
     {
         
     }

@@ -63,8 +63,8 @@ public class UI_MatchMaking : UI_Scene
         base.Init();
         
         BindObjects();
-        SetButtonEvents();
-        SetUI();
+        InitButtonEvents();
+        InitUI();
         
         _matchMakingVm.StartMatchMaking();
     }
@@ -117,12 +117,12 @@ public class UI_MatchMaking : UI_Scene
         Bind<TextMeshProUGUI>(typeof(Texts));
     }
 
-    protected override void SetButtonEvents()
+    protected override void InitButtonEvents()
     {
         GetButton((int)Buttons.CancelButton).gameObject.BindEvent(OnCancelClicked);
     }
     
-    protected override void SetUI()
+    protected override void InitUI()
     {
         GetImage((int)Images.EnemyDeckPanel).gameObject.SetActive(false);
         GetImage((int)Images.VSImage).gameObject.SetActive(false);

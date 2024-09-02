@@ -14,6 +14,7 @@ using Image = UnityEngine.UI.Image;
 public class UI_BattlePopupWolf : UI_Popup
 {
     private IUserService _userService;
+    private IWebService _webService;
     private ITokenService _tokenService;
     
     private enum Buttons
@@ -30,9 +31,10 @@ public class UI_BattlePopupWolf : UI_Popup
     }
     
     [Inject]
-    public void Construct(IUserService userService, ITokenService tokenService)
+    public void Construct(IUserService userService, IWebService webService, ITokenService tokenService)
     {
         _userService = userService;
+        _webService = webService;
         _tokenService = tokenService;
     }
 
@@ -41,8 +43,8 @@ public class UI_BattlePopupWolf : UI_Popup
         base.Init();
         
         BindObjects();
-        SetButtonEvents();
-        SetUI();
+        InitButtonEvents();
+        InitUI();
     }
 
     private void OnExitClicked(PointerEventData data)
@@ -59,7 +61,8 @@ public class UI_BattlePopupWolf : UI_Popup
             DeckNumber = User.Instance.DeckSheep.DeckNumber,
         };
         
-        var task = Managers.Web.SendPostRequestAsync<GetSelectedDeckResponse>("Collection/GetSelectedDeck", deckPacket);
+        var task = _webService.SendWebRequestAsync<GetSelectedDeckResponse>(
+            "Collection/GetSelectedDeck", "POST", deckPacket);
         var response = await task;
 
         if (response.GetSelectedDeckOk == false)
@@ -84,7 +87,8 @@ public class UI_BattlePopupWolf : UI_Popup
             DeckNumber = User.Instance.DeckSheep.DeckNumber,
         };
         
-        var task = Managers.Web.SendPostRequestAsync<GetSelectedDeckResponse>("Collection/GetSelectedDeck", deckPacket);
+        var task = _webService.SendWebRequestAsync<GetSelectedDeckResponse>(
+            "Collection/GetSelectedDeck", "POST", deckPacket);
         var response = await task;
 
         if (response.GetSelectedDeckOk == false)
@@ -114,7 +118,7 @@ public class UI_BattlePopupWolf : UI_Popup
         Bind<Image>(typeof(Images));
     }
 
-    protected override void SetButtonEvents()
+    protected override void InitButtonEvents()
     {
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(OnExitClicked);
         GetButton((int)Buttons.RankGameButton).gameObject.BindEvent(OnRankGameClicked);
@@ -122,7 +126,7 @@ public class UI_BattlePopupWolf : UI_Popup
         GetButton((int)Buttons.TestButton).gameObject.BindEvent(OnTestClicked);
     }
 
-    protected override void SetUI()
+    protected override void InitUI()
     {
         SetObjectSize(GetImage((int)Images.WolfIcon).gameObject, 0.25f);
     }

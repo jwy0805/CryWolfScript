@@ -6,10 +6,10 @@ using UnityEngine.EventSystems;
 
 public class InputManager
 {
-    public Action<Define.MouseEvent> MouseAction = null;
+    public Action<Define.MouseEvent> MouseAction;
     
-    private bool _pressed = false;
-    private float _pressedTime = 0.0f;
+    private bool _pressed;
+    private float _pressedTime;
 
     public void OnUpdate()
     {

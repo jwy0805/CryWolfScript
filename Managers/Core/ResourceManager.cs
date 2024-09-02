@@ -68,11 +68,11 @@ public class ResourceManager
 
         var installer = new ServiceInstaller();
 
-        // Services that are needed for the entire project are registered
+        // Register services that are needed for the entire project
         var projectContext = ProjectContext.Instance.Container;
         installer.CreateFactoryOnProjectContext(projectContext);
         
-        // Services that are needed for the scene are registered (especially view models)
+        // Register services that are needed for the scene (especially view models)
         var sceneContext = Object.FindObjectOfType<SceneContext>().Container;
         installer.CreateFactory(path, sceneContext);
         
