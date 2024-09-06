@@ -104,7 +104,10 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         CollectionScrollView,
         Deck,
         HoldingCardPanel,
-        NotHoldingCardPanel
+        NotHoldingCardPanel,
+        
+        CharacterFrame,
+        SupportFrame,
     }
 
     #endregion
@@ -145,6 +148,9 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         _collectionVm.OnCardInitialized += SetCollectionUI;
         _collectionVm.OnCardSwitched -= SwitchCollection;
         _collectionVm.OnCardSwitched += SwitchCollection;
+        
+        _userService.InitDeckButton -= SetDeckButtonUI;
+        _userService.InitDeckButton += SetDeckButtonUI;
     }
 
     protected override void Init()
@@ -156,6 +162,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
 
         Util.Camp = Camp.Sheep;
         InitUI();
+        
         _lobbyVm.SetCurrentPage(2);
     }
 
@@ -198,7 +205,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         _lobbyVm.IsSwipeMode = false;
     }
     
-        private async void SetMainLobbyItemUI()
+    private async void SetMainLobbyItemUI()
     {
         _deck = GetImage((int)Images.Deck).transform;
         _collection = GetImage((int)Images.HoldingCardPanel).transform;
@@ -230,8 +237,8 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         _collectionVm.OrderCardsByClass();
         var ownedUnits = camp == Camp.Sheep ? User.Instance.OwnedCardListSheep : User.Instance.OwnedCardListWolf;
         var notOwnedUnits = camp == Camp.Sheep ? User.Instance.NotOwnedCardListSheep : User.Instance.NotOwnedCardListWolf;
-        var ownedParent = Util.FindChild(gameObject, _collection.name, true).transform; 
-        var notOwnedParent = Util.FindChild(gameObject, _noCollection.name, true).transform;
+        var ownedParent = _collection.transform;
+        var notOwnedParent = _noCollection.transform;
         
         Util.DestroyAllChildren(ownedParent);
         Util.DestroyAllChildren(notOwnedParent);
@@ -359,7 +366,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     // UI Size Adjustments
     #region UiAdjustment
     
-        protected override void BindObjects()
+    protected override void BindObjects()
     {
         Bind<Button>(typeof(Buttons));
         Bind<Image>(typeof(Images));
@@ -405,6 +412,9 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         SetObjectSize(GetImage((int)Images.ShopButtonIcon).gameObject, 0.8f);
         SetObjectSize(GetImage((int)Images.EventButtonIcon).gameObject, 0.8f);
         SetObjectSize(GetImage((int)Images.ClanButtonIcon).gameObject, 0.8f);
+        
+        SetObjectSize(GetImage((int)Images.CharacterFrame).gameObject, 0.5f);
+        SetObjectSize(GetImage((int)Images.SupportFrame).gameObject, 0.5f);
         
         // MainLobby_Item Setting
         SetMainLobbyItemUI();

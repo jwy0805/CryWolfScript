@@ -27,7 +27,6 @@ public class MyPlayerController : PlayerController
     private GameObject _cameraObject;
 
     public Camp Camp { get; set; }
-    public int SelectedUnitId { get; set; }
     
     [Inject]
     public void Construct(GameViewModel gameVm)
@@ -146,7 +145,7 @@ public class MyPlayerController : PlayerController
             case var _ when layer == LayerMask.NameToLayer("Tower"):
                 if (Camp == Camp.Sheep)
                 {
-                    AdjustUI(go, GameObjectType.Tower);
+                    AdjustUI<UnitControlWindow>(go, GameObjectType.Tower);
                 }
                 break;
                     
@@ -168,21 +167,14 @@ public class MyPlayerController : PlayerController
             case var _ when layer == LayerMask.NameToLayer("MonsterStatue"):
                 if (Camp == Camp.Wolf)
                 {
-                    AdjustUI(go, GameObjectType.MonsterStatue);
+                    AdjustUI<UnitControlWindow>(go, GameObjectType.MonsterStatue);
                 }
                 break;
             
             case var _ when layer == LayerMask.NameToLayer("Fence"):
                 if (Camp == Camp.Sheep)
                 {
-                    if (_gameVm.CapacityWindow is { ObjectType: GameObjectType.Fence })
-                    {
-                        _gameVm.TurnOnSelectRing(cc.Id);
-                    }
-                    else
-                    {
-                        Managers.UI.ShowPopupUiInGame<SkillWindow>();
-                    }
+                    AdjustUI<UnitControlWindow>(go, GameObjectType.Fence);
                 }
                 break;
             
@@ -191,8 +183,12 @@ public class MyPlayerController : PlayerController
                 {
                     _gameVm.TurnOffSelectRing();
                     _gameVm.TurnOnSelectRing(cc.Id);
-                    Managers.UI.ShowPopupUiInGame<SubResourceWindow>();
+                    var window = Managers.UI.ShowPopupUiInGame<UnitControlWindow>();
+                    window.SelectedUnit = go;
                 }
+                break;
+            
+            case var _ when layer == LayerMask.NameToLayer("Base"):
                 break;
         }
 
@@ -236,17 +232,19 @@ public class MyPlayerController : PlayerController
         }
     }
 
-    private void AdjustUI(GameObject go, GameObjectType type)
+    private void AdjustUI<T>(GameObject go, GameObjectType type) where T : UI_Popup
     {
         var cc = go.GetComponent<CreatureController>();
-        UnitControlWindow window;
+        UI_Popup window;
         if (_gameVm.CapacityWindow != null && _gameVm.CapacityWindow.ObjectType == type)
         {
             if (_gameVm.SelectedObjectIds.Contains(cc.Id))
             {
-                // _gameVm.TurnOffSelectRing();
-                window = Managers.UI.ShowPopupUiInGame<UnitControlWindow>();
-                window.SelectedUnit = go;
+                window = Managers.UI.ShowPopupUiInGame<T>();
+                if (window is UnitControlWindow unitControlWindow)
+                {
+                    unitControlWindow.SelectedUnit = go;
+                }
             }
             _gameVm.TurnOnSelectRing(cc.Id);
         }
@@ -254,8 +252,11 @@ public class MyPlayerController : PlayerController
         {
             _gameVm.TurnOffSelectRing();
             _gameVm.TurnOnSelectRing(cc.Id);
-            window = Managers.UI.ShowPopupUiInGame<UnitControlWindow>();
-            window.SelectedUnit = go;
+            window = Managers.UI.ShowPopupUiInGame<T>();
+            if (window is UnitControlWindow unitControlWindow)
+            {
+                unitControlWindow.SelectedUnit = go;
+            }        
         }
     }
 }

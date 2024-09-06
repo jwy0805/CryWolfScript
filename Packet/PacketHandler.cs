@@ -172,7 +172,7 @@ public class PacketHandler
 
         Vector3 dest = new Vector3(resourceDestPacket.Dest.X, resourceDestPacket.Dest.Y, resourceDestPacket.Dest.Z);
         rc.DestPos = dest + Vector3.up * 0.5f;
-        rc.moveFlag = true;
+        // rc.moveFlag = true;
         rc.yield = resourceDestPacket.Yield;
     }
 
@@ -218,11 +218,6 @@ public class PacketHandler
         var upgradePacket = (S_PortraitUpgrade)packet;
         var ui = GameObject.FindWithTag("UI").GetComponent<UI_GameSingleWay>();
         ui.UpgradePortrait(upgradePacket.UnitId.ToString());
-    }
-
-    public static void S_UnitUpgradeHandler(PacketSession session, IMessage packet)
-    {
-        
     }
 
     public static void S_GetDamageHandler(PacketSession session, IMessage packet)
@@ -419,6 +414,21 @@ public class PacketHandler
         var upgradePacket = (S_SetUpgradeButtonCost)packet;
         var ui = GameObject.FindWithTag("UI").GetComponent<UI_GameSingleWay>();
         ui.UpdateUpgradeCost(upgradePacket.Cost);
+    }
+    
+    public static void S_SetUnitUpgradeCostHandler(PacketSession session, IMessage packet)
+    {
+        Managers.Event.TriggerEvent("UpdateUnitUpgradeCost", packet);
+    }
+    
+    public static void S_SetUnitDeleteCostHandler(PacketSession session, IMessage packet)
+    {
+        Managers.Event.TriggerEvent("UpdateUnitDeleteCost", packet);
+    }
+    
+    public static void S_SetUnitRepairCostHandler(PacketSession session, IMessage packet)
+    {
+        Managers.Event.TriggerEvent("UpdateUnitRepairCost", packet);
     }
     
     public static void S_SendWarningInGameHandler(PacketSession session, IMessage packet)

@@ -4,23 +4,52 @@ using UnityEngine;
 public class ResourceController : BaseController
 {
     public int yield;
-    public bool moveFlag = false;
-    private readonly float _moveSpeed = 11.0f;
+    private float _waitTime = 1f;
+    private Vector3 _initPos;
+    private readonly float _jumpHeight = 2f;
+    private readonly float _jumpSpeed = 4f;
+    private readonly float _moveSpeed = 8.0f;
 
     public override State State
     {
         get => PosInfo.State;
         set => PosInfo.State = value;
     }
+
+    protected override void Init()
+    {
+        DestPos = Managers.Object.MyPlayer.transform.position;
+        _initPos = transform.position;
+    }
+
+    protected override void Update()
+    {
+        if (_waitTime <= 0)
+        {
+            State = State.Moving;
+        }
+        else
+        {
+            Pop();
+            _waitTime -= Time.deltaTime;
+        }
+        
+        switch (State)
+        {
+            case State.Idle:
+                UpdateIdle();
+                break;
+            case State.Moving:
+                UpdateMoving();
+                break;
+        }
+    }
     
     protected override void UpdateMoving()
     {
-        if (moveFlag == false) return;
         Vector3 dir = DestPos - transform.position;
         if (dir.magnitude < 0.3f)
         {
-            C_ChangeResource resourcePacket = new C_ChangeResource { Camp = Camp.Sheep, ObjectId = Id, Resource = yield };
-            Managers.Network.Send(resourcePacket);
             Managers.Game.Despawn(gameObject);
         }
         else
@@ -28,5 +57,11 @@ public class ResourceController : BaseController
             float moveDist = Mathf.Clamp(_moveSpeed * Time.deltaTime, 0, dir.magnitude);
             transform.position += dir.normalized * moveDist;
         }
+    }
+
+    protected virtual void Pop()
+    {
+        float y = _initPos.y + Mathf.PingPong(Time.time * _jumpSpeed, _jumpHeight);   
+        transform.position = new Vector3(transform.position.x, y, transform.position.z);
     }
 }

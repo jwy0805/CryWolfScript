@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf.Protocol;
@@ -6,6 +7,8 @@ using Zenject;
 public class UserService : IUserService
 {
     private readonly ITokenService _tokenService;
+
+    public event Action<Camp> InitDeckButton;
     
     [Inject]
     public UserService(ITokenService tokenService)
@@ -88,5 +91,7 @@ public class UserService : IUserService
         User.Instance.DeckWolf = User.Instance.AllDeckWolf.Any(deck => deck.LastPicked) 
             ? User.Instance.AllDeckWolf.First(deck => deck.LastPicked) 
             : User.Instance.AllDeckWolf.First();
+        
+        InitDeckButton?.Invoke(Util.Camp);
     }
 }

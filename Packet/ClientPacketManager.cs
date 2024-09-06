@@ -63,8 +63,6 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SSkillUpdate, PacketHandler.S_SkillUpdateHandler);		
 		_onRecv.Add((ushort)MessageId.SPortraitUpgrade, MakePacket<S_PortraitUpgrade>);
 		_handler.Add((ushort)MessageId.SPortraitUpgrade, PacketHandler.S_PortraitUpgradeHandler);		
-		_onRecv.Add((ushort)MessageId.SUnitUpgrade, MakePacket<S_UnitUpgrade>);
-		_handler.Add((ushort)MessageId.SUnitUpgrade, PacketHandler.S_UnitUpgradeHandler);		
 		_onRecv.Add((ushort)MessageId.SGetDamage, MakePacket<S_GetDamage>);
 		_handler.Add((ushort)MessageId.SGetDamage, PacketHandler.S_GetDamageHandler);		
 		_onRecv.Add((ushort)MessageId.SChangeHp, MakePacket<S_ChangeHp>);
@@ -97,6 +95,12 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SSetUpgradePopup, PacketHandler.S_SetUpgradePopupHandler);		
 		_onRecv.Add((ushort)MessageId.SSetUpgradeButtonCost, MakePacket<S_SetUpgradeButtonCost>);
 		_handler.Add((ushort)MessageId.SSetUpgradeButtonCost, PacketHandler.S_SetUpgradeButtonCostHandler);		
+		_onRecv.Add((ushort)MessageId.SSetUnitUpgradeCost, MakePacket<S_SetUnitUpgradeCost>);
+		_handler.Add((ushort)MessageId.SSetUnitUpgradeCost, PacketHandler.S_SetUnitUpgradeCostHandler);		
+		_onRecv.Add((ushort)MessageId.SSetUnitDeleteCost, MakePacket<S_SetUnitDeleteCost>);
+		_handler.Add((ushort)MessageId.SSetUnitDeleteCost, PacketHandler.S_SetUnitDeleteCostHandler);		
+		_onRecv.Add((ushort)MessageId.SSetUnitRepairCost, MakePacket<S_SetUnitRepairCost>);
+		_handler.Add((ushort)MessageId.SSetUnitRepairCost, PacketHandler.S_SetUnitRepairCostHandler);		
 		_onRecv.Add((ushort)MessageId.SSendWarningInGame, MakePacket<S_SendWarningInGame>);
 		_handler.Add((ushort)MessageId.SSendWarningInGame, PacketHandler.S_SendWarningInGameHandler);		
 		_onRecv.Add((ushort)MessageId.SShowResultScene, MakePacket<S_ShowResultScene>);

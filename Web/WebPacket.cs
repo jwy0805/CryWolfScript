@@ -7,6 +7,43 @@ using UnityEngine;
 // ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable CollectionNeverUpdated.Global
 
+public class UnitInfo
+{
+    public UnitId Id { get; set; }
+    public UnitClass Class { get; set; }
+    public int Level { get; set; }
+    public UnitId Species { get; set; }
+    public Role Role { get; set; }
+    public Camp Camp { get; set; }
+}
+
+public class SheepInfo
+{
+    public SheepId Id { get; set; }
+    public UnitClass Class { get; set; }
+}
+
+public class EnchantInfo
+{
+    public EnchantId Id { get; set; }
+    public UnitClass Class { get; set; }
+}
+
+public class CharacterInfo
+{
+    public CharacterId Id { get; set; }
+    public UnitClass Class { get; set; }
+}
+
+public class DeckInfo
+{
+    public int DeckId { get; set; }
+    public UnitInfo[] UnitInfo { get; set; }
+    public int DeckNumber { get; set; }
+    public int Camp { get; set; }
+    public bool LastPicked { get; set; }
+}
+
 public class CreateUserAccountPacketRequired
 {
     public string UserAccount { get; set; }
@@ -62,16 +99,6 @@ public class GetOwnedCardsPacketRequired
     public Env Environment { get; set; }
 }
 
-public class UnitInfo
-{
-    public UnitId Id { get; set; }
-    public UnitClass Class { get; set; }
-    public int Level { get; set; }
-    public UnitId Species { get; set; }
-    public Role Role { get; set; }
-    public Camp Camp { get; set; }
-}
-
 public class GetOwnedCardsPacketResponse
 {
     public bool GetCardsOk { get; set; }
@@ -81,19 +108,55 @@ public class GetOwnedCardsPacketResponse
     public string RefreshToken { get; set; }
 }
 
-public class GetInitDeckPacketRequired
+public class GetOwnedSheepPacketRequired
 {
     public string AccessToken { get; set; }
     public Env Environment { get; set; }
 }
 
-public class DeckInfo
+public class GetOwnedSheepPacketResponse
 {
-    public int DeckId { get; set; }
-    public UnitInfo[] UnitInfo { get; set; }
-    public int DeckNumber { get; set; }
-    public int Camp { get; set; }
-    public bool LastPicked { get; set; }
+    public bool GetSheepOk { get; set; }
+    public List<SheepInfo> OwnedSheepList { get; set; }
+    public List<SheepInfo> NotOwnedSheepList { get; set; }
+    public string AccessToken { get; set; }
+    public string RefreshToken { get; set; }
+}
+
+public class GetOwnedEnchantPacketRequired
+{
+    public string AccessToken { get; set; }
+    public Env Environment { get; set; }
+}
+
+public class GetOwnedEnchantPacketResponse
+{
+    public bool GetEnchantOk { get; set; }
+    public List<EnchantInfo> OwnedEnchantList { get; set; }
+    public List<EnchantInfo> NotOwnedEnchantList { get; set; }
+    public string AccessToken { get; set; }
+    public string RefreshToken { get; set; }
+}
+
+public class GetOwnedCharacterPacketRequired
+{
+    public string AccessToken { get; set; }
+    public Env Environment { get; set; }
+}
+
+public class GetOwnedCharacterPacketResponse
+{
+    public bool GetCharacterOk { get; set; }
+    public List<CharacterInfo> OwnedCharacterList { get; set; }
+    public List<CharacterInfo> NotOwnedCharacterList { get; set; }
+    public string AccessToken { get; set; }
+    public string RefreshToken { get; set; }
+}
+
+public class GetInitDeckPacketRequired
+{
+    public string AccessToken { get; set; }
+    public Env Environment { get; set; }
 }
 
 public class GetInitDeckPacketResponse

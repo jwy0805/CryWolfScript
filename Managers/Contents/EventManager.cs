@@ -18,7 +18,7 @@ public class EventManager
             _eventDictionary.Add(eventName, thisEvent);
         }
     }
-
+    
     public void StopListening(string eventName, Action<object> listener)
     {
         if (_eventDictionary.TryGetValue(eventName, out var thisEvent) == false) return;

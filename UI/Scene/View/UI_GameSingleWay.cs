@@ -101,7 +101,7 @@ public class UI_GameSingleWay : UI_Game
     {
         if (portrait is not MonoBehaviour mono) return;
         var go = mono.gameObject;
-        var glowObject = go.transform.parent.transform.GetChild(1).gameObject;
+        var glowObject = go.transform.parent.GetChild(1).gameObject;
         glowObject.TryGetComponent(out GlowCycle glow);
         if (go.TryGetComponent(out ButtonBounce bounce) == false) return;
         glow.Selected = on;
@@ -134,6 +134,7 @@ public class UI_GameSingleWay : UI_Game
     private void TurnOnSelectRing(int id)
     {   
         var go = Managers.Object.FindById(id);
+        if (go == null) return; 
         if (go.transform.Find("SelectRing") != null)
         {
             return;
@@ -233,5 +234,14 @@ public class UI_GameSingleWay : UI_Game
     protected override void InitUI()
     {
         GetText((int)Texts.ResourceText).text = "0";
+    }
+
+    private void OnDestroy()
+    {
+        _gameVm.OnPortraitClickedEvent -= ShowPortraitSelectEffect;
+        _gameVm.TurnOnSelectRingCoroutineEvent -= SelectRingCoroutine;
+        _gameVm.TurnOffOneSelectRingEvent -= TurnOffOneSelectRing;
+        _gameVm.TurnOffSelectRingEvent -= TurnOffSelectRing;
+        _gameVm.SelectedObjectIds.CollectionChanged -= OnSlotIdChanged;
     }
 }

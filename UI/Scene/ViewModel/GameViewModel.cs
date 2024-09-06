@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using Google.Protobuf.Protocol;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -8,6 +9,15 @@ using UnityEngine.UI;
 
 public class GameViewModel
 {
+    /*
+     * The principles of using events and interfaces in the ViewModel are as follows:
+     * 1. Events
+     *  - Events have to be used for reacting to UI events such as clicking, dragging, etc.
+     * 2. Interfaces
+     *  - Interfaces have to be used for data binding, initializing, and updating UI elements.
+     * These principles must be observed especially managing popups. 
+     */
+    
     // Events using in UI_GameSingleWay
     public event Action<IPortrait, bool> OnPortraitClickedEvent;   // Show Portrait Select Effect
     public event Action<int> TurnOnSelectRingCoroutineEvent;
@@ -19,16 +29,15 @@ public class GameViewModel
     public event Action HighlightDeleteImageOnWindowEvent;
     public event Action RestoreDeleteImageOnWindowEvent;
     public event Action DisappearDeleteImageOnWindowEvent;
-    public event Func<GameObject, int> GetButtonIndexEvent; 
-    public event Func<GameObject> GetDeleteImageEvent; 
     
     public bool OnPortraitDrag { get; set; }
     public bool OnSlotDrag { get; set; }
     public ObservableCollection<int> SelectedObjectIds { get; set; } = new();
     public List<Skill> SkillsUpgraded { get; set; } = new();
     public ISkillWindow SkillWindow { get; set; }
+    public IUnitControlWindow UnitControlWindow { get; set; }
     public ICapacityWindow CapacityWindow { get; set; }
-    public GameObject DeleteImage => GetDeleteImageEvent?.Invoke();
+    public GameObject DeleteImage => CapacityWindow.GetDeleteImage();
     public ISubResourceWindow SubResourceWindow { get; set; }
     public IPortrait CurrentSelectedPortrait { get; set; }
     public ISkillButton CurrentSelectedSkillButton { get; set; }
@@ -37,6 +46,9 @@ public class GameViewModel
     {
         Managers.Event.StartListening("ShowRings", OnReceiveRanges);
         Managers.Event.StartListening("CanSpawn", OnCanSpawn);
+        Managers.Event.StartListening("UpdateUnitUpgradeCost", UpdateUnitUpgradeCostResponse);
+        Managers.Event.StartListening("UpdateUnitDeleteCost", UpdateUnitDeleteCostResponse);
+        Managers.Event.StartListening("UpdateUnitRepairCost", UpdateUnitRepairCostResponse);
     }
     
     public int GetLevelFromUiObject(UnitId unitId)
@@ -78,6 +90,48 @@ public class GameViewModel
         SkillWindow?.UpdateUpgradeCost(cost);
     }
 
+    public void UpdateUnitUpgradeCostRequired(int[] objectIds)
+    {
+        var packet = new C_SetUnitUpgradeCost();
+        packet.ObjectIds.AddRange(objectIds);
+        Managers.Network.Send(packet);
+    }
+    
+    private void UpdateUnitUpgradeCostResponse(object eventData)
+    {
+        var packet = (S_SetUnitUpgradeCost)eventData;
+        CapacityWindow?.UpdateUpgradeCostText(packet.Cost);
+        UnitControlWindow?.UpdateUpgradeCostText(packet.Cost);
+    }
+    
+    public void UpdateUnitDeleteCostRequired(int[] objectIds)
+    {
+        var packet = new C_SetUnitDeleteCost();
+        packet.ObjectIds.AddRange(objectIds);
+        Managers.Network.Send(packet);
+    }
+    
+    private void UpdateUnitDeleteCostResponse(object eventData)
+    {
+        var packet = (S_SetUnitDeleteCost)eventData;
+        CapacityWindow?.UpdateDeleteCostText(packet.Cost);
+        UnitControlWindow?.UpdateDeleteCostText(packet.Cost);
+    }
+    
+    public void UpdateUnitRepairCostRequired(int[] objectIds)
+    {
+        var packet = new C_SetUnitRepairCost();
+        packet.ObjectIds.AddRange(objectIds);
+        Managers.Network.Send(packet);
+    }
+    
+    private void UpdateUnitRepairCostResponse(object eventData)
+    {
+        var packet = (S_SetUnitRepairCost)eventData;
+        CapacityWindow?.UpdateRepairCostText(packet.Cost);
+        UnitControlWindow.UpdateRepairCostText(packet.Cost);
+    }
+
     private void OnReceiveRanges(object eventData)
     {
         var packet = (S_GetRanges)eventData;
@@ -96,7 +150,6 @@ public class GameViewModel
         
         CancelClickedEffect();
         Managers.UI.CloseAllPopupUI();
-        if (CurrentSelectedPortrait == portrait) return;
         
         CurrentSelectedPortrait = portrait;
         Managers.UI.ShowPopupUiInGame<SkillWindow>();
@@ -163,7 +216,7 @@ public class GameViewModel
     
     public int? GetButtonIndex(GameObject button)
     {
-        return GetButtonIndexEvent?.Invoke(button);
+        return CapacityWindow.GetButtonIndex(button);
     }
     
     // Upgrade button on skill panel clicked
@@ -177,21 +230,34 @@ public class GameViewModel
     // Upgrade button on unit control panel
     public void OnUnitUpgradeClicked(IEnumerable<int> ids)
     {
-        foreach (var id in ids)
-        {
-            Managers.Network.Send(new C_UnitUpgrade { ObjectId = id });
-        }
+        var packet = new C_UnitUpgrade();
+        packet.ObjectId.AddRange(ids);
+        Managers.Network.Send(packet);
         
+        TurnOffSelectRing();
+        SelectedObjectIds.Clear();
         Managers.UI.CloseAllPopupUI();
     }
 
     public void OnUnitDeleteClicked(IEnumerable<int> ids)
     {
-        foreach (var id in ids)
-        {
-            Managers.Network.Send(new C_DeleteUnit { ObjectId = id });
-        }
+        var packet = new C_UnitDelete();
+        packet.ObjectId.AddRange(ids);
+        Managers.Network.Send(packet);
         
+        TurnOffSelectRing();
+        SelectedObjectIds.Clear();
+        Managers.UI.CloseAllPopupUI();
+    }
+    
+    public void OnUnitRepairClicked(IEnumerable<int> ids)
+    {
+        var packet = new C_UnitDelete();
+        packet.ObjectId.AddRange(ids);
+        Managers.Network.Send(packet);
+        
+        TurnOffSelectRing();
+        SelectedObjectIds.Clear();
         Managers.UI.CloseAllPopupUI();
     }
 

@@ -10,6 +10,7 @@ public interface IUserService
     void LoadDeck(DeckInfo deckInfo);
     void SaveDeck(DeckInfo deckInfo);
     void BindDeck();
+    event Action<Camp> InitDeckButton;
 }
 
 public interface IWebService

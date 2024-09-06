@@ -62,6 +62,36 @@ public class CollectionViewModel
         OnCardInitialized?.Invoke(Util.Camp);
     }
 
+    private async Task InitializeSheep()
+    {
+        var sheepPacket = new GetOwnedSheepPacketRequired()
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            Environment = _webService.Environment
+        };
+        
+        var sheepTask = _webService.SendWebRequestAsync<GetOwnedSheepPacketResponse>(
+            "Collection/GetSheep", "POST", sheepPacket);
+        
+        await sheepTask;
+        
+        var sheepResponse = sheepTask.Result;
+        if (sheepResponse.GetSheepOk == false) return;
+        
+        
+        
+    }
+
+    private async Task InitializeEnchant()
+    {
+        
+    }
+
+    private async Task InitializeCharacter()
+    {
+        
+    }
+    
     public void OrderCardsByClass()
     {
         User.Instance.OwnedCardListSheep.Sort((a, b) => a.Class.CompareTo(b.Class));

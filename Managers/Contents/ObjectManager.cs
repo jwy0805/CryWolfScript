@@ -115,7 +115,7 @@ public class ObjectManager
                 break;
             
             case GameObjectType.Fence:
-                go = Managers.Game.Spawn($"{info.Name}");
+                go = Managers.Game.Spawn($"Fences/{info.Name}");
                 _objects.Add(info.ObjectId, go);
                 PositionInfo fencePos = info.PosInfo;
                 go.transform.position = new Vector3(fencePos.PosX, fencePos.PosY, fencePos.PosZ);
@@ -127,7 +127,7 @@ public class ObjectManager
                 break;
             
             case GameObjectType.Sheep:
-                go = Managers.Game.Spawn($"{info.Name}");
+                go = Managers.Game.Spawn($"Sheep/{info.Name}");
                 _objects.Add(info.ObjectId, go);
                 PositionInfo sheepPos = info.PosInfo;
                 go.transform.position = new Vector3(sheepPos.PosX, sheepPos.PosY, sheepPos.PosZ);
@@ -163,7 +163,7 @@ public class ObjectManager
                 break;
             
             case GameObjectType.Portal:
-                go = Managers.Game.Spawn($"{info.Name}");
+                go = Managers.Game.Spawn($"Portals/{info.Name}");
                 _objects.Add(info.ObjectId, go);
                 PositionInfo portalPos = info.PosInfo;
                 go.transform.position = new Vector3(portalPos.PosX, portalPos.PosY, portalPos.PosZ);

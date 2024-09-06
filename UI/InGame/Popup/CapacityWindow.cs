@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Linq;
 using Google.Protobuf.Protocol;
+using NUnit.Framework;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -15,6 +17,11 @@ public interface ICapacityWindow
 {
     void InitSlot(int index);
     void DeleteAllSlots();
+    void UpdateUpgradeCostText(int cost);
+    void UpdateDeleteCostText(int cost);
+    void UpdateRepairCostText(int cost);
+    int GetButtonIndex(GameObject button);
+    GameObject GetDeleteImage();
     GameObjectType ObjectType { get; set; }
 }
 
@@ -26,6 +33,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
     {
         UnitUpgradeButton,
         UnitDeleteButton,
+        UnitRepairButton,
         
         NorthUnitButton0,
         NorthUnitButton1,
@@ -43,11 +51,19 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
 
     private enum Images
     {
+        UnitUpgradePanel,
+        UnitDeletePanel,
+        UnitRepairPanel,
+        
         UnitUpgradeButtonPanel,
         UnitDeleteButtonPanel,
+        UnitRepairButtonPanel,
+        
         UnitUpgradeGoldImage,
         UnitDeleteGoldImage,
         UnitDeleteGoldPlusImage,
+        UnitRepairGoldImage,
+        
         DeleteImage,
         
         NorthUnitPanel0,
@@ -66,16 +82,19 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
     
     private enum Texts
     {
+        UnitUpgradeText,
+        
         UnitUpgradeGoldText,
         UnitDeleteGoldText,
+        UnitRepairGoldText,
     }
     
     #endregion
     
     private GameViewModel _gameVm;
     
-    private readonly Dictionary<string, GameObject> _unitSlotButton = new();
-    private readonly Dictionary<string, GameObject> _unitSlotPanel = new();
+    private readonly Dictionary<string, GameObject> _buttons = new();
+    private readonly Dictionary<string, GameObject> _images = new();
     private readonly GameObject[] _buttonArray = new GameObject[12];
     private GameObject _deleteImage;
 
@@ -108,26 +127,19 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         InitSlot(0);
         SubscribeEvents();
     }
-
-    public void DeleteAllSlots()
-    {
-        for (var i = 0; i < 12 ; i ++)
-        {
-            SetObjectSize(_unitSlotPanel[$"NorthUnitPanel{i}"], 0);
-        }
-    }
     
     public void InitSlot(int index)
     {
         var id = _gameVm.SelectedObjectIds[index];
         var unitId = Managers.Object.FindById(id).GetComponent<CreatureController>().UnitId;
-        var slotPanel = _unitSlotPanel[$"NorthUnitPanel{index}"];
-        var slotButtonImage = _unitSlotButton[$"NorthUnitButton{index}"];
+        var slotPanel = _images[$"NorthUnitPanel{index}"];
+        var slotButtonImage = _buttons[$"NorthUnitButton{index}"];
+        
         var path = ObjectType switch
         {
             GameObjectType.Tower => $"Sprites/Portrait/{unitId.ToString()}",
-            GameObjectType.MonsterStatue => $"Sprites/Portrait/{unitId.ToString()}Statue",
             GameObjectType.Fence => $"Sprites/Portrait/{unitId.ToString()}",
+            GameObjectType.MonsterStatue => $"Sprites/Portrait/{unitId.ToString()}Statue",
             _ => throw new ArgumentOutOfRangeException()
         };
         
@@ -138,34 +150,101 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
 
     protected override void BindObjects()
     {
-        BindData<Button>(typeof(Buttons), _unitSlotButton);
-        BindData<Image>(typeof(Images), _unitSlotPanel);
+        BindData<Button>(typeof(Buttons), _buttons);
+        BindData<Image>(typeof(Images), _images);
         Bind<TextMeshProUGUI>(typeof(Texts));
         
-        _deleteImage = _unitSlotPanel["DeleteImage"];
-        SetObjectSize(_unitSlotPanel["DeleteImage"], 0.35f);
-        _unitSlotPanel["DeleteImage"].SetActive(false);
+        _deleteImage = _images["DeleteImage"];
+        SetObjectSize(_images["DeleteImage"], 0.35f);
+        _images["DeleteImage"].SetActive(false);
         for (var i = 0; i < 12; i++)
         {
-            _buttonArray[i] = _unitSlotButton[$"NorthUnitButton{i}"];
+            _buttonArray[i] = _buttons[$"NorthUnitButton{i}"];
         }
     }
 
     protected override void InitUI()
     {
-        SetObjectSize(_unitSlotPanel["UnitUpgradeButtonPanel"], 0.6f);
-        SetObjectSize(_unitSlotPanel["UnitDeleteButtonPanel"], 0.6f);
-        SetObjectSize(_unitSlotPanel["UnitUpgradeGoldImage"], 0.15f);
-        SetObjectSize(_unitSlotPanel["UnitDeleteGoldImage"], 0.15f);
-        SetObjectSize(_unitSlotPanel["UnitDeleteGoldPlusImage"], 0.1f);
+        var images = new List<Images>();
+        switch (ObjectType)
+        {
+            case GameObjectType.Tower:
+                images.AddRange(new[] { Images.UnitUpgradePanel, Images.UnitDeletePanel });
+                break;
+            case GameObjectType.Fence:
+                images.AddRange(new[] { Images.UnitRepairPanel });
+                break;
+            case GameObjectType.MonsterStatue:
+                images.AddRange(new[] 
+                    { Images.UnitUpgradePanel, Images.UnitDeletePanel, Images.UnitRepairPanel });
+                break;
+        }
+        
+        BindControlButtons(images);
+        SetObjectSize(_images["UnitUpgradeButtonPanel"], 0.6f);
+        SetObjectSize(_images["UnitDeleteButtonPanel"], 0.6f);
+        SetObjectSize(_images["UnitRepairButtonPanel"], 0.6f);
+        SetObjectSize(_images["UnitUpgradeGoldImage"], 0.15f);
+        SetObjectSize(_images["UnitDeleteGoldImage"], 0.15f);
+        SetObjectSize(_images["UnitDeleteGoldPlusImage"], 0.1f);
+        SetObjectSize(_images["UnitRepairGoldImage"], 0.15f);
+    }
+    
+    private void BindControlButtons(List<Images> images)
+    {
+        var allImages = new List<Images>
+        {
+            Images.UnitUpgradePanel,
+            Images.UnitDeletePanel,
+            Images.UnitRepairPanel,
+        };
+        
+        var imagesToBeHidden = allImages.Except(images).ToList();
+        foreach (var hiddenImage in imagesToBeHidden)
+        {
+            _images[hiddenImage.ToString()].SetActive(false);
+        }
+
+        Image image;
+        float increment;
+        switch (images.Count)
+        {
+            case 1:
+                image = _images[images[0].ToString()].GetComponent<Image>();
+                image.GetComponent<RectTransform>().anchorMin = new Vector2(0.3f, 0f);
+                image.GetComponent<RectTransform>().anchorMax = new Vector2(0.7f, 1f);
+                break;
+            case 2:
+                increment = 0.4f;
+                for (var i = 0; i < images.Count; i++)
+                {
+                    image = _images[images[i].ToString()].GetComponent<Image>();
+                    image.GetComponent<RectTransform>().anchorMin = new Vector2(0.1f + increment * i, 0f);
+                    image.GetComponent<RectTransform>().anchorMax = new Vector2(0.5f + increment * i, 1f);
+                }
+                break;
+            case 3:
+                increment = 0.33f;
+                for (var i = 0; i < images.Count; i++)
+                {
+                    image = _images[images[i].ToString()].GetComponent<Image>();
+                    image.GetComponent<RectTransform>().anchorMin = new Vector2(0f + increment * i, 0f);
+                    image.GetComponent<RectTransform>().anchorMax = new Vector2(0.33f + increment * i, 1f);
+                }
+                break;
+        }
     }
 
     protected override void InitButtonEvents()
     {
-        foreach (var slot in _unitSlotButton.Values)
+        for (var i = 0; i < 12 ; i++)
         {
-            slot.BindEvent(OnSlotClicked);
+            _buttons[$"NorthUnitButton{i}"].gameObject.BindEvent(OnSlotClicked);
         }
+        
+        _buttons["UnitUpgradeButton"].BindEvent(OnUpgradeClicked);
+        _buttons["UnitDeleteButton"].BindEvent(OnDeleteClicked);
+        _buttons["UnitRepairButton"].BindEvent(OnRepairClicked);
     }
 
     private void SubscribeEvents()
@@ -178,12 +257,16 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         _gameVm.RestoreDeleteImageOnWindowEvent += RestoreDeleteImage;
         _gameVm.DisappearDeleteImageOnWindowEvent -= DisappearDeleteImage;
         _gameVm.DisappearDeleteImageOnWindowEvent += DisappearDeleteImage;
-        _gameVm.GetButtonIndexEvent -= GetButtonIndex;
-        _gameVm.GetButtonIndexEvent += GetButtonIndex;
-        _gameVm.GetDeleteImageEvent -= GetDeleteImage;
-        _gameVm.GetDeleteImageEvent += GetDeleteImage;
     }
 
+    public void DeleteAllSlots()
+    {
+        for (var i = 0; i < 12 ; i ++)
+        {
+            SetObjectSize(_images[$"NorthUnitPanel{i}"], 0);
+        }
+    }
+    
     private void SetDeleteImage()
     {
         _deleteImage.SetActive(true);
@@ -206,20 +289,50 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         _deleteImage.SetActive(false);
     }
 
-    private GameObject GetDeleteImage()
+    public GameObject GetDeleteImage()
     {
         return _deleteImage;
+    }
+    
+    public int GetButtonIndex(GameObject button)
+    {
+        return Array.IndexOf(_buttonArray, button);
+    }
+
+    public void UpdateUpgradeCostText(int cost)
+    {
+        GetText((int)Texts.UnitUpgradeGoldText).text = cost.ToString();
+    }
+
+    public void UpdateDeleteCostText(int cost)
+    {
+        GetText((int)Texts.UnitDeleteGoldText).text = cost.ToString();
+    }
+    
+    public void UpdateRepairCostText(int cost)
+    {
+        GetText((int)Texts.UnitRepairGoldText).text = cost.ToString();
+    }
+    
+    private void OnUpgradeClicked(PointerEventData data)
+    {
+        _gameVm.OnUnitUpgradeClicked(_gameVm.SelectedObjectIds);
+    }
+    
+    private void OnDeleteClicked(PointerEventData data)
+    {
+        _gameVm.OnUnitDeleteClicked(_gameVm.SelectedObjectIds);
+    }
+    
+    private void OnRepairClicked(PointerEventData data)
+    {
+        _gameVm.OnUnitRepairClicked(_gameVm.SelectedObjectIds);
     }
     
     private void OnSlotClicked(PointerEventData data)
     {
         var index = GetButtonIndex(data.pointerPress.gameObject);
         _gameVm.OnSlotClicked(index);
-    }
-    
-    private int GetButtonIndex(GameObject button)
-    {
-        return Array.IndexOf(_buttonArray, button);
     }
     
     private void OnDestroy()
@@ -230,8 +343,6 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
             _gameVm.HighlightDeleteImageOnWindowEvent -= HighlightDeleteImage;
             _gameVm.RestoreDeleteImageOnWindowEvent -= RestoreDeleteImage;
             _gameVm.DisappearDeleteImageOnWindowEvent -= DisappearDeleteImage;
-            _gameVm.GetButtonIndexEvent -= GetButtonIndex;
-            _gameVm.GetDeleteImageEvent -= GetDeleteImage;
             _gameVm.CapacityWindow = null;
         }
     }
