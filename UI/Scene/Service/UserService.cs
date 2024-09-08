@@ -39,7 +39,42 @@ public class UserService : IUserService
             User.Instance.NotOwnedCardListWolf.Add(unitInfo);
         }
     }
+    
+    public void LoadOwnedSheep(SheepInfo sheepInfo)
+    {
+        User.Instance.OwnedSheepList.Add(sheepInfo);
+    }
+    
+    public void LoadNotOwnedSheep(SheepInfo sheepInfo)
+    {
+        User.Instance.NotOwnedSheepList.Add(sheepInfo);
+    }
+    
+    public void LoadOwnedEnchant(EnchantInfo enchantInfo)
+    {
+        User.Instance.OwnedEnchantList.Add(enchantInfo);
+    }
+    
+    public void LoadNotOwnedEnchant(EnchantInfo enchantInfo)
+    {
+        User.Instance.NotOwnedEnchantList.Add(enchantInfo);
+    }
+    
+    public void LoadOwnedCharacter(CharacterInfo characterInfo)
+    {
+        User.Instance.OwnedCharacterList.Add(characterInfo);
+    }
+    
+    public void LoadNotOwnedCharacter(CharacterInfo characterInfo)
+    {
+        User.Instance.NotOwnedCharacterList.Add(characterInfo);
+    }
 
+    public void LoadBattleSetting(BattleSettingInfo battleSettingInfo)
+    {
+        User.Instance.BattleSetting = battleSettingInfo;
+    }
+    
     public void LoadDeck(DeckInfo deckInfo)
     {
         // Receive the user's deck information from the server and store it.

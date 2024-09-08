@@ -26,11 +26,14 @@ public class CollectionViewModel
     public async Task Initialize()
     {
         await InitializeCards();
+        await Task.WhenAll(InitializeSheep(), InitializeEnchant(), InitializeCharacter());
+        
+        OnCardInitialized?.Invoke(Util.Camp);
     }
 
     private async Task InitializeCards()
     {
-        var cardPacket = new GetOwnedCardsPacketRequired()
+        var cardPacket = new GetOwnedCardsPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
             Environment = _webService.Environment
@@ -58,13 +61,11 @@ public class CollectionViewModel
         {
             _userService.LoadNotOwnedUnit(unitInfo);
         }
-        
-        OnCardInitialized?.Invoke(Util.Camp);
     }
 
     private async Task InitializeSheep()
     {
-        var sheepPacket = new GetOwnedSheepPacketRequired()
+        var sheepPacket = new GetOwnedSheepPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
             Environment = _webService.Environment
@@ -77,28 +78,91 @@ public class CollectionViewModel
         
         var sheepResponse = sheepTask.Result;
         if (sheepResponse.GetSheepOk == false) return;
+        if (sheepResponse.AccessToken != null)
+        {
+            _tokenService.SaveAccessToken(sheepResponse.AccessToken);
+            _tokenService.SaveRefreshToken(sheepResponse.RefreshToken);
+        }
         
-        
-        
+        foreach (var sheepInfo in sheepResponse.OwnedSheepList)
+        {
+            _userService.LoadOwnedSheep(sheepInfo);
+        }
+
+        foreach (var sheepInfo in sheepResponse.NotOwnedSheepList)
+        {
+            _userService.LoadNotOwnedSheep(sheepInfo);
+        }
     }
 
     private async Task InitializeEnchant()
     {
+        var enchantPacket = new GetOwnedEnchantPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            Environment = _webService.Environment
+        };
         
+        var enchantTask = _webService.SendWebRequestAsync<GetOwnedEnchantPacketResponse>(
+            "Collection/GetEnchants", "POST", enchantPacket);
+        
+        await enchantTask;
+        
+        var enchantResponse = enchantTask.Result;
+        if (enchantResponse.GetEnchantOk == false) return;
+        if (enchantResponse.AccessToken != null)
+        {
+            _tokenService.SaveAccessToken(enchantResponse.AccessToken);
+            _tokenService.SaveRefreshToken(enchantResponse.RefreshToken);
+        }
+        
+        foreach (var enchantInfo in enchantResponse.OwnedEnchantList)
+        {
+            _userService.LoadOwnedEnchant(enchantInfo);
+        }
+        
+        foreach (var enchantInfo in enchantResponse.NotOwnedEnchantList)
+        {
+            _userService.LoadNotOwnedEnchant(enchantInfo);
+        }
     }
 
     private async Task InitializeCharacter()
     {
+        var characterPacket = new GetOwnedCharacterPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            Environment = _webService.Environment
+        };
         
+        var characterTask = _webService.SendWebRequestAsync<GetOwnedCharacterPacketResponse>(
+            "Collection/GetCharacters", "POST", characterPacket);
+        
+        await characterTask;
+        
+        var characterResponse = characterTask.Result;
+        if (characterResponse.GetCharacterOk == false) return;
+        if (characterResponse.AccessToken != null)
+        {
+            _tokenService.SaveAccessToken(characterResponse.AccessToken);
+            _tokenService.SaveRefreshToken(characterResponse.RefreshToken);
+        }
+        
+        foreach (var characterInfo in characterResponse.OwnedCharacterList)
+        {
+            _userService.LoadOwnedCharacter(characterInfo);
+        }
+        
+        foreach (var characterInfo in characterResponse.NotOwnedCharacterList)
+        {
+            _userService.LoadNotOwnedCharacter(characterInfo);
+        }
     }
     
-    public void OrderCardsByClass()
+    public void OrderCardsByClass<T>(List<T> ownedAsset, List<T> notOwnedAsset) where T : IAsset
     {
-        User.Instance.OwnedCardListSheep.Sort((a, b) => a.Class.CompareTo(b.Class));
-        User.Instance.NotOwnedCardListSheep.Sort((a, b) => a.Class.CompareTo(b.Class));
-        
-        User.Instance.OwnedCardListWolf.Sort((a, b) => a.Class.CompareTo(b.Class));
-        User.Instance.NotOwnedCardListWolf.Sort((a, b) => a.Class.CompareTo(b.Class));
+        ownedAsset.Sort((a, b) => a.Class.CompareTo(b.Class));
+        notOwnedAsset.Sort((a, b) => a.Class.CompareTo(b.Class));
     }
 
     public void SwitchCards(Camp camp)

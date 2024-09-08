@@ -7,32 +7,39 @@ using UnityEngine;
 // ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable CollectionNeverUpdated.Global
 
-public class UnitInfo
+public class UnitInfo : IAsset
 {
-    public UnitId Id { get; set; }
+    public int Id { get; set; }
     public UnitClass Class { get; set; }
     public int Level { get; set; }
-    public UnitId Species { get; set; }
+    public int Species { get; set; }
     public Role Role { get; set; }
     public Camp Camp { get; set; }
 }
 
-public class SheepInfo
+public class SheepInfo : IAsset
 {
-    public SheepId Id { get; set; }
+    public int Id { get; set; }
     public UnitClass Class { get; set; }
 }
 
-public class EnchantInfo
+public class EnchantInfo : IAsset
 {
-    public EnchantId Id { get; set; }
+    public int Id { get; set; }
     public UnitClass Class { get; set; }
 }
 
-public class CharacterInfo
+public class CharacterInfo : IAsset
 {
-    public CharacterId Id { get; set; }
+    public int Id { get; set; }
     public UnitClass Class { get; set; }
+}
+
+public class BattleSettingInfo
+{
+    public SheepInfo SheepInfo { get; set; }
+    public EnchantInfo EnchantInfo { get; set; }
+    public CharacterInfo CharacterInfo { get; set; }
 }
 
 public class DeckInfo
@@ -163,6 +170,7 @@ public class GetInitDeckPacketResponse
 {
     public bool GetDeckOk { get; set; }
     public List<DeckInfo> DeckList { get; set; }
+    public BattleSettingInfo BattleSetting { get; set; }
 }
 
 public class GetSelectedDeckRequired

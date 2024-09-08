@@ -50,6 +50,8 @@ public class DeckViewModel
             _userService.LoadDeck(deckInfo);
         }
         
+        _userService.LoadBattleSetting(deckResponse.BattleSetting);
+        
         _userService.BindDeck();
         OnDeckInitialized?.Invoke(Util.Camp);
     }
@@ -62,29 +64,33 @@ public class DeckViewModel
     public void UpdateDeck(Card oldCard, Card newCard)
     {
         var deck = GetDeck(Util.Camp);
-        var index = Array.FindIndex(deck.UnitsOnDeck, unitInfo => unitInfo.Id == oldCard.UnitInfo.Id);
+        var index = Array.FindIndex(deck.UnitsOnDeck, unitInfo => unitInfo.Id == oldCard.Id);
         if (index == -1) return;
         
         var unitIdToBeDeleted = deck.UnitsOnDeck[index].Id;
-        var unitIdToBeUpdated = newCard.UnitInfo.Id;
-        deck.UnitsOnDeck[index] = newCard.UnitInfo;
-        deck.UnitsOnDeck = deck.UnitsOnDeck.OrderBy(unit => unit.Class).ToArray();
+        var unitIdToBeUpdated = newCard.Id;
 
         if (Util.Camp == Camp.Sheep)
         {
+            deck.UnitsOnDeck[index] = User.Instance.OwnedCardListSheep
+                .FirstOrDefault(unitInfo => unitInfo.Id == newCard.Id);
             User.Instance.DeckSheep = deck;
         }
         else
         {
+            deck.UnitsOnDeck[index] = User.Instance.OwnedCardListWolf
+                .FirstOrDefault(unitInfo => unitInfo.Id == newCard.Id);
             User.Instance.DeckWolf = deck;
         }
         
+        deck.UnitsOnDeck = deck.UnitsOnDeck.OrderBy(unit => unit.Class).ToArray();
+
         var updateDeckPacket = new UpdateDeckPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
             DeckId = deck.DeckId,
-            UnitIdToBeDeleted = unitIdToBeDeleted,
-            UnitIdToBeUpdated = unitIdToBeUpdated
+            UnitIdToBeDeleted = (UnitId)unitIdToBeDeleted,
+            UnitIdToBeUpdated = (UnitId)unitIdToBeUpdated
         };
         
         _webService.SendWebRequest<UpdateDeckPacketResponse>(

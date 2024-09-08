@@ -99,24 +99,30 @@ public class Util
                 return Managers.Resource.Load<Sprite>("Externals/UICasual/ResourcesData/Sprite/Component/Frame/Frame_ItemFrame01_Color_Brown");
         }
     }
-    
-    public static GameObject GetCardResources(
-        UnitInfo unitInfo, Transform parent, float cardSize = 0, Action<PointerEventData> action = null)
+
+    public static GameObject GetCardResources<TEnum>(
+        IAsset asset, Transform parent, float cardSize = 0, Action<PointerEventData> action = null) 
+        where TEnum : struct, Enum
     {
         var cardFrame = Managers.Resource.Instantiate("UI/Deck/CardFrame", parent);
         var unitInCard = cardFrame.transform.Find("CardUnit").gameObject;
         
         if (cardFrame.TryGetComponent(out Card card) == false) return null;
-        card.UnitInfo = unitInfo;
+        card.Id = asset.Id;
+        card.Class = asset.Class;
         
-        cardFrame.GetComponent<Image>().sprite = SetCardFrame(unitInfo.Class);
-        unitInCard.GetComponent<Image>().sprite = 
-            Managers.Resource.Load<Sprite>($"Sprites/Portrait/{unitInfo.Id.ToString()}");
+        cardFrame.GetComponent<Image>().sprite = SetCardFrame(asset.Class);
+        var enumValue = (TEnum)Enum.ToObject(typeof(TEnum), asset.Id);
+        var path = $"Sprites/Portrait/{enumValue.ToString()}";
+        unitInCard.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
 
         if (cardSize != 0)
         {
             var unitRect = unitInCard.GetComponent<RectTransform>();
-            unitRect.sizeDelta = new Vector2(cardSize, cardSize);
+            unitRect.anchorMin = new Vector2((1 - cardSize) * 0.5f, (1 - cardSize) * 0.5f);
+            unitRect.anchorMax = new Vector2((1 + cardSize) * 0.5f, (1 + cardSize) * 0.5f);
+            unitRect.offsetMin = Vector2.zero;
+            unitRect.offsetMax = Vector2.zero;
         }
         
         if (action != null) cardFrame.BindEvent(action);

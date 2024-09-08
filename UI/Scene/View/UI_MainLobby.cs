@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using UnityEngine;
@@ -25,8 +26,12 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     private Card _selectedCard;
     private UI_CardClickPopup _cardPopup;
     private Transform _deck;
-    private Transform _collection;
-    private Transform _noCollection;
+    private Transform _unitCollection;
+    private Transform _unitNoCollection;
+    private Transform _assetCollection;
+    private Transform _assetNoCollection;
+    private Transform _characterCollection;
+    private Transform _characterNoCollection;
     
     private UI_CardClickPopup CardPopup
     {
@@ -103,11 +108,16 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         DeckScrollView,
         CollectionScrollView,
         Deck,
-        HoldingCardPanel,
-        NotHoldingCardPanel,
+        
+        UnitHoldingCardPanel,
+        UnitNotHoldingCardPanel,
+        AssetHoldingCardPanel,
+        AssetNotHoldingCardPanel,
+        CharacterHoldingCardPanel,
+        CharacterNotHoldingCardPanel,
         
         CharacterFrame,
-        SupportFrame,
+        AssetFrame,
     }
 
     #endregion
@@ -208,8 +218,12 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     private async void SetMainLobbyItemUI()
     {
         _deck = GetImage((int)Images.Deck).transform;
-        _collection = GetImage((int)Images.HoldingCardPanel).transform;
-        _noCollection = GetImage((int)Images.NotHoldingCardPanel).transform;
+        _unitCollection = GetImage((int)Images.UnitHoldingCardPanel).transform;
+        _unitNoCollection = GetImage((int)Images.UnitNotHoldingCardPanel).transform;
+        _assetCollection = GetImage((int)Images.AssetHoldingCardPanel).transform;
+        _assetNoCollection = GetImage((int)Images.AssetNotHoldingCardPanel).transform;
+        _characterCollection = GetImage((int)Images.CharacterHoldingCardPanel).transform;
+        _characterNoCollection = GetImage((int)Images.CharacterNotHoldingCardPanel).transform;
 
         GetButton((int)Buttons.DeckButton1).GetComponent<DeckButtonInfo>().DeckIndex = 1;
         GetButton((int)Buttons.DeckButton2).GetComponent<DeckButtonInfo>().DeckIndex = 2;
@@ -224,35 +238,102 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     
     private void SetDeckUI(Camp camp)
     {
+        // Set Deck - As using layout group, no need to set position
         var deck = _deckVm.GetDeck(camp);
-        var parent = Util.FindChild(gameObject, _deck.name, true, true).transform;
+        var deckParent = Util.FindChild(gameObject, _deck.name, true, true).transform;
+        
         foreach (var unit in deck.UnitsOnDeck)
         {
-            Util.GetCardResources(unit, parent, 0, OnCardClickedOnDeck);
+            Util.GetCardResources<UnitId>(unit, deckParent, 0, OnCardClicked);
         }
+
+        // Set Asset Frame
+        IAsset asset = camp == Camp.Sheep ? User.Instance.BattleSetting.SheepInfo : User.Instance.BattleSetting.EnchantInfo;
+        var assetParent = GetImage((int)Images.AssetFrame).transform;
+        var assetFrame = camp == Camp.Sheep ?
+            Util.GetCardResources<SheepId>(asset, assetParent, 1, OnCardClicked):
+            Util.GetCardResources<EnchantId>(asset, assetParent, 1, OnCardClicked);
+        assetFrame.GetComponent<RectTransform>().anchorMin = new Vector2(0, 0);
+        assetFrame.GetComponent<RectTransform>().anchorMax = new Vector2(1, 1);
+        
+        // Set Character Frame
+        var characterParent = GetImage((int)Images.CharacterFrame).transform;
+        var character = User.Instance.BattleSetting.CharacterInfo;
+        var characterFrame = Util.GetCardResources<CharacterId>(character, characterParent, 0.75f, OnCardClicked);
+        characterFrame.GetComponent<RectTransform>().anchorMin = new Vector2(0, 0);
+        characterFrame.GetComponent<RectTransform>().anchorMax = new Vector2(1, 1);
     }
     
     private void SetCollectionUI(Camp camp)
     {
-        _collectionVm.OrderCardsByClass();
+        _collectionVm.OrderCardsByClass(User.Instance.OwnedCardListSheep, User.Instance.NotOwnedCardListWolf);
+        _collectionVm.OrderCardsByClass(User.Instance.OwnedCardListWolf, User.Instance.NotOwnedCardListWolf);
+        _collectionVm.OrderCardsByClass(User.Instance.OwnedSheepList, User.Instance.NotOwnedSheepList);
+        _collectionVm.OrderCardsByClass(User.Instance.OwnedEnchantList, User.Instance.NotOwnedEnchantList);
+        _collectionVm.OrderCardsByClass(User.Instance.OwnedCharacterList, User.Instance.NotOwnedCharacterList);
+        
+        
         var ownedUnits = camp == Camp.Sheep ? User.Instance.OwnedCardListSheep : User.Instance.OwnedCardListWolf;
         var notOwnedUnits = camp == Camp.Sheep ? User.Instance.NotOwnedCardListSheep : User.Instance.NotOwnedCardListWolf;
-        var ownedParent = _collection.transform;
-        var notOwnedParent = _noCollection.transform;
+        var ownedAssets = camp == Camp.Sheep 
+            ? User.Instance.OwnedSheepList.Cast<IAsset>().ToList() 
+            : User.Instance.OwnedEnchantList.Cast<IAsset>().ToList();
+        var notOwnedAssets = camp == Camp.Sheep 
+            ? User.Instance.NotOwnedSheepList.Cast<IAsset>().ToList() 
+            : User.Instance.NotOwnedEnchantList.Cast<IAsset>().ToList();
         
-        Util.DestroyAllChildren(ownedParent);
-        Util.DestroyAllChildren(notOwnedParent);
+        
+        Util.DestroyAllChildren(_unitCollection);
+        Util.DestroyAllChildren(_unitNoCollection);
+        Util.DestroyAllChildren(_assetCollection);
+        Util.DestroyAllChildren(_assetNoCollection);
+        Util.DestroyAllChildren(_characterCollection);
+        Util.DestroyAllChildren(_characterNoCollection);
 
+        // Units in collection UI
         foreach (var unit in ownedUnits)
         {
-            Util.GetCardResources(unit, ownedParent, 0, OnCardClickedOnDeck);
+            Util.GetCardResources<UnitId>(unit, _unitCollection, 0, OnCardClicked);
         }
 
         foreach (var unit in notOwnedUnits)
         {
-            var cardFrame = Util.GetCardResources(unit, notOwnedParent);
+            var cardFrame = Util.GetCardResources<UnitId>(unit, _unitNoCollection, 0, OnCardClicked);
             var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
-            cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>($"Sprites/Portrait/{unit.Id.ToString()}_gray");
+            var path = $"Sprites/Portrait/{((UnitId)unit.Id).ToString()}_gray";
+            cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
+        }
+
+        // Assets in collection UI
+        foreach (var asset in ownedAssets)
+        {
+            var cardFrame = camp == Camp.Sheep 
+                ? Util.GetCardResources<SheepId>(asset, _assetCollection, 0, OnCardClicked) 
+                : Util.GetCardResources<EnchantId>(asset, _assetCollection, 0, OnCardClicked);
+        }
+
+        foreach (var asset in notOwnedAssets)
+        {
+            var cardFrame = camp == Camp.Sheep 
+                ? Util.GetCardResources<SheepId>(asset, _assetNoCollection, 0, OnCardClicked) 
+                : Util.GetCardResources<EnchantId>(asset, _assetNoCollection, 0, OnCardClicked);
+            var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
+            var path = $"Sprites/Portrait/{((SheepId)asset.Id).ToString()}_gray";
+            cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
+        }
+        
+        // Characters in collection UI
+        foreach (var character in User.Instance.OwnedCharacterList)
+        {
+            Util.GetCardResources<CharacterId>(character, _characterCollection, 0, OnCardClicked);
+        }
+        
+        foreach (var character in User.Instance.NotOwnedCharacterList)
+        {
+            var cardFrame = Util.GetCardResources<CharacterId>(character, _characterNoCollection, 0, OnCardClicked);
+            var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
+            var path = $"Sprites/Portrait/{((CharacterId)character.Id).ToString()}_gray";
+            cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
         }
     }
 
@@ -355,7 +436,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         GetImage((int)Images.CollectionScrollView).gameObject.SetActive(true);
     }
     
-    private void OnCardClickedOnDeck(PointerEventData data)
+    private void OnCardClicked(PointerEventData data)
     {
         if (data.pointerPress.TryGetComponent(out Card card) == false) return;
         SetCardPopupUI(card);
@@ -413,8 +494,8 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         SetObjectSize(GetImage((int)Images.EventButtonIcon).gameObject, 0.8f);
         SetObjectSize(GetImage((int)Images.ClanButtonIcon).gameObject, 0.8f);
         
+        SetObjectSize(GetImage((int)Images.AssetFrame).gameObject, 0.5f);
         SetObjectSize(GetImage((int)Images.CharacterFrame).gameObject, 0.5f);
-        SetObjectSize(GetImage((int)Images.SupportFrame).gameObject, 0.5f);
         
         // MainLobby_Item Setting
         SetMainLobbyItemUI();
@@ -448,13 +529,11 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
 
     #endregion
     
-    
     // Touch Events
     #region TouchEvent
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        Debug.Log("click");
         if (CardPopup != null) Managers.UI.ClosePopupUI(CardPopup);
     }
 
@@ -474,4 +553,16 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     }
 
     #endregion
+
+    private void OnDestroy()
+    {
+        _lobbyVm.OnPageChanged -= UpdateScrollbar;
+        _deckVm.OnDeckInitialized -= SetDeckUI;
+        _deckVm.OnDeckSelected -= ResetDeckUI;
+        _deckVm.OnDeckSelected -= SetDeckButtonUI;
+        _deckVm.OnDeckSwitched -= ResetDeckUI;
+        _collectionVm.OnCardInitialized -= SetCollectionUI;
+        _collectionVm.OnCardSwitched -= SwitchCollection;
+        _userService.InitDeckButton -= SetDeckButtonUI;
+    }
 }

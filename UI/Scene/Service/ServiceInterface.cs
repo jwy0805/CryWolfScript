@@ -7,6 +7,13 @@ public interface IUserService
 {
     void LoadOwnedUnit(UnitInfo unitInfo);
     void LoadNotOwnedUnit(UnitInfo unitInfo);
+    void LoadOwnedSheep(SheepInfo sheepInfo);
+    void LoadNotOwnedSheep(SheepInfo sheepInfo);
+    void LoadOwnedEnchant(EnchantInfo enchantInfo);
+    void LoadNotOwnedEnchant(EnchantInfo enchantInfo);
+    void LoadOwnedCharacter(CharacterInfo characterInfo);
+    void LoadNotOwnedCharacter(CharacterInfo characterInfo);
+    void LoadBattleSetting(BattleSettingInfo battleSettingInfo);
     void LoadDeck(DeckInfo deckInfo);
     void SaveDeck(DeckInfo deckInfo);
     void BindDeck();

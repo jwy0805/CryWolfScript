@@ -9,8 +9,8 @@ using UnityEngine.UI;
 using Zenject;
 using Image = UnityEngine.UI.Image;
 
-/* Last Modified : 24. 08. 14
-   * Version : 1.0
+/* Last Modified : 24. 09. 07
+   * Version : 1.01
    */
 
 public class UI_CardClickPopup : UI_Popup
@@ -20,7 +20,7 @@ public class UI_CardClickPopup : UI_Popup
     private Card _selectedCard;
     public Vector3 CardPosition { get; set; }
     public Vector2 Size { get; set; }
-    public UnitInfo UnitInfo { get; set; }
+    public IAsset Asset { get; set; }
     public int Level { get; set; }
     public bool FromDeck { get; set; }
 
@@ -31,7 +31,7 @@ public class UI_CardClickPopup : UI_Popup
         {
             _selectedCard = value;
             _selectedCard.TryGetComponent(out Card card);
-            UnitInfo = card.UnitInfo;
+            Asset = card;
         }
     }
 
@@ -98,7 +98,7 @@ public class UI_CardClickPopup : UI_Popup
         var deck = Util.Camp == Camp.Sheep 
             ? User.Instance.DeckSheep.UnitsOnDeck 
             : User.Instance.DeckWolf.UnitsOnDeck;
-        var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == UnitInfo.Id);
+        var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == Asset.Id);
         GetButton((int)Buttons.UnitSelectButton).interactable = index == -1 || FromDeck;
     }
 
@@ -108,9 +108,9 @@ public class UI_CardClickPopup : UI_Popup
         var cardFrame = Managers.Resource.Instantiate("UI/Deck/CardFrame", parent);
         var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
         
-        cardFrame.GetComponent<Image>().sprite = Util.SetCardFrame(UnitInfo.Class);
+        cardFrame.GetComponent<Image>().sprite = Util.SetCardFrame(Asset.Class);
         cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(
-            $"Sprites/Portrait/{UnitInfo.Id.ToString()}");
+            $"Sprites/Portrait/{((UnitId)Asset.Id).ToString()}");
         
         cardFrame.TryGetComponent(out RectTransform rectTransform);
         rectTransform.anchorMax = new Vector2(1, 1);

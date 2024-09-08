@@ -1,7 +1,8 @@
 using Google.Protobuf.Protocol;
 using UnityEngine;
 
-public class Card : MonoBehaviour
+public class Card : MonoBehaviour, IAsset
 {
-    public UnitInfo UnitInfo { get; set; }
+    public int Id { get; set; }
+    public UnitClass Class { get; set; }
 }
