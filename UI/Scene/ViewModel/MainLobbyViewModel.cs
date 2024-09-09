@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Google.Protobuf.Protocol;
 using UnityEngine;
 using Zenject;
 // ReSharper disable ClassNeverInstantiated.Global
@@ -20,6 +21,7 @@ public class MainLobbyViewModel
     public bool IsSwipeMode { get; set; } = false;
     public float SwipeTime => 0.2f;
     
+    // Logics related to the main lobby scroll view
     public void Initialize(int pageCount)
     {
         ScrollPageValues = new float[pageCount];   // 스크롤되는 페이지의 각 value 값을 저장하는 배열 메모리 할당
@@ -32,7 +34,7 @@ public class MainLobbyViewModel
 
         _maxPage = pageCount;           
     }
-
+    
     public void StartTouch(float startX)
     {
         if (IsSwipeMode) return;

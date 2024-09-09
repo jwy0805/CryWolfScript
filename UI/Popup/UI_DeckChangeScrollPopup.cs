@@ -1,22 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Zenject;
+using Vector2 = UnityEngine.Vector2;
 
-/* Last Modified : 24. 08. 14
- * Version : 1.0
+/* Last Modified : 24. 09. 09
+ * Version : 1.011
  */
 
 public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
 {
     private DeckViewModel _deckVm;
     
-    private UI_MainLobby _mainLobby;
     private Card[] _deck;
     private UI_CardClickPopup _cardPopup;
     private bool _changing;
@@ -81,7 +82,6 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
     {
         base.Init();
         
-        _mainLobby = GameObject.Find("UI_MainLobby(Clone)").GetComponent<UI_MainLobby>();
         BindObjects();
         InitButtonEvents();
         InitUI();
@@ -150,13 +150,12 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         var units = collection
             .Where(unitInfo => deck.UnitsOnDeck.All(u => u.Id != unitInfo.Id)).ToList();
         
-        
         foreach (var unit in units)
         {
             var cardFrame = Util.GetCardResources<UnitId>(unit, parent, 0, OnCollectionCardClicked);
             cardFrame.TryGetComponent(out RectTransform rectTransform);
-            rectTransform.anchorMax = new Vector2(1, 1);
-            rectTransform.anchorMin = new Vector2(0, 0);
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.anchorMin = Vector2.zero;
             
             cardFrame.BindEvent(OnCollectionCardClicked);
         }
@@ -193,16 +192,15 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         Changing = true;
     }
     
-    
     private void CloseAllPopup(PointerEventData data)
     {
-        _mainLobby.ResetDeckUI(Util.Camp);
+        _deckVm.ResetDeckUI(Util.Camp);
         Managers.UI.CloseAllPopupUI();
     }
     
     public void OnPointerClick(PointerEventData eventData)
     {
-        _mainLobby.ResetDeckUI(Util.Camp);
+        _deckVm.ResetDeckUI(Util.Camp);
         if (CardPopup != null) Managers.UI.ClosePopupUI(CardPopup);
     }
     
@@ -219,6 +217,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
 
     private void OnDeckButtonClicked(PointerEventData data)
     {
-        _mainLobby.OnDeckButtonClicked(data);
+        var buttonNumber = data.pointerPress.GetComponent<DeckButtonInfo>().DeckIndex;
+        _deckVm.SelectDeck(buttonNumber, Util.Camp);
     }
 }

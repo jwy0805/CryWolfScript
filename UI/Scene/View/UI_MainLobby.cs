@@ -9,9 +9,10 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Zenject;
 
-/* Last Modified : 24. 08. 14
- * Version : 1.0
- */
+/* Last Modified : 24. 09. 09
+   * Version : 1.011
+   */
+ 
 
 public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBeginDragHandler, IEndDragHandler
 {
@@ -147,10 +148,8 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
 
         _deckVm.OnDeckInitialized -= SetDeckUI;
         _deckVm.OnDeckInitialized += SetDeckUI;
-        _deckVm.OnDeckSelected -= ResetDeckUI;
-        _deckVm.OnDeckSelected += ResetDeckUI;
-        _deckVm.OnDeckSelected -= SetDeckButtonUI;
-        _deckVm.OnDeckSelected += SetDeckButtonUI;
+        _deckVm.OnDeckSwitched -= SetDeckButtonUI;
+        _deckVm.OnDeckSwitched += SetDeckButtonUI;
         _deckVm.OnDeckSwitched -= ResetDeckUI;
         _deckVm.OnDeckSwitched += ResetDeckUI;
         
@@ -272,7 +271,6 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         _collectionVm.OrderCardsByClass(User.Instance.OwnedEnchantList, User.Instance.NotOwnedEnchantList);
         _collectionVm.OrderCardsByClass(User.Instance.OwnedCharacterList, User.Instance.NotOwnedCharacterList);
         
-        
         var ownedUnits = camp == Camp.Sheep ? User.Instance.OwnedCardListSheep : User.Instance.OwnedCardListWolf;
         var notOwnedUnits = camp == Camp.Sheep ? User.Instance.NotOwnedCardListSheep : User.Instance.NotOwnedCardListWolf;
         var ownedAssets = camp == Camp.Sheep 
@@ -369,12 +367,14 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         CardPopup = Managers.UI.ShowPopupUI<UI_CardClickPopup>();
         CardPopup.SelectedCard = _selectedCard;
         CardPopup.CardPosition = _selectedCard.transform.position;
-        CardPopup.FromDeck = card.gameObject.transform.parent == GetImage((int)Images.Deck).transform;
+        CardPopup.FromDeck = card.gameObject.transform.parent == GetImage((int)Images.Deck).transform 
+                             || card.gameObject.transform.parent == GetImage((int)Images.AssetFrame).transform
+                             || card.gameObject.transform.parent == GetImage((int)Images.CharacterFrame).transform;
         
         // TODO: Set Size By Various Resolution
     }
     
-    public void ResetDeckUI(Camp camp)
+    private void ResetDeckUI(Camp camp)
     {
         var parent = GetImage((int)Images.Deck).transform;
         foreach (Transform child in parent) Destroy(child.gameObject);
@@ -421,7 +421,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         GetImage((int)Images.DeckScrollView).gameObject.SetActive(true);
     }
 
-    public void OnDeckButtonClicked(PointerEventData data)
+    private void OnDeckButtonClicked(PointerEventData data)
     {
         var buttonNumber = data.pointerPress.GetComponent<DeckButtonInfo>().DeckIndex;
         _deckVm.SelectDeck(buttonNumber, Util.Camp);
@@ -558,8 +558,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     {
         _lobbyVm.OnPageChanged -= UpdateScrollbar;
         _deckVm.OnDeckInitialized -= SetDeckUI;
-        _deckVm.OnDeckSelected -= ResetDeckUI;
-        _deckVm.OnDeckSelected -= SetDeckButtonUI;
+        _deckVm.OnDeckSwitched -= SetDeckButtonUI;
         _deckVm.OnDeckSwitched -= ResetDeckUI;
         _collectionVm.OnCardInitialized -= SetCollectionUI;
         _collectionVm.OnCardSwitched -= SwitchCollection;

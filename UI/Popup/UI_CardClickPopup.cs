@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Google.Protobuf.Protocol;
+using ModestTree;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -9,9 +10,9 @@ using UnityEngine.UI;
 using Zenject;
 using Image = UnityEngine.UI.Image;
 
-/* Last Modified : 24. 09. 07
-   * Version : 1.01
-   */
+/* Last Modified : 24. 09. 09
+ * Version : 1.011
+ */
 
 public class UI_CardClickPopup : UI_Popup
 {
@@ -20,7 +21,6 @@ public class UI_CardClickPopup : UI_Popup
     private Card _selectedCard;
     public Vector3 CardPosition { get; set; }
     public Vector2 Size { get; set; }
-    public IAsset Asset { get; set; }
     public int Level { get; set; }
     public bool FromDeck { get; set; }
 
@@ -31,7 +31,6 @@ public class UI_CardClickPopup : UI_Popup
         {
             _selectedCard = value;
             _selectedCard.TryGetComponent(out Card card);
-            Asset = card;
         }
     }
 
@@ -67,7 +66,22 @@ public class UI_CardClickPopup : UI_Popup
         BindObjects();
         InitButtonEvents();
         InitUI();
-        SetCardInPopup();
+
+        switch (_selectedCard.AssetType)
+        {
+            case Asset.Unit:
+                SetCardInPopup<UnitId>();
+                break;
+            case Asset.Sheep:
+                SetCardInPopup<SheepId>();
+                break;
+            case Asset.Enchant:
+                SetCardInPopup<EnchantId>();
+                break;
+            case Asset.Character:
+                SetCardInPopup<CharacterId>();
+                break;
+        }
     }
 
     protected override void BindObjects()
@@ -98,23 +112,36 @@ public class UI_CardClickPopup : UI_Popup
         var deck = Util.Camp == Camp.Sheep 
             ? User.Instance.DeckSheep.UnitsOnDeck 
             : User.Instance.DeckWolf.UnitsOnDeck;
-        var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == Asset.Id);
+        var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == _selectedCard.Id);
         GetButton((int)Buttons.UnitSelectButton).interactable = index == -1 || FromDeck;
     }
 
-    private void SetCardInPopup()
+    private void SetCardInPopup<TEnum>() where TEnum : struct, Enum
     {
         var parent = GetImage((int)Images.CardPanel).transform;
         var cardFrame = Managers.Resource.Instantiate("UI/Deck/CardFrame", parent);
         var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
         
-        cardFrame.GetComponent<Image>().sprite = Util.SetCardFrame(Asset.Class);
-        cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(
-            $"Sprites/Portrait/{((UnitId)Asset.Id).ToString()}");
+        if (cardFrame.TryGetComponent(out Card card) == false) return;
+        card.Id = _selectedCard.Id;
+        card.Class = _selectedCard.Class;
+        card.AssetType = typeof(TEnum).Name switch
+        {
+            "UnitId" => Asset.Unit,
+            "SheepId" => Asset.Sheep,
+            "EnchantId" => Asset.Enchant,
+            "CharacterId" => Asset.Character,
+            _ => Asset.None
+        };
+        
+        var enumValue = (TEnum)Enum.ToObject(typeof(TEnum), _selectedCard.Id);
+        var path = $"Sprites/Portrait/{enumValue.ToString()}";
+        cardFrame.GetComponent<Image>().sprite = Util.SetCardFrame(_selectedCard.Class);
+        cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
         
         cardFrame.TryGetComponent(out RectTransform rectTransform);
-        rectTransform.anchorMax = new Vector2(1, 1);
         rectTransform.anchorMin = new Vector2(0, 0);
+        rectTransform.anchorMax = new Vector2(1, 1);
         cardFrame.BindEvent(ClosePopup);
     }
     
@@ -126,14 +153,22 @@ public class UI_CardClickPopup : UI_Popup
 
     private void OnSelectClicked()
     {
-        if (FromDeck)
+        if (_selectedCard.AssetType == Asset.Unit)
         {
-            var popup = Managers.UI.ShowPopupUI<UI_DeckChangeScrollPopup>();
-            popup.SelectedCard = SelectedCard;
+            if (FromDeck)
+            {
+                var popup = Managers.UI.ShowPopupUI<UI_DeckChangeScrollPopup>();
+                popup.SelectedCard = SelectedCard;
+            }
+            else
+            {
+                var popup = Managers.UI.ShowPopupUI<UI_DeckChangePopup>();
+                popup.SelectedCard = SelectedCard;
+            }
         }
         else
         {
-            var popup = Managers.UI.ShowPopupUI<UI_DeckChangePopup>();
+            var popup = Managers.UI.ShowPopupUI<UI_AssetChangeScrollPopup>();
             popup.SelectedCard = SelectedCard;
         }
     }

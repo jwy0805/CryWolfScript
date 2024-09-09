@@ -14,7 +14,6 @@ public class DeckViewModel
     private readonly ITokenService _tokenService;
 
     public event Action<Camp> OnDeckInitialized;
-    public event Action<Camp> OnDeckSelected;
     public event Action<Camp> OnDeckSwitched;
     
     [Inject]
@@ -56,6 +55,42 @@ public class DeckViewModel
         OnDeckInitialized?.Invoke(Util.Camp);
     }
 
+    public void ResetDeckUI(Camp camp)
+    {
+        OnDeckSwitched?.Invoke(Util.Camp);
+    }
+
+    public void UpdateBattleSetting(Card oldCard, Card newCard)
+    {
+        var battleSetting = User.Instance.BattleSetting;
+        var type = oldCard.AssetType;
+        
+        switch (type)
+        {
+            case Asset.Sheep:
+                battleSetting.SheepInfo.Id = newCard.Id;
+                battleSetting.SheepInfo.Class = newCard.Class;
+                break;
+            case Asset.Enchant:
+                battleSetting.EnchantInfo.Id = newCard.Id;
+                battleSetting.EnchantInfo.Class = newCard.Class;
+                break;
+            case Asset.Character:
+                battleSetting.CharacterInfo.Id = newCard.Id;
+                battleSetting.CharacterInfo.Class = newCard.Class;
+                break;
+        }
+        
+        var updatePacket = new UpdateBattleSettingPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            BattleSettingInfo = battleSetting
+        };
+        
+        _webService.SendWebRequest<UpdateBattleSettingPacketResponse>(
+            "Collection/UpdateBattleSetting", "PUT", updatePacket, _ => { });
+    }
+    
     public Deck GetDeck(Camp camp)
     {
         return camp == Camp.Sheep ? User.Instance.DeckSheep : User.Instance.DeckWolf;
@@ -124,7 +159,7 @@ public class DeckViewModel
             User.Instance.DeckWolf = deck;
         }
         
-        OnDeckSelected?.Invoke(camp);
+        OnDeckSwitched?.Invoke(camp);
     }
     
     public void SwitchDeck(Camp camp)

@@ -47,7 +47,7 @@ public class LoginServiceFactory : IServiceFactory
 {
     public void Bind(DiContainer container)
     {
-        container.Bind<LoginViewModel>().AsTransient();
+        container.Bind<LoginViewModel>().AsSingle();
     }
 }
 
@@ -55,9 +55,9 @@ public class MainLobbyServiceFactory : IServiceFactory
 {
     public void Bind(DiContainer container)
     {
-        container.Bind<MainLobbyViewModel>().AsTransient();
-        container.Bind<DeckViewModel>().AsTransient();
-        container.Bind<CollectionViewModel>().AsTransient();
+        container.Bind<MainLobbyViewModel>().AsSingle();
+        container.Bind<DeckViewModel>().AsSingle();
+        container.Bind<CollectionViewModel>().AsSingle();
     }
 }
 
@@ -65,8 +65,8 @@ public class MatchMakingServiceFactory : IServiceFactory
 {
     public void Bind(DiContainer container)
     {
-        container.Bind<MatchMakingViewModel>().AsTransient();
-        container.Bind<DeckViewModel>().AsTransient();
+        container.Bind<MatchMakingViewModel>().AsSingle();
+        container.Bind<DeckViewModel>().AsSingle();
     }
 }
 

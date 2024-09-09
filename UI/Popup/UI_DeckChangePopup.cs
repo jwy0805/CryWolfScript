@@ -7,16 +7,14 @@ using UnityEngine.UI;
 using Zenject;
 
 /*
- * Last Modified : 24. 08. 14
- * Version : 1.0
+ * Last Modified : 24. 09. 09
+ * Version : 1.011
  */
 
 public class UI_DeckChangePopup : UI_Popup
 {
     private DeckViewModel _deckVm;
     private IUserService _userService;
-
-    private UI_MainLobby _mainLobby;
     
     public Card SelectedCard { get; set; }
     
@@ -54,7 +52,6 @@ public class UI_DeckChangePopup : UI_Popup
     {
         base.Init();
         
-        _mainLobby = GameObject.Find("UI_MainLobby").GetComponent<UI_MainLobby>();
         BindObjects();
         InitButtonEvents();
         InitUI();
@@ -87,7 +84,14 @@ public class UI_DeckChangePopup : UI_Popup
         var deck = _deckVm.GetDeck(Util.Camp);
         foreach (var unit in deck.UnitsOnDeck)
         {
-            var cardFrame = Util.GetCardResources<UnitId>(unit, parent, 0, OnChangeDeck);
+            var cardFrame = Util.GetCardResources<UnitId>(unit, parent, 0, data =>
+            {
+                // 실제 덱이 수정되고, DeckChangeScrollPopup으로 넘어감
+                if (data.pointerPress.TryGetComponent(out Card card) == false) return;
+                _deckVm.UpdateDeck(card, SelectedCard);
+                Managers.UI.ShowPopupUI<UI_DeckChangeScrollPopup>();
+            });
+            
             cardFrame.TryGetComponent(out RectTransform rectTransform);
             rectTransform.anchorMax = new Vector2(1, 1);
             rectTransform.anchorMin = new Vector2(0, 0);
@@ -97,29 +101,15 @@ public class UI_DeckChangePopup : UI_Popup
     private void SetCardInPopup()
     {
         var parent = GetImage((int)Images.CardPanel).transform;
-        var cardFrame = Util.GetCardResources<UnitId>(SelectedCard, parent, 0, OnCardClickedOnDeck);
+        var cardFrame = Util.GetCardResources<UnitId>(SelectedCard, parent);
         cardFrame.TryGetComponent(out RectTransform rectTransform);
         rectTransform.anchorMax = new Vector2(1, 1);
         rectTransform.anchorMin = new Vector2(0, 0);
     }
     
-    // Event Methods
-    private void OnChangeDeck(PointerEventData data)
-    {   
-        // 실제 덱이 수정되고, DeckChangeScrollPopup으로 넘어감
-        if (data.pointerPress.TryGetComponent(out Card card) == false) return;
-        _deckVm.UpdateDeck(card, SelectedCard);
-        Managers.UI.ShowPopupUI<UI_DeckChangeScrollPopup>();
-    }
-    
-    private void OnCardClickedOnDeck(PointerEventData data)
-    {
-        
-    }
-    
     private void ClosePopup(PointerEventData data)
     {
-        _mainLobby.ResetDeckUI(Util.Camp);
+        _deckVm.ResetDeckUI(Util.Camp);
         Managers.UI.CloseAllPopupUI();
     }
 }

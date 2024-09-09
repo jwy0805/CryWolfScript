@@ -209,3 +209,14 @@ public class UpdateLastDeckPacketResponse
 {
     public bool UpdateLastDeckOk { get; set; }
 }
+
+public class UpdateBattleSettingPacketRequired
+{
+    public string AccessToken { get; set; }
+    public BattleSettingInfo BattleSettingInfo { get; set; }
+}
+
+public class UpdateBattleSettingPacketResponse
+{
+    public bool UpdateBattleSettingOk { get; set; }   
+}

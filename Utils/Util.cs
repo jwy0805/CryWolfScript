@@ -10,6 +10,10 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
+/* Last Modified : 24. 09. 09
+ * Version : 1.011
+ */
+
 public class Util
 {
     public static Camp Camp = Camp.Sheep;
@@ -110,10 +114,18 @@ public class Util
         if (cardFrame.TryGetComponent(out Card card) == false) return null;
         card.Id = asset.Id;
         card.Class = asset.Class;
+        card.AssetType = typeof(TEnum).Name switch
+        {
+            "UnitId" => Asset.Unit,
+            "SheepId" => Asset.Sheep,
+            "EnchantId" => Asset.Enchant,
+            "CharacterId" => Asset.Character,
+            _ => Asset.None
+        };
         
-        cardFrame.GetComponent<Image>().sprite = SetCardFrame(asset.Class);
         var enumValue = (TEnum)Enum.ToObject(typeof(TEnum), asset.Id);
         var path = $"Sprites/Portrait/{enumValue.ToString()}";
+        cardFrame.GetComponent<Image>().sprite = SetCardFrame(asset.Class);
         unitInCard.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
 
         if (cardSize != 0)
