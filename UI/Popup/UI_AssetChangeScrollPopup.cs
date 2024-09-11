@@ -151,7 +151,7 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
         }
     }
     
-    public void OnPointerClick(PointerEventData eventData)
+    public void OnPointerClick(PointerEventData data)
     {
         _deckVm.ResetDeckUI(Util.Camp);
     }

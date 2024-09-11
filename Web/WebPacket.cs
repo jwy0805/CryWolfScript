@@ -15,6 +15,7 @@ public class UnitInfo : IAsset
     public int Species { get; set; }
     public Role Role { get; set; }
     public Camp Camp { get; set; }
+    public UnitRegion Region { get; set; }
 }
 
 public class SheepInfo : IAsset

@@ -56,7 +56,7 @@ public class Managers : MonoBehaviour
         _network.Update();
     }
 
-    static void Init()
+    static async void Init()
     {
         if (s_instance == null)
         {
@@ -70,9 +70,9 @@ public class Managers : MonoBehaviour
             DontDestroyOnLoad(go);
             s_instance = go.GetComponent<Managers>();
             
-            s_instance._data.Init();
             s_instance._pool.Init();
             s_instance._sound.Init();
+            await s_instance._data.InitAsync();
         }
     }
     

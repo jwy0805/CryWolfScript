@@ -159,6 +159,14 @@ public class CollectionViewModel
         }
     }
     
+    public int GetLevelFromUiObject(UnitId unitId)
+    {
+        var level = (int)unitId % 100 % 3;
+        if (level == 0) { level = 3; }
+
+        return level;
+    }
+    
     public void OrderCardsByClass<T>(List<T> ownedAsset, List<T> notOwnedAsset) where T : IAsset
     {
         ownedAsset.Sort((a, b) => a.Class.CompareTo(b.Class));

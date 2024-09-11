@@ -10,29 +10,19 @@ using UnityEngine.UI;
 using Zenject;
 using Image = UnityEngine.UI.Image;
 
-/* Last Modified : 24. 09. 09
- * Version : 1.011
+/* Last Modified : 24. 09. 10
+ * Version : 1.012
  */
 
 public class UI_CardClickPopup : UI_Popup
 {
     private IUserService _userService;
     
-    private Card _selectedCard;
     public Vector3 CardPosition { get; set; }
     public Vector2 Size { get; set; }
-    public int Level { get; set; }
     public bool FromDeck { get; set; }
 
-    public Card SelectedCard
-    {
-        get => _selectedCard;
-        set
-        {
-            _selectedCard = value;
-            _selectedCard.TryGetComponent(out Card card);
-        }
-    }
+    public Card SelectedCard { get; set; }
 
     private enum Images
     {
@@ -67,7 +57,7 @@ public class UI_CardClickPopup : UI_Popup
         InitButtonEvents();
         InitUI();
 
-        switch (_selectedCard.AssetType)
+        switch (SelectedCard.AssetType)
         {
             case Asset.Unit:
                 SetCardInPopup<UnitId>();
@@ -112,7 +102,7 @@ public class UI_CardClickPopup : UI_Popup
         var deck = Util.Camp == Camp.Sheep 
             ? User.Instance.DeckSheep.UnitsOnDeck 
             : User.Instance.DeckWolf.UnitsOnDeck;
-        var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == _selectedCard.Id);
+        var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == SelectedCard.Id);
         GetButton((int)Buttons.UnitSelectButton).interactable = index == -1 || FromDeck;
     }
 
@@ -123,8 +113,8 @@ public class UI_CardClickPopup : UI_Popup
         var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
         
         if (cardFrame.TryGetComponent(out Card card) == false) return;
-        card.Id = _selectedCard.Id;
-        card.Class = _selectedCard.Class;
+        card.Id = SelectedCard.Id;
+        card.Class = SelectedCard.Class;
         card.AssetType = typeof(TEnum).Name switch
         {
             "UnitId" => Asset.Unit,
@@ -134,9 +124,9 @@ public class UI_CardClickPopup : UI_Popup
             _ => Asset.None
         };
         
-        var enumValue = (TEnum)Enum.ToObject(typeof(TEnum), _selectedCard.Id);
+        var enumValue = (TEnum)Enum.ToObject(typeof(TEnum), SelectedCard.Id);
         var path = $"Sprites/Portrait/{enumValue.ToString()}";
-        cardFrame.GetComponent<Image>().sprite = Util.SetCardFrame(_selectedCard.Class);
+        cardFrame.GetComponent<Image>().sprite = Util.SetCardFrame(SelectedCard.Class);
         cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
         
         cardFrame.TryGetComponent(out RectTransform rectTransform);
@@ -147,13 +137,21 @@ public class UI_CardClickPopup : UI_Popup
     
     private void OnInfoClicked(PointerEventData data)
     {
-        // 정보 팝업
-        var popup = Managers.UI.ShowPopupUI<UI_CardInfoPopup>();
+        if (SelectedCard.AssetType == Asset.Unit)
+        {
+            var popup = Managers.UI.ShowPopupUI<UI_UnitInfoPopup>();
+            popup.SelectedCard = SelectedCard;
+        }
+        else
+        {
+            var popup = Managers.UI.ShowPopupUI<UI_AssetInfoPopup>();
+            popup.SelectedCard = SelectedCard;
+        }
     }
 
     private void OnSelectClicked()
     {
-        if (_selectedCard.AssetType == Asset.Unit)
+        if (SelectedCard.AssetType == Asset.Unit)
         {
             if (FromDeck)
             {

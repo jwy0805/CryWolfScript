@@ -38,3 +38,13 @@ public class Deck
     public Camp Camp;
     public bool LastPicked;
 }
+
+public class Unit : IAsset
+{
+    public int Id { get; set; }
+    public UnitClass Class { get; set; }
+    public int Level { get; set; }
+    public UnitId Species { get; set; }
+    public Role Role { get; set; }
+    public Camp Camp { get; set; }
+}
