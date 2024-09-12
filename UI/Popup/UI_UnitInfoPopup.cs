@@ -9,21 +9,27 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Zenject;
 
-/* Last Modified : 24. 09. 10
- * Version : 1.012
+/* Last Modified : 24. 09. 12
+ * Version : 0.02
  */
 
 public class UI_UnitInfoPopup : UI_Popup
 {
+    private bool _showDetails;
     private Button _selectedButton;
     private UnitInfo _unitInfo;
+    private RectTransform _skillInfoPanelRect;
+    private GameObject _skillDescriptionPanel;
+    private GameObject _currentSkillPanel;
+    private GameObject _mainSkillTextPanel;
+    private GameObject _mainSkillPanel;
+    private GameObject _mainSkillIcon;
     private readonly Dictionary<int, Button> _levelButtons = new();
-    
+
     public Card SelectedCard { get; set; }
 
     public Button SelectedButton
     {
-        get => _selectedButton;
         set
         {
             _selectedButton = value;
@@ -35,7 +41,10 @@ public class UI_UnitInfoPopup : UI_Popup
     
     private enum Images
     {
+        ScrollView,
         CardPanel,
+        StatPanel,
+        StatDetailPanel,
         
         UnitClassPanel,
         UnitRegionPanel,
@@ -57,6 +66,15 @@ public class UI_UnitInfoPopup : UI_Popup
         UnitLocationImage,
         UnitTypeImage,
         UnitAttackTypeImage,
+        
+        SkillInfoPanel,
+        SkillPanel,
+        SkillTreeTextPanel,
+        SkillDescriptionPanel,
+        SkillDescriptionGoldImage,
+        MainSkillTextPanel,
+        MainSkillPanel,
+        MainSkillImage
     }
 
     private enum Buttons
@@ -82,6 +100,10 @@ public class UI_UnitInfoPopup : UI_Popup
         UnitLocationText,
         UnitTypeText,
         UnitAttackTypeText,
+        
+        SkillDescriptionText,
+        SkillDescriptionGoldText,
+        MainSkillDescriptionText
     }
 
     protected override void Init()
@@ -111,14 +133,21 @@ public class UI_UnitInfoPopup : UI_Popup
     {
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(CloseAllPopup);
         GetButton((int)Buttons.EnterButton).gameObject.BindEvent(CloseAllPopup);
-        GetButton((int)Buttons.LevelButton1).gameObject.BindEvent(LevelButtonClicked);
-        GetButton((int)Buttons.LevelButton2).gameObject.BindEvent(LevelButtonClicked);
-        GetButton((int)Buttons.LevelButton3).gameObject.BindEvent(LevelButtonClicked);
+        GetButton((int)Buttons.LevelButton1).gameObject.BindEvent(OnLevelButtonClicked);
+        GetButton((int)Buttons.LevelButton2).gameObject.BindEvent(OnLevelButtonClicked);
+        GetButton((int)Buttons.LevelButton3).gameObject.BindEvent(OnLevelButtonClicked);
     }
 
     protected override void InitUI()
-    {
-        
+    { 
+        var skillTreeTextPanel = GetImage((int)Images.SkillTreeTextPanel);
+        _mainSkillTextPanel = GetImage((int)Images.MainSkillTextPanel).gameObject;
+        _mainSkillPanel = GetImage((int)Images.MainSkillPanel).gameObject;
+        _skillInfoPanelRect = GetImage((int)Images.SkillInfoPanel).GetComponent<RectTransform>();
+
+        AdjustLayoutElement(_mainSkillTextPanel, 0.12f, 0.5f);
+        AdjustLayoutElement(_mainSkillPanel, 0.12f, 0.96f);
+        AdjustLayoutElement(skillTreeTextPanel.gameObject, 0.12f, 0.5f);
     }
     
     private void GetUnitInfo(UnitId unitId)
@@ -137,8 +166,24 @@ public class UI_UnitInfoPopup : UI_Popup
             Region = unitData.Region
         };
     }
+    
+    private void SetLevelButton(UnitInfo unitInfo)
+    {
+        foreach (var button in _levelButtons.Values)
+        {
+            button.GetComponent<Image>().color = new Color(248f/255f, 211f/255f, 123f/255f);
+            button.GetComponent<Button>().interactable = true;
+        }
+        
+        SelectedButton = _levelButtons[unitInfo.Level].GetComponent<Button>();
+        
+        SetCardImage(_unitInfo);
+        SetStatus();
+        SetSkillPanel(_unitInfo);
+        SetMainSkillPanel(_unitInfo);
+    }
 
-    private void SetInitialCardImage(IAsset asset)
+    private void SetCardImage(IAsset asset)
     {
         // Set card image
         SetObjectSize(GetImage((int)Images.CardPanel).gameObject, 0.7f, 1.12f);
@@ -153,22 +198,8 @@ public class UI_UnitInfoPopup : UI_Popup
         cardFrame.GetComponent<RectTransform>().anchorMin = Vector2.zero;
         cardUnit.GetComponent<RectTransform>().sizeDelta = new Vector2(cardPanelSize.x * 0.9f, cardPanelSize.x * 0.9f);
     }
-    
-    private void SetLevelButton(UnitInfo unitInfo)
-    {
-        foreach (var button in _levelButtons.Values)
-        {
-            button.GetComponent<Image>().color = new Color(248f/255f, 211f/255f, 123f/255f);
-            button.GetComponent<Button>().interactable = true;
-        }
-        
-        SelectedButton = _levelButtons[unitInfo.Level].GetComponent<Button>();
-        
-        SetInitialCardImage(_unitInfo);
-        SetInitialStatus();
-    }
 
-    private void SetInitialStatus()
+    private void SetStatus()
     {
         var classPath = $"Sprites/Icons/icon_class_{_unitInfo.Class.ToString()}";
         var regionPath = $"Sprites/Icons/icon_region_{_unitInfo.Region.ToString()}";
@@ -203,8 +234,90 @@ public class UI_UnitInfoPopup : UI_Popup
         GetText((int)Texts.UnitAttackTypeText).text = attackType;
     }
     
+    private void SetSkillPanel(IAsset asset)
+    {
+        if (_currentSkillPanel != null)
+        {
+            Destroy(_currentSkillPanel);
+        }
+        
+        var parent = GetImage((int)Images.SkillPanel);
+        AdjustLayoutElement(parent.gameObject, 0.6f, 0.96f);
+        
+        var skillPanelPath = $"UI/InGame/SkillPanel/{((UnitId)asset.Id).ToString()}SkillPanel";
+        _currentSkillPanel = Managers.Resource.Instantiate(skillPanelPath);
+        _currentSkillPanel.transform.SetParent(parent.transform);
+        
+        var skillPanelRect = _currentSkillPanel.GetComponent<RectTransform>();
+        skillPanelRect.anchoredPosition = new Vector2(0, 0);
+        skillPanelRect.sizeDelta = new Vector2(0, 0);
+        
+        var skillButtons = _currentSkillPanel.GetComponentsInChildren<Button>();
+        foreach (var skillButton in skillButtons)
+        {
+            skillButton.gameObject.BindEvent(OnSkillButtonClicked);
+            SetObjectSize(skillButton.gameObject, 0.22f);
+        }
+
+        _skillDescriptionPanel = GetImage((int)Images.SkillDescriptionPanel).gameObject;
+        AdjustLayoutElement(_skillDescriptionPanel, 0.2f, 0.96f);
+        _skillDescriptionPanel.gameObject.SetActive(false);
+    }
+
+    private void SetMainSkillPanel(IAsset asset)
+    {
+        if (_mainSkillIcon != null)
+        {
+            Destroy(_mainSkillIcon);
+        }
+        
+        Managers.Data.MainSkillDict.TryGetValue((UnitId)asset.Id, out var mainSkill);
+        if (mainSkill == null) return;
+
+        if (mainSkill.Count == 0)
+        {
+            _mainSkillTextPanel.SetActive(false);
+            _mainSkillPanel.SetActive(false);
+        }
+        else
+        {
+            _mainSkillTextPanel.SetActive(true);
+            _mainSkillPanel.SetActive(true);
+
+            var skillId = mainSkill[0];
+            var mainSkillText = GetText((int)Texts.MainSkillDescriptionText);
+            var mainSkillImage = GetImage((int)Images.MainSkillImage);
+            var mainSkillIcon = _currentSkillPanel.GetComponentsInChildren<Button>()
+                .FirstOrDefault(button => button.name.Contains(skillId.ToString()))?
+                .transform.parent.parent.gameObject;
+            
+            _mainSkillIcon = Instantiate(mainSkillIcon, _mainSkillPanel.transform);
+            var copiedSkillIconRect = _mainSkillIcon.GetComponent<RectTransform>();
+            var mainSkillImageRect = mainSkillImage.GetComponent<RectTransform>();
+
+            Managers.Data.SkillDict.TryGetValue((int)skillId, out var skillData);
+            if (skillData == null || mainSkillIcon == null) return;
+            
+            mainSkillText.text = skillData.Explanation;
+            mainSkillImageRect.sizeDelta = new Vector2(Screen.width * 0.1f, Screen.width * 0.1f);
+            
+            _mainSkillIcon.transform.SetParent(mainSkillImage.transform);
+            copiedSkillIconRect.offsetMin = Vector2.zero;
+            copiedSkillIconRect.offsetMax = Vector2.zero;
+            copiedSkillIconRect.anchorMax = Vector2.one;
+            copiedSkillIconRect.anchorMin = Vector2.zero;
+        }
+    }
+
+    private void AdjustLayoutElement(GameObject go, float height, float width)
+    {
+        var layoutElement = go.GetComponent<LayoutElement>();
+        layoutElement.preferredHeight = _skillInfoPanelRect.rect.height * height;
+        layoutElement.preferredWidth = _skillInfoPanelRect.rect.width * width;
+    }
+    
     // Button events
-    private void LevelButtonClicked(PointerEventData data)
+    private void OnLevelButtonClicked(PointerEventData data)
     {
         var clickedButton = data.pointerPress.GetComponent<Button>();
         var level = _levelButtons.FirstOrDefault(pair => pair.Value == clickedButton).Key;
@@ -215,6 +328,31 @@ public class UI_UnitInfoPopup : UI_Popup
 
         GetUnitInfo((UnitId)newUnitId);
         SetLevelButton(_unitInfo);
+    }
+
+    private void OnSkillButtonClicked(PointerEventData data)
+    {
+        _skillDescriptionPanel.gameObject.SetActive(true);
+        
+        var skillDescriptionGoldImage = GetImage((int)Images.SkillDescriptionGoldImage);
+        var skillDescriptionText = GetText((int)Texts.SkillDescriptionText);
+        var skillDescriptionGoldText = GetText((int)Texts.SkillDescriptionGoldText);
+        var skillNumber = Managers.Data.SkillDict.Values
+            .FirstOrDefault(skill => data.pointerPress.name.Contains(((Skill)skill.Id).ToString()))?
+            .Id;
+        
+        if (skillNumber == null) return;
+        Managers.Data.SkillDict.TryGetValue((int)skillNumber, out var skillData);
+
+        if (skillData == null) return;
+        skillDescriptionGoldImage.rectTransform.sizeDelta = new Vector2(Screen.width * 0.045f, Screen.width * 0.045f);
+        skillDescriptionText.text = skillData.Explanation;
+        skillDescriptionGoldText.text = skillData.Cost.ToString();
+    }
+    
+    private void OnDetailButtonClicked(PointerEventData data)
+    {
+        _showDetails = !_showDetails;
     }
     
     private void CloseAllPopup(PointerEventData data)
