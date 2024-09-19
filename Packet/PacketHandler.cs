@@ -431,6 +431,11 @@ public class PacketHandler
         Managers.Event.TriggerEvent("UpdateUnitRepairCost", packet);
     }
     
+    public static void S_SetBaseSkillCostHandler(PacketSession session, IMessage packet)
+    {
+        Managers.Event.TriggerEvent("SetBaseSkillCost", packet);
+    }
+    
     public static void S_SendWarningInGameHandler(PacketSession session, IMessage packet)
     {
         var popupPacket = (S_SendWarningInGame)packet;

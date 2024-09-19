@@ -212,7 +212,7 @@ public class UI_GameSingleWay : UI_Game
     private void OnSubResourceButtonClicked(PointerEventData data)
     {
         Managers.UI.CloseAllPopupUI();
-        Managers.UI.ShowPopupUiInGame<SubResourceWindow>();
+        Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
     }
 
     #endregion

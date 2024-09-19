@@ -93,8 +93,8 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
     
     private GameViewModel _gameVm;
     
-    private readonly Dictionary<string, GameObject> _buttons = new();
-    private readonly Dictionary<string, GameObject> _images = new();
+    private readonly Dictionary<string, GameObject> _buttonDict = new();
+    private readonly Dictionary<string, GameObject> _imageDict = new();
     private readonly GameObject[] _buttonArray = new GameObject[12];
     private GameObject _deleteImage;
 
@@ -132,8 +132,8 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
     {
         var id = _gameVm.SelectedObjectIds[index];
         var unitId = Managers.Object.FindById(id).GetComponent<CreatureController>().UnitId;
-        var slotPanel = _images[$"NorthUnitPanel{index}"];
-        var slotButtonImage = _buttons[$"NorthUnitButton{index}"];
+        var slotPanel = _imageDict[$"NorthUnitPanel{index}"];
+        var slotButtonImage = _buttonDict[$"NorthUnitButton{index}"];
         
         var path = ObjectType switch
         {
@@ -150,16 +150,16 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
 
     protected override void BindObjects()
     {
-        BindData<Button>(typeof(Buttons), _buttons);
-        BindData<Image>(typeof(Images), _images);
+        BindData<Button>(typeof(Buttons), _buttonDict);
+        BindData<Image>(typeof(Images), _imageDict);
         Bind<TextMeshProUGUI>(typeof(Texts));
         
-        _deleteImage = _images["DeleteImage"];
-        SetObjectSize(_images["DeleteImage"], 0.35f);
-        _images["DeleteImage"].SetActive(false);
+        _deleteImage = _imageDict["DeleteImage"];
+        SetObjectSize(_imageDict["DeleteImage"], 0.35f);
+        _imageDict["DeleteImage"].SetActive(false);
         for (var i = 0; i < 12; i++)
         {
-            _buttonArray[i] = _buttons[$"NorthUnitButton{i}"];
+            _buttonArray[i] = _buttonDict[$"NorthUnitButton{i}"];
         }
     }
 
@@ -181,13 +181,13 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         }
         
         BindControlButtons(images);
-        SetObjectSize(_images["UnitUpgradeButtonPanel"], 0.6f);
-        SetObjectSize(_images["UnitDeleteButtonPanel"], 0.6f);
-        SetObjectSize(_images["UnitRepairButtonPanel"], 0.6f);
-        SetObjectSize(_images["UnitUpgradeGoldImage"], 0.15f);
-        SetObjectSize(_images["UnitDeleteGoldImage"], 0.15f);
-        SetObjectSize(_images["UnitDeleteGoldPlusImage"], 0.1f);
-        SetObjectSize(_images["UnitRepairGoldImage"], 0.15f);
+        SetObjectSize(_imageDict["UnitUpgradeButtonPanel"], 0.6f);
+        SetObjectSize(_imageDict["UnitDeleteButtonPanel"], 0.6f);
+        SetObjectSize(_imageDict["UnitRepairButtonPanel"], 0.6f);
+        SetObjectSize(_imageDict["UnitUpgradeGoldImage"], 0.15f);
+        SetObjectSize(_imageDict["UnitDeleteGoldImage"], 0.15f);
+        SetObjectSize(_imageDict["UnitDeleteGoldPlusImage"], 0.1f);
+        SetObjectSize(_imageDict["UnitRepairGoldImage"], 0.15f);
     }
     
     private void BindControlButtons(List<Images> images)
@@ -202,7 +202,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         var imagesToBeHidden = allImages.Except(images).ToList();
         foreach (var hiddenImage in imagesToBeHidden)
         {
-            _images[hiddenImage.ToString()].SetActive(false);
+            _imageDict[hiddenImage.ToString()].SetActive(false);
         }
 
         Image image;
@@ -210,7 +210,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         switch (images.Count)
         {
             case 1:
-                image = _images[images[0].ToString()].GetComponent<Image>();
+                image = _imageDict[images[0].ToString()].GetComponent<Image>();
                 image.GetComponent<RectTransform>().anchorMin = new Vector2(0.3f, 0f);
                 image.GetComponent<RectTransform>().anchorMax = new Vector2(0.7f, 1f);
                 break;
@@ -218,7 +218,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
                 increment = 0.4f;
                 for (var i = 0; i < images.Count; i++)
                 {
-                    image = _images[images[i].ToString()].GetComponent<Image>();
+                    image = _imageDict[images[i].ToString()].GetComponent<Image>();
                     image.GetComponent<RectTransform>().anchorMin = new Vector2(0.1f + increment * i, 0f);
                     image.GetComponent<RectTransform>().anchorMax = new Vector2(0.5f + increment * i, 1f);
                 }
@@ -227,7 +227,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
                 increment = 0.33f;
                 for (var i = 0; i < images.Count; i++)
                 {
-                    image = _images[images[i].ToString()].GetComponent<Image>();
+                    image = _imageDict[images[i].ToString()].GetComponent<Image>();
                     image.GetComponent<RectTransform>().anchorMin = new Vector2(0f + increment * i, 0f);
                     image.GetComponent<RectTransform>().anchorMax = new Vector2(0.33f + increment * i, 1f);
                 }
@@ -239,12 +239,12 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
     {
         for (var i = 0; i < 12 ; i++)
         {
-            _buttons[$"NorthUnitButton{i}"].gameObject.BindEvent(OnSlotClicked);
+            _buttonDict[$"NorthUnitButton{i}"].gameObject.BindEvent(OnSlotClicked);
         }
         
-        _buttons["UnitUpgradeButton"].BindEvent(OnUpgradeClicked);
-        _buttons["UnitDeleteButton"].BindEvent(OnDeleteClicked);
-        _buttons["UnitRepairButton"].BindEvent(OnRepairClicked);
+        _buttonDict["UnitUpgradeButton"].BindEvent(OnUpgradeClicked);
+        _buttonDict["UnitDeleteButton"].BindEvent(OnDeleteClicked);
+        _buttonDict["UnitRepairButton"].BindEvent(OnRepairClicked);
     }
 
     private void SubscribeEvents()
@@ -263,7 +263,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
     {
         for (var i = 0; i < 12 ; i ++)
         {
-            SetObjectSize(_images[$"NorthUnitPanel{i}"], 0);
+            SetObjectSize(_imageDict[$"NorthUnitPanel{i}"], 0);
         }
     }
     

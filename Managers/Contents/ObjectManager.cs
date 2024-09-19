@@ -25,8 +25,17 @@ public class ObjectManager
         switch (objectType)
         {
             case GameObjectType.Player:
-                bool isSheep = Util.Camp == Camp.Sheep;
-                Managers.Network.Send(new C_EnterGame { IsSheep = isSheep });
+                var isSheep = Util.Camp == Camp.Sheep;
+                var battleSetting = User.Instance.BattleSetting;
+                var enterPacket = new C_EnterGame
+                {
+                    IsSheep = isSheep,
+                    CharacterId = battleSetting.CharacterInfo.Id,
+                    AssetId = isSheep ? battleSetting.SheepInfo.Id : battleSetting.EnchantInfo.Id
+                };
+                
+                Managers.Network.Send(enterPacket);
+                
                 if (myPlayer)
                 {
                     go = Managers.Game.Spawn("PlayerCharacter");

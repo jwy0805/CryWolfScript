@@ -101,6 +101,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SSetUnitDeleteCost, PacketHandler.S_SetUnitDeleteCostHandler);		
 		_onRecv.Add((ushort)MessageId.SSetUnitRepairCost, MakePacket<S_SetUnitRepairCost>);
 		_handler.Add((ushort)MessageId.SSetUnitRepairCost, PacketHandler.S_SetUnitRepairCostHandler);		
+		_onRecv.Add((ushort)MessageId.SSetBaseSkillCost, MakePacket<S_SetBaseSkillCost>);
+		_handler.Add((ushort)MessageId.SSetBaseSkillCost, PacketHandler.S_SetBaseSkillCostHandler);		
 		_onRecv.Add((ushort)MessageId.SSendWarningInGame, MakePacket<S_SendWarningInGame>);
 		_handler.Add((ushort)MessageId.SSendWarningInGame, PacketHandler.S_SendWarningInGameHandler);		
 		_onRecv.Add((ushort)MessageId.SShowResultScene, MakePacket<S_ShowResultScene>);

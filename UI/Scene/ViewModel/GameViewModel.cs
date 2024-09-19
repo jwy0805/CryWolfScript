@@ -38,7 +38,7 @@ public class GameViewModel
     public IUnitControlWindow UnitControlWindow { get; set; }
     public ICapacityWindow CapacityWindow { get; set; }
     public GameObject DeleteImage => CapacityWindow.GetDeleteImage();
-    public ISubResourceWindow SubResourceWindow { get; set; }
+    public IBaseSkillWindow SubResourceWindow { get; set; }
     public IPortrait CurrentSelectedPortrait { get; set; }
     public ISkillButton CurrentSelectedSkillButton { get; set; }
 
@@ -49,6 +49,7 @@ public class GameViewModel
         Managers.Event.StartListening("UpdateUnitUpgradeCost", UpdateUnitUpgradeCostResponse);
         Managers.Event.StartListening("UpdateUnitDeleteCost", UpdateUnitDeleteCostResponse);
         Managers.Event.StartListening("UpdateUnitRepairCost", UpdateUnitRepairCostResponse);
+        Managers.Event.StartListening("SetBaseSkillCost", SetBaseSkillCostResponse);
     }
     
     public int GetLevelFromUiObject(UnitId unitId)
@@ -132,6 +133,16 @@ public class GameViewModel
         UnitControlWindow.UpdateRepairCostText(packet.Cost);
     }
 
+    private void SetBaseSkillCostRequired()
+    {
+        var packet = new C_SetBaseSkillCost { Camp = Util.Camp };
+    }
+    
+    private void SetBaseSkillCostResponse(object eventData)
+    {
+        
+    }
+    
     private void OnReceiveRanges(object eventData)
     {
         var packet = (S_GetRanges)eventData;

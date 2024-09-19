@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Google.Protobuf.Protocol;
 using TMPro;
@@ -8,6 +9,8 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Zenject;
+using DG.Tweening;
+// ReSharper disable SpecifyACultureInStringConversionExplicitly
 
 /* Last Modified : 24. 09. 12
  * Version : 0.02
@@ -15,10 +18,13 @@ using Zenject;
 
 public class UI_UnitInfoPopup : UI_Popup
 {
+    private bool _isAnimating;
     private bool _showDetails;
     private Button _selectedButton;
     private UnitInfo _unitInfo;
+    private Contents.UnitData _unitData;
     private RectTransform _skillInfoPanelRect;
+    private GameObject _statDetailPanel;
     private GameObject _skillDescriptionPanel;
     private GameObject _currentSkillPanel;
     private GameObject _mainSkillTextPanel;
@@ -27,6 +33,18 @@ public class UI_UnitInfoPopup : UI_Popup
     private readonly Dictionary<int, Button> _levelButtons = new();
 
     public Card SelectedCard { get; set; }
+    
+    public bool ShowDetails
+    {
+        get => _showDetails;
+        set
+        {
+            _showDetails = value;
+            var detailButtonText = GetText((int)Texts.DetailButtonText).GetComponent<TextMeshProUGUI>();
+            detailButtonText.text = _showDetails ? "Summary" : "Detail";
+            ToggleStatDetailPanel();
+        }
+    }
 
     public Button SelectedButton
     {
@@ -38,6 +56,8 @@ public class UI_UnitInfoPopup : UI_Popup
             _selectedButton.interactable = false;
         }
     }
+    
+    #region Enums
     
     private enum Images
     {
@@ -93,6 +113,7 @@ public class UI_UnitInfoPopup : UI_Popup
     private enum Texts
     {
         UnitNameText,
+        DetailButtonText,
         
         UnitClassText,
         UnitRegionText,
@@ -103,18 +124,32 @@ public class UI_UnitInfoPopup : UI_Popup
         
         SkillDescriptionText,
         SkillDescriptionGoldText,
-        MainSkillDescriptionText
+        MainSkillDescriptionText,
+        
+        UnitHpText,
+        UnitMpText,
+        UnitAttackText,
+        UnitMagicalAttackText,
+        UnitAttackSpeedText,
+        UnitMoveSpeedText,
+        UnitDefenceText,
+        UnitMagicalDefenceText,
+        UnitFireResistText,
+        UnitPoisonResistText,
+        UnitAttackRangeText,
+        UnitSkillRangeText,
     }
-
+    
+    #endregion
+    
     protected override void Init()
     {
         base.Init();
         
         BindObjects();
         InitButtonEvents();
-        InitUI();
-        
         GetUnitInfo((UnitId)SelectedCard.Id);
+        InitUI();
         SetLevelButton(_unitInfo);
     }
 
@@ -136,6 +171,8 @@ public class UI_UnitInfoPopup : UI_Popup
         GetButton((int)Buttons.LevelButton1).gameObject.BindEvent(OnLevelButtonClicked);
         GetButton((int)Buttons.LevelButton2).gameObject.BindEvent(OnLevelButtonClicked);
         GetButton((int)Buttons.LevelButton3).gameObject.BindEvent(OnLevelButtonClicked);
+        
+        GetButton((int)Buttons.DetailButton).gameObject.BindEvent(OnDetailButtonClicked);
     }
 
     protected override void InitUI()
@@ -144,6 +181,13 @@ public class UI_UnitInfoPopup : UI_Popup
         _mainSkillTextPanel = GetImage((int)Images.MainSkillTextPanel).gameObject;
         _mainSkillPanel = GetImage((int)Images.MainSkillPanel).gameObject;
         _skillInfoPanelRect = GetImage((int)Images.SkillInfoPanel).GetComponent<RectTransform>();
+        _statDetailPanel = GetImage((int)Images.StatDetailPanel).gameObject;
+
+        var statDetailPanelRect = _statDetailPanel.GetComponent<RectTransform>();
+        SetDetailStat();
+        statDetailPanelRect.anchorMax = new Vector2(0.43f, 1);
+        statDetailPanelRect.anchorMin = new Vector2(0.43f, 0.12f);
+        _statDetailPanel.gameObject.SetActive(false);
 
         AdjustLayoutElement(_mainSkillTextPanel, 0.12f, 0.5f);
         AdjustLayoutElement(_mainSkillPanel, 0.12f, 0.96f);
@@ -155,6 +199,7 @@ public class UI_UnitInfoPopup : UI_Popup
         Managers.Data.UnitDict.TryGetValue((int)unitId, out var unitData);
         if (unitData == null) return;
         
+        _unitData = unitData;
         _unitInfo = new UnitInfo
         {
             Id = unitData.Id,
@@ -181,6 +226,11 @@ public class UI_UnitInfoPopup : UI_Popup
         SetStatus();
         SetSkillPanel(_unitInfo);
         SetMainSkillPanel(_unitInfo);
+
+        if (_statDetailPanel.gameObject.activeSelf)
+        {
+            SetDetailStat();
+        }
     }
 
     private void SetCardImage(IAsset asset)
@@ -204,10 +254,10 @@ public class UI_UnitInfoPopup : UI_Popup
         var classPath = $"Sprites/Icons/icon_class_{_unitInfo.Class.ToString()}";
         var regionPath = $"Sprites/Icons/icon_region_{_unitInfo.Region.ToString()}";
         var rolePath = $"Sprites/Icons/icon_role_{_unitInfo.Role.ToString()}";
-        var locationPath = $"Sprites/Icons/icon_location_{Managers.Data.UnitDict[_unitInfo.Id].RecommendedLocation}";
+        var locationPath = $"Sprites/Icons/icon_location_{_unitData.RecommendedLocation}";
 
-        var type = Managers.Data.UnitDict[_unitInfo.Id].Stat.UnitType == 0 ? "ground" : "air";
-        var attackType = Managers.Data.UnitDict[_unitInfo.Id].Stat.AttackType switch
+        var type = _unitData.Stat.UnitType == 0 ? "ground" : "air";
+        var attackType = _unitData.Stat.AttackType switch
         {
             0 => "ground",
             1 => "air",
@@ -225,11 +275,11 @@ public class UI_UnitInfoPopup : UI_Popup
         GetImage((int)Images.UnitTypeImage).sprite = Resources.Load<Sprite>(typePath);
         GetImage((int)Images.UnitAttackTypeImage).sprite = Resources.Load<Sprite>(attackTypePath);
         
-        GetText((int)Texts.UnitNameText).text = Managers.Data.UnitDict[_unitInfo.Id].Name;
+        GetText((int)Texts.UnitNameText).text = _unitData.Name;
         GetText((int)Texts.UnitClassText).text = _unitInfo.Class.ToString();
         GetText((int)Texts.UnitRegionText).text = _unitInfo.Region.ToString();
         GetText((int)Texts.UnitRoleText).text = _unitInfo.Role.ToString();
-        GetText((int)Texts.UnitLocationText).text = Managers.Data.UnitDict[_unitInfo.Id].RecommendedLocation;
+        GetText((int)Texts.UnitLocationText).text = _unitData.RecommendedLocation;
         GetText((int)Texts.UnitTypeText).text = type;
         GetText((int)Texts.UnitAttackTypeText).text = attackType;
     }
@@ -309,11 +359,69 @@ public class UI_UnitInfoPopup : UI_Popup
         }
     }
 
+    private void SetDetailStat()
+    {
+        GetText((int)Texts.UnitHpText).text = _unitData.Stat.Hp.ToString();
+        GetText((int)Texts.UnitMpText).text = _unitData.Stat.Mp.ToString();
+        GetText((int)Texts.UnitAttackText).text = _unitData.Stat.Attack.ToString();
+        GetText((int)Texts.UnitMagicalAttackText).text = _unitData.Stat.Skill.ToString();
+        GetText((int)Texts.UnitAttackSpeedText).text = _unitData.Stat.AttackSpeed.ToString();
+        GetText((int)Texts.UnitMoveSpeedText).text = _unitData.Stat.MoveSpeed.ToString();
+        GetText((int)Texts.UnitDefenceText).text = _unitData.Stat.Defence.ToString();
+        // TODO: Add Magical Defence Stat
+        GetText((int)Texts.UnitMagicalDefenceText).text = _unitData.Stat.Defence.ToString();
+        GetText((int)Texts.UnitFireResistText).text = _unitData.Stat.FireResist + " %";
+        GetText((int)Texts.UnitPoisonResistText).text = _unitData.Stat.PoisonResist + " %";
+        GetText((int)Texts.UnitAttackRangeText).text = _unitData.Stat.AttackRange.ToString();
+        GetText((int)Texts.UnitSkillRangeText).text = _unitData.Stat.SkillRange.ToString();
+    }
+
     private void AdjustLayoutElement(GameObject go, float height, float width)
     {
         var layoutElement = go.GetComponent<LayoutElement>();
         layoutElement.preferredHeight = _skillInfoPanelRect.rect.height * height;
         layoutElement.preferredWidth = _skillInfoPanelRect.rect.width * width;
+    }
+
+    private void ToggleStatDetailPanel()
+    {
+        if (_isAnimating) return;
+
+        var rect = _statDetailPanel.GetComponent<RectTransform>();
+        
+        if (ShowDetails)
+        {
+            _statDetailPanel.SetActive(true);
+            StartCoroutine(AnimateStatDetailPanel(rect, Vector2.one, 0.2f));
+        }
+        else
+        {
+            StartCoroutine(AnimateStatDetailPanel(rect, new Vector2(0.43f, 1), 0.2f, true));
+        }
+    }
+
+    private IEnumerator AnimateStatDetailPanel(RectTransform rectTransform, Vector2 targetAnchorMax, float duration,
+        bool deactivateAfter = false)
+    {
+        _isAnimating = true;
+        float elapsedTime = 0;
+        Vector2 initialAnchorMax = rectTransform.anchorMax;
+
+        while (elapsedTime < duration)
+        {
+            rectTransform.anchorMax = Vector2.Lerp(initialAnchorMax, targetAnchorMax, elapsedTime / duration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        
+        rectTransform.anchorMax = targetAnchorMax;
+
+        if (deactivateAfter)
+        {
+            rectTransform.gameObject.SetActive(false);
+        }
+
+        _isAnimating = false;
     }
     
     // Button events
@@ -337,8 +445,9 @@ public class UI_UnitInfoPopup : UI_Popup
         var skillDescriptionGoldImage = GetImage((int)Images.SkillDescriptionGoldImage);
         var skillDescriptionText = GetText((int)Texts.SkillDescriptionText);
         var skillDescriptionGoldText = GetText((int)Texts.SkillDescriptionGoldText);
+        var skillName = data.pointerPress.name.Replace("Button", "");
         var skillNumber = Managers.Data.SkillDict.Values
-            .FirstOrDefault(skill => data.pointerPress.name.Contains(((Skill)skill.Id).ToString()))?
+            .FirstOrDefault(skill => skill.Id == (int)Enum.Parse(typeof(Skill), skillName))?
             .Id;
         
         if (skillNumber == null) return;
@@ -352,7 +461,7 @@ public class UI_UnitInfoPopup : UI_Popup
     
     private void OnDetailButtonClicked(PointerEventData data)
     {
-        _showDetails = !_showDetails;
+        ShowDetails = !ShowDetails;
     }
     
     private void CloseAllPopup(PointerEventData data)

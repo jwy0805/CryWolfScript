@@ -183,12 +183,19 @@ public class MyPlayerController : PlayerController
                 {
                     _gameVm.TurnOffSelectRing();
                     _gameVm.TurnOnSelectRing(cc.Id);
-                    var window = Managers.UI.ShowPopupUiInGame<UnitControlWindow>();
-                    window.SelectedUnit = go;
+                    var window = Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
+                    // window.SelectedUnit = go;
                 }
                 break;
             
             case var _ when layer == LayerMask.NameToLayer("Base"):
+                if (_isDragging) return;
+                if (Camp == Camp.Sheep)
+                {
+                    _gameVm.TurnOffSelectRing();
+                    // _gameVm.TurnOnSelectRing(cc.Id);
+                    Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
+                }
                 break;
         }
 
