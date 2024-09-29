@@ -126,28 +126,16 @@ public class SkillWindow : UI_Popup, ISkillWindow
         Managers.UI.ClosePopupUI<UI_UpgradePopup>();
         foreach (var skillButton in _skillButtons)
         {
-            GetFrameFromButton(skillButton.GetComponent<UI_Skill>()).color = Color.green;
+            Util.GetFrameFromButton(skillButton.GetComponent<UI_Skill>()).color = Color.green;
         }
 
         var selectedSkillButton = data.pointerPress.GetComponent<UI_Skill>();
         if (selectedSkillButton == null) return;
         
         _gameVm.CurrentSelectedSkillButton = selectedSkillButton;
-        GetFrameFromButton(_gameVm.CurrentSelectedSkillButton).color = Color.cyan;
+        Util.GetFrameFromButton(_gameVm.CurrentSelectedSkillButton).color = Color.cyan;
         
-        Managers.UI.ShowPopupUiInGame<UI_UpgradePopup>();
-        var skillName = _gameVm.CurrentSelectedSkillButton.Name.Replace("Button", "");
-        if (Enum.TryParse(skillName, out Skill skill))
-        {
-            Managers.Network.Send(new C_SetUpgradePopup { SkillId = (int)skill });
-        }
-    }
-    
-    private Image GetFrameFromButton(ISkillButton button)
-    {
-        if (button is not MonoBehaviour mono) return null;
-        var go = mono.gameObject;
-        return go.transform.parent.parent.GetChild(1).GetComponent<Image>();
+        _gameVm.ShowUpgradePopup();
     }
 
     #endregion

@@ -10,6 +10,7 @@ public interface IPortrait
     UnitId UnitId { get; set; }
     bool CanSpawn { get; set; }
     void ShowRing(float attackRange, float skillRange);
+    void ShowSpawnableBounds(float minZ, float maxZ);
 }
 
 public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHandler, IEndDragHandler
@@ -24,6 +25,7 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
     private Vector3 _hitPoint;
     private GameObject _attackRangeRing;
     private GameObject _skillRangeRing;
+    private GameObject _spawnableBounds;
 
     public UnitId UnitId { get; set; }
 
@@ -57,8 +59,9 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         _originalPos = tf.position;
         _lastSendTime = 0;
         
-        // Send packet to show the range rings
+        // Send packet to show the range rings, spawnable bounds
         Managers.Network.Send(new C_GetRanges { UnitId = (int)_gameVm.CurrentSelectedPortrait.UnitId });
+        Managers.Network.Send(new C_GetSpawnableBounds { Faction = Util.Faction });
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -98,7 +101,7 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        // Hide the range rings
+        HideSpawnableBounds();
         HideRing();
         
         // Drag ended
@@ -145,4 +148,17 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
             _skillRangeRing = null;
         }
     }
+    
+    public void ShowSpawnableBounds(float minZ, float maxZ)
+    {
+        _spawnableBounds = Managers.Resource.Instantiate("WorldObjects/SpawnableBounds");
+        _spawnableBounds.transform.position = new Vector3(0, 6.01f, minZ + (maxZ - minZ) / 2);
+        _spawnableBounds.transform.localScale = new Vector3(22, maxZ - minZ);
+    }
+
+    private void HideSpawnableBounds()
+    {
+        Managers.Resource.Destroy(_spawnableBounds);
+        _spawnableBounds = null;
+    }   
 }

@@ -30,7 +30,7 @@ public class ServerSession : PacketSession
         
         var sessionPacket = new C_SetSession
         {
-            UserAccount = User.Instance.UserAccount, Camp = Util.Camp, Test = test
+            UserAccount = User.Instance.UserAccount, Faction = Util.Faction, Test = test
         };
         Send(sessionPacket);
     }

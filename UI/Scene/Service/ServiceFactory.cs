@@ -58,6 +58,7 @@ public class MainLobbyServiceFactory : IServiceFactory
         container.Bind<MainLobbyViewModel>().AsSingle();
         container.Bind<DeckViewModel>().AsSingle();
         container.Bind<CollectionViewModel>().AsSingle();
+        container.Bind<CraftingViewModel>().AsSingle();
     }
 }
 

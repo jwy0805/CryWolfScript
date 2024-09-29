@@ -20,8 +20,7 @@ public class UI_RangeRing : MonoBehaviour
         if (AboutAttack)
         {
             _spriteRenderer.color = Color.cyan;
-            transform.localScale = 
-                new Vector3(_cc.AttackRange * 0.75f, _cc.AttackRange * 0.75f, _cc.AttackRange * 0.75f);
+            transform.localScale = new Vector3(_cc.AttackRange, _cc.AttackRange, _cc.AttackRange);
         }
         
         if (AboutSkill)
@@ -29,7 +28,7 @@ public class UI_RangeRing : MonoBehaviour
             _spriteRenderer.color = Color.magenta;
             transform.localScale = _cc.SkillRange == 0 
                 ? new Vector3(0, 0, 0) 
-                : new Vector3(_cc.SkillRange * 0.75f, _cc.SkillRange * 0.75f, _cc.SkillRange * 0.75f);
+                : new Vector3(_cc.SkillRange, _cc.SkillRange, _cc.SkillRange);
         }
     }
 
@@ -40,15 +39,14 @@ public class UI_RangeRing : MonoBehaviour
         if (AboutAttack)
         {
             _spriteRenderer.color = Color.cyan;
-            transform.localScale = 
-                new Vector3(range * 0.75f, range * 0.75f, range * 0.75f);
+            transform.localScale = new Vector3(range, range, range);
         }
 
         if (AboutSkill)
         {
             _spriteRenderer.color = Color.magenta;
-            transform.localScale =
-                new Vector3(range * 0.75f, range * 0.75f, range * 0.75f);
+            transform.localScale = new Vector3(range, range, range);
+
         }
     }
 }

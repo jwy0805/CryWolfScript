@@ -7,6 +7,6 @@ public class EffectWithRotationController : EffectController
     protected override void Init()
     {
         base.Init();
-        transform.rotation = Parent.transform.rotation;
+        if (Master != null) transform.rotation = Master.transform.rotation;
     }
 }

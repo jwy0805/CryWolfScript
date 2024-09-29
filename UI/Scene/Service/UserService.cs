@@ -8,7 +8,7 @@ public class UserService : IUserService
 {
     private readonly ITokenService _tokenService;
 
-    public event Action<Camp> InitDeckButton;
+    public event Action<Faction> InitDeckButton;
     
     [Inject]
     public UserService(ITokenService tokenService)
@@ -18,7 +18,7 @@ public class UserService : IUserService
 
     public void LoadOwnedUnit(UnitInfo unitInfo)
     {
-        if (unitInfo.Camp == Camp.Sheep)
+        if (unitInfo.Faction == Faction.Sheep)
         {
             User.Instance.OwnedCardListSheep.Add(unitInfo);
         }
@@ -30,7 +30,7 @@ public class UserService : IUserService
 
     public void LoadNotOwnedUnit(UnitInfo unitInfo)
     {
-        if (unitInfo.Camp == Camp.Sheep)
+        if (unitInfo.Faction == Faction.Sheep)
         {
             User.Instance.NotOwnedCardListSheep.Add(unitInfo);
         }
@@ -83,12 +83,12 @@ public class UserService : IUserService
             DeckId = deckInfo.DeckId,
             UnitsOnDeck = deckInfo.UnitInfo,
             DeckNumber = deckInfo.DeckNumber,
-            Camp = (Camp)deckInfo.Camp,
+            Faction = (Faction)deckInfo.Faction,
             LastPicked = deckInfo.LastPicked,
         };
         deck.UnitsOnDeck = deck.UnitsOnDeck.OrderBy(unit => unit.Class).ToArray();
         
-        if (deck.Camp == Camp.Sheep)
+        if (deck.Faction == Faction.Sheep)
         {
             User.Instance.AllDeckSheep.Add(deck);
         }
@@ -103,12 +103,12 @@ public class UserService : IUserService
             DeckId = deckInfo.DeckId,
             UnitsOnDeck = deckInfo.UnitInfo,
             DeckNumber = deckInfo.DeckNumber,
-            Camp = (Camp)deckInfo.Camp,
+            Faction = (Faction)deckInfo.Faction,
             LastPicked = deckInfo.LastPicked,
         };
         deck.UnitsOnDeck = deck.UnitsOnDeck.OrderBy(unit => unit.Class).ToArray();
 
-        if (deck.Camp == Camp.Sheep)
+        if (deck.Faction == Faction.Sheep)
         {
             User.Instance.DeckSheep = deck;
         }
@@ -127,6 +127,6 @@ public class UserService : IUserService
             ? User.Instance.AllDeckWolf.First(deck => deck.LastPicked) 
             : User.Instance.AllDeckWolf.First();
         
-        InitDeckButton?.Invoke(Util.Camp);
+        InitDeckButton?.Invoke(Util.Faction);
     }
 }

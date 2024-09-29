@@ -14,7 +14,7 @@ public class Contents
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public Camp Camp { get; set; }
+        public Faction Faction { get; set; }
         public Role UnitRole { get; set; }
         public UnitClass UnitClass { get; set; }
         public Species UnitSpecies { get; set; }

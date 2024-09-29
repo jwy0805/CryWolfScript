@@ -81,6 +81,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SUnitSpawnPos, PacketHandler.S_UnitSpawnPosHandler);		
 		_onRecv.Add((ushort)MessageId.SGetRanges, MakePacket<S_GetRanges>);
 		_handler.Add((ushort)MessageId.SGetRanges, PacketHandler.S_GetRangesHandler);		
+		_onRecv.Add((ushort)MessageId.SGetSpawnableBounds, MakePacket<S_GetSpawnableBounds>);
+		_handler.Add((ushort)MessageId.SGetSpawnableBounds, PacketHandler.S_GetSpawnableBoundsHandler);		
 		_onRecv.Add((ushort)MessageId.STime, MakePacket<S_Time>);
 		_handler.Add((ushort)MessageId.STime, PacketHandler.S_TimeHandler);		
 		_onRecv.Add((ushort)MessageId.SSetTextUI, MakePacket<S_SetTextUI>);

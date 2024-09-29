@@ -13,8 +13,8 @@ public class DeckViewModel
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
 
-    public event Action<Camp> OnDeckInitialized;
-    public event Action<Camp> OnDeckSwitched;
+    public event Action<Faction> OnDeckInitialized;
+    public event Action<Faction> OnDeckSwitched;
     
     [Inject]
     public DeckViewModel(IUserService userService, IWebService webService, ITokenService tokenService)
@@ -52,12 +52,12 @@ public class DeckViewModel
         _userService.LoadBattleSetting(deckResponse.BattleSetting);
         
         _userService.BindDeck();
-        OnDeckInitialized?.Invoke(Util.Camp);
+        OnDeckInitialized?.Invoke(Util.Faction);
     }
 
-    public void ResetDeckUI(Camp camp)
+    public void ResetDeckUI(Faction faction)
     {
-        OnDeckSwitched?.Invoke(Util.Camp);
+        OnDeckSwitched?.Invoke(faction);
     }
 
     public void UpdateBattleSetting(Card oldCard, Card newCard)
@@ -91,21 +91,21 @@ public class DeckViewModel
             "Collection/UpdateBattleSetting", "PUT", updatePacket, _ => { });
     }
     
-    public Deck GetDeck(Camp camp)
+    public Deck GetDeck(Faction faction)
     {
-        return camp == Camp.Sheep ? User.Instance.DeckSheep : User.Instance.DeckWolf;
+        return faction == Faction.Sheep ? User.Instance.DeckSheep : User.Instance.DeckWolf;
     }
     
     public void UpdateDeck(Card oldCard, Card newCard)
     {
-        var deck = GetDeck(Util.Camp);
+        var deck = GetDeck(Util.Faction);
         var index = Array.FindIndex(deck.UnitsOnDeck, unitInfo => unitInfo.Id == oldCard.Id);
         if (index == -1) return;
         
         var unitIdToBeDeleted = deck.UnitsOnDeck[index].Id;
         var unitIdToBeUpdated = newCard.Id;
 
-        if (Util.Camp == Camp.Sheep)
+        if (Util.Faction == Faction.Sheep)
         {
             deck.UnitsOnDeck[index] = User.Instance.OwnedCardListSheep
                 .FirstOrDefault(unitInfo => unitInfo.Id == newCard.Id);
@@ -132,9 +132,9 @@ public class DeckViewModel
             "Collection/UpdateDeck", "PUT", updateDeckPacket, _ => { });
     }
 
-    public void SelectDeck(int buttonNum, Camp camp)
+    public void SelectDeck(int buttonNum, Faction faction)
     {
-        var deckList = Util.Camp == Camp.Sheep ? User.Instance.AllDeckSheep : User.Instance.AllDeckWolf;
+        var deckList = Util.Faction == Faction.Sheep ? User.Instance.AllDeckSheep : User.Instance.AllDeckWolf;
         var deck = deckList.First(deck => deck.DeckNumber == buttonNum);
 
         foreach (var d in deckList) d.LastPicked = false;
@@ -150,7 +150,7 @@ public class DeckViewModel
         _webService.SendWebRequest<UpdateLastDeckPacketResponse>(
             "Collection/UpdateLastDeck", "PUT", updateLastDeckPacket, _ => { });
         
-        if (Util.Camp == Camp.Sheep)
+        if (Util.Faction == Faction.Sheep)
         {
             User.Instance.DeckSheep = deck;
         }
@@ -159,16 +159,16 @@ public class DeckViewModel
             User.Instance.DeckWolf = deck;
         }
         
-        OnDeckSwitched?.Invoke(camp);
+        OnDeckSwitched?.Invoke(faction);
     }
     
-    public void SwitchDeck(Camp camp)
+    public void SwitchDeck(Faction faction)
     {
-        var deckList = camp == Camp.Sheep ? User.Instance.AllDeckSheep : User.Instance.AllDeckWolf;
+        var deckList = faction == Faction.Sheep ? User.Instance.AllDeckSheep : User.Instance.AllDeckWolf;
         var deck = deckList.FirstOrDefault(d => d.LastPicked) 
                    ?? deckList.First(d => d.DeckNumber == 1);
         
-        if (camp == Camp.Sheep)
+        if (faction == Faction.Sheep)
         {
             User.Instance.DeckSheep = deck;
         }
@@ -177,6 +177,6 @@ public class DeckViewModel
             User.Instance.DeckWolf = deck;
         }
         
-        OnDeckSwitched?.Invoke(camp);
+        OnDeckSwitched?.Invoke(faction);
     }
 }

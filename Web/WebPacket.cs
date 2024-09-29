@@ -14,7 +14,7 @@ public class UnitInfo : IAsset
     public int Level { get; set; }
     public int Species { get; set; }
     public Role Role { get; set; }
-    public Camp Camp { get; set; }
+    public Faction Faction { get; set; }
     public UnitRegion Region { get; set; }
 }
 
@@ -48,7 +48,7 @@ public class DeckInfo
     public int DeckId { get; set; }
     public UnitInfo[] UnitInfo { get; set; }
     public int DeckNumber { get; set; }
-    public int Camp { get; set; }
+    public int Faction { get; set; }
     public bool LastPicked { get; set; }
 }
 
@@ -81,7 +81,7 @@ public class ChangeActPacketRequired
 {
     public string AccessToken { get; set; }
     public UserAct Act { get; set; }
-    public Camp Camp { get; set; }
+    public Faction Faction { get; set; }
     public int MapId { get; set; }
 }
 
@@ -177,7 +177,7 @@ public class GetInitDeckPacketResponse
 public class GetSelectedDeckRequired
 {
     public string AccessToken { get; set; }
-    public int Camp { get; set; }
+    public int Faction { get; set; }
     public int DeckNumber { get; set; }
 }
 

@@ -26,7 +26,6 @@ public class MyPlayerController : PlayerController
     private Vector3 _lastMousePos;
     private GameObject _cameraObject;
 
-    public Camp Camp { get; set; }
     
     [Inject]
     public void Construct(GameViewModel gameVm)
@@ -43,32 +42,41 @@ public class MyPlayerController : PlayerController
         _cameraObject = GameObject.FindWithTag("CameraFocus");
 
         // Test - Unit Spawn
-        // C_Spawn spawnPacket = new()
-        // {
-        //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.Creeper,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 1, PosY = 8, PosZ = 16, Dir = 180 },
-        //     Way = SpawnWay.North
-        // };
-        // Managers.Network.Send(spawnPacket);
+        C_Spawn spawnPacket = new()
+        {
+            Type = GameObjectType.Monster,
+            Num = (int)UnitId.CactusBoss,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = -1, PosY = 8, PosZ = 16, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(spawnPacket);
         
         // C_Spawn spawnPacket1 = new()
         // {
         //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.WolfPup,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = -1, PosY = 6, PosZ = 16, Dir = 180 },
-        //     Way = SpawnWay.North,
+        //     Num = (int)UnitId.Snake,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 1, PosY = 8, PosZ = 16, Dir = 180 },
+        //     Way = SpawnWay.North
         // };
         // Managers.Network.Send(spawnPacket1);
-        //
-        // C_Spawn spawnPacket2 = new()
+        
+        C_Spawn spawnPacket2 = new()
+        {
+            Type = GameObjectType.Tower,
+            Num = (int)UnitId.TrainingDummy,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = -1, PosY = 6, PosZ = -6, Dir = 180 },
+            Way = SpawnWay.North,
+        };
+        Managers.Network.Send(spawnPacket2);
+        
+        // C_Spawn spawnPacket3 = new()
         // {
-        //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.WolfPup,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 3, PosY = 6, PosZ = 16, Dir = 180 },
+        //     Type = GameObjectType.Tower,
+        //     Num = (int)UnitId.SoulMage,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 1, PosY = 6, PosZ = -6, Dir = 180 },
         //     Way = SpawnWay.North,
         // };
-        // Managers.Network.Send(spawnPacket2);
+        // Managers.Network.Send(spawnPacket3);
     }
     
     private void OnMouseEvent(Define.MouseEvent evt)
@@ -99,9 +107,15 @@ public class MyPlayerController : PlayerController
                     var direction = axisYInversion ? currentMousePos.y - pressedY : pressedY - currentMousePos.y;
                     var moveZ = direction * Time.deltaTime * 0.08f;
 
-                    if (_cameraObject.transform.position.z < -12.1f && moveZ < 0) return;
-                    if (_cameraObject.transform.position.z > 12.1f && moveZ > 0) return;
-                    _cameraObject.transform.Translate(0, 0, moveZ);
+                    switch (_cameraObject.transform.position.z)
+                    {
+                        case < -12.1f when moveZ < 0:
+                        case > 12.1f when moveZ > 0:
+                            return;
+                        default:
+                            _cameraObject.transform.Translate(0, 0, moveZ);
+                            break;
+                    }
                 }
                 break;
         }
@@ -143,14 +157,14 @@ public class MyPlayerController : PlayerController
                 break;
                     
             case var _ when layer == LayerMask.NameToLayer("Tower"):
-                if (Camp == Camp.Sheep)
+                if (Faction == Faction.Sheep)
                 {
                     AdjustUI<UnitControlWindow>(go, GameObjectType.Tower);
                 }
                 break;
                     
             case var _ when layer == LayerMask.NameToLayer("Monster"):
-                if (Camp == Camp.Wolf)
+                if (Faction == Faction.Wolf)
                 {
                     if (_gameVm.CapacityWindow is { ObjectType: GameObjectType.Monster })
                     {
@@ -165,37 +179,34 @@ public class MyPlayerController : PlayerController
                 break;
             
             case var _ when layer == LayerMask.NameToLayer("MonsterStatue"):
-                if (Camp == Camp.Wolf)
+                if (Faction == Faction.Wolf)
                 {
                     AdjustUI<UnitControlWindow>(go, GameObjectType.MonsterStatue);
                 }
                 break;
             
             case var _ when layer == LayerMask.NameToLayer("Fence"):
-                if (Camp == Camp.Sheep)
+                if (Faction == Faction.Sheep)
                 {
                     AdjustUI<UnitControlWindow>(go, GameObjectType.Fence);
                 }
                 break;
             
             case var _ when layer == LayerMask.NameToLayer("Sheep"):
-                if (Camp == Camp.Sheep)
+                if (Faction == Faction.Sheep)
                 {
                     _gameVm.TurnOffSelectRing();
                     _gameVm.TurnOnSelectRing(cc.Id);
-                    var window = Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
-                    // window.SelectedUnit = go;
+                    Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
                 }
                 break;
             
+            case var _ when layer == LayerMask.NameToLayer("Player"):
             case var _ when layer == LayerMask.NameToLayer("Base"):
                 if (_isDragging) return;
-                if (Camp == Camp.Sheep)
-                {
-                    _gameVm.TurnOffSelectRing();
-                    // _gameVm.TurnOnSelectRing(cc.Id);
-                    Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
-                }
+                _gameVm.TurnOffSelectRing();
+                // _gameVm.TurnOnSelectRing(cc.Id);
+                Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
                 break;
         }
 
@@ -208,7 +219,7 @@ public class MyPlayerController : PlayerController
         Managers.UI.CloseAllPopupUI();
         CapacityWindow window = null;
         
-        if (Camp == Camp.Sheep)
+        if (Faction == Faction.Sheep)
         {
             switch (go.layer)
             {
@@ -222,13 +233,13 @@ public class MyPlayerController : PlayerController
                     break;
             }
         }
-        else if (Camp == Camp.Wolf)
+        else if (Faction == Faction.Wolf)
         {
             switch (go.layer)
             {
                 case var _ when go.layer == LayerMask.NameToLayer("MonsterStatue"):
                     window = Managers.UI.ShowPopupUiInGame<CapacityWindow>();
-                    ObjectType = GameObjectType.MonsterStatue;
+                    window.ObjectType = GameObjectType.MonsterStatue;
                     break;
             }
         }

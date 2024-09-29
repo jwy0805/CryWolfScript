@@ -78,7 +78,7 @@ public class UI_MatchMaking : UI_Scene
     private void SetDeckInfo()
     {
         _myDeck = GetImage((int)Images.MyDeckPanel).transform;
-        var deck = _deckVm.GetDeck(Util.Camp);
+        var deck = _deckVm.GetDeck(Util.Faction);
         foreach (var unit in deck.UnitsOnDeck)
         {
             Util.GetCardResources<UnitId>(unit, _myDeck, 150);

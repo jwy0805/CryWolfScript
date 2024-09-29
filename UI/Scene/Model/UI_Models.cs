@@ -35,7 +35,7 @@ public class Deck
     public int DeckId;
     public UnitInfo[] UnitsOnDeck;
     public int DeckNumber;
-    public Camp Camp;
+    public Faction Faction;
     public bool LastPicked;
 }
 
@@ -46,5 +46,5 @@ public class Unit : IAsset
     public int Level { get; set; }
     public UnitId Species { get; set; }
     public Role Role { get; set; }
-    public Camp Camp { get; set; }
+    public Faction Faction { get; set; }
 }

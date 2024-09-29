@@ -81,7 +81,7 @@ public class UI_DeckChangePopup : UI_Popup
     private void SetDeckUiInPopup()
     {
         var parent = GetImage((int)Images.Deck).transform;
-        var deck = _deckVm.GetDeck(Util.Camp);
+        var deck = _deckVm.GetDeck(Util.Faction);
         foreach (var unit in deck.UnitsOnDeck)
         {
             var cardFrame = Util.GetCardResources<UnitId>(unit, parent, 0, data =>
@@ -109,7 +109,7 @@ public class UI_DeckChangePopup : UI_Popup
     
     private void ClosePopup(PointerEventData data)
     {
-        _deckVm.ResetDeckUI(Util.Camp);
+        _deckVm.ResetDeckUI(Util.Faction);
         Managers.UI.CloseAllPopupUI();
     }
 }

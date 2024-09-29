@@ -49,6 +49,16 @@ public class BasicProjectileController : ProjectileController
     protected override void FixedUpdate ()
     {
         Vector3 dir = DestPos - transform.position;
+        
+        if (detached.Length > 0)
+        {
+            foreach (var detachedPrefab in detached)
+            {
+                if (detachedPrefab == null || !detachedPrefab.TryGetComponent(out Renderer render)) continue;
+                render.enabled = true;
+            }
+        }
+        
         if (dir.sqrMagnitude < 0.01f)
         {
             HitEffect();

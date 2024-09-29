@@ -16,7 +16,7 @@ using Object = UnityEngine.Object;
 
 public class Util
 {
-    public static Camp Camp = Camp.Sheep;
+    public static Faction Faction = Faction.Sheep;
     public static Deck Deck = new();
     
     public static T GetOrAddComponent<T>(GameObject go) where T : Component
@@ -104,9 +104,8 @@ public class Util
         }
     }
 
-    public static GameObject GetCardResources<TEnum>(
-        IAsset asset, Transform parent, float cardSize = 0, Action<PointerEventData> action = null) 
-        where TEnum : struct, Enum
+    public static GameObject GetCardResources<TEnum>(IAsset asset, 
+        Transform parent, float cardSize = 0, Action<PointerEventData> action = null) where TEnum : struct, Enum
     {
         var cardFrame = Managers.Resource.Instantiate("UI/Deck/CardFrame", parent);
         var unitInCard = cardFrame.transform.Find("CardUnit").gameObject;
@@ -140,6 +139,13 @@ public class Util
         if (action != null) cardFrame.BindEvent(action);
 
         return cardFrame;
+    }
+    
+    public static Image GetFrameFromButton(ISkillButton button)
+    {
+        if (button is not MonoBehaviour mono) return null;
+        var go = mono.gameObject;
+        return go.transform.parent.parent.GetChild(1).GetComponent<Image>();
     }
     
     public static void DestroyAllChildren(Transform parent)

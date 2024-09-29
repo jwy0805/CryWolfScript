@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Cinemachine;
 using Google.Protobuf.Protocol;
+using JetBrains.Annotations;
 using UnityEngine;
 using Zenject;
 using Object = UnityEngine.Object;
@@ -21,24 +22,25 @@ public class ObjectManager
     {
         GameObjectType objectType = GetObjectTypeById(info.ObjectId);
         GameObject go;
-
+        
         switch (objectType)
         {
             case GameObjectType.Player:
-                var isSheep = Util.Camp == Camp.Sheep;
-                var battleSetting = User.Instance.BattleSetting;
-                var enterPacket = new C_EnterGame
-                {
-                    IsSheep = isSheep,
-                    CharacterId = battleSetting.CharacterInfo.Id,
-                    AssetId = isSheep ? battleSetting.SheepInfo.Id : battleSetting.EnchantInfo.Id
-                };
-                
-                Managers.Network.Send(enterPacket);
-                
+
+                go = Managers.Game.Spawn("PlayerCharacter");
                 if (myPlayer)
                 {
-                    go = Managers.Game.Spawn("PlayerCharacter");
+                    var isSheep = Util.Faction == Faction.Sheep;
+                    var battleSetting = User.Instance.BattleSetting;
+                    var enterPacket = new C_EnterGame
+                    {
+                        IsSheep = isSheep,
+                        CharacterId = battleSetting.CharacterInfo.Id,
+                        AssetId = isSheep ? battleSetting.SheepInfo.Id : battleSetting.EnchantInfo.Id
+                    };
+                
+                    Managers.Network.Send(enterPacket);
+                    
                     var controller = go.AddComponent<MyPlayerController>();
                     Object.FindObjectOfType<SceneContext>().Container.Inject(controller);
                     
@@ -49,7 +51,7 @@ public class ObjectManager
                     MyPlayer = go.GetComponent<MyPlayerController>();
                     MyPlayer.Id = info.ObjectId;
                     MyPlayer.PosInfo = info.PosInfo;
-                    MyPlayer.Camp = isSheep ? Camp.Sheep : Camp.Wolf;
+                    MyPlayer.Faction = isSheep ? Faction.Sheep : Faction.Wolf;
                     
                     Vector3 pos = go.transform.position;
                     MyPlayer.PosInfo.PosX = pos.x;
@@ -69,24 +71,41 @@ public class ObjectManager
                     followCam.Follow = tf;
                     followCam.LookAt = tf;
                     
-                    if (Util.Camp == Camp.Wolf)
+                    if (Util.Faction == Faction.Wolf)
                     {
+                        var cameraRotation = followCam.transform.rotation.eulerAngles;
+                        cameraRotation.y += 180f;
+                        followCam.transform.rotation = Quaternion.Euler(cameraRotation);
                         MyPlayer.transform.rotation = Quaternion.Euler(0, 180, 0);
+                        cameraFocus.transform.rotation = Quaternion.Euler(0, 180, 0);
+                        
                         var cinemachineTransposer = followCam.GetCinemachineComponent<CinemachineTransposer>();
                         cinemachineTransposer.m_FollowOffset = new Vector3(0, 15, 10);
                     }
                 }
                 else
                 {
-                    go = Managers.Game.Spawn("PlayerCharacter");
+                    var isSheep = Util.Faction != Faction.Sheep;
+                    var enterPacket = new C_EnterGameNpc
+                    {
+                        IsSheep = isSheep,
+                        CharacterId = 2001,
+                        AssetId = isSheep ? 901 : 1001
+                    };
+                
+                    Managers.Network.Send(enterPacket);
+                    
                     go.AddComponent<PlayerController>();
                     go.name = info.Name;
                     _objects.Add(info.ObjectId, go);
                     
-                    PlayerController pc = go.GetComponent<PlayerController>();
+                    var pc = go.GetComponent<PlayerController>();
                     pc.Id = info.ObjectId;
                     pc.PosInfo = info.PosInfo;
+                    pc.Faction = isSheep ? Faction.Sheep : Faction.Wolf;
+                    pc.SetPosition();
                 }
+                
                 break;
             
             case GameObjectType.Tower:
@@ -147,22 +166,6 @@ public class ObjectManager
                 sc.Stat = info.StatInfo;
                 break;
             
-            case GameObjectType.Effect:
-                go = Managers.Game.Spawn($"Effects/{info.Name}");
-                _objects.Add(info.ObjectId, go);
-                go.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
-                break;
-            
-            case GameObjectType.Projectile:
-                go = Managers.Game.Spawn($"Effects/{info.Name}");
-                _objects.Add(info.ObjectId, go);
-                if (go.TryGetComponent(out ProjectileController prc))
-                {
-                    prc.Id = info.ObjectId;
-                    prc.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
-                }
-                break;
-            
             case GameObjectType.Resource:
                 go = Managers.Game.Spawn($"Items/{info.Name}");
                 _objects.Add(info.ObjectId, go);
@@ -191,8 +194,8 @@ public class ObjectManager
     {   
         var parent = FindById(parentId);
         if (parent == null) return;
-        var go = Managers.Game.Spawn($"Effects/{info.Name}", 
-            new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ));
+        var projectilePos = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
+        var go = Managers.Game.Spawn($"Effects/{info.Name}", projectilePos);
         _objects.Add(info.ObjectId, go);
         if (go.TryGetComponent(out ProjectileController prc) == false) return;
         prc.Id = info.ObjectId;
@@ -201,15 +204,15 @@ public class ObjectManager
         prc.Speed = speed;
     }
 
-    public void AddEffect(ObjectInfo info, int parentId, bool trailingParent, int duration)
+    public void AddEffect(ObjectInfo info, int masterId, bool trailingParent, int duration)
     {
-        var parent = FindById(parentId);
-        GameObject go = Managers.Game.Spawn($"Effects/{info.Name}");
+        var master = FindById(masterId);
+        var go = Managers.Game.Spawn($"Effects/{info.Name}");
         _objects.Add(info.ObjectId, go);
         if (go.TryGetComponent(out EffectController ec) == false) return; 
         ec.Id = info.ObjectId;
-        ec.Parent = parent;
-        ec.TrailingParent = trailingParent;
+        ec.Master = master;
+        ec.TrailingMaster = trailingParent;
         ec.Duration = duration / (float)1000;
         go.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
     }
@@ -226,6 +229,7 @@ public class ObjectManager
         MyPlayer = null;
     }
 
+    [CanBeNull]
     public GameObject FindById(int id)
     {
         _objects.TryGetValue(id, out var go);

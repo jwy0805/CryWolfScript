@@ -131,10 +131,18 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
     public void InitSlot(int index)
     {
         var id = _gameVm.SelectedObjectIds[index];
-        var unitId = Managers.Object.FindById(id).GetComponent<CreatureController>().UnitId;
+        var go = Managers.Object.FindById(id);
         var slotPanel = _imageDict[$"NorthUnitPanel{index}"];
         var slotButtonImage = _buttonDict[$"NorthUnitButton{index}"];
+
+        if (go == null)
+        {
+            SetObjectSize(slotPanel, 0);
+            return;    
+        }
         
+        var unitId = go.GetComponent<CreatureController>().UnitId;
+        var image = slotButtonImage.GetComponent<Image>();
         var path = ObjectType switch
         {
             GameObjectType.Tower => $"Sprites/Portrait/{unitId.ToString()}",
@@ -143,7 +151,6 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
             _ => throw new ArgumentOutOfRangeException()
         };
         
-        var image = slotButtonImage.GetComponent<Image>();
         image.sprite = Managers.Resource.Load<Sprite>(path);
         SetObjectSize(slotPanel, 0.25f);   
     }

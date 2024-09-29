@@ -53,7 +53,7 @@ public class UI_BattlePopupSheep : UI_Popup
         var deckPacket = new GetSelectedDeckRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            Camp = (int)User.Instance.DeckSheep.Camp,
+            Faction = (int)User.Instance.DeckSheep.Faction,
             DeckNumber = User.Instance.DeckSheep.DeckNumber,
         };
         
@@ -80,7 +80,7 @@ public class UI_BattlePopupSheep : UI_Popup
         var deckPacket = new GetSelectedDeckRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            Camp = (int)User.Instance.DeckSheep.Camp,
+            Faction = (int)User.Instance.DeckSheep.Faction,
             DeckNumber = User.Instance.DeckSheep.DeckNumber,
         };
         

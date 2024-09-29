@@ -128,7 +128,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         var parent = GetImage((int)Images.Deck).transform;
         foreach (Transform child in parent) Destroy(child.gameObject);
         
-        var deck = _deckVm.GetDeck(Util.Camp).UnitsOnDeck;
+        var deck = _deckVm.GetDeck(Util.Faction).UnitsOnDeck;
         foreach (var unit in deck)
         {
             var cardFrame = Util.GetCardResources<UnitId>(unit, parent, 0, OnDeckCardClicked);
@@ -143,10 +143,10 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         var parent = GetImage((int)Images.CollectionPanel).transform;
         foreach (Transform child in parent) Destroy(child.gameObject);
         
-        var collection = Util.Camp == Camp.Sheep 
+        var collection = Util.Faction == Faction.Sheep 
             ? User.Instance.OwnedCardListSheep 
             : User.Instance.OwnedCardListWolf;
-        var deck = _deckVm.GetDeck(Util.Camp);
+        var deck = _deckVm.GetDeck(Util.Faction);
         var units = collection
             .Where(unitInfo => deck.UnitsOnDeck.All(u => u.Id != unitInfo.Id)).ToList();
         
@@ -194,13 +194,13 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
     
     private void CloseAllPopup(PointerEventData data)
     {
-        _deckVm.ResetDeckUI(Util.Camp);
+        _deckVm.ResetDeckUI(Util.Faction);
         Managers.UI.CloseAllPopupUI();
     }
     
     public void OnPointerClick(PointerEventData eventData)
     {
-        _deckVm.ResetDeckUI(Util.Camp);
+        _deckVm.ResetDeckUI(Util.Faction);
         if (CardPopup != null) Managers.UI.ClosePopupUI(CardPopup);
     }
     
@@ -218,6 +218,6 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
     private void OnDeckButtonClicked(PointerEventData data)
     {
         var buttonNumber = data.pointerPress.GetComponent<DeckButtonInfo>().DeckIndex;
-        _deckVm.SelectDeck(buttonNumber, Util.Camp);
+        _deckVm.SelectDeck(buttonNumber, Util.Faction);
     }
 }

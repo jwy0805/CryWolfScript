@@ -45,6 +45,7 @@ public class GameViewModel
     public GameViewModel()
     {
         Managers.Event.StartListening("ShowRings", OnReceiveRanges);
+        Managers.Event.StartListening("ShowBounds", OnReceiveBounds);
         Managers.Event.StartListening("CanSpawn", OnCanSpawn);
         Managers.Event.StartListening("UpdateUnitUpgradeCost", UpdateUnitUpgradeCostResponse);
         Managers.Event.StartListening("UpdateUnitDeleteCost", UpdateUnitDeleteCostResponse);
@@ -60,12 +61,53 @@ public class GameViewModel
         return level;
     }
 
+    public void ShowUpgradePopup(string name = null)
+    {
+        Managers.UI.ShowPopupUiInGame<UI_UpgradePopup>();
+        var skillName = name ?? CurrentSelectedSkillButton.Name.Replace("Button", "");
+        
+        if (Enum.TryParse(skillName, out Skill skill))
+        {
+            Managers.Network.Send(new C_SetUpgradePopup { SkillId = (int)skill });
+        }
+    }
+    public void ShowUpgradePopupNoCost(string name = null)
+    {
+        Managers.UI.ShowPopupUiInGame<UI_UpgradePopupNoCost>();
+        var skillName = name ?? CurrentSelectedSkillButton.Name.Replace("Button", "");
+        
+        if (Enum.TryParse(skillName, out Skill skill))
+        {
+            Managers.Network.Send(new C_SetUpgradePopup { SkillId = (int)skill });
+        }
+    }
+    
     public void UpgradeSkill()
     {
         var skillName = CurrentSelectedSkillButton.Name.Replace("Button", "");
-        var skill = (Skill)Enum.Parse(typeof(Skill), skillName);
+        if (Enum.TryParse(skillName, out Skill skill) == false) return;
+        
         Managers.Network.Send(new C_SkillUpgrade{ Skill = skill });
         Managers.UI.ClosePopupUI<UI_UpgradePopup>();
+        Managers.UI.ClosePopupUI<UI_UpgradePopupNoCost>();
+    }
+
+    public void UpgradeBaseSkill()
+    {
+        var skillName = CurrentSelectedSkillButton.Name.Replace("Button", "") switch
+        {
+            "Upgrade" => Util.Faction == Faction.Sheep ? "UpgradeSheep" : "UpgradeWolf",
+            "Repair" => Util.Faction == Faction.Sheep ? "RepairSheep" : "RepairWolf",
+            "Resource" => Util.Faction == Faction.Sheep ? "ResourceSheep" : "ResourceWolf",
+            "Asset" => Util.Faction == Faction.Sheep ? "AssetSheep" : "AssetWolf",
+            _ => null
+        };
+        
+        if (Enum.TryParse(skillName, out Skill skill) == false) return;
+        
+        Managers.Network.Send(new C_BaseSkillRun{ Skill = skill });
+        Managers.UI.ClosePopupUI<UI_UpgradePopup>();
+        Managers.UI.ClosePopupUI<UI_UpgradePopupNoCost>();
     }
 
     public void UpdateSkillPanel(IPortrait portrait)
@@ -132,10 +174,10 @@ public class GameViewModel
         CapacityWindow?.UpdateRepairCostText(packet.Cost);
         UnitControlWindow.UpdateRepairCostText(packet.Cost);
     }
-
+    
     private void SetBaseSkillCostRequired()
     {
-        var packet = new C_SetBaseSkillCost { Camp = Util.Camp };
+        var packet = new C_SetBaseSkillCost { Faction = Util.Faction };
     }
     
     private void SetBaseSkillCostResponse(object eventData)
@@ -149,6 +191,12 @@ public class GameViewModel
         CurrentSelectedPortrait.ShowRing(packet.AttackRange, packet.SkillRange);
     }
 
+    private void OnReceiveBounds(object eventData)
+    {
+        var packet = (S_GetSpawnableBounds)eventData;
+        CurrentSelectedPortrait.ShowSpawnableBounds(packet.MinZ, packet.MaxZ);
+    }
+    
     private void OnCanSpawn(object eventData)
     {
         var packet = (S_UnitSpawnPos)eventData;
@@ -181,6 +229,7 @@ public class GameViewModel
         Managers.UI.CloseAllPopupUI();
         var window = Managers.UI.ShowPopupUiInGame<UnitControlWindow>();
         var go = Managers.Object.FindById(SelectedObjectIds[index]);
+        if (go == null) return;
         var id = go.GetComponent<CreatureController>().Id;
         window.SelectedUnit = go;
         TurnOffSelectRing();
@@ -263,7 +312,7 @@ public class GameViewModel
     
     public void OnUnitRepairClicked(IEnumerable<int> ids)
     {
-        var packet = new C_UnitDelete();
+        var packet = new C_UnitRepair();
         packet.ObjectId.AddRange(ids);
         Managers.Network.Send(packet);
         

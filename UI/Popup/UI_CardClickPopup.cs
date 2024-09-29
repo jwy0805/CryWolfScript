@@ -17,6 +17,7 @@ using Image = UnityEngine.UI.Image;
 public class UI_CardClickPopup : UI_Popup
 {
     private IUserService _userService;
+    private CraftingViewModel _craftingVm;
     
     public Vector3 CardPosition { get; set; }
     public Vector2 Size { get; set; }
@@ -35,6 +36,7 @@ public class UI_CardClickPopup : UI_Popup
     {
         UnitInfoButton,
         UnitSelectButton,
+        UnitCraftingButton,
     }
 
     private enum Texts
@@ -44,9 +46,10 @@ public class UI_CardClickPopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(IUserService userService)
+    public void Construct(IUserService userService, CraftingViewModel craftingViewModel)
     {
         _userService = userService;
+        _craftingVm = craftingViewModel;
     }
     
     protected override void Init()
@@ -84,10 +87,9 @@ public class UI_CardClickPopup : UI_Popup
     protected override void InitButtonEvents()
     {
         GetButton((int)Buttons.UnitInfoButton).gameObject.BindEvent(OnInfoClicked);
-        var selectButton = GetButton((int)Buttons.UnitSelectButton);
-        selectButton.GetComponent<Button>().onClick.AddListener(OnSelectClicked);
+        GetButton((int)Buttons.UnitSelectButton).gameObject.BindEvent(OnSelectClicked);
+        GetButton((int)Buttons.UnitCraftingButton).gameObject.BindEvent(OnCraftingClicked);
         GetImage((int)Images.CardBackground).gameObject.BindEvent(ClosePopup);
-        GetText((int)Texts.UnitNameText).gameObject.BindEvent(ClosePopup);
     }
     
     protected override void InitUI()
@@ -99,11 +101,12 @@ public class UI_CardClickPopup : UI_Popup
         var unitSelectText = GetText((int)Texts.UnitSelectText);
         if (SelectedCard.transform.parent.name == "Deck") unitSelectText.text = "CHANGE";
         
-        var deck = Util.Camp == Camp.Sheep 
+        var deck = Util.Faction == Faction.Sheep 
             ? User.Instance.DeckSheep.UnitsOnDeck 
             : User.Instance.DeckWolf.UnitsOnDeck;
         var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == SelectedCard.Id);
         GetButton((int)Buttons.UnitSelectButton).interactable = index == -1 || FromDeck;
+        GetText((int)Texts.UnitNameText).text = Managers.Data.UnitDict[SelectedCard.Id].Name;
     }
 
     private void SetCardInPopup<TEnum>() where TEnum : struct, Enum
@@ -149,7 +152,7 @@ public class UI_CardClickPopup : UI_Popup
         }
     }
 
-    private void OnSelectClicked()
+    private void OnSelectClicked(PointerEventData data)
     {
         if (SelectedCard.AssetType == Asset.Unit)
         {
@@ -169,6 +172,11 @@ public class UI_CardClickPopup : UI_Popup
             var popup = Managers.UI.ShowPopupUI<UI_AssetChangeScrollPopup>();
             popup.SelectedCard = SelectedCard;
         }
+    }
+
+    private void OnCraftingClicked(PointerEventData data)
+    {
+        _craftingVm.OnCraftingButtonClicked();
     }
     
     private void ClosePopup(PointerEventData data)

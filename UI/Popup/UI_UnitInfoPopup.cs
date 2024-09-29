@@ -204,7 +204,7 @@ public class UI_UnitInfoPopup : UI_Popup
         {
             Id = unitData.Id,
             Level = unitData.Stat.Level,
-            Camp = unitData.Camp,
+            Faction = unitData.Faction,
             Class = unitData.UnitClass,
             Role = unitData.UnitRole,
             Species = (int)unitData.UnitSpecies,

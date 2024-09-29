@@ -12,8 +12,8 @@ public class CollectionViewModel
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
     
-    public event Action<Camp> OnCardInitialized;
-    public event Action<Camp> OnCardSwitched;
+    public event Action<Faction> OnCardInitialized;
+    public event Action<Faction> OnCardSwitched;
     
     [Inject]
     public CollectionViewModel(IUserService userService, IWebService webService, ITokenService tokenService)
@@ -28,7 +28,7 @@ public class CollectionViewModel
         await InitializeCards();
         await Task.WhenAll(InitializeSheep(), InitializeEnchant(), InitializeCharacter());
         
-        OnCardInitialized?.Invoke(Util.Camp);
+        OnCardInitialized?.Invoke(Util.Faction);
     }
 
     private async Task InitializeCards()
@@ -173,8 +173,8 @@ public class CollectionViewModel
         notOwnedAsset.Sort((a, b) => a.Class.CompareTo(b.Class));
     }
 
-    public void SwitchCards(Camp camp)
+    public void SwitchCards(Faction faction)
     {
-        OnCardSwitched?.Invoke(camp);
+        OnCardSwitched?.Invoke(faction);
     }
 }

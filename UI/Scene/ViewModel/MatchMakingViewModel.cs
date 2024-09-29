@@ -24,7 +24,7 @@ public class MatchMakingViewModel
         var changeActPacket = new ChangeActPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            Camp = Util.Camp,
+            Faction = Util.Faction,
             Act = UserAct.MatchMaking,
             MapId = Managers.Map.MapId
         };

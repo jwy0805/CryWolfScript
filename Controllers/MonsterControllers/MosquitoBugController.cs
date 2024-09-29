@@ -11,7 +11,7 @@ public class MosquitoBugController : MonsterController
     {
         SkillSubject = GameObject.Find("Subject").GetComponent<SkillSubject>();
         SkillSubject.AddObserver(this);
-        ObjectType = GameObjectType.Tower;
+        ObjectType = GameObjectType.Monster;
         
         // Instantiate Health bar
         Managers.Resource.Instantiate("WorldObjects/HealthSlider", transform);

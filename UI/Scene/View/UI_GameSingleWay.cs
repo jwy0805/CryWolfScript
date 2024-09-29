@@ -18,7 +18,6 @@ public class UI_GameSingleWay : UI_Game
     {
         CapacityButton,
         ResourceButton,
-        SubResourceButton,
         MenuButton,
     }
     
@@ -35,7 +34,6 @@ public class UI_GameSingleWay : UI_Game
     private enum Texts
     {
         ResourceText,
-        SubResourceText,
     }
 
     #endregion
@@ -46,7 +44,7 @@ public class UI_GameSingleWay : UI_Game
     private readonly Dictionary<string, GameObject> _dictPortrait = new();
     
     public MyPlayerController Player { get; set; }
-    public Camp Camp { get; set; }
+    public Faction Faction { get; set; }
     
     [Inject]
     public void Construct(GameViewModel gameViewModel)
@@ -57,7 +55,7 @@ public class UI_GameSingleWay : UI_Game
     protected override void Init()
     {
         base.Init();
-        Camp = Util.Camp;
+        Faction = Util.Faction;
         
         BindObjects();
         InitButtonEvents();
@@ -162,7 +160,7 @@ public class UI_GameSingleWay : UI_Game
     private void TurnOffOneSelectRing(int id)
     {
         var go = Managers.Object.FindById(id);
-        var selectRing = go.transform.Find("SelectRing");
+        var selectRing = go?.transform.Find("SelectRing");
         if (selectRing != null)
         {
             Managers.Resource.Destroy(selectRing.gameObject);
@@ -225,12 +223,7 @@ public class UI_GameSingleWay : UI_Game
         
         SetLog();
     }
-
-    protected override void InitButtonEvents()
-    {
-        GetButton((int)Buttons.SubResourceButton).gameObject.BindEvent(OnSubResourceButtonClicked);
-    }
-
+    
     protected override void InitUI()
     {
         GetText((int)Texts.ResourceText).text = "0";

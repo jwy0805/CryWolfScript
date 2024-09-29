@@ -20,7 +20,7 @@ public class PacketHandler
         var enterGamePacket = (S_EnterGame)packet;
         if (enterGamePacket != null)
         {
-            Managers.Object.Add(enterGamePacket.Player, myPlayer: true);
+            Managers.Object.Add(enterGamePacket.Player, true);
         }
     }
     
@@ -31,7 +31,7 @@ public class PacketHandler
         switch (type)
         {
             case GameObjectType.Effect:
-                GameObject go = Managers.Object.FindById(leaveGamePacket.ObjectId);
+                var go = Managers.Object.FindById(leaveGamePacket.ObjectId);
                 Managers.Resource.Destroy(go);
                 Managers.Object.Remove(leaveGamePacket.ObjectId);
                 break;
@@ -172,8 +172,6 @@ public class PacketHandler
 
         Vector3 dest = new Vector3(resourceDestPacket.Dest.X, resourceDestPacket.Dest.Y, resourceDestPacket.Dest.Z);
         rc.DestPos = dest + Vector3.up * 0.5f;
-        // rc.moveFlag = true;
-        rc.yield = resourceDestPacket.Yield;
     }
 
     public static void S_SetAnimSpeedHandler(PacketSession session, IMessage packet)
@@ -328,6 +326,11 @@ public class PacketHandler
         Managers.Event.TriggerEvent("ShowRings", packet);
     }
     
+    public static void S_GetSpawnableBoundsHandler(PacketSession session, IMessage packet)
+    {
+        Managers.Event.TriggerEvent("ShowBounds", packet);
+    }
+    
     public static void S_TimeHandler(PacketSession session, IMessage packet)
     {
         var timePacket = (S_Time)packet;
@@ -403,9 +406,17 @@ public class PacketHandler
     {
         var popupPacket = (S_SetUpgradePopup)packet;
         var popupList = Managers.UI.PopupList;
+        
         foreach (var popup in popupList.Where(p => p is UI_UpgradePopup))
         {
             popup.GetComponent<UI_UpgradePopup>().SetPopup(popupPacket);
+            break;
+        }
+
+        foreach (var popup in popupList.Where(p => p is UI_UpgradePopupNoCost))
+        {
+            popup.GetComponent<UI_UpgradePopupNoCost>().SetPopup(popupPacket);
+            break;
         }
     }
 

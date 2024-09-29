@@ -1,18 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
 using Google.Protobuf.Protocol;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Serialization;
 
 public class EffectController : MonoBehaviour
 {
-    protected float LastSendTime = 0;
-    protected readonly float SendTick = 0.099f;
     protected float StartTime;
+    protected float DiffY;
     
     public int Id { get; set; }
-    public GameObject Parent { get; set; }
-    public bool TrailingParent { get; set; }
+    [CanBeNull] public GameObject Master { get; set; }
+    public bool TrailingMaster { get; set; }
     public float Duration { get; set; } = 2.0f;
     
     protected virtual void Start()
@@ -20,15 +20,28 @@ public class EffectController : MonoBehaviour
         Init();
     }
 
+    protected virtual void Init()
+    {
+        StartTime = Time.time;
+        if (TrailingMaster && Master != null) DiffY = transform.position.y - Master.transform.position.y;
+    }
+    
     protected virtual void Update()
     {
         if (Time.time < StartTime + Duration) return;
         Managers.Object.Remove(Id);
         Managers.Resource.Destroy(gameObject);
-    }
 
-    protected virtual void Init()
-    {
-        StartTime = Time.time;
+        if (TrailingMaster && Master != null)
+        {
+            if (Master.TryGetComponent(out CreatureController cc))
+            {
+                if (cc.Stat.Hp > 0) return;
+                Managers.Object.Remove(Id);
+                Managers.Resource.Destroy(gameObject);
+            }
+            
+            transform.position = Master.transform.position + new Vector3(0, DiffY, 0);
+        }
     }
 }

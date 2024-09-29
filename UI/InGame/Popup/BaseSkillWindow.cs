@@ -72,8 +72,8 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
 
     protected override void InitUI()
     {
-        var resourceString = Util.Camp == Camp.Sheep ? "IncreaseSheepResource" : "IncreaseWolfResource";
-        var assetString = Util.Camp == Camp.Sheep ? "CreateSheep" : "Enchant";
+        var resourceString = Util.Faction == Faction.Sheep ? "IncreaseSheepResource" : "IncreaseWolfResource";
+        var assetString = Util.Faction == Faction.Sheep ? "CreateSheep" : "Enchant";
         var resourceButtonImage = _buttonDict["ResourceButton"].GetComponent<Image>();
         var assetButtonImage = _buttonDict["AssetButton"].GetComponent<Image>();
         var baseUpgradeText = GetText((int)Texts.BaseUpgradeText);
@@ -84,10 +84,10 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
         resourceButtonImage.sprite = Managers.Resource.Load<Sprite>($"Sprites/Icons/icon_base_skill_{resourceString}");
         assetButtonImage.sprite = Managers.Resource.Load<Sprite>($"Sprites/Icons/icon_base_skill_{assetString}");
 
-        baseUpgradeText.text = Util.Camp == Camp.Sheep ? "기지\n업그레이드" : "포탈\n업그레이드";
-        repairText.text = Util.Camp == Camp.Sheep ? "모든 울타리\n수리" : "모든 석상\n수리";
-        resourceText.text = Util.Camp == Camp.Sheep ? "획득 골드\n증가" : "획득 DNA\n증가";
-        assetText.text = Util.Camp == Camp.Sheep ? "양 생성" : "주술 강화";
+        baseUpgradeText.text = Util.Faction == Faction.Sheep ? "기지\n업그레이드" : "포탈\n업그레이드";
+        repairText.text = Util.Faction == Faction.Sheep ? "모든 울타리\n수리" : "모든 석상\n수리";
+        resourceText.text = Util.Faction == Faction.Sheep ? "획득 골드\n증가" : "획득 DNA\n증가";
+        assetText.text = Util.Faction == Faction.Sheep ? "양 생성" : "주술 강화";
         
         SetObjectSize(GetImage((int)Images.BaseUpgradeButtonPanel).gameObject, 0.65f, 0.65f);
         SetObjectSize(GetImage((int)Images.RepairButtonPanel).gameObject, 0.65f, 0.65f);
@@ -112,42 +112,27 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
         foreach (var button in _buttonDict.Values)
         {
             button.BindEvent(OnSkillButtonClicked);
+            button.AddComponent<UI_Skill>();
         }
     }
     
     private void OnSkillButtonClicked(PointerEventData data)
     {
-        Managers.UI.ClosePopupUI<UI_UpgradePopup>();
-        if (_gameVm.CurrentSelectedSkillButton != null)
+        Managers.UI.ClosePopupUI<UI_UpgradePopupNoCost>();
+        foreach (var skillButton in _buttonDict.Values)
         {
-            var oldImage = GetImageFromButton(_gameVm.CurrentSelectedSkillButton);
-            oldImage.color = Color.green;
+            Util.GetFrameFromButton(skillButton.GetComponent<UI_Skill>()).color = Color.green;
         }
-        
-        var selectedSkillButton = data.pointerPress.GetComponent<ISkillButton>();
+
+        var selectedSkillButton = data.pointerPress.GetComponent<UI_Skill>();
         if (selectedSkillButton == null) return;
         
         _gameVm.CurrentSelectedSkillButton = selectedSkillButton;
-        var newImage = GetImageFromButton(_gameVm.CurrentSelectedSkillButton);
-        if (newImage != null)
-        {
-            newImage.color = Color.blue;
-        }
+        Util.GetFrameFromButton(_gameVm.CurrentSelectedSkillButton).color = Color.cyan;
         
-        Managers.UI.ShowPopupUiInGame<UI_UpgradePopup>();
         var skillName = _gameVm.CurrentSelectedSkillButton.Name.Replace("Button", "");
-        var camp = Util.Camp.ToString();
+        var camp = Util.Faction.ToString();
         var skillNameCamp = $"{skillName}{camp}";
-        if (Enum.TryParse(skillNameCamp, out Skill skill))
-        {
-            Managers.Network.Send(new C_SetUpgradePopup { SkillId = (int)skill });
-        }
-    }
-    
-    private Image GetImageFromButton(ISkillButton button)
-    {
-        if (button is not MonoBehaviour mono) return null;
-        var go = mono.gameObject;
-        return go.transform.parent.parent.GetChild(1).GetComponent<Image>();
+        _gameVm.ShowUpgradePopupNoCost(skillNameCamp);
     }
 }

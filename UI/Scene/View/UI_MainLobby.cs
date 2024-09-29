@@ -23,9 +23,14 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     private MainLobbyViewModel _lobbyVm;
     private DeckViewModel _deckVm;
     private CollectionViewModel _collectionVm;
+    private CraftingViewModel _craftingVm;
     
+    private bool _isCraftingPanelOpen;
+    private readonly float _craftingPanelDuration = 5f;
+    private readonly float _craftingPanelHeight = 1000;
     private Card _selectedCard;
     private UI_CardClickPopup _cardPopup;
+    private RectTransform _craftingPanel;
     private Transform _deck;
     private Transform _unitCollection;
     private Transform _unitNoCollection;
@@ -48,7 +53,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
 
     private enum Buttons
     {
-        CampButton,
+        FactionButton,
         RankButton,
         SingleButton,
         MultiButton,
@@ -64,6 +69,8 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         DeckButton5,
         
         CollectionTabButton,
+        
+        CraftingTabButton
     }
 
     private enum Texts
@@ -110,6 +117,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         CollectionScrollView,
         Deck,
         
+        CraftingPanel,
         UnitHoldingCardPanel,
         UnitNotHoldingCardPanel,
         AssetHoldingCardPanel,
@@ -129,13 +137,15 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         ITokenService tokenService,
         MainLobbyViewModel viewModel,
         DeckViewModel deckViewModel,
-        CollectionViewModel collectionViewModel)
+        CollectionViewModel collectionViewModel,
+        CraftingViewModel craftingViewModel)
     {
         _userService = userService;
         _tokenService = tokenService;
         _lobbyVm = viewModel;
         _deckVm = deckViewModel;
         _collectionVm = collectionViewModel;
+        _craftingVm = craftingViewModel;
     }
 
     private void Awake()
@@ -157,6 +167,9 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         _collectionVm.OnCardInitialized += SetCollectionUI;
         _collectionVm.OnCardSwitched -= SwitchCollection;
         _collectionVm.OnCardSwitched += SwitchCollection;
+
+        _craftingVm.GoToCraftingTab -= GoToCraftingTab;
+        _craftingVm.GoToCraftingTab += GoToCraftingTab;
         
         _userService.InitDeckButton -= SetDeckButtonUI;
         _userService.InitDeckButton += SetDeckButtonUI;
@@ -169,7 +182,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         BindObjects();
         InitButtonEvents();
 
-        Util.Camp = Camp.Sheep;
+        Util.Faction = Faction.Sheep;
         InitUI();
         
         _lobbyVm.SetCurrentPage(2);
@@ -235,10 +248,10 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         SetItemUI();
     }
     
-    private void SetDeckUI(Camp camp)
+    private void SetDeckUI(Faction faction)
     {
         // Set Deck - As using layout group, no need to set position
-        var deck = _deckVm.GetDeck(camp);
+        var deck = _deckVm.GetDeck(faction);
         var deckParent = Util.FindChild(gameObject, _deck.name, true, true).transform;
         
         foreach (var unit in deck.UnitsOnDeck)
@@ -247,9 +260,9 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         }
 
         // Set Asset Frame
-        IAsset asset = camp == Camp.Sheep ? User.Instance.BattleSetting.SheepInfo : User.Instance.BattleSetting.EnchantInfo;
+        IAsset asset = faction == Faction.Sheep ? User.Instance.BattleSetting.SheepInfo : User.Instance.BattleSetting.EnchantInfo;
         var assetParent = GetImage((int)Images.AssetFrame).transform;
-        var assetFrame = camp == Camp.Sheep ?
+        var assetFrame = faction == Faction.Sheep ?
             Util.GetCardResources<SheepId>(asset, assetParent, 1, OnCardClicked):
             Util.GetCardResources<EnchantId>(asset, assetParent, 1, OnCardClicked);
         assetFrame.GetComponent<RectTransform>().anchorMin = new Vector2(0, 0);
@@ -263,7 +276,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         characterFrame.GetComponent<RectTransform>().anchorMax = new Vector2(1, 1);
     }
     
-    private void SetCollectionUI(Camp camp)
+    private void SetCollectionUI(Faction faction)
     {
         _collectionVm.OrderCardsByClass(User.Instance.OwnedCardListSheep, User.Instance.NotOwnedCardListWolf);
         _collectionVm.OrderCardsByClass(User.Instance.OwnedCardListWolf, User.Instance.NotOwnedCardListWolf);
@@ -271,15 +284,14 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         _collectionVm.OrderCardsByClass(User.Instance.OwnedEnchantList, User.Instance.NotOwnedEnchantList);
         _collectionVm.OrderCardsByClass(User.Instance.OwnedCharacterList, User.Instance.NotOwnedCharacterList);
         
-        var ownedUnits = camp == Camp.Sheep ? User.Instance.OwnedCardListSheep : User.Instance.OwnedCardListWolf;
-        var notOwnedUnits = camp == Camp.Sheep ? User.Instance.NotOwnedCardListSheep : User.Instance.NotOwnedCardListWolf;
-        var ownedAssets = camp == Camp.Sheep 
+        var ownedUnits = faction == Faction.Sheep ? User.Instance.OwnedCardListSheep : User.Instance.OwnedCardListWolf;
+        var notOwnedUnits = faction == Faction.Sheep ? User.Instance.NotOwnedCardListSheep : User.Instance.NotOwnedCardListWolf;
+        var ownedAssets = faction == Faction.Sheep 
             ? User.Instance.OwnedSheepList.Cast<IAsset>().ToList() 
             : User.Instance.OwnedEnchantList.Cast<IAsset>().ToList();
-        var notOwnedAssets = camp == Camp.Sheep 
+        var notOwnedAssets = faction == Faction.Sheep 
             ? User.Instance.NotOwnedSheepList.Cast<IAsset>().ToList() 
             : User.Instance.NotOwnedEnchantList.Cast<IAsset>().ToList();
-        
         
         Util.DestroyAllChildren(_unitCollection);
         Util.DestroyAllChildren(_unitNoCollection);
@@ -305,14 +317,14 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         // Assets in collection UI
         foreach (var asset in ownedAssets)
         {
-            var cardFrame = camp == Camp.Sheep 
+            var cardFrame = faction == Faction.Sheep 
                 ? Util.GetCardResources<SheepId>(asset, _assetCollection, 0, OnCardClicked) 
                 : Util.GetCardResources<EnchantId>(asset, _assetCollection, 0, OnCardClicked);
         }
 
         foreach (var asset in notOwnedAssets)
         {
-            var cardFrame = camp == Camp.Sheep 
+            var cardFrame = faction == Faction.Sheep 
                 ? Util.GetCardResources<SheepId>(asset, _assetNoCollection, 0, OnCardClicked) 
                 : Util.GetCardResources<EnchantId>(asset, _assetNoCollection, 0, OnCardClicked);
             var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
@@ -335,9 +347,9 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         }
     }
 
-    private void SetDeckButtonUI(Camp camp)
+    private void SetDeckButtonUI(Faction faction)
     {
-        var deckNumber = camp == Camp.Sheep ? User.Instance.DeckSheep.DeckNumber : User.Instance.DeckWolf.DeckNumber;
+        var deckNumber = faction == Faction.Sheep ? User.Instance.DeckSheep.DeckNumber : User.Instance.DeckWolf.DeckNumber;
         var deckButtons = new List<Button>
         {
             GetButton((int)Buttons.DeckButton1),
@@ -358,6 +370,9 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     private void SetItemUI()
     {
         Util.SetAlpha(GetButton((int)Buttons.CollectionTabButton).GetComponent<Image>(), 0.4f);
+        Util.SetAlpha(GetButton((int)Buttons.CraftingTabButton).GetComponent<Image>(), 0.4f);
+        _craftingPanel = GetImage((int)Images.CraftingPanel).GetComponent<RectTransform>();
+        _craftingPanel.sizeDelta = new Vector2(_craftingPanel.sizeDelta.x, 0);
         GetImage((int)Images.CollectionScrollView).gameObject.SetActive(false);
     }
 
@@ -366,42 +381,73 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         _selectedCard = card;
         CardPopup = Managers.UI.ShowPopupUI<UI_CardClickPopup>();
         CardPopup.SelectedCard = _selectedCard;
-        CardPopup.CardPosition = _selectedCard.transform.position;
+        CardPopup.CardPosition = _selectedCard.transform.position - new Vector3(0, 60);
         CardPopup.FromDeck = card.gameObject.transform.parent == GetImage((int)Images.Deck).transform 
                              || card.gameObject.transform.parent == GetImage((int)Images.AssetFrame).transform
                              || card.gameObject.transform.parent == GetImage((int)Images.CharacterFrame).transform;
-        
         // TODO: Set Size By Various Resolution
     }
     
-    private void ResetDeckUI(Camp camp)
+    private void ResetDeckUI(Faction faction)
     {
         var parent = GetImage((int)Images.Deck).transform;
         foreach (Transform child in parent) Destroy(child.gameObject);
-        SetDeckUI(camp);
+        SetDeckUI(faction);
     }
     
-    private void SwitchCollection(Camp camp)
+    private void SwitchCollection(Faction faction)
     {
-        SetCollectionUI(camp);
+        SetCollectionUI(faction);
+    }
+
+    private void OpenCraftingPanel()
+    {
+        if (_isCraftingPanelOpen) return;
+        
+        _craftingPanel.gameObject.SetActive(true);
+        StartCoroutine(AdjustCraftingPanel(_craftingPanelHeight));
+    }
+
+    private void CloseCraftingPanel()
+    {
+        _craftingPanel.sizeDelta = new Vector2(_craftingPanel.sizeDelta.x, 0);
+        _craftingPanel.gameObject.SetActive(false);
+    }
+    
+    private IEnumerator AdjustCraftingPanel(float targetHeight)
+    {
+        _isCraftingPanelOpen = true;
+        float elapsedTime = 0;
+        float startHeight = _craftingPanel.sizeDelta.y;
+
+        while (elapsedTime < _craftingPanelDuration)
+        {
+            float newHeight = Mathf.Lerp(startHeight, targetHeight, elapsedTime / _craftingPanelDuration);
+            _craftingPanel.sizeDelta = new Vector2(_craftingPanel.sizeDelta.x, newHeight);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        
+        _craftingPanel.sizeDelta = new Vector2(_craftingPanel.sizeDelta.x, 1000);
+        _isCraftingPanelOpen = false;
     }
     
     // Button Click Events
     #region ButtonEvent
 
-    private void OnCampButtonClicked(PointerEventData data)
+    private void OnFactionButtonClicked(PointerEventData data)
     {
-        Util.Camp = Util.Camp == Camp.Sheep ? Camp.Wolf : Camp.Sheep;
+        Util.Faction = Util.Faction == Faction.Sheep ? Faction.Wolf : Faction.Sheep;
         
-        _deckVm.SwitchDeck(Util.Camp);
-        _collectionVm.SwitchCards(Util.Camp);
+        _deckVm.SwitchDeck(Util.Faction);
+        _collectionVm.SwitchCards(Util.Faction);
         
-        SwitchLobbyUI(Util.Camp);
+        SwitchLobbyUI(Util.Faction);
     }
 
     private void OnSingleClicked(PointerEventData data)
     {
-        Util.Deck = _deckVm.GetDeck(Util.Camp);
+        Util.Deck = _deckVm.GetDeck(Util.Faction);
     }
 
     private void OnMultiClicked(PointerEventData data)
@@ -409,14 +455,16 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         Managers.UI.ShowPopupUI<UI_Dim>();
         Managers.UI.ShowPopupUI<UI_BattlePopupSheep>();
 
-        Util.Deck = _deckVm.GetDeck(Util.Camp);
+        Util.Deck = _deckVm.GetDeck(Util.Faction);
     }
     
     private void OnDeckTabClicked(PointerEventData data)
     {
         Managers.UI.CloseAllPopupUI();
         Util.SetAlpha(GetButton((int)Buttons.CollectionTabButton).GetComponent<Image>(), 0.4f);
+        Util.SetAlpha(GetButton((int)Buttons.CraftingTabButton).GetComponent<Image>(), 0.4f);
         Util.SetAlpha(GetButton((int)Buttons.DeckTabButton).GetComponent<Image>(), 1f);
+        CloseCraftingPanel();
         GetImage((int)Images.CollectionScrollView).gameObject.SetActive(false);
         GetImage((int)Images.DeckScrollView).gameObject.SetActive(true);
     }
@@ -424,22 +472,40 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     private void OnDeckButtonClicked(PointerEventData data)
     {
         var buttonNumber = data.pointerPress.GetComponent<DeckButtonInfo>().DeckIndex;
-        _deckVm.SelectDeck(buttonNumber, Util.Camp);
+        _deckVm.SelectDeck(buttonNumber, Util.Faction);
     }
 
     private void OnCollectionTabClicked(PointerEventData data)
     {
         Managers.UI.CloseAllPopupUI();
         Util.SetAlpha(GetButton((int)Buttons.DeckTabButton).GetComponent<Image>(), 0.4f);
+        Util.SetAlpha(GetButton((int)Buttons.CraftingTabButton).GetComponent<Image>(), 0.4f);
         Util.SetAlpha(GetButton((int)Buttons.CollectionTabButton).GetComponent<Image>(), 1f);
+        CloseCraftingPanel();
         GetImage((int)Images.DeckScrollView).gameObject.SetActive(false);
         GetImage((int)Images.CollectionScrollView).gameObject.SetActive(true);
     }
-    
+
     private void OnCardClicked(PointerEventData data)
     {
         if (data.pointerPress.TryGetComponent(out Card card) == false) return;
         SetCardPopupUI(card);
+    }
+    
+    private void OnCraftingTabClicked(PointerEventData data)
+    {
+        GoToCraftingTab();
+    }
+    
+    private void GoToCraftingTab()
+    {
+        Managers.UI.CloseAllPopupUI();
+        Util.SetAlpha(GetButton((int)Buttons.DeckTabButton).GetComponent<Image>(), 0.4f);
+        Util.SetAlpha(GetButton((int)Buttons.CollectionTabButton).GetComponent<Image>(), 0.4f);
+        Util.SetAlpha(GetButton((int)Buttons.CraftingTabButton).GetComponent<Image>(), 1f);
+        GetImage((int)Images.DeckScrollView).gameObject.SetActive(false);
+        GetImage((int)Images.CollectionScrollView).gameObject.SetActive(true);
+        OpenCraftingPanel();
     }
     
     #endregion
@@ -455,7 +521,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
 
     protected override void InitButtonEvents()
     {
-        GetButton((int)Buttons.CampButton).gameObject.BindEvent(OnCampButtonClicked);
+        GetButton((int)Buttons.FactionButton).gameObject.BindEvent(OnFactionButtonClicked);
         GetButton((int)Buttons.SingleButton).gameObject.BindEvent(OnSingleClicked);
         GetButton((int)Buttons.MultiButton).gameObject.BindEvent(OnMultiClicked);
         
@@ -467,11 +533,12 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         GetButton((int)Buttons.DeckButton5).gameObject.BindEvent(OnDeckButtonClicked);
         
         GetButton((int)Buttons.CollectionTabButton).gameObject.BindEvent(OnCollectionTabClicked);
+        GetButton((int)Buttons.CraftingTabButton).gameObject.BindEvent(OnCraftingTabClicked);
     }
     
     protected override void InitUI()
     {
-        SetObjectSize(GetButton((int)Buttons.CampButton).gameObject, 1.0f);
+        SetObjectSize(GetButton((int)Buttons.FactionButton).gameObject, 1.0f);
         SetObjectSize(GetImage((int)Images.GoldImage).gameObject, 1.2f);
         SetObjectSize(GetImage((int)Images.GemImage).gameObject, 1.2f);
         SetObjectSize(GetImage((int)Images.CloverImage).gameObject, 0.9f);
@@ -501,24 +568,24 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         SetMainLobbyItemUI();
     }
 
-    private void SwitchLobbyUI(Camp camp)
+    private void SwitchLobbyUI(Faction faction)
     {
         var gamePanelImage = GetImage((int)Images.GamePanelBackground);
-        var campButtonImage = GetButton((int)Buttons.CampButton).GetComponent<Image>();
+        var factionButtonImage = GetButton((int)Buttons.FactionButton).GetComponent<Image>();
         var singleImage = GetImage((int)Images.SingleButtonImage);
         var multiImage = GetImage((int)Images.MultiButtonImage);
         
-        switch (camp)
+        switch (faction)
         {
-            case Camp.Sheep:
+            case Faction.Sheep:
                 gamePanelImage.sprite = Resources.Load<Sprite>("Sprites/Backgrounds/MainLobbySheep");
-                campButtonImage.sprite = Resources.Load<Sprite>("Sprites/SheepButton");
+                factionButtonImage.sprite = Resources.Load<Sprite>("Sprites/SheepButton");
                 singleImage.sprite = Resources.Load<Sprite>("Sprites/SheepButton");
                 multiImage.sprite = Resources.Load<Sprite>("Sprites/SheepMultiButton");
                 break;
-            case Camp.Wolf:
+            case Faction.Wolf:
                 gamePanelImage.sprite = Resources.Load<Sprite>("Sprites/Backgrounds/MainLobbyWolf");
-                campButtonImage.sprite = Resources.Load<Sprite>("Sprites/WolfButton");
+                factionButtonImage.sprite = Resources.Load<Sprite>("Sprites/WolfButton");
                 singleImage.sprite = Resources.Load<Sprite>("Sprites/WolfButton");
                 multiImage.sprite = Resources.Load<Sprite>("Sprites/WolfMultiButton");
                 break;
@@ -562,6 +629,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         _deckVm.OnDeckSwitched -= ResetDeckUI;
         _collectionVm.OnCardInitialized -= SetCollectionUI;
         _collectionVm.OnCardSwitched -= SwitchCollection;
+        _craftingVm.GoToCraftingTab -= GoToCraftingTab;
         _userService.InitDeckButton -= SetDeckButtonUI;
     }
 }

@@ -3,12 +3,12 @@ using UnityEngine;
 
 public class ResourceController : BaseController
 {
-    public int yield;
     private float _waitTime = 1f;
-    private Vector3 _initPos;
-    private readonly float _jumpHeight = 2f;
+    private readonly float _jumpHeight = 3f;
     private readonly float _jumpSpeed = 4f;
     private readonly float _moveSpeed = 8.0f;
+    
+    protected Vector3 InitPos;
 
     public override State State
     {
@@ -19,7 +19,7 @@ public class ResourceController : BaseController
     protected override void Init()
     {
         DestPos = Managers.Object.MyPlayer.transform.position;
-        _initPos = transform.position;
+        InitPos = transform.position;
     }
 
     protected override void Update()
@@ -61,7 +61,7 @@ public class ResourceController : BaseController
 
     protected virtual void Pop()
     {
-        float y = _initPos.y + Mathf.PingPong(Time.time * _jumpSpeed, _jumpHeight);   
+        float y = InitPos.y + Mathf.PingPong(Time.time * _jumpSpeed, _jumpHeight);   
         transform.position = new Vector3(transform.position.x, y, transform.position.z);
     }
 }
