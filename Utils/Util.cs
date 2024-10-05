@@ -5,6 +5,7 @@ using System.Linq;
 using Cinemachine;
 using Google.Protobuf.Protocol;
 using JetBrains.Annotations;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -110,7 +111,7 @@ public class Util
         var cardFrame = Managers.Resource.Instantiate("UI/Deck/CardFrame", parent);
         var unitInCard = cardFrame.transform.Find("CardUnit").gameObject;
         
-        if (cardFrame.TryGetComponent(out Card card) == false) return null;
+        var card = cardFrame.GetOrAddComponent<Card>();
         card.Id = asset.Id;
         card.Class = asset.Class;
         card.AssetType = typeof(TEnum).Name switch
@@ -140,8 +141,52 @@ public class Util
 
         return cardFrame;
     }
+
+    public static GameObject GetMaterialResources(
+        IAsset asset, Transform parent, float cardSize = 0, Action<PointerEventData> action = null)
+    {
+        var panel = Managers.Resource.Instantiate("UI/Deck/ItemPanel", parent);
+        var materialInFrame = FindChild(panel, "ItemButton", true, true);
+        
+        var material = panel.GetOrAddComponent<MaterialItem>();
+        material.Id = asset.Id;
+        material.Class = asset.Class;
+        
+        var enumValue = (MaterialId)Enum.ToObject(typeof(MaterialId), asset.Id);
+        var path = $"Sprites/Materials/{enumValue.ToString()}";
+        var background = FindChild(panel, "ItemClassBackground", true, true);
+        materialInFrame.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
+        background.GetComponent<Image>().color = asset.Class switch
+        {
+            UnitClass.Peasant => new Color(.48f, .48f, .48f),
+            UnitClass.Squire => new Color(.2f, .8f, .16f),
+            UnitClass.Knight => new Color(.16f, .65f, .8f),
+            UnitClass.NobleKnight => new Color(.8f, .16f, .8f),
+            UnitClass.Baron => new Color(1, .86f, 0),
+            UnitClass.Earl => new Color(1, 0.7f, 0),
+            UnitClass.Duke => new Color(1, .26f, 0),
+            UnitClass.None => new Color(.48f, .48f, .48f),
+            _ => new Color(.48f, .48f, .48f),
+        };
+        
+        if (action != null) panel.BindEvent(action);
+        
+        return panel;
+    }
     
-    public static Image GetFrameFromButton(ISkillButton button)
+    public static Faction FindFactionByUnitId(int unitId)
+    {
+        return unitId / 500 == 0 ? Faction.Sheep : Faction.Wolf;
+    }
+    
+    public static void SetCardSize(RectTransform rect, float x, float y, Vector2 anchoredVector = new())
+    {
+        rect.anchoredPosition = anchoredVector;
+        rect.sizeDelta = new Vector2(x, y);
+        rect.transform.GetChild(0).GetComponent<RectTransform>().sizeDelta = new Vector2(x, x);
+    }
+    
+    public static Image GetFrameFromCardButton(ISkillButton button)
     {
         if (button is not MonoBehaviour mono) return null;
         var go = mono.gameObject;

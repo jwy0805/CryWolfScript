@@ -451,7 +451,7 @@ public class PacketHandler
     {
         var popupPacket = (S_SendWarningInGame)packet;
         var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-        popup.GetComponent<UI_WarningPopup>().SetPopup(popupPacket.Warning);
+        popup.GetComponent<UI_WarningPopup>().SetWarning(popupPacket.Warning);
     }
 
     public static void S_ShowResultSceneHandler(PacketSession session, IMessage packet)

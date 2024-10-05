@@ -176,7 +176,7 @@ public class UI_CardClickPopup : UI_Popup
 
     private void OnCraftingClicked(PointerEventData data)
     {
-        _craftingVm.OnCraftingButtonClicked();
+        _craftingVm.SetCard(SelectedCard);
     }
     
     private void ClosePopup(PointerEventData data)

@@ -143,16 +143,16 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         var parent = GetImage((int)Images.CollectionPanel).transform;
         foreach (Transform child in parent) Destroy(child.gameObject);
         
-        var collection = Util.Faction == Faction.Sheep 
-            ? User.Instance.OwnedCardListSheep 
-            : User.Instance.OwnedCardListWolf;
+        var collection = User.Instance.OwnedUnitList
+            .Where(info => info.UnitInfo.Faction == Util.Faction).ToList();
         var deck = _deckVm.GetDeck(Util.Faction);
         var units = collection
-            .Where(unitInfo => deck.UnitsOnDeck.All(u => u.Id != unitInfo.Id)).ToList();
+            .Where(unitInfo => deck.UnitsOnDeck.All(u => u.Id != unitInfo.UnitInfo.Id)).ToList();
         
         foreach (var unit in units)
         {
-            var cardFrame = Util.GetCardResources<UnitId>(unit, parent, 0, OnCollectionCardClicked);
+            var cardFrame = 
+                Util.GetCardResources<UnitId>(unit.UnitInfo, parent, 0, OnCollectionCardClicked);
             cardFrame.TryGetComponent(out RectTransform rectTransform);
             rectTransform.anchorMax = Vector2.one;
             rectTransform.anchorMin = Vector2.zero;

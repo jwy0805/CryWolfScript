@@ -31,14 +31,14 @@ public class WebService : IWebService
         }
     }
     
-    public virtual async Task<T> SendWebRequestAsync<T>(string url, string method, object obj)
+    public async Task<T> SendWebRequestAsync<T>(string url, string method, object obj)
     {
         var tcs = new TaskCompletionSource<T>();
         await SendWebRequest<T>(url, method, obj, response => tcs.SetResult(response));
         return await tcs.Task;
     }
     
-    public virtual async Task SendWebRequest<T>(string url, string method, object obj, Action<T> responseAction)
+    public async Task SendWebRequest<T>(string url, string method, object obj, Action<T> responseAction)
     {
         var sendUrl = $"{BaseUrl}/{url}";
         byte[] jsonBytes = null;

@@ -81,6 +81,14 @@ public class DataManager
         { UnitId.SkeletonMage, new List<Skill> { Skill.SkeletonMageCurse } }
     };
 
+    // Dictionaries for DB caching only before introducing REDIS
+    public Dictionary<int, UnitInfo> UnitInfoDict { get; set;  } = new();
+    public Dictionary<int, SheepInfo> SheepInfoDict { get; set;  } = new();
+    public Dictionary<int, EnchantInfo> EnchantInfoDict { get; set; } = new();
+    public Dictionary<int, CharacterInfo> CharacterInfoDict { get; set; } = new();
+    public Dictionary<int, MaterialInfo> MaterialInfoDict { get; set; } = new();
+    // Dictionaries for DB caching only before introducing REDIS
+
     public async Task InitAsync()
     {
         UnitDict = (await LoadJsonAsync<Contents.UnitLoader, int, Contents.UnitData>("UnitData"))!.MakeDict();

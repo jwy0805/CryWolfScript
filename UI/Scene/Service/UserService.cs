@@ -16,31 +16,17 @@ public class UserService : IUserService
         _tokenService = tokenService;
     }
 
-    public void LoadOwnedUnit(UnitInfo unitInfo)
+    public void LoadOwnedUnit(OwnedUnitInfo units)
     {
-        if (unitInfo.Faction == Faction.Sheep)
-        {
-            User.Instance.OwnedCardListSheep.Add(unitInfo);
-        }
-        else
-        {
-            User.Instance.OwnedCardListWolf.Add(unitInfo);
-        }
+        User.Instance.OwnedUnitList.Add(units);
     }
 
     public void LoadNotOwnedUnit(UnitInfo unitInfo)
     {
-        if (unitInfo.Faction == Faction.Sheep)
-        {
-            User.Instance.NotOwnedCardListSheep.Add(unitInfo);
-        }
-        else
-        {
-            User.Instance.NotOwnedCardListWolf.Add(unitInfo);
-        }
+        User.Instance.NotOwnedUnitList.Add(unitInfo);
     }
     
-    public void LoadOwnedSheep(SheepInfo sheepInfo)
+    public void LoadOwnedSheep(OwnedSheepInfo sheepInfo)
     {
         User.Instance.OwnedSheepList.Add(sheepInfo);
     }
@@ -50,7 +36,7 @@ public class UserService : IUserService
         User.Instance.NotOwnedSheepList.Add(sheepInfo);
     }
     
-    public void LoadOwnedEnchant(EnchantInfo enchantInfo)
+    public void LoadOwnedEnchant(OwnedEnchantInfo enchantInfo)
     {
         User.Instance.OwnedEnchantList.Add(enchantInfo);
     }
@@ -60,7 +46,7 @@ public class UserService : IUserService
         User.Instance.NotOwnedEnchantList.Add(enchantInfo);
     }
     
-    public void LoadOwnedCharacter(CharacterInfo characterInfo)
+    public void LoadOwnedCharacter(OwnedCharacterInfo characterInfo)
     {
         User.Instance.OwnedCharacterList.Add(characterInfo);
     }
@@ -68,6 +54,11 @@ public class UserService : IUserService
     public void LoadNotOwnedCharacter(CharacterInfo characterInfo)
     {
         User.Instance.NotOwnedCharacterList.Add(characterInfo);
+    }
+    
+    public void LoadOwnedMaterial(OwnedMaterialInfo materialInfo)
+    {
+        User.Instance.OwnedMaterialList.Add(materialInfo);
     }
 
     public void LoadBattleSetting(BattleSettingInfo battleSettingInfo)

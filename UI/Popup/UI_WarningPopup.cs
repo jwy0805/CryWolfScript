@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class UI_WarningPopup : UI_Popup
 {
-    public void SetPopup(string warningText)
+    public void SetWarning(string warningText)
     {
         TextMeshProUGUI text = Util.FindChild<TextMeshProUGUI>(gameObject, "WarningText", true);
         text.text = warningText;

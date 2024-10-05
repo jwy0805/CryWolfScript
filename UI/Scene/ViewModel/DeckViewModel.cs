@@ -105,16 +105,15 @@ public class DeckViewModel
         var unitIdToBeDeleted = deck.UnitsOnDeck[index].Id;
         var unitIdToBeUpdated = newCard.Id;
 
+        deck.UnitsOnDeck[index] = User.Instance.OwnedUnitList
+            .Select(info => info.UnitInfo)
+            .FirstOrDefault(info => info.Id == newCard.Id);
         if (Util.Faction == Faction.Sheep)
         {
-            deck.UnitsOnDeck[index] = User.Instance.OwnedCardListSheep
-                .FirstOrDefault(unitInfo => unitInfo.Id == newCard.Id);
             User.Instance.DeckSheep = deck;
         }
         else
         {
-            deck.UnitsOnDeck[index] = User.Instance.OwnedCardListWolf
-                .FirstOrDefault(unitInfo => unitInfo.Id == newCard.Id);
             User.Instance.DeckWolf = deck;
         }
         

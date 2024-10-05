@@ -427,13 +427,15 @@ public class UI_UnitInfoPopup : UI_Popup
     // Button events
     private void OnLevelButtonClicked(PointerEventData data)
     {
+        var cardPanel = GetImage((int)Images.CardPanel);
         var clickedButton = data.pointerPress.GetComponent<Button>();
         var level = _levelButtons.FirstOrDefault(pair => pair.Value == clickedButton).Key;
         var newUnitId = Managers.Data.UnitDict
             .Where(pair => pair.Value.UnitSpecies == (Species)_unitInfo.Species && pair.Value.Stat.Level == level)
             .Select(pair => pair.Key)
             .FirstOrDefault();
-
+        
+        Util.DestroyAllChildren(cardPanel.transform);
         GetUnitInfo((UnitId)newUnitId);
         SetLevelButton(_unitInfo);
     }
@@ -447,7 +449,7 @@ public class UI_UnitInfoPopup : UI_Popup
         var skillDescriptionGoldText = GetText((int)Texts.SkillDescriptionGoldText);
         var skillName = data.pointerPress.name.Replace("Button", "");
         var skillNumber = Managers.Data.SkillDict.Values
-            .FirstOrDefault(skill => skill.Id == (int)Enum.Parse(typeof(Skill), skillName))?
+            .FirstOrDefault(skill => skill.Id == (int)skillName.ToEnum<Skill>())?
             .Id;
         
         if (skillNumber == null) return;

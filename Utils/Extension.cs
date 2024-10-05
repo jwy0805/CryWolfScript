@@ -25,4 +25,9 @@ public static class Extension
         return;
         async void Action(PointerEventData data) => await action(data);
     }
+    
+    public static T ToEnum<T>(this string enumString) where T : Enum
+    {
+        return (T)Enum.Parse(typeof(T), enumString);
+    }
 }

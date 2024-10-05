@@ -121,14 +121,14 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
         Managers.UI.ClosePopupUI<UI_UpgradePopupNoCost>();
         foreach (var skillButton in _buttonDict.Values)
         {
-            Util.GetFrameFromButton(skillButton.GetComponent<UI_Skill>()).color = Color.green;
+            Util.GetFrameFromCardButton(skillButton.GetComponent<UI_Skill>()).color = Color.green;
         }
 
         var selectedSkillButton = data.pointerPress.GetComponent<UI_Skill>();
         if (selectedSkillButton == null) return;
         
         _gameVm.CurrentSelectedSkillButton = selectedSkillButton;
-        Util.GetFrameFromButton(_gameVm.CurrentSelectedSkillButton).color = Color.cyan;
+        Util.GetFrameFromCardButton(_gameVm.CurrentSelectedSkillButton).color = Color.cyan;
         
         var skillName = _gameVm.CurrentSelectedSkillButton.Name.Replace("Button", "");
         var camp = Util.Faction.ToString();

@@ -1,9 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 using Zenject;
+
+/* Last Modified : 24. 10. 04
+ * Version : 1.012
+ */
 
 public class LoginViewModel
 {

@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using UnityEngine;
+using UnityEngine.Networking;
 using Zenject;
 
 public class CollectionViewModel
@@ -25,22 +27,46 @@ public class CollectionViewModel
     
     public async Task Initialize()
     {
+        // Load unit & item data
+        #pragma warning disable CS4014
+        LoadInfoAsync();
+        #pragma warning restore CS4014
+        
         await InitializeCards();
-        await Task.WhenAll(InitializeSheep(), InitializeEnchant(), InitializeCharacter());
+        await Task.WhenAll(InitializeSheep(), InitializeEnchants(), InitializeCharacters(), InitializeMaterials());
         
         OnCardInitialized?.Invoke(Util.Faction);
+    }
+    
+    // DB caching only before introducing REDIS
+    private async Task LoadInfoAsync()
+    {
+        var loadInfoTask = _webService.SendWebRequestAsync<LoadInfoPacketResponse>(
+            "Collection/LoadInfo", UnityWebRequest.kHttpVerbPOST, new LoadInfoPacketRequired
+            {
+                LoadInfo = true
+            });
+        
+        await loadInfoTask;
+        var loadInfoResponse = loadInfoTask.Result;
+        if (loadInfoResponse.LoadInfoOk == false) return;
+        Managers.Data.UnitInfoDict = loadInfoResponse.UnitInfos.ToDictionary(info => info.Id, info => info);
+        Managers.Data.EnchantInfoDict = loadInfoResponse.EnchantInfos.ToDictionary(info => info.Id, info => info);
+        Managers.Data.SheepInfoDict = loadInfoResponse.SheepInfos.ToDictionary(info => info.Id, info => info);
+        Managers.Data.CharacterInfoDict = loadInfoResponse.CharacterInfos.ToDictionary(info => info.Id, info => info);
+        Managers.Data.MaterialInfoDict = loadInfoResponse.MaterialInfos.ToDictionary(info => info.Id, info => info);
     }
 
     private async Task InitializeCards()
     {
-        var cardPacket = new GetOwnedCardsPacketRequired
+        var cardPacket = new InitCardsPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
             Environment = _webService.Environment
         };
         
-        var cardTask = _webService.SendWebRequestAsync<GetOwnedCardsPacketResponse>(
-            "Collection/GetCards", "POST", cardPacket);
+        var cardTask = _webService.SendWebRequestAsync<InitCardsPacketResponse>(
+            "Collection/InitCards", "POST", cardPacket);
         
         await cardTask;
         
@@ -65,14 +91,14 @@ public class CollectionViewModel
 
     private async Task InitializeSheep()
     {
-        var sheepPacket = new GetOwnedSheepPacketRequired
+        var sheepPacket = new InitSheepPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
             Environment = _webService.Environment
         };
         
-        var sheepTask = _webService.SendWebRequestAsync<GetOwnedSheepPacketResponse>(
-            "Collection/GetSheep", "POST", sheepPacket);
+        var sheepTask = _webService.SendWebRequestAsync<InitSheepPacketResponse>(
+            "Collection/InitSheep", "POST", sheepPacket);
         
         await sheepTask;
         
@@ -95,16 +121,16 @@ public class CollectionViewModel
         }
     }
 
-    private async Task InitializeEnchant()
+    private async Task InitializeEnchants()
     {
-        var enchantPacket = new GetOwnedEnchantPacketRequired
+        var enchantPacket = new InitEnchantPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
             Environment = _webService.Environment
         };
         
-        var enchantTask = _webService.SendWebRequestAsync<GetOwnedEnchantPacketResponse>(
-            "Collection/GetEnchants", "POST", enchantPacket);
+        var enchantTask = _webService.SendWebRequestAsync<InitEnchantPacketResponse>(
+            "Collection/InitEnchants", "POST", enchantPacket);
         
         await enchantTask;
         
@@ -127,16 +153,16 @@ public class CollectionViewModel
         }
     }
 
-    private async Task InitializeCharacter()
+    private async Task InitializeCharacters()
     {
-        var characterPacket = new GetOwnedCharacterPacketRequired
+        var characterPacket = new InitCharacterPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
             Environment = _webService.Environment
         };
         
-        var characterTask = _webService.SendWebRequestAsync<GetOwnedCharacterPacketResponse>(
-            "Collection/GetCharacters", "POST", characterPacket);
+        var characterTask = _webService.SendWebRequestAsync<InitCharacterPacketResponse>(
+            "Collection/InitCharacters", "POST", characterPacket);
         
         await characterTask;
         
@@ -159,18 +185,39 @@ public class CollectionViewModel
         }
     }
     
+    private async Task InitializeMaterials()
+    {
+        var materialPacket = new InitMaterialPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            Environment = _webService.Environment
+        };
+        
+        var materialTask = _webService.SendWebRequestAsync<InitMaterialPacketResponse>(
+            "Collection/InitMaterials", "POST", materialPacket);
+        
+        await materialTask;
+        
+        var materialResponse = materialTask.Result;
+        if (materialResponse.GetMaterialOk == false) return;
+        if (materialResponse.AccessToken != null)
+        {
+            _tokenService.SaveAccessToken(materialResponse.AccessToken);
+            _tokenService.SaveRefreshToken(materialResponse.RefreshToken);
+        }
+        
+        foreach (var materialInfo in materialResponse.OwnedMaterialList)
+        {
+            _userService.LoadOwnedMaterial(materialInfo);
+        }
+    }
+    
     public int GetLevelFromUiObject(UnitId unitId)
     {
         var level = (int)unitId % 100 % 3;
         if (level == 0) { level = 3; }
 
         return level;
-    }
-    
-    public void OrderCardsByClass<T>(List<T> ownedAsset, List<T> notOwnedAsset) where T : IAsset
-    {
-        ownedAsset.Sort((a, b) => a.Class.CompareTo(b.Class));
-        notOwnedAsset.Sort((a, b) => a.Class.CompareTo(b.Class));
     }
 
     public void SwitchCards(Faction faction)

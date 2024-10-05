@@ -4,15 +4,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Zenject;
 
-/* Last Modified : 24. 09. 09
-   * Version : 1.011
-   */
- 
+/* Last Modified : 24. 10. 04
+ * Version : 1.012
+ */
 
 public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBeginDragHandler, IEndDragHandler
 {
@@ -26,11 +26,11 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     private CraftingViewModel _craftingVm;
     
     private bool _isCraftingPanelOpen;
-    private readonly float _craftingPanelDuration = 5f;
-    private readonly float _craftingPanelHeight = 1000;
     private Card _selectedCard;
+    private Card _selectedCardForCrafting;
     private UI_CardClickPopup _cardPopup;
     private RectTransform _craftingPanel;
+    private ScrollRect _craftingScrollRect;
     private Transform _deck;
     private Transform _unitCollection;
     private Transform _unitNoCollection;
@@ -38,6 +38,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     private Transform _assetNoCollection;
     private Transform _characterCollection;
     private Transform _characterNoCollection;
+    private Transform _materialCollection;
     
     private UI_CardClickPopup CardPopup
     {
@@ -70,7 +71,14 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         
         CollectionTabButton,
         
-        CraftingTabButton
+        CraftingTabButton,
+        CraftingButton,
+        CraftUpperArrowButton,
+        CraftLowerArrowButton,
+        CraftButton,
+        
+        ReinforceButton,
+        RecycleButton,
     }
 
     private enum Texts
@@ -83,6 +91,8 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         RankScoreText,
         RankingText,
         RankNameText,
+        
+        CraftCountText,
     }
 
     private enum Images
@@ -117,16 +127,31 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         CollectionScrollView,
         Deck,
         
-        CraftingPanel,
         UnitHoldingCardPanel,
         UnitNotHoldingCardPanel,
         AssetHoldingCardPanel,
         AssetNotHoldingCardPanel,
         CharacterHoldingCardPanel,
         CharacterNotHoldingCardPanel,
+        MaterialHoldingPanel,
         
         CharacterFrame,
         AssetFrame,
+        
+        CraftingPanel,
+        
+        CraftingCardPanel,
+        CardPedestal,
+        
+        CraftingSelectPanel,
+        
+        CraftingCraftPanel,
+        CraftCardPanel,
+        MaterialPanel,
+        
+        CraftingReinforcePanel,
+        
+        CraftingRecyclePanel,
     }
 
     #endregion
@@ -168,8 +193,14 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         _collectionVm.OnCardSwitched -= SwitchCollection;
         _collectionVm.OnCardSwitched += SwitchCollection;
 
-        _craftingVm.GoToCraftingTab -= GoToCraftingTab;
-        _craftingVm.GoToCraftingTab += GoToCraftingTab;
+        _craftingVm.SetCardOnCraftingPanel -= SetCardOnCraftingPanel;
+        _craftingVm.SetCardOnCraftingPanel += SetCardOnCraftingPanel;
+        _craftingVm.SetMaterialsOnCraftPanel -= InitMaterialsOnCraftPanel;
+        _craftingVm.SetMaterialsOnCraftPanel += InitMaterialsOnCraftPanel;
+        _craftingVm.InitCraftingPanel -= InitCraftingPanel;
+        _craftingVm.InitCraftingPanel += InitCraftingPanel;
+        _craftingVm.SetCollectionUI -= SetCollectionUI;
+        _craftingVm.SetCollectionUI += SetCollectionUI;
         
         _userService.InitDeckButton -= SetDeckButtonUI;
         _userService.InitDeckButton += SetDeckButtonUI;
@@ -236,6 +267,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         _assetNoCollection = GetImage((int)Images.AssetNotHoldingCardPanel).transform;
         _characterCollection = GetImage((int)Images.CharacterHoldingCardPanel).transform;
         _characterNoCollection = GetImage((int)Images.CharacterNotHoldingCardPanel).transform;
+        _materialCollection = GetImage((int)Images.MaterialHoldingPanel).transform;
 
         GetButton((int)Buttons.DeckButton1).GetComponent<DeckButtonInfo>().DeckIndex = 1;
         GetButton((int)Buttons.DeckButton2).GetComponent<DeckButtonInfo>().DeckIndex = 2;
@@ -278,20 +310,27 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     
     private void SetCollectionUI(Faction faction)
     {
-        _collectionVm.OrderCardsByClass(User.Instance.OwnedCardListSheep, User.Instance.NotOwnedCardListWolf);
-        _collectionVm.OrderCardsByClass(User.Instance.OwnedCardListWolf, User.Instance.NotOwnedCardListWolf);
-        _collectionVm.OrderCardsByClass(User.Instance.OwnedSheepList, User.Instance.NotOwnedSheepList);
-        _collectionVm.OrderCardsByClass(User.Instance.OwnedEnchantList, User.Instance.NotOwnedEnchantList);
-        _collectionVm.OrderCardsByClass(User.Instance.OwnedCharacterList, User.Instance.NotOwnedCharacterList);
-        
-        var ownedUnits = faction == Faction.Sheep ? User.Instance.OwnedCardListSheep : User.Instance.OwnedCardListWolf;
-        var notOwnedUnits = faction == Faction.Sheep ? User.Instance.NotOwnedCardListSheep : User.Instance.NotOwnedCardListWolf;
-        var ownedAssets = faction == Faction.Sheep 
-            ? User.Instance.OwnedSheepList.Cast<IAsset>().ToList() 
-            : User.Instance.OwnedEnchantList.Cast<IAsset>().ToList();
-        var notOwnedAssets = faction == Faction.Sheep 
-            ? User.Instance.NotOwnedSheepList.Cast<IAsset>().ToList() 
-            : User.Instance.NotOwnedEnchantList.Cast<IAsset>().ToList();
+        var ownedUnits = User.Instance.OwnedUnitList
+            .Where(info => info.UnitInfo.Faction == faction)
+            .OrderBy(info => info.UnitInfo.Class)
+            .ThenBy(info => info.UnitInfo.Id).ToList();
+        var notOwnedUnits = User.Instance.NotOwnedUnitList
+            .Where(info => info.Faction == faction)
+            .OrderBy(info => info.Class).ToList();
+        var ownedSheep = User.Instance.OwnedSheepList
+            .OrderBy(info => info.SheepInfo.Class).ToList();
+        var notOwnedSheep = User.Instance.NotOwnedSheepList
+            .OrderBy(info => info.Class).ToList();
+        var ownedEnchants = User.Instance.OwnedEnchantList
+            .OrderBy(info => info.EnchantInfo.Class).ToList();
+        var notOwnedEnchants = User.Instance.NotOwnedEnchantList
+            .OrderBy(info => info.Class).ToList();
+        var ownedCharacters = User.Instance.OwnedCharacterList
+            .OrderBy(info => info.CharacterInfo.Class).ToList();
+        var notOwnedCharacters = User.Instance.NotOwnedCharacterList
+            .OrderBy(info => info.Class).ToList();
+        var ownedMaterials = User.Instance.OwnedMaterialList
+            .OrderBy(info => info.MaterialInfo.Class).ToList();
         
         Util.DestroyAllChildren(_unitCollection);
         Util.DestroyAllChildren(_unitNoCollection);
@@ -299,11 +338,14 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         Util.DestroyAllChildren(_assetNoCollection);
         Util.DestroyAllChildren(_characterCollection);
         Util.DestroyAllChildren(_characterNoCollection);
+        Util.DestroyAllChildren(_materialCollection);
 
         // Units in collection UI
         foreach (var unit in ownedUnits)
         {
-            Util.GetCardResources<UnitId>(unit, _unitCollection, 0, OnCardClicked);
+            var cardFrame = 
+                Util.GetCardResources<UnitId>(unit.UnitInfo, _unitCollection, 0, OnCardClicked);
+            GetCountText(cardFrame.transform, unit.Count);
         }
 
         foreach (var unit in notOwnedUnits)
@@ -315,41 +357,73 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         }
 
         // Assets in collection UI
-        foreach (var asset in ownedAssets)
+        if (faction == Faction.Sheep)
         {
-            var cardFrame = faction == Faction.Sheep 
-                ? Util.GetCardResources<SheepId>(asset, _assetCollection, 0, OnCardClicked) 
-                : Util.GetCardResources<EnchantId>(asset, _assetCollection, 0, OnCardClicked);
-        }
+            foreach (var sheep in ownedSheep)
+            {
+                var cardFrame = 
+                    Util.GetCardResources<SheepId>(sheep.SheepInfo, _assetCollection, 0, OnCardClicked);
+                GetCountText(cardFrame.transform, sheep.Count);
+            }
 
-        foreach (var asset in notOwnedAssets)
+            foreach (var sheep in notOwnedSheep)
+            {
+                var cardFrame = 
+                    Util.GetCardResources<SheepId>(sheep, _assetNoCollection, 0, OnCardClicked);
+                var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
+                var path = $"Sprites/Portrait/{((SheepId)sheep.Id).ToString()}_gray";
+                cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
+            }
+        }
+        else
         {
-            var cardFrame = faction == Faction.Sheep 
-                ? Util.GetCardResources<SheepId>(asset, _assetNoCollection, 0, OnCardClicked) 
-                : Util.GetCardResources<EnchantId>(asset, _assetNoCollection, 0, OnCardClicked);
-            var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
-            var path = $"Sprites/Portrait/{((SheepId)asset.Id).ToString()}_gray";
-            cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
+            foreach (var enchant in ownedEnchants)
+            {
+                var cardFrame = 
+                    Util.GetCardResources<EnchantId>(enchant.EnchantInfo, _assetCollection, 0, OnCardClicked);
+                GetCountText(cardFrame.transform, enchant.Count);
+            }
+
+            foreach (var enchant in notOwnedEnchants)     
+            {
+                var cardFrame = 
+                    Util.GetCardResources<EnchantId>(enchant, _assetNoCollection, 0, OnCardClicked);
+                var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
+                var path = $"Sprites/Portrait/{((EnchantId)enchant.Id).ToString()}_gray";
+                cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
+            }
         }
         
         // Characters in collection UI
-        foreach (var character in User.Instance.OwnedCharacterList)
+        foreach (var character in ownedCharacters)
         {
-            Util.GetCardResources<CharacterId>(character, _characterCollection, 0, OnCardClicked);
+            var cardFrame = 
+                Util.GetCardResources<CharacterId>(character.CharacterInfo, _characterCollection, 0, OnCardClicked);
+            GetCountText(cardFrame.transform, character.Count);
         }
         
-        foreach (var character in User.Instance.NotOwnedCharacterList)
+        foreach (var character in notOwnedCharacters)
         {
-            var cardFrame = Util.GetCardResources<CharacterId>(character, _characterNoCollection, 0, OnCardClicked);
+            var cardFrame = 
+                Util.GetCardResources<CharacterId>(character, _characterNoCollection, 0, OnCardClicked);
             var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
             var path = $"Sprites/Portrait/{((CharacterId)character.Id).ToString()}_gray";
             cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
+        }
+        
+        // Materials in collection UI
+        foreach (var material in ownedMaterials)
+        {
+            var cardFrame = Util.GetMaterialResources(material.MaterialInfo, _materialCollection);
+            GetCountText(cardFrame.transform, material.Count);
         }
     }
 
     private void SetDeckButtonUI(Faction faction)
     {
-        var deckNumber = faction == Faction.Sheep ? User.Instance.DeckSheep.DeckNumber : User.Instance.DeckWolf.DeckNumber;
+        var deckNumber = faction == Faction.Sheep 
+            ? User.Instance.DeckSheep.DeckNumber 
+            : User.Instance.DeckWolf.DeckNumber;
         var deckButtons = new List<Button>
         {
             GetButton((int)Buttons.DeckButton1),
@@ -395,19 +469,45 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         SetDeckUI(faction);
     }
     
-    private void SwitchCollection(Faction faction)
+    private void SwitchCollection(Faction faction) 
     {
         SetCollectionUI(faction);
     }
+    
+    private void GetCountText(Transform parent, int count, float rate = 0.32f)
+    {
+        var countTextPanel = Managers.Resource.Instantiate("UI/Deck/CountTextPanel", parent);
+        countTextPanel.GetComponentInChildren<TextMeshProUGUI>().text = count.ToString();
+        
+        var gridLayout = parent.transform.parent.GetComponent<GridLayoutGroup>();
+        var countTextRect = countTextPanel.GetComponent<RectTransform>();
+        countTextRect.sizeDelta = new Vector2(gridLayout.cellSize.x * rate, gridLayout.cellSize.x * rate);
+        countTextRect.anchorMin = new Vector2(0.8f, 0.15f);
+        countTextRect.anchorMax = new Vector2(0.8f, 0.15f);
+    }
 
+    private void GoToCraftingTab()
+    {
+        Managers.UI.CloseAllPopupUI();
+        Util.SetAlpha(GetButton((int)Buttons.DeckTabButton).GetComponent<Image>(), 0.4f);
+        Util.SetAlpha(GetButton((int)Buttons.CollectionTabButton).GetComponent<Image>(), 0.4f);
+        Util.SetAlpha(GetButton((int)Buttons.CraftingTabButton).GetComponent<Image>(), 1f);
+        GetImage((int)Images.DeckScrollView).gameObject.SetActive(false);
+        GetImage((int)Images.CollectionScrollView).gameObject.SetActive(true);
+        GetImage((int)Images.CraftingSelectPanel).gameObject.SetActive(true);
+
+        OpenCraftingPanel();
+        _craftingScrollRect.verticalNormalizedPosition = 1f;
+    }
+    
     private void OpenCraftingPanel()
     {
         if (_isCraftingPanelOpen) return;
         
-        _craftingPanel.gameObject.SetActive(true);
-        StartCoroutine(AdjustCraftingPanel(_craftingPanelHeight));
+        InitCraftingPanel();
+        StartCoroutine(AdjustCraftingPanel(_craftingVm.CraftingPanelHeight));
     }
-
+    
     private void CloseCraftingPanel()
     {
         _craftingPanel.sizeDelta = new Vector2(_craftingPanel.sizeDelta.x, 0);
@@ -420,9 +520,9 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         float elapsedTime = 0;
         float startHeight = _craftingPanel.sizeDelta.y;
 
-        while (elapsedTime < _craftingPanelDuration)
+        while (elapsedTime < _craftingVm.CraftingPanelDuration)
         {
-            float newHeight = Mathf.Lerp(startHeight, targetHeight, elapsedTime / _craftingPanelDuration);
+            float newHeight = Mathf.Lerp(startHeight, targetHeight, elapsedTime / _craftingVm.CraftingPanelDuration);
             _craftingPanel.sizeDelta = new Vector2(_craftingPanel.sizeDelta.x, newHeight);
             elapsedTime += Time.deltaTime;
             yield return null;
@@ -430,6 +530,170 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         
         _craftingPanel.sizeDelta = new Vector2(_craftingPanel.sizeDelta.x, 1000);
         _isCraftingPanelOpen = false;
+    }
+    
+    private void SetCardOnCraftingPanel(Card card)
+    {
+        GoToCraftingTab();
+        LoadCraftingCard(card);
+    }
+
+    private void LoadCraftingCard(Card card)
+    {
+        var parent = GetImage((int)Images.CraftingCardPanel).transform;
+        Util.DestroyAllChildren(parent);
+        var cardFrame = card.AssetType switch
+        {
+            Asset.Unit => Util.GetCardResources<UnitId>(card, parent),
+            Asset.Sheep => Util.GetCardResources<SheepId>(card, parent),
+            Asset.Enchant => Util.GetCardResources<EnchantId>(card, parent),
+            Asset.Character => Util.GetCardResources<CharacterId>(card, parent),
+            _ => null
+        };
+        
+        if (cardFrame == null) return;
+        var cardFrameRect = cardFrame.GetComponent<RectTransform>();
+        Util.SetCardSize(cardFrameRect, 250, 400, new Vector2(0, 40));
+    }
+    
+    private void InitCraftingPanel()
+    {
+        _craftingPanel.gameObject.SetActive(true);
+        GetImage((int)Images.CraftingSelectPanel).gameObject.SetActive(true);
+        GetImage((int)Images.CraftingCraftPanel).gameObject.SetActive(false);
+        GetImage((int)Images.CraftingReinforcePanel).gameObject.SetActive(false);
+        GetImage((int)Images.CraftingRecyclePanel).gameObject.SetActive(false);
+
+        if (_selectedCard == null) return;
+        _selectedCardForCrafting = _selectedCard;
+        var unitLevel = _collectionVm.GetLevelFromUiObject((UnitId)_selectedCard.Id);
+        if (unitLevel == 3)
+        {
+            GetButton((int)Buttons.ReinforceButton).interactable = false;
+        }
+    }
+
+    private async Task InitCraftPanel()
+    {
+        if (_selectedCard == null || _selectedCardForCrafting == null) return;
+        var unitLevel = _collectionVm.GetLevelFromUiObject((UnitId)_selectedCard.Id);
+        var unitId = unitLevel switch
+        {
+            1 => (UnitId)_selectedCardForCrafting.Id,
+            2 => (UnitId)_selectedCardForCrafting.Id - 1,
+            _ => (UnitId)_selectedCardForCrafting.Id - 2
+        };
+
+        var parent = GetImage((int)Images.CraftCardPanel);
+        Util.DestroyAllChildren(parent.transform);
+        
+        var parentRect = parent.GetComponent<RectTransform>();
+        var cardFrame = Managers.Resource.Instantiate("UI/Deck/CardFrame", parent.transform);
+        var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
+        
+        parentRect.anchorMin = new Vector2(0.5f, 0.5f);
+        parentRect.anchorMax = new Vector2(0.5f, 0.5f);
+        parentRect.anchoredPosition = new Vector2(0, 40);
+        parentRect.sizeDelta = new Vector2(250, 400);
+        
+        if (cardFrame.TryGetComponent(out Card craftingCard) == false) return ;
+        // Have to set card info to crafting card, not selected card
+        craftingCard.Id = (int)unitId;
+        craftingCard.Class = _selectedCardForCrafting.Class;
+        craftingCard.AssetType = _selectedCardForCrafting.AssetType;
+        
+        var enumValue = (UnitId)Enum.ToObject(typeof(UnitId), craftingCard.Id);
+        var path = $"Sprites/Portrait/{enumValue.ToString()}";
+        cardFrame.GetComponent<Image>().sprite = Util.SetCardFrame(craftingCard.Class);
+        cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
+        
+        cardFrame.TryGetComponent(out RectTransform rectTransform);
+        rectTransform.anchorMin = new Vector2(0, 0);
+        rectTransform.anchorMax = new Vector2(1, 1);     
+        
+        await _craftingVm.LoadMaterials(unitId);
+        _craftingVm.Count = 1;
+        _craftingVm.TotalCraftingMaterials = _craftingVm.CraftingMaterials;
+        GetText((int)Texts.CraftCountText).text = _craftingVm.Count.ToString();
+    }
+
+    private void InitMaterialsOnCraftPanel(List<OwnedMaterialInfo> craftingMaterials, List<OwnedMaterialInfo> ownedMaterials)
+    {
+        var parent = GetImage((int)Images.MaterialPanel).transform;
+        Util.DestroyAllChildren(parent);
+
+        foreach (var material in craftingMaterials)
+        {
+            var scrollViewChild = Managers.Resource.Instantiate("UI/Deck/CraftingMaterialFrame", parent);
+            var itemPanel =  Util.GetMaterialResources(material.MaterialInfo, scrollViewChild.transform);
+            var itemPanelRect = itemPanel.GetComponent<RectTransform>();
+            var itemFrame = Util.FindChild(itemPanel, "Frame", true);
+            var needText = Util.FindChild(scrollViewChild, "NeedCountText", true);
+            var ownedText = Util.FindChild(scrollViewChild, "OwnedCountText", true);
+            var nameText = Util.FindChild(scrollViewChild, "MaterialNameText", true);
+            var materialName = ((MaterialId)material.MaterialInfo.Id).ToString();
+            if (materialName.Length > 11)
+            {
+                materialName = materialName.Substring(0, 9) + "..";
+            }
+            
+            itemPanelRect.anchorMin = new Vector2(0.5f, 0.5f);
+            itemPanelRect.anchorMax = new Vector2(0.5f, 0.5f);
+            itemPanelRect.sizeDelta = new Vector2(125, 125);
+            
+            var ownedCount = ownedMaterials.FirstOrDefault(info =>
+                info.MaterialInfo.Id == material.MaterialInfo.Id)?.Count ?? 0;
+            needText.GetComponent<TextMeshProUGUI>().text = material.Count.ToString();
+            ownedText.GetComponent<TextMeshProUGUI>().text = ownedCount.ToString();
+            nameText.GetComponent<TextMeshProUGUI>().text = materialName;
+
+            CheckAndSetColorOnMaterialFrame(material, itemFrame);
+        }
+    }
+    
+    private void CheckAndSetColorOnMaterialFrame(OwnedMaterialInfo material, GameObject itemFrame)
+    {
+        var ownedCount = User.Instance.OwnedMaterialList
+            .FirstOrDefault(info => info.MaterialInfo.Id == material.MaterialInfo.Id)?.Count ?? 0;
+        itemFrame.GetComponent<Image>().color = ownedCount >= material.Count ? Color.green : Color.red;
+    }
+    
+    private void UpdateCraftingMaterials()
+    {
+        _craftingVm.TotalCraftingMaterials = _craftingVm.CraftingMaterials.Select(info => new OwnedMaterialInfo 
+        {
+            MaterialInfo = new MaterialInfo
+            {
+                Id = info.MaterialInfo.Id,
+                Class = info.MaterialInfo.Class,
+            },
+            Count = info.Count * _craftingVm.Count
+        }).ToList();
+        GetText((int)Texts.CraftCountText).text = _craftingVm.Count.ToString();
+        
+        var materialPanel = GetImage((int)Images.MaterialPanel).transform;
+        var childCount = materialPanel.childCount;
+        for (var i = 0; i < childCount; i++)
+        {
+            var materialFrame = materialPanel.GetChild(i);
+            var itemFrame = Util.FindChild(materialFrame.gameObject, "Frame", true);
+            var needText = Util.FindChild(materialFrame.gameObject, "NeedCountText", true);
+            var material = _craftingVm.TotalCraftingMaterials
+                .FirstOrDefault(info => info.MaterialInfo.Id == materialFrame.GetComponentInChildren<MaterialItem>().Id);
+            if (material == null) continue;
+            needText.GetComponent<TextMeshProUGUI>().text = material.Count.ToString();
+            CheckAndSetColorOnMaterialFrame(material, itemFrame);
+        }
+    }
+    
+    private void InitReinforcePanel()
+    {
+        if (_selectedCard == null || _selectedCardForCrafting == null) return;
+    }
+
+    private void InitRecyclePanel()
+    {
+        if (_selectedCard == null || _selectedCardForCrafting == null) return;
     }
     
     // Button Click Events
@@ -441,6 +705,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         
         _deckVm.SwitchDeck(Util.Faction);
         _collectionVm.SwitchCards(Util.Faction);
+        Util.DestroyAllChildren(GetImage((int)Images.CraftingCardPanel).transform);
         
         SwitchLobbyUI(Util.Faction);
     }
@@ -497,19 +762,58 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         GoToCraftingTab();
     }
     
-    private void GoToCraftingTab()
+    private void OnCraftingButtonClicked(PointerEventData data)
     {
-        Managers.UI.CloseAllPopupUI();
-        Util.SetAlpha(GetButton((int)Buttons.DeckTabButton).GetComponent<Image>(), 0.4f);
-        Util.SetAlpha(GetButton((int)Buttons.CollectionTabButton).GetComponent<Image>(), 0.4f);
-        Util.SetAlpha(GetButton((int)Buttons.CraftingTabButton).GetComponent<Image>(), 1f);
-        GetImage((int)Images.DeckScrollView).gameObject.SetActive(false);
-        GetImage((int)Images.CollectionScrollView).gameObject.SetActive(true);
-        OpenCraftingPanel();
+        GetImage((int)Images.CraftingSelectPanel).gameObject.SetActive(false);
+        GetImage((int)Images.CraftingCraftPanel).gameObject.SetActive(true);
+        GetImage((int)Images.CraftingReinforcePanel).gameObject.SetActive(false);
+        GetImage((int)Images.CraftingRecyclePanel).gameObject.SetActive(false);
+        
+        _ = InitCraftPanel();
+    }
+    
+    private void OnReinforceButtonClicked(PointerEventData data)
+    {
+        GetImage((int)Images.CraftingSelectPanel).gameObject.SetActive(false);
+        GetImage((int)Images.CraftingCraftPanel).gameObject.SetActive(false);
+        GetImage((int)Images.CraftingReinforcePanel).gameObject.SetActive(true);
+        GetImage((int)Images.CraftingRecyclePanel).gameObject.SetActive(false);
+        
+        InitReinforcePanel();
+    }
+    
+    private void OnRecycleButtonClicked(PointerEventData data)
+    {
+        GetImage((int)Images.CraftingSelectPanel).gameObject.SetActive(false);
+        GetImage((int)Images.CraftingCraftPanel).gameObject.SetActive(false);
+        GetImage((int)Images.CraftingReinforcePanel).gameObject.SetActive(false);
+        GetImage((int)Images.CraftingRecyclePanel).gameObject.SetActive(true);
+        
+        InitRecyclePanel();
+    }
+    
+    private void OnCraftClicked(PointerEventData data)
+    {
+        _craftingVm.CardToBeCrafted = GetImage((int)Images.CraftCardPanel).GetComponentInChildren<Card>();
+        _ = _craftingVm.CraftCard();
+    }
+    
+    private void OnCraftUpperArrowClicked(PointerEventData data)
+    {
+        if (_craftingVm.Count >= 100) return;
+        _craftingVm.Count++;
+        UpdateCraftingMaterials();        
+    }
+    
+    private void OnCraftLowerArrowClicked(PointerEventData data)
+    {
+        if (_craftingVm.Count <= 1) return;
+        _craftingVm.Count--;
+        UpdateCraftingMaterials();
     }
     
     #endregion
-
+    
     // UI Size Adjustments
     #region UiAdjustment
     
@@ -517,6 +821,8 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     {
         Bind<Button>(typeof(Buttons));
         Bind<Image>(typeof(Images));
+        Bind<TextMeshProUGUI>(typeof(Texts));
+        _craftingScrollRect = GetImage((int)Images.CollectionScrollView).GetComponent<ScrollRect>();
     }
 
     protected override void InitButtonEvents()
@@ -534,6 +840,14 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         
         GetButton((int)Buttons.CollectionTabButton).gameObject.BindEvent(OnCollectionTabClicked);
         GetButton((int)Buttons.CraftingTabButton).gameObject.BindEvent(OnCraftingTabClicked);
+        
+        GetButton((int)Buttons.CraftingButton).gameObject.BindEvent(OnCraftingButtonClicked);
+        GetButton((int)Buttons.ReinforceButton).gameObject.BindEvent(OnReinforceButtonClicked);
+        GetButton((int)Buttons.RecycleButton).gameObject.BindEvent(OnRecycleButtonClicked);
+        
+        GetButton((int)Buttons.CraftButton).gameObject.BindEvent(OnCraftClicked);
+        GetButton((int)Buttons.CraftUpperArrowButton).gameObject.BindEvent(OnCraftUpperArrowClicked);
+        GetButton((int)Buttons.CraftLowerArrowButton).gameObject.BindEvent(OnCraftLowerArrowClicked);
     }
     
     protected override void InitUI()
@@ -589,8 +903,6 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
                 singleImage.sprite = Resources.Load<Sprite>("Sprites/WolfButton");
                 multiImage.sprite = Resources.Load<Sprite>("Sprites/WolfMultiButton");
                 break;
-            default:
-                break;
         }
     }
 
@@ -629,7 +941,10 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         _deckVm.OnDeckSwitched -= ResetDeckUI;
         _collectionVm.OnCardInitialized -= SetCollectionUI;
         _collectionVm.OnCardSwitched -= SwitchCollection;
-        _craftingVm.GoToCraftingTab -= GoToCraftingTab;
+        _craftingVm.SetCardOnCraftingPanel -= SetCardOnCraftingPanel;
+        _craftingVm.SetMaterialsOnCraftPanel -= InitMaterialsOnCraftPanel;
+        _craftingVm.InitCraftingPanel -= InitCraftingPanel;
+        _craftingVm.SetCollectionUI -= SetCollectionUI;
         _userService.InitDeckButton -= SetDeckButtonUI;
     }
 }

@@ -5,14 +5,15 @@ using Google.Protobuf.Protocol;
 
 public interface IUserService
 {
-    void LoadOwnedUnit(UnitInfo unitInfo);
+    void LoadOwnedUnit(OwnedUnitInfo units);
     void LoadNotOwnedUnit(UnitInfo unitInfo);
-    void LoadOwnedSheep(SheepInfo sheepInfo);
+    void LoadOwnedSheep(OwnedSheepInfo sheepInfo);
     void LoadNotOwnedSheep(SheepInfo sheepInfo);
-    void LoadOwnedEnchant(EnchantInfo enchantInfo);
+    void LoadOwnedEnchant(OwnedEnchantInfo enchantInfo);
     void LoadNotOwnedEnchant(EnchantInfo enchantInfo);
-    void LoadOwnedCharacter(CharacterInfo characterInfo);
+    void LoadOwnedCharacter(OwnedCharacterInfo characterInfo);
     void LoadNotOwnedCharacter(CharacterInfo characterInfo);
+    void LoadOwnedMaterial(OwnedMaterialInfo materialInfo);
     void LoadBattleSetting(BattleSettingInfo battleSettingInfo);
     void LoadDeck(DeckInfo deckInfo);
     void SaveDeck(DeckInfo deckInfo);
@@ -33,4 +34,9 @@ public interface ITokenService
     void SaveRefreshToken(string refreshToken);
     string GetAccessToken();
     string GetRefreshToken();
+}
+
+public interface ICraftingService
+{
+    
 }

@@ -99,7 +99,7 @@ public class SkillWindow : UI_Popup, ISkillWindow
         foreach (var skillButton in _skillButtons)
         {
             var skillName = skillButton.name.Replace("Button", "");
-            if (_gameVm.SkillsUpgraded.Contains((Skill)Enum.Parse(typeof(Skill), skillName)))
+            if (_gameVm.SkillsUpgraded.Contains(skillName.ToEnum<Skill>()))
             {
                 Util.SetAlpha(skillButton.gameObject.GetComponent<Image>(), 1f);
             }
@@ -126,14 +126,14 @@ public class SkillWindow : UI_Popup, ISkillWindow
         Managers.UI.ClosePopupUI<UI_UpgradePopup>();
         foreach (var skillButton in _skillButtons)
         {
-            Util.GetFrameFromButton(skillButton.GetComponent<UI_Skill>()).color = Color.green;
+            Util.GetFrameFromCardButton(skillButton.GetComponent<UI_Skill>()).color = Color.green;
         }
 
         var selectedSkillButton = data.pointerPress.GetComponent<UI_Skill>();
         if (selectedSkillButton == null) return;
         
         _gameVm.CurrentSelectedSkillButton = selectedSkillButton;
-        Util.GetFrameFromButton(_gameVm.CurrentSelectedSkillButton).color = Color.cyan;
+        Util.GetFrameFromCardButton(_gameVm.CurrentSelectedSkillButton).color = Color.cyan;
         
         _gameVm.ShowUpgradePopup();
     }

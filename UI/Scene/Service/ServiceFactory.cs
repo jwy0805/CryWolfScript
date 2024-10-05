@@ -38,6 +38,7 @@ public class ServiceInstaller
         container.Bind<IUserService>().To<UserService>().AsSingle();
         container.Bind<IWebService>().To<WebService>().AsSingle();
         container.Bind<ITokenService>().To<TokenService>().AsSingle();
+        container.Bind<ICraftingService>().To<CraftingService>().AsSingle();
 
         _servicesBound = true;
     }

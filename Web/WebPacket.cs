@@ -36,6 +36,43 @@ public class CharacterInfo : IAsset
     public UnitClass Class { get; set; }
 }
 
+public class MaterialInfo : IAsset
+{
+    public int Id { get; set; }
+    public UnitClass Class { get; set; }
+    // public int Count { get; set; }
+}
+
+public class OwnedUnitInfo
+{
+    public UnitInfo UnitInfo { get; set; }
+    public int Count { get; set; }
+}
+
+public class OwnedSheepInfo
+{
+    public SheepInfo SheepInfo { get; set; }
+    public int Count { get; set; }
+}
+
+public class OwnedEnchantInfo
+{
+    public EnchantInfo EnchantInfo { get; set; }
+    public int Count { get; set; }
+}
+
+public class OwnedCharacterInfo
+{
+    public CharacterInfo CharacterInfo { get; set; }
+    public int Count { get; set; }
+}
+
+public class OwnedMaterialInfo
+{
+    public MaterialInfo MaterialInfo { get; set; }
+    public int Count { get; set; }
+}
+
 public class BattleSettingInfo
 {
     public SheepInfo SheepInfo { get; set; }
@@ -90,6 +127,21 @@ public class ChangeActPacketResponse
     public bool ChangeOk { get; set; }
 }
 
+public class LoadInfoPacketRequired
+{
+    public bool LoadInfo { get; set; }
+}
+
+public class LoadInfoPacketResponse
+{
+    public bool LoadInfoOk { get; set; }
+    public List<UnitInfo> UnitInfos { get; set; }
+    public List<SheepInfo> SheepInfos { get; set; }
+    public List<EnchantInfo> EnchantInfos { get; set; }
+    public List<CharacterInfo> CharacterInfos { get; set; }
+    public List<MaterialInfo> MaterialInfos { get; set; }
+}
+
 public class RefreshTokenRequired
 {
     public string RefreshToken { get; set; }
@@ -101,62 +153,76 @@ public class RefreshTokenResponse
     public string RefreshToken { get; set; }
 }
 
-public class GetOwnedCardsPacketRequired
+public class InitCardsPacketRequired
 {
     public string AccessToken { get; set; }
     public Env Environment { get; set; }
 }
 
-public class GetOwnedCardsPacketResponse
+public class InitCardsPacketResponse
 {
     public bool GetCardsOk { get; set; }
-    public List<UnitInfo> OwnedCardList { get; set; }
+    public List<OwnedUnitInfo> OwnedCardList { get; set; }
     public List<UnitInfo> NotOwnedCardList { get; set; }
     public string AccessToken { get; set; }
     public string RefreshToken { get; set; }
 }
 
-public class GetOwnedSheepPacketRequired
+public class InitSheepPacketRequired
 {
     public string AccessToken { get; set; }
     public Env Environment { get; set; }
 }
 
-public class GetOwnedSheepPacketResponse
+public class InitSheepPacketResponse
 {
     public bool GetSheepOk { get; set; }
-    public List<SheepInfo> OwnedSheepList { get; set; }
+    public List<OwnedSheepInfo> OwnedSheepList { get; set; }
     public List<SheepInfo> NotOwnedSheepList { get; set; }
     public string AccessToken { get; set; }
     public string RefreshToken { get; set; }
 }
 
-public class GetOwnedEnchantPacketRequired
+public class InitEnchantPacketRequired
 {
     public string AccessToken { get; set; }
     public Env Environment { get; set; }
 }
 
-public class GetOwnedEnchantPacketResponse
+public class InitEnchantPacketResponse
 {
     public bool GetEnchantOk { get; set; }
-    public List<EnchantInfo> OwnedEnchantList { get; set; }
+    public List<OwnedEnchantInfo> OwnedEnchantList { get; set; }
     public List<EnchantInfo> NotOwnedEnchantList { get; set; }
     public string AccessToken { get; set; }
     public string RefreshToken { get; set; }
 }
 
-public class GetOwnedCharacterPacketRequired
+public class InitCharacterPacketRequired
 {
     public string AccessToken { get; set; }
     public Env Environment { get; set; }
 }
 
-public class GetOwnedCharacterPacketResponse
+public class InitCharacterPacketResponse
 {
     public bool GetCharacterOk { get; set; }
-    public List<CharacterInfo> OwnedCharacterList { get; set; }
+    public List<OwnedCharacterInfo> OwnedCharacterList { get; set; }
     public List<CharacterInfo> NotOwnedCharacterList { get; set; }
+    public string AccessToken { get; set; }
+    public string RefreshToken { get; set; }
+}
+
+public class InitMaterialPacketRequired
+{
+    public string AccessToken { get; set; }
+    public Env Environment { get; set; }
+}
+
+public class InitMaterialPacketResponse
+{
+    public bool GetMaterialOk { get; set; }
+    public List<OwnedMaterialInfo> OwnedMaterialList { get; set; }
     public string AccessToken { get; set; }
     public string RefreshToken { get; set; }
 }
@@ -220,4 +286,31 @@ public class UpdateBattleSettingPacketRequired
 public class UpdateBattleSettingPacketResponse
 {
     public bool UpdateBattleSettingOk { get; set; }   
+}
+
+public class LoadMaterialsPacketRequired
+{
+    public string AccessToken { get; set; }
+    public UnitId UnitId { get; set; }
+}
+
+public class LoadMaterialsPacketResponse
+{
+    public List<OwnedMaterialInfo> CraftingMaterialList { get; set; }
+    public bool LoadMaterialsOk { get; set; }
+}
+
+public class CraftCardPacketRequired
+{
+    public string AccessToken { get; set; }
+    public List<OwnedMaterialInfo> Materials { get; set; }
+    public UnitId UnitId { get; set; }
+    public int Count { get; set; }
+}
+
+public class CraftCardPacketResponse
+{
+    // Error: 0 - Success, 1 - Not enough materials
+    public bool CraftCardOk { get; set; }
+    public int Error { get; set; }
 }
