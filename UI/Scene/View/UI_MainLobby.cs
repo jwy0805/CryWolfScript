@@ -39,6 +39,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     private Transform _characterCollection;
     private Transform _characterNoCollection;
     private Transform _materialCollection;
+    private Dictionary<string, GameObject> _craftingUiDict;
     
     private UI_CardClickPopup CardPopup
     {
@@ -71,6 +72,7 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         
         CollectionTabButton,
         
+        CraftingBackButton,
         CraftingTabButton,
         CraftingButton,
         CraftUpperArrowButton,
@@ -93,6 +95,10 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         RankNameText,
         
         CraftCountText,
+        
+        ReinforceCardSelectText,
+        SuccessRateText,
+        SuccessText,
     }
 
     private enum Images
@@ -143,15 +149,20 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         CraftingCardPanel,
         CardPedestal,
         
+        CraftingBackButtonPanel,
         CraftingSelectPanel,
-        
         CraftingCraftPanel,
         CraftCardPanel,
-        MaterialPanel,
         
         CraftingReinforcePanel,
+        ReinforceCardPanel,
+        ArrowPanel,
+        ReinforceResultPanel,
         
         CraftingRecyclePanel,
+        
+        MaterialScrollView,
+        MaterialPanel,
     }
 
     #endregion
@@ -559,23 +570,16 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     private void InitCraftingPanel()
     {
         _craftingPanel.gameObject.SetActive(true);
-        GetImage((int)Images.CraftingSelectPanel).gameObject.SetActive(true);
-        GetImage((int)Images.CraftingCraftPanel).gameObject.SetActive(false);
-        GetImage((int)Images.CraftingReinforcePanel).gameObject.SetActive(false);
-        GetImage((int)Images.CraftingRecyclePanel).gameObject.SetActive(false);
+        SetActiveCraftingPanel(new[] { "CraftingSelectPanel" });
 
         if (_selectedCard == null) return;
         _selectedCardForCrafting = _selectedCard;
         var unitLevel = _collectionVm.GetLevelFromUiObject((UnitId)_selectedCard.Id);
-        if (unitLevel == 3)
-        {
-            GetButton((int)Buttons.ReinforceButton).interactable = false;
-        }
+        GetButton((int)Buttons.ReinforceButton).interactable = unitLevel != 3;
     }
 
     private async Task InitCraftPanel()
     {
-        if (_selectedCard == null || _selectedCardForCrafting == null) return;
         var unitLevel = _collectionVm.GetLevelFromUiObject((UnitId)_selectedCard.Id);
         var unitId = unitLevel switch
         {
@@ -688,12 +692,30 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     
     private void InitReinforcePanel()
     {
-        if (_selectedCard == null || _selectedCardForCrafting == null) return;
+        var cardParent = GetImage((int)Images.ReinforceCardPanel).transform;
+        var resultParent = GetImage((int)Images.ReinforceResultPanel).transform;
+        
+        Util.DestroyAllChildren(cardParent);
+        Util.DestroyAllChildren(resultParent);
+
+        var selectedUnit = Managers.Data.UnitInfoDict[_selectedCardForCrafting.Id];
+        var resultUnit = Managers.Data.UnitInfoDict[_selectedCardForCrafting.Id + 1];
+        var cardFrame = Util.GetCardResources<UnitId>(selectedUnit, cardParent);
+        var resultFrame = Util.GetCardResources<UnitId>(resultUnit, resultParent);
+        var cardFrameRect = cardFrame.GetComponent<RectTransform>();
+        var resultFrameRect = resultFrame.GetComponent<RectTransform>();
+        
+        cardFrameRect.anchorMin = new Vector2(0.5f, 0.5f);
+        cardFrameRect.anchorMax = new Vector2(0.5f, 0.5f);
+        cardFrameRect.sizeDelta = new Vector2(250, 400);
+        resultFrameRect.anchorMin = new Vector2(0.5f, 0.5f);
+        resultFrameRect.anchorMax = new Vector2(0.5f, 0.5f);
+        resultFrameRect.sizeDelta = new Vector2(250, 400);
     }
 
     private void InitRecyclePanel()
     {
-        if (_selectedCard == null || _selectedCardForCrafting == null) return;
+        
     }
     
     // Button Click Events
@@ -761,39 +783,51 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
     {
         GoToCraftingTab();
     }
-    
-    private void OnCraftingButtonClicked(PointerEventData data)
+
+    private void SetActiveCraftingPanel(string[] uiNames)
     {
-        GetImage((int)Images.CraftingSelectPanel).gameObject.SetActive(false);
-        GetImage((int)Images.CraftingCraftPanel).gameObject.SetActive(true);
-        GetImage((int)Images.CraftingReinforcePanel).gameObject.SetActive(false);
-        GetImage((int)Images.CraftingRecyclePanel).gameObject.SetActive(false);
-        
+        foreach (var pair in _craftingUiDict)
+        {
+            pair.Value.SetActive(uiNames.Contains(pair.Key));
+        }
+    }
+    
+    private void OnCraftingClicked(PointerEventData data)
+    {
+        var activeUis = new[] { "CraftingBackButtonPanel", "CraftingCraftPanel", "MaterialScrollView" };
+        SetActiveCraftingPanel(activeUis);
         _ = InitCraftPanel();
     }
     
-    private void OnReinforceButtonClicked(PointerEventData data)
+    private void OnReinforceClicked(PointerEventData data)
     {
-        GetImage((int)Images.CraftingSelectPanel).gameObject.SetActive(false);
-        GetImage((int)Images.CraftingCraftPanel).gameObject.SetActive(false);
-        GetImage((int)Images.CraftingReinforcePanel).gameObject.SetActive(true);
-        GetImage((int)Images.CraftingRecyclePanel).gameObject.SetActive(false);
-        
+        if (_selectedCard == null || _selectedCardForCrafting == null) return;
+        var activeUis = new[] { "CraftingBackButtonPanel", "CraftingReinforcePanel", "MaterialScrollView" };
+        SetActiveCraftingPanel(activeUis);
         InitReinforcePanel();
     }
     
-    private void OnRecycleButtonClicked(PointerEventData data)
+    private void OnRecycleClicked(PointerEventData data)
     {
-        GetImage((int)Images.CraftingSelectPanel).gameObject.SetActive(false);
-        GetImage((int)Images.CraftingCraftPanel).gameObject.SetActive(false);
-        GetImage((int)Images.CraftingReinforcePanel).gameObject.SetActive(false);
-        GetImage((int)Images.CraftingRecyclePanel).gameObject.SetActive(true);
-        
+        var activeUis = new[] { "CraftingBackButtonPanel", "CraftingRecyclePanel" };
+        SetActiveCraftingPanel(activeUis);
         InitRecyclePanel();
+    }
+
+    private void OnCraftingBackClicked(PointerEventData data)
+    {
+        InitCraftingPanel();
     }
     
     private void OnCraftClicked(PointerEventData data)
     {
+        if (_selectedCard == null || _selectedCardForCrafting == null)
+        {
+            var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
+            popup.SetWarning("카드를 선택해주세요.");
+            return;
+        }
+        
         _craftingVm.CardToBeCrafted = GetImage((int)Images.CraftCardPanel).GetComponentInChildren<Card>();
         _ = _craftingVm.CraftCard();
     }
@@ -823,6 +857,15 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         Bind<Image>(typeof(Images));
         Bind<TextMeshProUGUI>(typeof(Texts));
         _craftingScrollRect = GetImage((int)Images.CollectionScrollView).GetComponent<ScrollRect>();
+        _craftingUiDict = new Dictionary<string, GameObject>
+        {
+            { "CraftingBackButtonPanel", GetImage((int)Images.CraftingBackButtonPanel).gameObject },
+            { "CraftingSelectPanel", GetImage((int)Images.CraftingSelectPanel).gameObject },
+            { "CraftingCraftPanel", GetImage((int)Images.CraftingCraftPanel).gameObject },
+            { "CraftingReinforcePanel", GetImage((int)Images.CraftingReinforcePanel).gameObject },
+            { "CraftingRecyclePanel", GetImage((int)Images.CraftingRecyclePanel).gameObject },
+            { "MaterialScrollView", GetImage((int)Images.MaterialScrollView).gameObject }
+        };
     }
 
     protected override void InitButtonEvents()
@@ -841,9 +884,10 @@ public class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBegin
         GetButton((int)Buttons.CollectionTabButton).gameObject.BindEvent(OnCollectionTabClicked);
         GetButton((int)Buttons.CraftingTabButton).gameObject.BindEvent(OnCraftingTabClicked);
         
-        GetButton((int)Buttons.CraftingButton).gameObject.BindEvent(OnCraftingButtonClicked);
-        GetButton((int)Buttons.ReinforceButton).gameObject.BindEvent(OnReinforceButtonClicked);
-        GetButton((int)Buttons.RecycleButton).gameObject.BindEvent(OnRecycleButtonClicked);
+        GetButton((int)Buttons.CraftingBackButton).gameObject.BindEvent(OnCraftingBackClicked);
+        GetButton((int)Buttons.CraftingButton).gameObject.BindEvent(OnCraftingClicked);
+        GetButton((int)Buttons.ReinforceButton).gameObject.BindEvent(OnReinforceClicked);
+        GetButton((int)Buttons.RecycleButton).gameObject.BindEvent(OnRecycleClicked);
         
         GetButton((int)Buttons.CraftButton).gameObject.BindEvent(OnCraftClicked);
         GetButton((int)Buttons.CraftUpperArrowButton).gameObject.BindEvent(OnCraftUpperArrowClicked);

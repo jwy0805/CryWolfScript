@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -87,6 +88,7 @@ public class DataManager
     public Dictionary<int, EnchantInfo> EnchantInfoDict { get; set; } = new();
     public Dictionary<int, CharacterInfo> CharacterInfoDict { get; set; } = new();
     public Dictionary<int, MaterialInfo> MaterialInfoDict { get; set; } = new();
+    public Dictionary<Tuple<UnitClass, int>, ReinforcePointInfo> ReinforcePointDict { get; set; } = new();
     // Dictionaries for DB caching only before introducing REDIS
 
     public async Task InitAsync()

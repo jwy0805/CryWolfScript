@@ -55,6 +55,8 @@ public class CollectionViewModel
         Managers.Data.SheepInfoDict = loadInfoResponse.SheepInfos.ToDictionary(info => info.Id, info => info);
         Managers.Data.CharacterInfoDict = loadInfoResponse.CharacterInfos.ToDictionary(info => info.Id, info => info);
         Managers.Data.MaterialInfoDict = loadInfoResponse.MaterialInfos.ToDictionary(info => info.Id, info => info);
+        Managers.Data.ReinforcePointDict = loadInfoResponse.ReinforcePoints
+            .ToDictionary(info => Tuple.Create(info.Class, info.Level), info => info);
     }
 
     private async Task InitializeCards()

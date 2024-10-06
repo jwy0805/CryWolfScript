@@ -43,6 +43,13 @@ public class MaterialInfo : IAsset
     // public int Count { get; set; }
 }
 
+public class ReinforcePointInfo
+{
+    public UnitClass Class { get; set; }
+    public int Level { get; set; }
+    public int Point { get; set; }
+}
+
 public class OwnedUnitInfo
 {
     public UnitInfo UnitInfo { get; set; }
@@ -140,6 +147,7 @@ public class LoadInfoPacketResponse
     public List<EnchantInfo> EnchantInfos { get; set; }
     public List<CharacterInfo> CharacterInfos { get; set; }
     public List<MaterialInfo> MaterialInfos { get; set; }
+    public List<ReinforcePointInfo> ReinforcePoints { get; set; }
 }
 
 public class RefreshTokenRequired
