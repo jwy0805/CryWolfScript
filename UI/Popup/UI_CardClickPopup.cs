@@ -105,37 +105,22 @@ public class UI_CardClickPopup : UI_Popup
             ? User.Instance.DeckSheep.UnitsOnDeck 
             : User.Instance.DeckWolf.UnitsOnDeck;
         var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == SelectedCard.Id);
+        
         GetButton((int)Buttons.UnitSelectButton).interactable = index == -1 || FromDeck;
-        GetText((int)Texts.UnitNameText).text = Managers.Data.UnitDict[SelectedCard.Id].Name;
+        GetText((int)Texts.UnitNameText).text = SelectedCard switch
+        {
+            { AssetType: Asset.Unit } => Managers.Data.UnitDict[SelectedCard.Id].Name,
+            _ => Managers.Data.UnitDict[SelectedCard.Id].Name ?? string.Empty
+        };
     }
 
     private void SetCardInPopup<TEnum>() where TEnum : struct, Enum
     {
         var parent = GetImage((int)Images.CardPanel).transform;
-        var cardFrame = Managers.Resource.Instantiate("UI/Deck/CardFrame", parent);
-        var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
-        
-        if (cardFrame.TryGetComponent(out Card card) == false) return;
-        card.Id = SelectedCard.Id;
-        card.Class = SelectedCard.Class;
-        card.AssetType = typeof(TEnum).Name switch
-        {
-            "UnitId" => Asset.Unit,
-            "SheepId" => Asset.Sheep,
-            "EnchantId" => Asset.Enchant,
-            "CharacterId" => Asset.Character,
-            _ => Asset.None
-        };
-        
-        var enumValue = (TEnum)Enum.ToObject(typeof(TEnum), SelectedCard.Id);
-        var path = $"Sprites/Portrait/{enumValue.ToString()}";
-        cardFrame.GetComponent<Image>().sprite = Util.SetCardFrame(SelectedCard.Class);
-        cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
-        
-        cardFrame.TryGetComponent(out RectTransform rectTransform);
-        rectTransform.anchorMin = new Vector2(0, 0);
-        rectTransform.anchorMax = new Vector2(1, 1);
-        cardFrame.BindEvent(ClosePopup);
+        var cardFrame = Util.GetCardResources<TEnum>(SelectedCard, parent, 0, ClosePopup);
+        var cardFrameRect = cardFrame.GetComponent<RectTransform>();
+        cardFrameRect.anchorMin = new Vector2(0, 0);
+        cardFrameRect.anchorMax = new Vector2(1, 1);
     }
     
     private void OnInfoClicked(PointerEventData data)

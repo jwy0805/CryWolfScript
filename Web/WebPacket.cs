@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Google.Protobuf.Protocol;
@@ -40,7 +41,6 @@ public class MaterialInfo : IAsset
 {
     public int Id { get; set; }
     public UnitClass Class { get; set; }
-    // public int Count { get; set; }
 }
 
 public class ReinforcePointInfo
@@ -96,6 +96,12 @@ public class DeckInfo
     public bool LastPicked { get; set; }
 }
 
+public class UnitMaterialInfo
+{
+    public int UnitId { get; set; }
+    public List<OwnedMaterialInfo> Materials { get; set; }
+}
+
 public class CreateUserAccountPacketRequired
 {
     public string UserAccount { get; set; }
@@ -148,6 +154,7 @@ public class LoadInfoPacketResponse
     public List<CharacterInfo> CharacterInfos { get; set; }
     public List<MaterialInfo> MaterialInfos { get; set; }
     public List<ReinforcePointInfo> ReinforcePoints { get; set; }
+    public List<UnitMaterialInfo> CraftingMaterials { get; set; }
 }
 
 public class RefreshTokenRequired
@@ -320,5 +327,20 @@ public class CraftCardPacketResponse
 {
     // Error: 0 - Success, 1 - Not enough materials
     public bool CraftCardOk { get; set; }
+    public int Error { get; set; }
+}
+
+public class ReinforceResultPacketRequired
+{
+    public string AccessToken { get; set; }
+    public UnitInfo UnitInfo { get; set; }
+    public List<UnitInfo> UnitList { get; set; }
+}
+
+public class ReinforceResultPacketResponse
+{
+    public bool ReinforceResultOk { get; set; }
+    public bool IsSuccess { get; set; }
+    public List<OwnedUnitInfo> OwnedUnitList { get; set; }
     public int Error { get; set; }
 }

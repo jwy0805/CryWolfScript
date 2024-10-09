@@ -106,7 +106,7 @@ public class Util
     }
 
     public static GameObject GetCardResources<TEnum>(IAsset asset, 
-        Transform parent, float cardSize = 0, Action<PointerEventData> action = null) where TEnum : struct, Enum
+        Transform parent, float anchor = 0, Action<PointerEventData> action = null) where TEnum : struct, Enum
     {
         var cardFrame = Managers.Resource.Instantiate("UI/Deck/CardFrame", parent);
         var unitInCard = cardFrame.transform.Find("CardUnit").gameObject;
@@ -128,17 +128,33 @@ public class Util
         cardFrame.GetComponent<Image>().sprite = SetCardFrame(asset.Class);
         unitInCard.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
 
-        if (cardSize != 0)
+        if (anchor != 0)
         {
             var unitRect = unitInCard.GetComponent<RectTransform>();
-            unitRect.anchorMin = new Vector2((1 - cardSize) * 0.5f, (1 - cardSize) * 0.5f);
-            unitRect.anchorMax = new Vector2((1 + cardSize) * 0.5f, (1 + cardSize) * 0.5f);
+            unitRect.anchorMin = new Vector2((1 - anchor) * 0.5f, (1 - anchor) * 0.5f);
+            unitRect.anchorMax = new Vector2((1 + anchor) * 0.5f, (1 + anchor) * 0.5f);
             unitRect.offsetMin = Vector2.zero;
             unitRect.offsetMax = Vector2.zero;
         }
-        
-        if (action != null) cardFrame.BindEvent(action);
 
+        if (action != null) cardFrame.BindEvent(action);
+        if (card.AssetType != Asset.Unit) return cardFrame;
+        if (Managers.Data.UnitInfoDict.TryGetValue(asset.Id, out var unitInfo) == false) return cardFrame;
+        var starPanel = cardFrame.transform.Find("StarPanel").gameObject;
+            
+        for (var i = 0; i < unitInfo.Level; i++)
+        {
+            var star = new GameObject("Star", typeof(Image));
+            var starIconPath = "Sprites/Icons/icon_level";
+            var starImage = star.GetComponent<Image>();
+            var notOwned = User.Instance.NotOwnedUnitList.Any(info => info.Id == unitInfo.Id);
+                
+            starImage.sprite = Managers.Resource.Load<Sprite>(starIconPath);
+            starImage.color = notOwned ? Color.white : Color.yellow;
+            star.transform.SetParent(starPanel.transform);
+            star.GetComponent<RectTransform>().sizeDelta = new Vector2(40, 40);
+        }
+        
         return cardFrame;
     }
 

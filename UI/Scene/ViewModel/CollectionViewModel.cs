@@ -57,6 +57,8 @@ public class CollectionViewModel
         Managers.Data.MaterialInfoDict = loadInfoResponse.MaterialInfos.ToDictionary(info => info.Id, info => info);
         Managers.Data.ReinforcePointDict = loadInfoResponse.ReinforcePoints
             .ToDictionary(info => Tuple.Create(info.Class, info.Level), info => info);
+        Managers.Data.CraftingMaterialDict = loadInfoResponse.CraftingMaterials
+            .ToDictionary(info => info.UnitId, info => info);
     }
 
     private async Task InitializeCards()

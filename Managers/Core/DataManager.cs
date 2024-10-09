@@ -9,9 +9,9 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Networking;
 
-/* Last Modified : 24. 09. 12
- * Version : 0.02
- */
+/* Last Modified : 24. 10. 08
+   * Version : 1.013
+   */
 
 public interface ILoader<Key, Value>
 {
@@ -89,6 +89,7 @@ public class DataManager
     public Dictionary<int, CharacterInfo> CharacterInfoDict { get; set; } = new();
     public Dictionary<int, MaterialInfo> MaterialInfoDict { get; set; } = new();
     public Dictionary<Tuple<UnitClass, int>, ReinforcePointInfo> ReinforcePointDict { get; set; } = new();
+    public Dictionary<int, UnitMaterialInfo> CraftingMaterialDict { get; set; } = new();
     // Dictionaries for DB caching only before introducing REDIS
 
     public async Task InitAsync()
