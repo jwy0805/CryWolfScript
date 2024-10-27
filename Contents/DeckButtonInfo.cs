@@ -17,8 +17,8 @@ public class DeckButtonInfo : MonoBehaviour
             _isSelected = value;
             var buttonImage = GetComponent<Image>();
             buttonImage.color = _isSelected 
-                ? new Color(171f/255f, 140f/255f, 64f/255f) 
-                : new Color(248f/255f, 211f/255f, 123f/255f);
+                ? Color.white
+                : new Color(93/255f, 51/255f, 34/255f);
         }
     }
 }

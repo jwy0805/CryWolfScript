@@ -38,3 +38,131 @@ public enum MaterialId
     SoulPowderZumarigloom = 35,
 }
 
+public enum ProductId
+{
+    AbundantHarvest = 1,
+    BeginningOfTheLegend1,
+    BeginningOfTheLegend2,
+    BeginnersSpirit,
+    BeginnersResolve,
+    BeginnersLuck,
+    BeginnersAmbition,
+    GoldenEgg,
+    GoldPile,
+    GoldHeap,
+    GoldPouch,
+    GoldVault,
+    SpinelPile,
+    SpinelHeap,
+    SpinelTower,
+    SpinelPouch,
+    SpinelChest,
+    SpinelVault,
+    LowGradeMaterialBox,
+    MidGradeMaterialBox,
+    TopGradeMaterialBox,
+    PeasantCardPlate,
+    SquireCardPlate,
+    KnightCardPlate,
+    NobleKnightCardPlate,
+    BaronCardPlate,
+    PeasantCardPlate5,
+    SquireCardPlate5,
+    KnightCardPlate5,
+    NobleKnightCardPlate5,
+    BaronCardPlate5,
+    SelectableKnight3BoxSheep,
+    SelectableKnight3BoxWolf,
+    RandomKnight3Box,
+    SelectableKnight2BoxSheep,
+    SelectableKnight2BoxWolf,
+    RandomNobleKnight2Box,
+    SelectableNobleKnight3BoxSheep,
+    SelectableNobleKnight3BoxWolf,
+    RandomPeasant1Box,
+    RandomSquire1Box,
+    RandomKnight1Box,
+    RandomNobleKnight1Box,
+    RandomBaron1Box,
+    RandomPeasant2Box,
+    RandomSquire2Box,
+    RandomKnight2Box,
+    RandomBaron2Box,
+    RandomSheepBox,
+    RandomEnchantBox,
+    WoodenChest,
+    GoldenChest,
+    JeweledChest,
+    RandomBaron1To2Box1
+}
+
+public enum ProductType
+{
+    Unit,
+    Material,
+    Enchant,
+    Sheep,
+    Character,
+    Gold,
+    Spinel,
+}
+
+public enum ProductCategory
+{
+    None = 0,
+    SpecialPackage = 1,
+    BeginnerPackage = 2,
+    GoldPackage = 3,
+    SpinelPackage = 4,
+    GoldItem = 5,
+    SpinelItem = 6,
+    ReservedSale = 7,
+    DailyDeal = 8,
+    Other = 9,
+}   
+
+public enum CurrencyType
+{
+    None,
+    Cash,
+    Gold,
+    Spinel
+}
+
+public enum CashCurrencyType
+{
+    None,
+    KRW,
+    USD,
+    JPY,
+    CNY,
+    EUR,
+    GBP, // Great Britain Pound
+    CAD, // Canadian Dollar
+    AUD, // Australian Dollar
+    NZD, // New Zealand Dollar
+    CHF, // Swiss Franc
+    SEK, // Swedish Krona
+    DKK, // Danish Krone
+    NOK, // Norwegian Krone
+    ZAR, // South African Rand
+    RUB, // Russian Ruble
+    BRZ, // Brazilian Real
+    MXN, // Mexican Peso
+    INR, // Indian Rupee
+    IDR, // Indonesian Rupiah
+    VNĐ, // Vietnamese Dong
+    THB, // Thai Baht
+}
+
+public enum TransactionStatus
+{
+    None,
+    Completed,
+    Refunded,
+    Cancelled,
+    Failed,
+    Pending,
+    Expired,
+    PartiallyRefunded,
+}

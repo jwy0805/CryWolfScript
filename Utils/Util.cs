@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Cinemachine;
 using Google.Protobuf.Protocol;
 using JetBrains.Annotations;
@@ -33,7 +34,7 @@ public class Util
     {
         if (go == null)
             return null;
-
+        
         if (recursive == false)
         {
             for (var i = 0; i < go.transform.childCount; i++)
@@ -88,30 +89,30 @@ public class Util
         switch (unitClass)
         {
             case UnitClass.Squire:
-                return Managers.Resource.Load<Sprite>("Externals/UICasual/ResourcesData/Sprite/Component/Frame/Frame_ItemFrame01_Color_Green");
+                return Managers.Resource.Load<Sprite>("Externals/UI/UICasual/ResourcesData/Sprite/Component/Frame/Frame_ItemFrame01_Color_Green");
             case UnitClass.Knight:
-                return Managers.Resource.Load<Sprite>("Externals/UICasual/ResourcesData/Sprite/Component/Frame/Frame_ItemFrame01_Color_Blue");
+                return Managers.Resource.Load<Sprite>("Externals/UI/UICasual/ResourcesData/Sprite/Component/Frame/Frame_ItemFrame01_Color_Blue");
             case UnitClass.NobleKnight:
-                return Managers.Resource.Load<Sprite>("Externals/UICasual/ResourcesData/Sprite/Component/Frame/Frame_ItemFrame01_Color_Purple");
+                return Managers.Resource.Load<Sprite>("Externals/UI/UICasual/ResourcesData/Sprite/Component/Frame/Frame_ItemFrame01_Color_Purple");
             case UnitClass.Baron:
             case UnitClass.Earl:
-                return Managers.Resource.Load<Sprite>("Externals/UICasual/ResourcesData/Sprite/Component/Frame/Frame_ItemFrame01_Color_Yellow");
+                return Managers.Resource.Load<Sprite>("Externals/UI/UICasual/ResourcesData/Sprite/Component/Frame/Frame_ItemFrame01_Color_Yellow");
             case UnitClass.Duke:
-                return Managers.Resource.Load<Sprite>("Externals/UICasual/ResourcesData/Sprite/Component/Frame/Frame_ItemFrame01_Color_Red");
+                return Managers.Resource.Load<Sprite>("Externals/UI/UICasual/ResourcesData/Sprite/Component/Frame/Frame_ItemFrame01_Color_Red");
             case UnitClass.Peasant:
             case UnitClass.None:
             default:
-                return Managers.Resource.Load<Sprite>("Externals/UICasual/ResourcesData/Sprite/Component/Frame/Frame_ItemFrame01_Color_Brown");
+                return Managers.Resource.Load<Sprite>("Externals/UI/UICasual/ResourcesData/Sprite/Component/Frame/Frame_ItemFrame01_Color_Brown");
         }
     }
 
-    public static GameObject GetCardResources<TEnum>(IAsset asset, 
-        Transform parent, float anchor = 0, Action<PointerEventData> action = null) where TEnum : struct, Enum
+    public static GameObject GetCardResources<TEnum>(IAsset asset, Transform parent, Action<PointerEventData> action = null) 
+        where TEnum : struct, Enum
     {
         var cardFrame = Managers.Resource.Instantiate("UI/Deck/CardFrame", parent);
-        var unitInCard = cardFrame.transform.Find("CardUnit").gameObject;
-        
+        var unitInCard = FindChild(cardFrame, "CardUnit", true);
         var card = cardFrame.GetOrAddComponent<Card>();
+        
         card.Id = asset.Id;
         card.Class = asset.Class;
         card.AssetType = typeof(TEnum).Name switch
@@ -125,69 +126,140 @@ public class Util
         
         var enumValue = (TEnum)Enum.ToObject(typeof(TEnum), asset.Id);
         var path = $"Sprites/Portrait/{enumValue.ToString()}";
-        cardFrame.GetComponent<Image>().sprite = SetCardFrame(asset.Class);
+        var background = FindChild(cardFrame, "Bg", true).GetComponent<Image>();
+        var gradient = FindChild(cardFrame, "Gradient", true).GetComponent<Image>();
+        var glow = FindChild(cardFrame, "Glow", true).GetComponent<Image>();
+        var role = FindChild(cardFrame, "Role", true);
+        var roleIcon = FindChild(role, "RoleIcon", true).GetComponent<Image>();
+        
         unitInCard.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
-
-        if (anchor != 0)
-        {
-            var unitRect = unitInCard.GetComponent<RectTransform>();
-            unitRect.anchorMin = new Vector2((1 - anchor) * 0.5f, (1 - anchor) * 0.5f);
-            unitRect.anchorMax = new Vector2((1 + anchor) * 0.5f, (1 + anchor) * 0.5f);
-            unitRect.offsetMin = Vector2.zero;
-            unitRect.offsetMax = Vector2.zero;
-        }
-
+        BindUnitCardColor(asset.Class, background, gradient, glow);
+        BindUnitRoleIcon(card.Id, roleIcon);
+        
         if (action != null) cardFrame.BindEvent(action);
-        if (card.AssetType != Asset.Unit) return cardFrame;
+        if (card.AssetType != Asset.Unit)
+        {
+            role.SetActive(false);
+            return cardFrame;
+        }
         if (Managers.Data.UnitInfoDict.TryGetValue(asset.Id, out var unitInfo) == false) return cardFrame;
         var starPanel = cardFrame.transform.Find("StarPanel").gameObject;
+        var nameText = FindChild(cardFrame, "UnitNameText", true).GetComponent<TextMeshProUGUI>();
+        nameText.text = ((UnitId)unitInfo.Id).ToString();
             
-        for (var i = 0; i < unitInfo.Level; i++)
+        for (var i = 1; i <= unitInfo.Level; i++)
         {
-            var star = new GameObject("Star", typeof(Image));
-            var starIconPath = "Sprites/Icons/icon_level";
-            var starImage = star.GetComponent<Image>();
-            var notOwned = User.Instance.NotOwnedUnitList.Any(info => info.Id == unitInfo.Id);
-                
-            starImage.sprite = Managers.Resource.Load<Sprite>(starIconPath);
-            starImage.color = notOwned ? Color.white : Color.yellow;
-            star.transform.SetParent(starPanel.transform);
-            star.GetComponent<RectTransform>().sizeDelta = new Vector2(40, 40);
+            var star = FindChild(starPanel, $"GradeStar{i}", true, true);
+            star.SetActive(true);
         }
         
         return cardFrame;
     }
 
-    public static GameObject GetMaterialResources(
-        IAsset asset, Transform parent, float cardSize = 0, Action<PointerEventData> action = null)
+    public static GameObject GetMaterialResources(IAsset asset, Transform parent, Action<PointerEventData> action = null)
     {
-        var panel = Managers.Resource.Instantiate("UI/Deck/ItemPanel", parent);
-        var materialInFrame = FindChild(panel, "ItemButton", true, true);
+        var itemFrame = Managers.Resource.Instantiate("UI/Deck/ItemFrame", parent);
+        var materialInFrame = FindChild(itemFrame, "ItemImage", true, true);
+        var material = itemFrame.GetOrAddComponent<MaterialItem>();
         
-        var material = panel.GetOrAddComponent<MaterialItem>();
         material.Id = asset.Id;
         material.Class = asset.Class;
         
         var enumValue = (MaterialId)Enum.ToObject(typeof(MaterialId), asset.Id);
         var path = $"Sprites/Materials/{enumValue.ToString()}";
-        var background = FindChild(panel, "ItemClassBackground", true, true);
+        var background = FindChild(itemFrame, "Bg", true).GetComponent<Image>();
+        var cornerDeco = FindChild(itemFrame, "CornerDeco", true).GetComponent<Image>();
+        var light = FindChild(itemFrame, "Light", true).GetComponent<Image>();
+        var glow = FindChild(itemFrame, "Glow", true).GetComponent<Image>();
+        
         materialInFrame.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
-        background.GetComponent<Image>().color = asset.Class switch
+        BindMaterialCardColor(material.Class, background, cornerDeco, light, glow);
+        
+        if (action != null) itemFrame.BindEvent(action);
+        
+        return itemFrame;
+    }
+
+    private static void BindUnitCardColor(UnitClass unitClass, Image background, Image gradient, Image glow)
+    {
+        switch (unitClass)
         {
-            UnitClass.Peasant => new Color(.48f, .48f, .48f),
-            UnitClass.Squire => new Color(.2f, .8f, .16f),
-            UnitClass.Knight => new Color(.16f, .65f, .8f),
-            UnitClass.NobleKnight => new Color(.8f, .16f, .8f),
-            UnitClass.Baron => new Color(1, .86f, 0),
-            UnitClass.Earl => new Color(1, 0.7f, 0),
-            UnitClass.Duke => new Color(1, .26f, 0),
-            UnitClass.None => new Color(.48f, .48f, .48f),
-            _ => new Color(.48f, .48f, .48f),
-        };
+            case UnitClass.Squire:
+                background.color = new Color(52 / 255f, 177 / 255f, 83 / 255f);
+                gradient.color = new Color(90 / 255f, 216 / 255f, 72 / 255f);
+                glow.color = new Color(156 / 255f, 254 / 255f, 79 / 255f);
+                break;
+            case UnitClass.Knight:
+                background.color = new Color(60 / 255f, 136 / 255f, 246 / 255f);
+                gradient.color = new Color(6 / 255f, 172 / 255f, 254 / 255f);
+                glow.color = new Color(1 / 255f, 222 / 255f, 1);
+                break;
+            case UnitClass.NobleKnight:
+                background.color = new Color(115 / 255f, 77 / 255f, 238 / 255f);
+                gradient.color = new Color(149 / 255f, 85 / 255f, 253 / 255f);
+                glow.color = new Color(185 / 255f, 150 / 255f, 1);
+                break;
+            case UnitClass.Baron:
+                background.color = new Color(1, 201 / 255f, 0);
+                gradient.color = new Color(1, 245 / 255f, 34 / 255f);
+                glow.color = new Color(1, 245 / 255f, 200 / 255f);
+                break;
+            case UnitClass.Peasant:
+            case UnitClass.None:
+            default:
+                background.color = new Color(98 / 255f, 110 / 255f, 139 / 255f);
+                gradient.color = new Color(144 / 255f, 163 / 255f, 186 / 255f);
+                glow.color = new Color(131 / 255f, 166 / 255f, 180 / 255f);
+                break;
+        }
+    }
+
+    private static void BindUnitRoleIcon(int id, Image roleIcon)
+    {
+        Managers.Data.UnitInfoDict.TryGetValue(id, out var unitInfo);
+        if (unitInfo == null) return;
         
-        if (action != null) panel.BindEvent(action);
-        
-        return panel;
+        var path = $"Sprites/Icons/icon_role_{unitInfo.Role.ToString().ToLower()}";
+        roleIcon.sprite = Managers.Resource.Load<Sprite>(path);
+    }
+
+    private static void BindMaterialCardColor(UnitClass materialClass, Image background, Image deco, Image light, Image glow)
+    {
+        switch (materialClass)
+        {
+            case UnitClass.Squire:
+                background.color = new Color(29 / 255f, 192 / 255f, 86 / 255f);
+                deco.color = new Color(52 / 255f, 217 / 255f, 52 / 255f);
+                light.color = new Color(178 / 255f, 241 / 255f, 31 / 255f);
+                glow.color = new Color(192 / 255f, 255 / 255f, 81 / 255f);
+                break;
+            case UnitClass.Knight:
+                background.color = new Color(0 / 255f, 168 / 255f, 255 / 255f);
+                deco.color = new Color(44 / 255f, 190 / 255f, 255 / 255f);
+                light.color = new Color(53 / 255f, 251 / 255f, 255 / 255f);
+                glow.color = new Color(8 / 255f, 239 / 255f, 255 / 255f);
+                break;
+            case UnitClass.NobleKnight:
+                background.color = new Color(178 / 255f, 96 / 255f, 253 / 255f);
+                deco.color = new Color(200 / 255f, 116 / 255f, 253 / 255f);
+                light.color = new Color(1f, 138 / 255f, 1f);
+                glow.color = new Color(185 / 255f, 138 / 255f, 1f);
+                break;
+            case UnitClass.Baron:
+                background.color = new Color(1f, 201 / 255f, 0);
+                deco.color = new Color(1f, 222 / 255f, 0);
+                light.color = new Color(254 / 255f, 138 / 255f, 78 / 255f);
+                glow.color = new Color(243 / 244f, 1f, 49 / 255f);
+                break;
+            case UnitClass.Peasant:
+            case UnitClass.None:
+            default:
+                background.color = new Color(97 / 255f, 126 / 255f, 138 / 255f);
+                deco.color = new Color(113 / 255f, 142 / 255f, 153 / 255f);
+                light.color = new Color(130 / 255f, 160 / 255f, 171 / 255f);
+                glow.color = new Color(131 / 255f, 166 / 255f, 180 / 255f);
+                break;
+        }
     }
     
     public static Faction FindFactionByUnitId(int unitId)
@@ -195,18 +267,26 @@ public class Util
         return unitId / 500 == 0 ? Faction.Sheep : Faction.Wolf;
     }
     
-    public static void SetCardSize(RectTransform rect, float x, float y, Vector2 anchoredVector = new())
-    {
-        rect.anchoredPosition = anchoredVector;
-        rect.sizeDelta = new Vector2(x, y);
-        rect.transform.GetChild(0).GetComponent<RectTransform>().sizeDelta = new Vector2(x, x);
-    }
-    
     public static Image GetFrameFromCardButton(ISkillButton button)
     {
         if (button is not MonoBehaviour mono) return null;
         var go = mono.gameObject;
         return go.transform.parent.parent.GetChild(1).GetComponent<Image>();
+    }
+
+    public static string ConvertStringToIconFormat(string str)
+    {
+        str = Regex.Replace(str, "(?<!^)([A-Z])", "_$1");
+        str = str.ToLower();
+
+        return "icon_" + str;
+    }
+    
+    public static string ConvertStringToNameFormat(string str)
+    {
+        str = Regex.Replace(str, "(?<!^)([A-Z])", " $1");
+        str = Regex.Replace(str, "(\\d+)", " $1");
+        return str;
     }
     
     public static void DestroyAllChildren(Transform parent)

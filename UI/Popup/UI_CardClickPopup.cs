@@ -117,10 +117,11 @@ public class UI_CardClickPopup : UI_Popup
     private void SetCardInPopup<TEnum>() where TEnum : struct, Enum
     {
         var parent = GetImage((int)Images.CardPanel).transform;
-        var cardFrame = Util.GetCardResources<TEnum>(SelectedCard, parent, 0, ClosePopup);
+        var cardFrame = Util.GetCardResources<TEnum>(SelectedCard, parent, ClosePopup);
         var cardFrameRect = cardFrame.GetComponent<RectTransform>();
-        cardFrameRect.anchorMin = new Vector2(0, 0);
-        cardFrameRect.anchorMax = new Vector2(1, 1);
+        cardFrameRect.sizeDelta = new Vector2(200, 320);
+        cardFrameRect.anchorMin = new Vector2(0.5f, 0.5f);
+        cardFrameRect.anchorMax = new Vector2(0.5f, 0.5f);
     }
     
     private void OnInfoClicked(PointerEventData data)

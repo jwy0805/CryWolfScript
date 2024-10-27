@@ -21,6 +21,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
     private Card[] _deck;
     private UI_CardClickPopup _cardPopup;
     private bool _changing;
+    private Dictionary<string, GameObject> _deckButtonDict;
     
     public Card SelectedCard { get; set; }
     public List<Card[]> Decks { get; set; }
@@ -94,6 +95,15 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
         Bind<TextMeshProUGUI>(typeof(Texts));
+        
+        _deckButtonDict = new Dictionary<string, GameObject>
+        {
+            {"DeckButton1", GetButton((int)Buttons.DeckButton1).gameObject},
+            {"DeckButton2", GetButton((int)Buttons.DeckButton2).gameObject},
+            {"DeckButton3", GetButton((int)Buttons.DeckButton3).gameObject},
+            {"DeckButton4", GetButton((int)Buttons.DeckButton4).gameObject},
+            {"DeckButton5", GetButton((int)Buttons.DeckButton5).gameObject},
+        };
     }
 
     protected override void InitButtonEvents()
@@ -101,21 +111,19 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         GetImage((int)Images.PopupPanel).gameObject.BindEvent(OnPointerClick);
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(CloseAllPopup);
         GetButton((int)Buttons.EnterButton).gameObject.BindEvent(CloseAllPopup);
-        
-        GetButton((int)Buttons.DeckButton1).gameObject.BindEvent(OnDeckButtonClicked);
-        GetButton((int)Buttons.DeckButton2).gameObject.BindEvent(OnDeckButtonClicked);
-        GetButton((int)Buttons.DeckButton3).gameObject.BindEvent(OnDeckButtonClicked);
-        GetButton((int)Buttons.DeckButton4).gameObject.BindEvent(OnDeckButtonClicked);
-        GetButton((int)Buttons.DeckButton5).gameObject.BindEvent(OnDeckButtonClicked);
+
+        foreach (var deckButton in _deckButtonDict.Values)
+        {
+            deckButton.BindEvent(OnDeckButtonClicked);
+        }
     }
 
     protected override void InitUI()
     {
-        GetButton((int)Buttons.DeckButton1).GetComponent<DeckButtonInfo>().DeckIndex = 1;
-        GetButton((int)Buttons.DeckButton2).GetComponent<DeckButtonInfo>().DeckIndex = 2;
-        GetButton((int)Buttons.DeckButton3).GetComponent<DeckButtonInfo>().DeckIndex = 3;
-        GetButton((int)Buttons.DeckButton4).GetComponent<DeckButtonInfo>().DeckIndex = 4;
-        GetButton((int)Buttons.DeckButton5).GetComponent<DeckButtonInfo>().DeckIndex = 5;
+        for (var i = 1; i <= 5; i++)
+        {
+            _deckButtonDict[$"DeckButton{i}"].GetComponent<DeckButtonInfo>().DeckIndex = i;
+        }
         
         var warningPanel = GetImage((int)Images.WarningPanel).gameObject;
         var selectTextPanel = GetImage((int)Images.SelectTextPanel).gameObject;
@@ -131,7 +139,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         var deck = _deckVm.GetDeck(Util.Faction).UnitsOnDeck;
         foreach (var unit in deck)
         {
-            var cardFrame = Util.GetCardResources<UnitId>(unit, parent, 0, OnDeckCardClicked);
+            var cardFrame = Util.GetCardResources<UnitId>(unit, parent, OnDeckCardClicked);
             cardFrame.TryGetComponent(out RectTransform rectTransform);
             rectTransform.anchorMax = new Vector2(1, 1);
             rectTransform.anchorMin = new Vector2(0, 0);
@@ -152,7 +160,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         foreach (var unit in units)
         {
             var cardFrame = 
-                Util.GetCardResources<UnitId>(unit.UnitInfo, parent, 0, OnCollectionCardClicked);
+                Util.GetCardResources<UnitId>(unit.UnitInfo, parent, OnCollectionCardClicked);
             cardFrame.TryGetComponent(out RectTransform rectTransform);
             rectTransform.anchorMax = Vector2.one;
             rectTransform.anchorMin = Vector2.zero;

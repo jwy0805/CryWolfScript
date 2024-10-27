@@ -35,8 +35,3 @@ public interface ITokenService
     string GetAccessToken();
     string GetRefreshToken();
 }
-
-public interface ICraftingService
-{
-    
-}

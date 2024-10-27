@@ -9,17 +9,29 @@ using Zenject;
 public class MainLobbyViewModel
 {
     public event Action<int> OnPageChanged;
+    public event Action<int> ChangeButtonFocus;
 
     private float _valueDistance = 0;                        // 각 페이지 사이의 거리
     private int _maxPage = 0;
     private float _startTouchX;
     private float _endTouchX;
-    private readonly float _swipeDistance = 150f;             // 페이지 스와이프를 위해 움직여야 하는 최소 거리
+    private readonly float _swipeDistance = 150f;           // 페이지 스와이프를 위해 움직여야 하는 최소 거리
+    private int _currentPage = 0;
     
     public float[] ScrollPageValues { get; private set; }
-    public int CurrentPage { get; private set; } = 0;
     public bool IsSwipeMode { get; set; } = false;
     public float SwipeTime => 0.2f;
+    
+    public int CurrentPage 
+    { 
+        get => _currentPage;
+        private set
+        {
+            _currentPage = value;
+            ChangeButtonFocus?.Invoke(value);
+        }
+    }
+
     
     // Logics related to the main lobby scroll view
     public void Initialize(int pageCount)

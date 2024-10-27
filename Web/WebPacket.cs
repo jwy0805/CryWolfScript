@@ -8,6 +8,24 @@ using UnityEngine;
 // ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable CollectionNeverUpdated.Global
 
+public class ProductInfo
+{
+    public int Id { get; set; }
+    public int Price { get; set; }
+    public int Count { get; set; }
+    public CurrencyType CurrencyType { get; set; }
+    public ProductCategory Category { get; set; }
+}
+
+public class DailyProductInfo
+{
+    public int Id { get; set; }
+    public int Price { get; set; }
+    public CurrencyType CurrencyType { get; set; }
+    public ProductCategory Category { get; set; }
+    public bool AlreadyBought { get; set; }
+}
+
 public class UnitInfo : IAsset
 {
     public int Id { get; set; }
@@ -343,4 +361,22 @@ public class ReinforceResultPacketResponse
     public bool IsSuccess { get; set; }
     public List<OwnedUnitInfo> OwnedUnitList { get; set; }
     public int Error { get; set; }
+}
+
+public class InitProductPacketRequired
+{
+    public string AccessToken { get; set; }
+}
+
+public class InitProductPacketResponse
+{
+    public bool GetProductOk { get; set; }
+    public List<ProductInfo> SpecialPackages { get; set; }
+    public List<ProductInfo> BeginnerPackages { get; set; }
+    public List<ProductInfo> GoldPackages { get; set; }
+    public List<ProductInfo> SpinelPackages { get; set; }
+    public List<ProductInfo> GoldItems { get; set; }
+    public List<ProductInfo> SpinelItems { get; set; }
+    public List<ProductInfo> ReservedSales { get; set; }
+    public List<DailyProductInfo> DailyDeals { get; set; }
 }

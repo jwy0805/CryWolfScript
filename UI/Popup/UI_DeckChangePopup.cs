@@ -84,7 +84,7 @@ public class UI_DeckChangePopup : UI_Popup
         var deck = _deckVm.GetDeck(Util.Faction);
         foreach (var unit in deck.UnitsOnDeck)
         {
-            var cardFrame = Util.GetCardResources<UnitId>(unit, parent, 0, data =>
+            var cardFrame = Util.GetCardResources<UnitId>(unit, parent, data =>
             {
                 // 실제 덱이 수정되고, DeckChangeScrollPopup으로 넘어감
                 if (data.pointerPress.TryGetComponent(out Card card) == false) return;

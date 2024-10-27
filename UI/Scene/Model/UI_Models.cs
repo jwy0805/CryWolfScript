@@ -11,7 +11,6 @@ public interface IAsset
 public class User
 {
     public static User Instance { get; } = new();
-    
     public string UserAccount { get; set; } = "temp";
     public List<OwnedUnitInfo> OwnedUnitList { get; set; } = new();
     public List<UnitInfo> NotOwnedUnitList { get; set; } = new();

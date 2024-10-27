@@ -18,16 +18,10 @@ public class Card : MonoBehaviour, IAsset, IBeginDragHandler, IDragHandler, IEnd
 
     private void Start()
     {
-        var scrollObject = GameObject.Find("CollectionScrollView");
+        var panel = GameObject.Find("DeckCollectionPanel");
+        _scrollRect = panel.GetComponentInChildren<ScrollRect>();
         
-        if (scrollObject != null)
-        {
-            _scrollRect = scrollObject.GetComponent<ScrollRect>();
-        }
-        else
-        {
-            Debug.LogError("ScrollRect object not found!");
-        }    
+        if (_scrollRect == null) Debug.Log("ScrollRect is null");
     }
 
     public void OnBeginDrag(PointerEventData eventData)

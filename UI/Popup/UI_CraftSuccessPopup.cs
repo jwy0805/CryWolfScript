@@ -69,7 +69,7 @@ public class UI_CraftSuccessPopup : UI_Popup
         
         if (cardFrame == null) return;
         var cardFrameRect = cardFrame.GetComponent<RectTransform>();
-        Util.SetCardSize(cardFrameRect, 250, 400);
+        cardFrameRect.sizeDelta = new Vector2(250, 400);
     }
     
     private void ClosePopup(PointerEventData eventData)

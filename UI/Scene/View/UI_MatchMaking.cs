@@ -81,7 +81,7 @@ public class UI_MatchMaking : UI_Scene
         var deck = _deckVm.GetDeck(Util.Faction);
         foreach (var unit in deck.UnitsOnDeck)
         {
-            Util.GetCardResources<UnitId>(unit, _myDeck, 150);
+            Util.GetCardResources<UnitId>(unit, _myDeck);
         }
     }
     

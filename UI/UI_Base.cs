@@ -56,7 +56,7 @@ public abstract class UI_Base : MonoBehaviour
             for (int i = 0; i < Objects[typeof(T)].Length; i++)
             {
                 GameObject btn = GetButton(i).gameObject;
-                dict.Add(btn.name, btn);
+                dict.Add(btn.name, btn); 
             }
         }
         else if (typeof(T) == typeof(Image))
