@@ -5,8 +5,8 @@ using UnityEngine;
 using UnityEngine.Networking;
 using Zenject;
 
-/* Last Modified : 24. 10. 18
- * Version : 1.016
+/* Last Modified : 24. 10. 30
+ * Version : 1.02
  */
 
 public class ShopViewModel
@@ -15,10 +15,15 @@ public class ShopViewModel
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
 
+    public List<ProductInfo> SpecialPackages;
+    public List<ProductInfo> BeginnerPackages;
+    public List<ProductInfo> ReservedSales;
     public List<ProductInfo> GoldPackages;
     public List<ProductInfo> SpinelPackages;
     public List<ProductInfo> GoldItems;
     public List<ProductInfo> SpinelItems;
+    
+    public ProductInfo SelectedProduct { get; set; }
     
     [Inject]
     public ShopViewModel(IUserService userService, IWebService webService, ITokenService tokenService)
@@ -43,6 +48,9 @@ public class ShopViewModel
         var productResponse = productTask.Result;
         if (productResponse.GetProductOk == false) return;
         
+        SpecialPackages = productResponse.SpecialPackages.OrderByDescending(pi => pi.Price).ToList();
+        BeginnerPackages = productResponse.BeginnerPackages.OrderBy(pi => pi.Price).ToList();
+        ReservedSales = productResponse.ReservedSales.OrderBy(pi => pi.Price).ToList();
         GoldPackages = productResponse.GoldPackages.OrderBy(pi => pi.Id).ToList();
         SpinelPackages = productResponse.SpinelPackages.OrderBy(pi => pi.Price).ToList();
         GoldItems = productResponse.GoldItems.OrderBy(pi => pi.Price).ToList();

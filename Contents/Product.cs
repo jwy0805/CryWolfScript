@@ -1,9 +1,41 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
-public class Product : MonoBehaviour
+/* Last Modified : 24. 10. 30
+ * Version : 1.02
+ */
+public class Product : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    public int Id { get; set; }
-    public int Price { get; set; }
+    private ScrollRect _scrollRect;
+    
+    public ProductInfo ProductInfo { get; set; }
+    public bool IsDragging { get; set; }
+
+    private void Start()
+    {
+        var panel = GameObject.Find("ShopPanel");
+        _scrollRect = panel.GetComponentInChildren<ScrollRect>();
+        
+        if (_scrollRect == null) Debug.Log("ScrollRect is null");
+    }
+    
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        IsDragging = true;
+        _scrollRect.OnBeginDrag(eventData);
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        _scrollRect.OnDrag(eventData);
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        _scrollRect.OnEndDrag(eventData);
+        IsDragging = false;
+    }
 }

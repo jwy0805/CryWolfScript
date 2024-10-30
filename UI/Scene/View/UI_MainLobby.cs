@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DG.Tweening;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -10,8 +11,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Zenject;
 
-/* Last Modified : 24. 10. 18
- * Version : 1.016
+/* Last Modified : 24. 10. 27
+ * Version : 1.017
  */
 
 // This class includes the binding, initialization and core logics for the main lobby UI.
@@ -26,7 +27,10 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private CollectionViewModel _collectionVm;
     private CraftingViewModel _craftingVm;
     private ShopViewModel _shopVm;
+
+    private readonly float _modeChangeTime = 0.25f;
     
+    private int _currentModeIndex;
     private bool _isCraftingPanelOpen;
     private Card _selectedCard;
     private Card _selectedCardForCrafting;
@@ -48,6 +52,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private Transform _spinelPackagePanel;
     private Transform _spinelItemsPanel;
     private Transform _goldItemsPanel;
+    private List<GameObject> _modes;
     private Dictionary<string, GameObject> _craftingUiDict;
     private Dictionary<string, GameObject> _collectionUiDict;
     private Dictionary<string, GameObject> _arrangeButtonDict;
@@ -57,6 +62,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private Dictionary<string, GameObject> _deckButtonDict;
     private Dictionary<string, GameObject> _lobbyDeckButtonDict;
     private SelectModeEnums _selectMode;
+    private GameModeEnums _gameMode;
     private ArrangeModeEnums _arrangeMode = ArrangeModeEnums.All;
 
     private Color ThemeColor => Util.Faction == Faction.Sheep
@@ -106,6 +112,13 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
 
     #region Enums
 
+    private enum GameModeEnums
+    {
+        RankGame = 0,
+        FriendlyMatch = 1,
+        SinglePlay = 2,
+    }
+    
     private enum SelectModeEnums
     {
         Normal,
@@ -135,8 +148,9 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         ClanButtonFocus,
         
         FactionButton,
-        RankButton,
         PlayButton,
+        ModeSelectButtonLeft,
+        ModeSelectButtonRight,
         
         LobbyDeckButton1,
         LobbyDeckButton2,
@@ -196,6 +210,10 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         LobbyDeck,
         
         FactionButtonIcon,
+        
+        FriendlyMatchPanel,
+        RankGamePanel,
+        SinglePlayPanel,
         
         ShopBackground,
         ItemBackground,
@@ -370,6 +388,65 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         SetBottomButton(list[pageIndex]);
     }
 
+    private IEnumerator MoveModeIcons()
+    {
+        var startAnchors = new Vector2[_modes.Count];
+        var targetAnchors = new Vector2[_modes.Count];
+        var anchorPositions = new Vector2[] { new(0.17f, 0.17f), new(0.5f, 0.5f), new(0.83f, 0.83f) };
+
+        for (var i = 0; i < _modes.Count; i++)
+        {
+            var targetIndex = (_currentModeIndex + i) % _modes.Count;
+            var rect = _modes[i].GetComponent<RectTransform>();
+            startAnchors[i] = new Vector2(rect.anchorMin.x, rect.anchorMin.y);
+            targetAnchors[i] = anchorPositions[targetIndex];
+        }
+
+        float elapsedTime = 0;
+        
+        while (elapsedTime < _modeChangeTime)
+        {
+            elapsedTime += Time.deltaTime;
+            var t = Mathf.Clamp01(elapsedTime / _modeChangeTime);
+
+            for (var i = 0; i < _modes.Count; i++)
+            {
+                var newX = Mathf.Lerp(startAnchors[i].x, targetAnchors[i].x, t);
+                var rect = _modes[i].GetComponent<RectTransform>();
+                rect.anchorMin = new Vector2(newX, rect.anchorMin.y);
+                rect.anchorMax = new Vector2(newX, rect.anchorMax.y);
+            }
+
+            yield return null;
+        }
+
+        for (var i = 0; i < _modes.Count; i++)
+        {
+            var rect = _modes[i].GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(targetAnchors[i].x, rect.anchorMin.y);
+            rect.anchorMax = new Vector2(targetAnchors[i].y, rect.anchorMax.y);
+        }
+
+        foreach (var mode in _modes)
+        {
+            var iconRect = mode.transform.GetChild(0).GetComponent<RectTransform>();
+            
+            if (Mathf.Approximately(mode.GetComponent<RectTransform>().anchorMin.x, 0.5f))
+            {
+                Util.FindChild(mode, $"{mode.name}Text", false, true).SetActive(true);
+                iconRect.anchorMin = new Vector2(iconRect.anchorMin.x, 0.66f);
+                iconRect.anchorMax = new Vector2(iconRect.anchorMax.x, 0.66f);
+            }
+            else
+            {
+                iconRect.anchorMin = new Vector2(iconRect.anchorMin.x, 0.5f);
+                iconRect.anchorMax = new Vector2(iconRect.anchorMax.x, 0.5f);
+                var go = Util.FindChild(mode, $"{mode.name}Text", false, true);
+                if (go != null) go.SetActive(false);
+            }
+        }
+    }
+    
     #region OrderingMethods
 
     private List<OwnedUnitInfo> OrderOwnedUnits()
@@ -519,19 +596,18 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         
         SwitchLobbyUI(Util.Faction);
     }
-
-    private void OnSingleClicked(PointerEventData data)
+    
+    private void OnPlayButtonClicked(PointerEventData data)
     {
-        Util.Deck = _deckVm.GetDeck(Util.Faction);
+        
     }
 
-    private void OnMultiClicked(PointerEventData data)
+    private void OnModeSelectButtonClicked(PointerEventData data, int direction)
     {
-        Managers.UI.ShowPopupUI<UI_Dim>();
-        Managers.UI.ShowPopupUI<UI_BattlePopupSheep>();
-
-        Util.Deck = _deckVm.GetDeck(Util.Faction);
-    }
+        _currentModeIndex = (_currentModeIndex + direction + _modes.Count) % _modes.Count;
+        _gameMode = (GameModeEnums)_currentModeIndex;
+        StartCoroutine(nameof(MoveModeIcons));
+    }    
 
     private void OnBottomButtonClicked(PointerEventData data)
     {
@@ -608,10 +684,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private void OnCardClicked(PointerEventData data)
     {
         if (data.pointerPress.TryGetComponent(out Card card) == false) return;
-        if (card.IsDragging)
-        {
-            return;
-        }
+        if (card.IsDragging) return;
         
         if (SelectMode is SelectModeEnums.Reinforce)
         {
@@ -715,6 +788,29 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
         popup.SetWarning("준비중인 기능입니다.");
     }
+
+    private void OnProductClicked(PointerEventData data, GameObject frameObject)
+    {
+        Product product = null;
+        if (data.pointerPress.TryGetComponent(out ProductSimple productSimple))
+        {
+            if (productSimple.IsDragging) return;
+            var simplePopup = Managers.UI.ShowPopupUI<UI_ProductInfoSimplePopup>();
+            simplePopup.FrameObject = Instantiate(frameObject);
+            product = productSimple;
+        }
+        
+        if (data.pointerPress.TryGetComponent(out ProductPackage productPackage))
+        {
+            if (productPackage.IsDragging) return;
+            var packagePopup = Managers.UI.ShowPopupUI<UI_ProductInfoPopup>();
+            packagePopup.FrameObject = Instantiate(frameObject);
+            product = productPackage;
+        }
+
+        if (product == null) return;
+        _shopVm.SelectedProduct = product.ProductInfo;
+    }
     
     #endregion
     
@@ -727,6 +823,13 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         Bind<Image>(typeof(Images));
         Bind<TextMeshProUGUI>(typeof(Texts));
         _craftingScrollRect = GetImage((int)Images.CollectionScrollView).GetComponent<ScrollRect>();
+        
+        _modes = new List<GameObject>
+        {            
+            GetImage((int)Images.FriendlyMatchPanel).gameObject,
+            GetImage((int)Images.RankGamePanel).gameObject,
+            GetImage((int)Images.SinglePlayPanel).gameObject
+        };
         
         _craftingUiDict = new Dictionary<string, GameObject>
         {
@@ -810,15 +913,11 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
 
     protected override void InitButtonEvents()
     {
-        GetButton((int)Buttons.FactionButton).gameObject.BindEvent(OnFactionButtonClicked);
-        GetButton((int)Buttons.PlayButton).gameObject.BindEvent(OnMultiClicked);
-
         foreach (var pair in _bottomButtonDict)
         {
             pair.Value.BindEvent(OnBottomButtonClicked);
         }
         
-        GetButton((int)Buttons.DeckTabButton).gameObject.BindEvent(OnDeckTabClicked);
         foreach (var pair in _deckButtonDict)
         {
             pair.Value.BindEvent(OnDeckButtonClicked);
@@ -829,6 +928,14 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
             pair.Value.BindEvent(OnDeckButtonClicked);
         }
         
+        GetButton((int)Buttons.FactionButton).gameObject.BindEvent(OnFactionButtonClicked);
+        GetButton((int)Buttons.PlayButton).gameObject.BindEvent(OnPlayButtonClicked);
+        GetButton((int)Buttons.ModeSelectButtonLeft).gameObject
+            .BindEvent(data => OnModeSelectButtonClicked(data, 1));
+        GetButton((int)Buttons.ModeSelectButtonRight).gameObject
+            .BindEvent(data => OnModeSelectButtonClicked(data, -1));
+        
+        GetButton((int)Buttons.DeckTabButton).gameObject.BindEvent(OnDeckTabClicked);
         GetButton((int)Buttons.CollectionTabButton).gameObject.BindEvent(OnCollectionTabClicked);
         
         GetButton((int)Buttons.ArrangeAllButton).gameObject.BindEvent(OnArrangeAllClicked);
@@ -863,6 +970,17 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         SetObjectSize(GetImage((int)Images.RankTextIcon).gameObject, 0.25f);
         
         SetBottomButton("GameButton");
+        
+        // Init GameMode
+        _gameMode = GameModeEnums.RankGame;
+        var go = _modes.FirstOrDefault(go => go.name.Contains(_gameMode.ToString()));
+        if (go != null)
+        {
+            var iconRect = go.transform.GetChild(0).GetComponent<RectTransform>();
+            Util.FindChild(go, $"{go.name}Text", false, true).SetActive(true);
+            iconRect.anchorMin = new Vector2(iconRect.anchorMin.x, 0.66f);
+            iconRect.anchorMax = new Vector2(iconRect.anchorMax.x, 0.66f);
+        }
         
         // MainLobby_Item Setting
         await InitCollection();

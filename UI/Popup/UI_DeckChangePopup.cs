@@ -6,9 +6,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Zenject;
 
-/*
- * Last Modified : 24. 09. 09
- * Version : 1.011
+/* Last Modified : 24. 10. 30
+ * Version : 1.02
  */
 
 public class UI_DeckChangePopup : UI_Popup
@@ -42,10 +41,10 @@ public class UI_DeckChangePopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(IUserService userService, DeckViewModel deckVm)
+    public void Construct(IUserService userService, DeckViewModel deckViewModel)
     {
         _userService = userService;
-        _deckVm = deckVm;
+        _deckVm = deckViewModel;
     }
     
     protected override void Init()

@@ -23,7 +23,7 @@ public class UI_UnitInfoPopup : UI_Popup
     private Button _selectedButton;
     private UnitInfo _unitInfo;
     private Contents.UnitData _unitData;
-    private RectTransform _skillInfoPanelRect;
+    // private RectTransform _skillInfoPanelRect;
     private GameObject _statDetailPanel;
     private GameObject _skillDescriptionPanel;
     private GameObject _currentSkillPanel;
@@ -51,8 +51,6 @@ public class UI_UnitInfoPopup : UI_Popup
         set
         {
             _selectedButton = value;
-            var buttonImage = _selectedButton.GetComponent<Image>(); 
-            buttonImage.color = new Color(171f/255f, 140f/255f, 64f/255f) ;
             _selectedButton.interactable = false;
         }
     }
@@ -87,7 +85,6 @@ public class UI_UnitInfoPopup : UI_Popup
         UnitTypeImage,
         UnitAttackTypeImage,
         
-        SkillInfoPanel,
         SkillPanel,
         SkillTreeTextPanel,
         SkillDescriptionPanel,
@@ -106,7 +103,6 @@ public class UI_UnitInfoPopup : UI_Popup
         LevelButton2,
         LevelButton3,
         
-        UpgradeButton,
         DetailButton
     }
 
@@ -180,7 +176,7 @@ public class UI_UnitInfoPopup : UI_Popup
         var skillTreeTextPanel = GetImage((int)Images.SkillTreeTextPanel);
         _mainSkillTextPanel = GetImage((int)Images.MainSkillTextPanel).gameObject;
         _mainSkillPanel = GetImage((int)Images.MainSkillPanel).gameObject;
-        _skillInfoPanelRect = GetImage((int)Images.SkillInfoPanel).GetComponent<RectTransform>();
+        // _skillInfoPanelRect = GetImage((int)Images.SkillInfoPanel).GetComponent<RectTransform>();
         _statDetailPanel = GetImage((int)Images.StatDetailPanel).gameObject;
 
         var statDetailPanelRect = _statDetailPanel.GetComponent<RectTransform>();
@@ -188,10 +184,6 @@ public class UI_UnitInfoPopup : UI_Popup
         statDetailPanelRect.anchorMax = new Vector2(0.43f, 1);
         statDetailPanelRect.anchorMin = new Vector2(0.43f, 0.12f);
         _statDetailPanel.gameObject.SetActive(false);
-
-        AdjustLayoutElement(_mainSkillTextPanel, 0.12f, 0.5f);
-        AdjustLayoutElement(_mainSkillPanel, 0.12f, 0.96f);
-        AdjustLayoutElement(skillTreeTextPanel.gameObject, 0.12f, 0.5f);
     }
     
     private void GetUnitInfo(UnitId unitId)
@@ -216,7 +208,6 @@ public class UI_UnitInfoPopup : UI_Popup
     {
         foreach (var button in _levelButtons.Values)
         {
-            button.GetComponent<Image>().color = new Color(248f/255f, 211f/255f, 123f/255f);
             button.GetComponent<Button>().interactable = true;
         }
         
@@ -239,14 +230,14 @@ public class UI_UnitInfoPopup : UI_Popup
         SetObjectSize(GetImage((int)Images.CardPanel).gameObject, 0.7f, 1.12f);
         
         var parent = GetImage((int)Images.CardPanel).transform;
-        var cardPanelSize = parent.GetComponent<RectTransform>().sizeDelta;
         var cardFrame = Util.GetCardResources<UnitId>(asset, parent);
-        var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
+        var rect = cardFrame.GetComponent<RectTransform>();
         
-        cardFrame.transform.SetParent(parent);
-        cardFrame.GetComponent<RectTransform>().anchorMax = Vector2.one;
-        cardFrame.GetComponent<RectTransform>().anchorMin = Vector2.zero;
-        cardUnit.GetComponent<RectTransform>().sizeDelta = new Vector2(cardPanelSize.x * 0.9f, cardPanelSize.x * 0.9f);
+        Util.FindChild(cardFrame, "UnitNameText", true).SetActive(false);
+        Util.FindChild(cardFrame, "Role", true).SetActive(false);
+        rect.sizeDelta = new Vector2(Screen.width * 0.3f, Screen.width * 0.48f);
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
     }
 
     private void SetStatus()
@@ -292,7 +283,6 @@ public class UI_UnitInfoPopup : UI_Popup
         }
         
         var parent = GetImage((int)Images.SkillPanel);
-        AdjustLayoutElement(parent.gameObject, 0.6f, 0.96f);
         
         var skillPanelPath = $"UI/InGame/SkillPanel/{((UnitId)asset.Id).ToString()}SkillPanel";
         _currentSkillPanel = Managers.Resource.Instantiate(skillPanelPath);
@@ -310,7 +300,6 @@ public class UI_UnitInfoPopup : UI_Popup
         }
 
         _skillDescriptionPanel = GetImage((int)Images.SkillDescriptionPanel).gameObject;
-        AdjustLayoutElement(_skillDescriptionPanel, 0.2f, 0.96f);
         _skillDescriptionPanel.gameObject.SetActive(false);
     }
 
@@ -374,13 +363,6 @@ public class UI_UnitInfoPopup : UI_Popup
         GetText((int)Texts.UnitPoisonResistText).text = _unitData.Stat.PoisonResist + " %";
         GetText((int)Texts.UnitAttackRangeText).text = _unitData.Stat.AttackRange.ToString();
         GetText((int)Texts.UnitSkillRangeText).text = _unitData.Stat.SkillRange.ToString();
-    }
-
-    private void AdjustLayoutElement(GameObject go, float height, float width)
-    {
-        var layoutElement = go.GetComponent<LayoutElement>();
-        layoutElement.preferredHeight = _skillInfoPanelRect.rect.height * height;
-        layoutElement.preferredWidth = _skillInfoPanelRect.rect.width * width;
     }
 
     private void ToggleStatDetailPanel()

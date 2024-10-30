@@ -11,10 +11,20 @@ using UnityEngine;
 public class ProductInfo
 {
     public int Id { get; set; }
+    public List<CompositionInfo> Compositions { get; set; }
     public int Price { get; set; }
-    public int Count { get; set; }
     public CurrencyType CurrencyType { get; set; }
     public ProductCategory Category { get; set; }
+}
+
+public class CompositionInfo
+{
+    public int Id { get; set; }
+    public List<int> Products { get; set; }
+    public ProductType Type { get; set; }
+    public int Count { get; set; }
+    public bool Guaranteed { get; set; }
+    public bool IsSelectable { get; set; }
 }
 
 public class DailyProductInfo

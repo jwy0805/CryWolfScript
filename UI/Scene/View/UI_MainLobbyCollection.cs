@@ -359,29 +359,13 @@ public partial class UI_MainLobby
         var parent = GetImage((int)Images.CraftCardPanel);
         Util.DestroyAllChildren(parent.transform);
         
-        var parentRect = parent.GetComponent<RectTransform>();
-        var cardFrame = Managers.Resource.Instantiate("UI/Deck/CardFrame", parent.transform);
-        var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
-        
-        parentRect.anchorMin = new Vector2(0.5f, 0.5f);
-        parentRect.anchorMax = new Vector2(0.5f, 0.5f);
-        parentRect.anchoredPosition = new Vector2(0, 40);
-        parentRect.sizeDelta = new Vector2(250, 400);
-        
-        if (cardFrame.TryGetComponent(out Card craftingCard) == false) return ;
-        // Have to set card info to crafting card, not selected card
-        craftingCard.Id = (int)unitId;
-        craftingCard.Class = _selectedCardForCrafting.Class;
-        craftingCard.AssetType = _selectedCardForCrafting.AssetType;
-        
-        var enumValue = (UnitId)Enum.ToObject(typeof(UnitId), craftingCard.Id);
-        var path = $"Sprites/Portrait/{enumValue.ToString()}";
-        cardFrame.GetComponent<Image>().sprite = Util.SetCardFrame(craftingCard.Class);
-        cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
-        
-        cardFrame.TryGetComponent(out RectTransform rectTransform);
-        rectTransform.anchorMin = new Vector2(0, 0);
-        rectTransform.anchorMax = new Vector2(1, 1);     
+        _ = _selectedCardForCrafting.AssetType switch
+        {
+            Asset.Unit => Util.GetCardResources<UnitId>(_selectedCardForCrafting, parent.transform),
+            Asset.Sheep => Util.GetCardResources<SheepId>(_selectedCardForCrafting, parent.transform),
+            Asset.Enchant => Util.GetCardResources<EnchantId>(_selectedCardForCrafting, parent.transform),
+            _ => null
+        };    
         
         _craftingVm.LoadMaterials(unitId);
         _craftingVm.CraftingCount = 1;

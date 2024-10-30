@@ -1,14 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-/* Last Modified : 24. 10. 18
- * Version : 1.016
+/* Last Modified : 24. 10. 30
+ * Version : 1.02
  */
 
 // This class includes the shop logics for the main lobby UI. 
@@ -28,28 +29,43 @@ public partial class UI_MainLobby
         await _shopVm.Initialize();
         
         InitSpecialPackage();
-        InitBeginnerPackage();
-        InitReservedSales();
+        InitPackages(_shopVm.BeginnerPackages, _beginnerPackagePanel);
+        InitPackages(_shopVm.ReservedSales, _reservedSalePanel);
         InitDailyDeal();
-        InitGoldPackage();
-        InitSpinelPackage();
+        InitPackages(_shopVm.GoldPackages, _goldPackagePanel);
+        InitPackages(_shopVm.SpinelPackages, _spinelPackagePanel);
         InitGoldItems();
         InitSpinelItems();
     }
 
     private void InitSpecialPackage()
     {
-        
+        foreach (var productInfo in _shopVm.SpecialPackages)
+        {
+            var itemName = ((ProductId)productInfo.Id).ToString();
+            var item = itemName == ((ProductId)1).ToString()
+                ? InitiateProduct(itemName, productInfo, _specialPackagePanel.GetChild(0))
+                : InitiateProduct(itemName, productInfo, _specialPackagePanel.GetChild(1));
+            var priceText = Util.FindChild(item, "TextPrice", true, true);
+            var frameObject = Util.FindChild(item, "ItemIcon", true, true);
+            
+            priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
+            item.BindEvent(data => OnProductClicked(data, frameObject));
+        }
     }
-    
-    private void InitBeginnerPackage()
+
+    private void InitPackages(IEnumerable<ProductInfo> packages, Transform panel)
     {
-        
-    }
-    
-    private void InitReservedSales()
-    {
-        
+        foreach (var productInfo in packages)
+        {
+            var itemName = ((ProductId)productInfo.Id).ToString();
+            var item = InitiateProduct(itemName, productInfo, panel);
+            var priceText = Util.FindChild(item, "TextPrice", true, true);
+            var frameObject = Util.FindChild(item, "ItemIcon", true, true);
+            
+            priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
+            item.BindEvent(data => OnProductClicked(data, frameObject));
+        }
     }
     
     private void InitDailyDeal()
@@ -57,56 +73,21 @@ public partial class UI_MainLobby
         
     }
     
-    private void InitGoldPackage()
-    {
-        foreach (var productInfo in _shopVm.GoldPackages)
-        {
-            var imageName = Util.ConvertStringToIconFormat(((ProductId)productInfo.Id).ToString());
-            var item = InitiateProduct("GoldPackage", productInfo, _goldPackagePanel);
-            var image = Util.FindChild(item, "Image_Package", true, true);
-            var nameText = Util.FindChild(item, "Text_Name", true, true);
-            var priceText = Util.FindChild(item, "Text_Cost", true, true);
-            var productName = Util.ConvertStringToNameFormat(((ProductId)productInfo.Id).ToString());
-            
-            image.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>($"Sprites/ShopIcons/{imageName}");
-            nameText.GetComponent<TextMeshProUGUI>().text = productName;
-            priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
-            SetItemImageSize(item, _goldPackagePanel, "Image_Package");
-        }
-    }
-    
-    private void InitSpinelPackage()
-    {
-        foreach (var productInfo in _shopVm.SpinelPackages)
-        {
-            var imageName = Util.ConvertStringToIconFormat(((ProductId)productInfo.Id).ToString());
-            var item = InitiateProduct("SpinelPackage", productInfo, _spinelPackagePanel);
-            var image = Util.FindChild(item, "Image_Package", true, true);
-            var nameText = Util.FindChild(item, "Text_Name", true, true);
-            var priceText = Util.FindChild(item, "Text_Cost", true, true);
-            var productName = Util.ConvertStringToNameFormat(((ProductId)productInfo.Id).ToString());
-            
-            image.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>($"Sprites/ShopIcons/{imageName}");
-            nameText.GetComponent<TextMeshProUGUI>().text = productName;
-            priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
-            SetItemImageSize(item, _spinelPackagePanel, "Image_Package");
-        }
-    }
-    
     private void InitGoldItems()
     {
         foreach (var productInfo in _shopVm.GoldItems)
         {
-            var imageName = Util.ConvertStringToIconFormat(((ProductId)productInfo.Id).ToString());
-            var item = InitiateProduct("GoldItem", productInfo, _goldItemsPanel);
-            var image = Util.FindChild(item, "Image_Gold", true, true);
-            var countText = Util.FindChild(item, "Text_Gold", true, true);
-            var priceText = Util.FindChild(item, "Text_Cost", true, true);
+            var itemName = ((ProductId)productInfo.Id).ToString();
+            var item = InitiateProduct(itemName, productInfo, _goldItemsPanel);
+            var countText = Util.FindChild(item, "TextNum", true, true);
+            var priceText = Util.FindChild(item, "TextPrice", true, true);
+            var frameObject = Util.FindChild(item, "ItemIcon", true, true);
             
-            image.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>($"Sprites/ShopIcons/{imageName}");
-            countText.GetComponent<TextMeshProUGUI>().text = productInfo.Count.ToString();
+            countText.GetComponent<TextMeshProUGUI>().text = productInfo.Compositions
+                .FirstOrDefault(c => c.Id == productInfo.Id)?
+                .Count.ToString();
             priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
-            SetItemImageSize(item, _goldItemsPanel, "Image_Gold");
+            item.BindEvent(data => OnProductClicked(data, frameObject));
         }
     }
     
@@ -114,16 +95,15 @@ public partial class UI_MainLobby
     {
         foreach (var productInfo in _shopVm.SpinelItems)
         {
-            var imageName = Util.ConvertStringToIconFormat(((ProductId)productInfo.Id).ToString());
-            var item = InitiateProduct("SpinelItem", productInfo, _spinelItemsPanel);
-            var image = Util.FindChild(item, "Image_Gem", true, true);
-            var countText = Util.FindChild(item, "Text_Gem", true, true);
-            var priceText = Util.FindChild(item, "Text_Cost", true, true);
+            var itemName = ((ProductId)productInfo.Id).ToString();
+            var item = InitiateProduct(itemName, productInfo, _spinelItemsPanel);
+            var countText = Util.FindChild(item, "TextNum", true, true);
+            var priceText = Util.FindChild(item, "TextPrice", true, true);
             
-            image.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>($"Sprites/ShopIcons/{imageName}");
-            countText.GetComponent<TextMeshProUGUI>().text = productInfo.Count.ToString();
-            priceText.GetComponent<TextMeshProUGUI>().text = "KRW" + productInfo.Price.ToString("N0");
-            SetItemImageSize(item, _spinelItemsPanel, "Image_Gem");
+            countText.GetComponent<TextMeshProUGUI>().text = productInfo.Compositions
+                .FirstOrDefault(c => c.Id == productInfo.Id)?
+                .Count.ToString();
+            priceText.GetComponent<TextMeshProUGUI>().text = "KRW " + productInfo.Price.ToString("N0");
         }
     }
 
@@ -132,23 +112,10 @@ public partial class UI_MainLobby
     {
         var panel = Managers.Resource.Instantiate($"UI/Shop/{prefabPath}", parent);
         var product = panel.GetOrAddComponent<Product>();
-        product.Id = productInfo.Id;
-        product.Price = productInfo.Price;
+        product.ProductInfo = productInfo;
         
         if (action != null) panel.BindEvent(action);
         
         return panel;
-    }
-
-    private void SetItemImageSize(GameObject item, Transform parent, string imageName, string glowName = "Glow")
-    {
-        var grid = parent.GetComponent<GridLayoutGroup>();
-        var image = Util.FindChild(item, imageName, true, true);
-        var glow = Util.FindChild(item, glowName, true, true);
-        var imageRect = image.GetComponent<RectTransform>();
-        var glowRect = glow.GetComponent<RectTransform>();
-        
-        imageRect.sizeDelta = new Vector2(grid.cellSize.x, grid.cellSize.x);
-        glowRect.sizeDelta = new Vector2(grid.cellSize.x * 1.1f, grid.cellSize.x * 1.1f);
     }
 }
