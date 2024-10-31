@@ -36,18 +36,20 @@ public enum MaterialId
     SoulPowderSandibreeze = 33,
     SoulPowderVoltenar = 34,
     SoulPowderZumarigloom = 35,
+    RainbowEgg = 36,
 }
 
 public enum ProductId
 {
-    AbundantHarvest = 1,
+    None = 0,
+    AbundantHarvest,
     BeginningOfTheLegend1,
     BeginningOfTheLegend2,
     BeginnersSpirit,
     BeginnersResolve,
     BeginnersLuck,
     BeginnersAmbition,
-    RainbowEgg,
+    RainbowEggPackage,
     GoldPile,
     GoldPouch,
     GoldBasket,
@@ -93,11 +95,17 @@ public enum ProductId
     WoodenChest,
     GoldenChest,
     JeweledChest,
-    RandomBaron1To2Box1
+    RandomBaron1To2Box1,
+    RandomPeasantMaterialBox,
+    RandomSquireMaterialBox,
+    RandomKnightMaterialBox,
+    RandomNobleKnightMaterialBox,
+    RandomBaronMaterialBox,
 }
 
 public enum ProductType
 {
+    None = 0, // Other Product
     Unit,
     Material,
     Enchant,
@@ -127,6 +135,13 @@ public enum CurrencyType
     Cash,
     Gold,
     Spinel
+}
+
+public enum CurrencyId
+{
+    None,
+    Gold = 4001,
+    Spinel = 4002
 }
 
 public enum CashCurrencyType

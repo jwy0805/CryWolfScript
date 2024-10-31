@@ -20,9 +20,11 @@ public class ProductInfo
 public class CompositionInfo
 {
     public int Id { get; set; }
-    public List<int> Products { get; set; }
+    public int ProductId { get; set; }
     public ProductType Type { get; set; }
     public int Count { get; set; }
+    public int MinCount { get; set; }
+    public int MaxCount { get; set; }
     public bool Guaranteed { get; set; }
     public bool IsSelectable { get; set; }
 }

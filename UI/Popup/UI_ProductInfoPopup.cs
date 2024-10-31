@@ -1,10 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using UnityEngine.UIElements;
 using Zenject;
+using Button = UnityEngine.UI.Button;
+using Image = UnityEngine.UI.Image;
 
 public class UI_ProductInfoPopup : UI_Popup
 {
@@ -16,6 +21,7 @@ public class UI_ProductInfoPopup : UI_Popup
     private ProductInfo _productInfo;
     
     public GameObject FrameObject { get; set; }
+    public Vector2 FrameSize { get; set; }
 
     private enum Buttons
     {
@@ -79,15 +85,101 @@ public class UI_ProductInfoPopup : UI_Popup
         _icon.sprite = Managers.Resource.Load<Sprite>(iconPath);
         FrameObject.transform.SetParent(_frame.transform);
         FrameObject.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+        FrameObject.GetComponent<RectTransform>().sizeDelta = FrameSize;
+        FrameObject.transform.localScale *= 0.85f;
+        
+        var icon = Util.FindChild(FrameObject, "Icon", true);
+        var priceText = Util.FindChild(FrameObject, "TextPrice", true);
+        if (icon != null && priceText != null)
+        {
+            icon.SetActive(false);
+            priceText.SetActive(false);
+        }
         
         GetText((int)Texts.TextName).text = ((ProductId)_productInfo.Id).ToString();
-        // GetText((int)Texts.TextNum).text = _productInfo.Compositions.ToString();
         GetText((int)Texts.TextPrice).text = _productInfo.Price.ToString();
+        GetText((int)Texts.TextNum).gameObject.SetActive(false);
+        SetContents();
     }
     
     private void GetProductInfo()
     {
         _productInfo = _shopVm.SelectedProduct;
+    }
+
+    private void SetContents()
+    {
+        var contentsPanel = Util.FindChild(gameObject, "Content", true);
+        var panelRect = contentsPanel.GetComponent<RectTransform>();
+        panelRect.pivot = _productInfo.Compositions.Count > 4 ? new Vector2(0, 0.5f) : new Vector2(0.5f, 0.5f);
+        
+        var sortedCompositions = _productInfo.Compositions.All(ci => ci.Type == ProductType.Material)
+            ? _productInfo.Compositions
+                .OrderBy(ci => Managers.Data.MaterialInfoDict.TryGetValue(ci.Id, out var materialInfo) 
+                    ? (int)materialInfo.Class : int.MaxValue).ToList()
+            : _productInfo.Compositions;
+        
+        foreach (var composition in sortedCompositions)
+        {
+            var framePath = $"UI/Deck/ProductInfo";
+            var productFrame = Managers.Resource.Instantiate(framePath, contentsPanel.transform);
+            var countText = Util.FindChild(productFrame, "TextNum", true);
+            var layoutElement = productFrame.AddComponent<LayoutElement>();
+            layoutElement.preferredWidth = Screen.width * 0.15f;
+            layoutElement.preferredHeight = Screen.height * 0.15f;
+            countText.GetComponent<TextMeshProUGUI>().text = composition.Count.ToString();
+
+            string productName;
+            string path;
+            GameObject product;
+            switch (composition.Type)
+            {
+                case ProductType.None:
+                    productName = ((ProductId)composition.ProductId).ToString();
+                    path = $"UI/Shop/{productName}";
+                    product = Managers.Resource.Instantiate(path, productFrame.transform);
+                    break;
+                
+                case ProductType.Unit:
+                    productName = ((UnitId)composition.ProductId).ToString();
+                    Managers.Data.UnitInfoDict.TryGetValue(composition.ProductId, out var unit);
+                    path = $"UI/Shop/OtherProducts/Product{unit?.Class}";
+                    product = Managers.Resource.Instantiate(path, productFrame.transform);
+                    var image = Util.FindChild(product, "CardUnit", true).GetComponent<Image>();
+                    image.sprite = Managers.Resource.Load<Sprite>($"Sprites/Portrait/{productName}");
+                    break;
+                
+                case ProductType.Material:
+                    Managers.Data.MaterialInfoDict.TryGetValue(composition.ProductId, out var material);
+                    product = Util.GetMaterialResources(material, productFrame.transform);                  
+                    break;
+                
+                case ProductType.Enchant:
+                case ProductType.Sheep:
+                case ProductType.Character:
+                case ProductType.Spinel:
+                case ProductType.Gold:
+                default:
+                    path = composition.Count switch
+                    {
+                        >= 50000 => "UI/Shop/OtherProducts/GoldVault",
+                        >= 25000 => "UI/Shop/OtherProducts/GoldBasket",
+                        >= 2500 => "UI/Shop/OtherProducts/GoldPouch",
+                        _ => "UI/Shop/OtherProducts/GoldPile"
+                    };
+                    product = Managers.Resource.Instantiate(path, productFrame.transform);
+                    break;
+            }
+            
+            var productRect = product.GetComponent<RectTransform>();
+            var width = layoutElement.preferredWidth;
+            var rectSize = productRect.sizeDelta;
+                    
+            product.transform.localScale = rectSize.x == 0 ? Vector3.one : width * Vector3.one / rectSize.x * 0.8f;
+            productRect.anchoredPosition = Vector2.zero;
+            productRect.anchorMin = new Vector2(0.5f, 0.55f);
+            productRect.anchorMax = new Vector2(0.5f, 0.55f);
+        }
     }
     
     private void OnBuyButtonClicked(PointerEventData data)

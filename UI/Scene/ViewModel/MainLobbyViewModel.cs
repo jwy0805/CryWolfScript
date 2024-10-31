@@ -49,13 +49,13 @@ public class MainLobbyViewModel
     
     public void StartTouch(float startX)
     {
-        if (IsSwipeMode) return;
+        if (IsSwipeMode || Managers.UI.PopupList.Count > 0) return;
         _startTouchX = startX;
     }
 
     public void EndTouch(float endX)
     {
-        if (IsSwipeMode) return;
+        if (IsSwipeMode || Managers.UI.PopupList.Count > 0) return;
         _endTouchX = endX;
 
         if (Math.Abs(_startTouchX - _endTouchX) < _swipeDistance)

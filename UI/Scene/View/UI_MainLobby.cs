@@ -805,6 +805,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
             if (productPackage.IsDragging) return;
             var packagePopup = Managers.UI.ShowPopupUI<UI_ProductInfoPopup>();
             packagePopup.FrameObject = Instantiate(frameObject);
+            packagePopup.FrameSize = frameObject.GetComponent<RectTransform>().sizeDelta;
             product = productPackage;
         }
 

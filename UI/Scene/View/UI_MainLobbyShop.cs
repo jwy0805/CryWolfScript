@@ -29,7 +29,7 @@ public partial class UI_MainLobby
         await _shopVm.Initialize();
         
         InitSpecialPackage();
-        InitPackages(_shopVm.BeginnerPackages, _beginnerPackagePanel);
+        InitBeginnerPackages();
         InitPackages(_shopVm.ReservedSales, _reservedSalePanel);
         InitDailyDeal();
         InitPackages(_shopVm.GoldPackages, _goldPackagePanel);
@@ -47,10 +47,22 @@ public partial class UI_MainLobby
                 ? InitiateProduct(itemName, productInfo, _specialPackagePanel.GetChild(0))
                 : InitiateProduct(itemName, productInfo, _specialPackagePanel.GetChild(1));
             var priceText = Util.FindChild(item, "TextPrice", true, true);
-            var frameObject = Util.FindChild(item, "ItemIcon", true, true);
             
             priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
-            item.BindEvent(data => OnProductClicked(data, frameObject));
+            item.BindEvent(data => OnProductClicked(data, item));
+        }
+    }
+    
+    private void InitBeginnerPackages()
+    {
+        foreach (var productInfo in _shopVm.BeginnerPackages)
+        {
+            var itemName = ((ProductId)productInfo.Id).ToString();
+            var item = InitiateProduct(itemName, productInfo, _beginnerPackagePanel);
+            var priceText = Util.FindChild(item, "TextPrice", true, true);
+            
+            priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
+            item.BindEvent(data => OnProductClicked(data, item));
         }
     }
 
