@@ -11,12 +11,12 @@ public class MainLobbyViewModel
     public event Action<int> OnPageChanged;
     public event Action<int> ChangeButtonFocus;
 
-    private float _valueDistance = 0;                        // 각 페이지 사이의 거리
-    private int _maxPage = 0;
-    private float _startTouchX;
-    private float _endTouchX;
+    private float _valueDistance;                        // 각 페이지 사이의 거리
+    private int _maxPage;
+    private Tuple<float, int> _startTouchX;
+    private Tuple<float, int> _endTouchX;
     private readonly float _swipeDistance = 150f;           // 페이지 스와이프를 위해 움직여야 하는 최소 거리
-    private int _currentPage = 0;
+    private int _currentPage;
     
     public float[] ScrollPageValues { get; private set; }
     public bool IsSwipeMode { get; set; } = false;
@@ -32,6 +32,24 @@ public class MainLobbyViewModel
         }
     }
 
+    public void OnPlayButtonClicked(UI_MainLobby.GameModeEnums mode)
+    {
+        switch (mode)
+        {
+            case UI_MainLobby.GameModeEnums.FriendlyMatch:
+                break;
+            case UI_MainLobby.GameModeEnums.RankGame:
+                LoadMatchMakingScene();
+                break;
+            case UI_MainLobby.GameModeEnums.SinglePlay:
+                break;
+        }
+    }
+    
+    private void LoadMatchMakingScene()
+    {
+        Managers.Scene.LoadScene(Define.Scene.MatchMaking);
+    }
     
     // Logics related to the main lobby scroll view
     public void Initialize(int pageCount)
@@ -49,22 +67,22 @@ public class MainLobbyViewModel
     
     public void StartTouch(float startX)
     {
-        if (IsSwipeMode || Managers.UI.PopupList.Count > 0) return;
-        _startTouchX = startX;
+        _startTouchX = new Tuple<float, int>(startX, Managers.UI.PopupList.Count);
     }
 
     public void EndTouch(float endX)
     {
-        if (IsSwipeMode || Managers.UI.PopupList.Count > 0) return;
-        _endTouchX = endX;
+        _endTouchX = new Tuple<float, int>(endX, Managers.UI.PopupList.Count);
 
-        if (Math.Abs(_startTouchX - _endTouchX) < _swipeDistance)
+        if (IsSwipeMode || Managers.UI.PopupList.Count > 0) return;
+        if (_startTouchX.Item2 != _endTouchX.Item2) return;
+        if (Math.Abs(_startTouchX.Item1 - _endTouchX.Item1) < _swipeDistance)
         {
             OnPageChanged?.Invoke(CurrentPage);
             return;
         }
         
-        bool isLeft = _startTouchX < _endTouchX;
+        bool isLeft = _startTouchX.Item1 < _endTouchX.Item1;
         if (isLeft)
         {
             if (CurrentPage == 0) return;

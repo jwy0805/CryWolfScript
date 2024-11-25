@@ -44,23 +44,23 @@ public class UI_HealthCircle : MonoBehaviour
         else
         {
             _shieldSlider.gameObject.SetActive(true);
-            float shieldRatio = _cc.ShieldRemain / (float)_cc.ShieldAdd * 100;
+            float shieldRatio = _cc.ShieldRemain / (float)_cc.ShieldAdd;
             _shieldSlider.value = shieldRatio;
             _shieldSliderFill.color = Color.blue;
         }
         
         // Hp
-        float hpRatio = _cc.Hp / (float)_cc.MaxHp * 100;
+        float hpRatio = _cc.Hp / (float)_cc.MaxHp;
         _hpSlider.value = hpRatio;
         _hpSliderFill.color = hpRatio switch
         {
-            > 70.0f => Color.green,
-            < 30.0f => Color.red,
+            > 0.7f => Color.green,
+            < 0.3f => Color.red,
             _ => Color.yellow
         };
 
         // Mp
-        float mpRatio = _cc.MaxMp != 1 ? _cc.Mp / (float)_cc.MaxMp * 100 : 0;
+        float mpRatio = _cc.MaxMp != 1 ? _cc.Mp / (float)_cc.MaxMp : 0;
         _mpSlider.value = mpRatio;
     }
 }

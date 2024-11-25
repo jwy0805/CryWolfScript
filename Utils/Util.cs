@@ -21,6 +21,10 @@ public class Util
     public static Faction Faction = Faction.Sheep;
     public static Deck Deck = new();
     
+    public static Color ThemeColor => Faction == Faction.Sheep
+        ? new Color(39 / 255f, 107 / 255f, 214 / 255f)
+        : new Color(133 / 255f, 29 / 255f, 72 / 255f);
+    
     public static T GetOrAddComponent<T>(GameObject go) where T : Component
     {
         var component = go.GetComponent<T>();

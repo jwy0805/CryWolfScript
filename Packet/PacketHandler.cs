@@ -24,6 +24,14 @@ public class PacketHandler
         }
     }
     
+    public static void S_ConnectSessionHandler(PacketSession session, IMessage packet)
+    {
+        var connectPacket = (S_ConnectSession)packet;
+        Debug.Log(connectPacket.SessionId);
+        var ui = GameObject.FindWithTag("UI").GetComponent<UI_MatchMaking>();
+        ui.StartMatchMaking(connectPacket.SessionId);
+    }
+    
     public static void S_LeaveGameHandler(PacketSession session, IMessage packet)
     {
         var leaveGamePacket = (S_LeaveGame)packet;
@@ -454,20 +462,32 @@ public class PacketHandler
         popup.GetComponent<UI_WarningPopup>().SetWarning(popupPacket.Warning);
     }
 
-    public static void S_ShowResultSceneHandler(PacketSession session, IMessage packet)
-    {
-        var resultPacket = (S_ShowResultScene)packet;
-        Managers.Game.GameResult = resultPacket.Win;
-        SceneManager.LoadScene("Scenes/Result");
-        Managers.Clear();
-    }
-
     public static void S_ShowResultPopupHandler(PacketSession session, IMessage packet)
     {
         var resultPacket = (S_ShowResultPopup)packet;
+        Managers.UI.CloseAllPopupUI();
         Managers.Game.GameResult = resultPacket.Win;
-        var popup = Managers.UI.ShowPopupUI<UI_ResultPopup>();
-        popup.GetComponent<UI_ResultPopup>().SetPopup();
-
+        
+        if (resultPacket.Win)
+        {
+            var popup = Managers.UI.ShowPopupUI<UI_ResultVictoryPopup>();
+            popup.RankPointValue = resultPacket.RankPointValue;
+            popup.RankPoint = resultPacket.RankPoint;
+            popup.Reward = resultPacket.Rewards.ToList();
+        }
+        else
+        {
+            var popup = Managers.UI.ShowPopupUI<UI_ResultDefeatPopup>();
+            popup.RankPointValue = resultPacket.RankPointValue;
+            popup.RankPoint = resultPacket.RankPoint;
+            popup.Reward = resultPacket.Rewards.ToList();
+        }
+    }
+    
+    public static void S_MatchMakingSuccessHandler(PacketSession session, IMessage packet)
+    {
+        var matchMakingPacket = (S_MatchMakingSuccess)packet;
+        var ui = GameObject.FindWithTag("UI").GetComponent<UI_MatchMaking>();
+        ui.SetEnemyUserInfo(matchMakingPacket);
     }
 }

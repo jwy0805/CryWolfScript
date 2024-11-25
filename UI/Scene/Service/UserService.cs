@@ -1,66 +1,116 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using Zenject;
 
 public class UserService : IUserService
 {
     private readonly ITokenService _tokenService;
+    private readonly IWebService _webService;
 
     public event Action<Faction> InitDeckButton;
     
+    public UserInfo UserInfo { get; set; }
+    
     [Inject]
-    public UserService(ITokenService tokenService)
+    public UserService(ITokenService tokenService, IWebService webService)
     {
         _tokenService = tokenService;
+        _webService = webService;
     }
 
-    public void LoadOwnedUnit(OwnedUnitInfo units)
+    public void LoadOwnedUnit(List<OwnedUnitInfo> units)
     {
-        User.Instance.OwnedUnitList.Add(units);
+        User.Instance.OwnedUnitList.Clear();
+        
+        foreach (var unit in units)
+        {
+            User.Instance.OwnedUnitList.Add(unit);
+        }
     }
 
-    public void LoadNotOwnedUnit(UnitInfo unitInfo)
+    public void LoadNotOwnedUnit(List<UnitInfo> units)
     {
-        User.Instance.NotOwnedUnitList.Add(unitInfo);
-    }
-    
-    public void LoadOwnedSheep(OwnedSheepInfo sheepInfo)
-    {
-        User.Instance.OwnedSheepList.Add(sheepInfo);
-    }
-    
-    public void LoadNotOwnedSheep(SheepInfo sheepInfo)
-    {
-        User.Instance.NotOwnedSheepList.Add(sheepInfo);
-    }
-    
-    public void LoadOwnedEnchant(OwnedEnchantInfo enchantInfo)
-    {
-        User.Instance.OwnedEnchantList.Add(enchantInfo);
-    }
-    
-    public void LoadNotOwnedEnchant(EnchantInfo enchantInfo)
-    {
-        User.Instance.NotOwnedEnchantList.Add(enchantInfo);
-    }
-    
-    public void LoadOwnedCharacter(OwnedCharacterInfo characterInfo)
-    {
-        User.Instance.OwnedCharacterList.Add(characterInfo);
-    }
-    
-    public void LoadNotOwnedCharacter(CharacterInfo characterInfo)
-    {
-        User.Instance.NotOwnedCharacterList.Add(characterInfo);
-    }
-    
-    public void LoadOwnedMaterial(OwnedMaterialInfo materialInfo)
-    {
-        User.Instance.OwnedMaterialList.Add(materialInfo);
+        User.Instance.NotOwnedUnitList.Clear();
+
+        foreach (var unit in units)
+        {
+            User.Instance.NotOwnedUnitList.Add(unit);
+        }
     }
 
+    public void LoadOwnedSheep(List<OwnedSheepInfo> sheep)
+    {
+        User.Instance.OwnedSheepList.Clear();
+
+        foreach (var eachSheep in sheep)
+        {
+            User.Instance.OwnedSheepList.Add(eachSheep);
+        }
+    }
+
+    public void LoadNotOwnedSheep(List<SheepInfo> sheep)
+    {
+        User.Instance.NotOwnedSheepList.Clear();
+
+        foreach (var eachSheep in sheep)
+        {
+            User.Instance.NotOwnedSheepList.Add(eachSheep);
+        }
+    }
+    
+    public void LoadOwnedEnchant(List<OwnedEnchantInfo> enchants)
+    {
+        User.Instance.OwnedEnchantList.Clear();
+
+        foreach (var enchant in enchants)
+        {
+            User.Instance.OwnedEnchantList.Add(enchant);
+        }
+    }
+    
+    public void LoadNotOwnedEnchant(List<EnchantInfo> enchants)
+    {
+        User.Instance.NotOwnedEnchantList.Clear();
+
+        foreach (var enchant in enchants)
+        {
+            User.Instance.NotOwnedEnchantList.Add(enchant);
+        }
+    }
+    
+    public void LoadOwnedCharacter(List<OwnedCharacterInfo> characters)
+    {
+        User.Instance.OwnedCharacterList.Clear();
+
+        foreach (var character in characters)
+        {
+            User.Instance.OwnedCharacterList.Add(character);
+        }
+    }
+    
+    public void LoadNotOwnedCharacter(List<CharacterInfo> characters)
+    {
+        User.Instance.NotOwnedCharacterList.Clear();
+
+        foreach (var character in characters)
+        {
+            User.Instance.NotOwnedCharacterList.Add(character);
+        }
+    }    
+    
+    public void LoadOwnedMaterial(List<OwnedMaterialInfo> materials)
+    {
+        User.Instance.OwnedMaterialList.Clear();
+
+        foreach (var material in materials)
+        {
+            User.Instance.OwnedMaterialList.Add(material);
+        }
+    }
+    
     public void LoadBattleSetting(BattleSettingInfo battleSettingInfo)
     {
         User.Instance.BattleSetting = battleSettingInfo;
@@ -77,13 +127,17 @@ public class UserService : IUserService
             Faction = (Faction)deckInfo.Faction,
             LastPicked = deckInfo.LastPicked,
         };
+        
         deck.UnitsOnDeck = deck.UnitsOnDeck.OrderBy(unit => unit.Class).ToArray();
         
         if (deck.Faction == Faction.Sheep)
         {
             User.Instance.AllDeckSheep.Add(deck);
         }
-        else User.Instance.AllDeckWolf.Add(deck);
+        else
+        {
+            User.Instance.AllDeckWolf.Add(deck);
+        }
     }
     
     public void SaveDeck(DeckInfo deckInfo)
@@ -108,6 +162,20 @@ public class UserService : IUserService
             User.Instance.DeckWolf = deck;
         }
     }
+
+    public async Task LoadUserInfo()
+    {
+        var loadUserInfoPacket = new LoadUserInfoPacketRequired{ AccessToken = _tokenService.GetAccessToken() };
+        var loadUserInfoTask = _webService.SendWebRequestAsync<LoadUserInfoPacketResponse>(
+            "UserAccount/LoadUserInfo", "POST", loadUserInfoPacket);
+        
+        await loadUserInfoTask;
+        
+        var loadUserInfoResponse = loadUserInfoTask.Result;
+        if (loadUserInfoResponse.LoadUserInfoOk == false) return;
+        
+        UserInfo = loadUserInfoResponse.UserInfo;
+    }
     
     public void BindDeck()
     {
@@ -119,5 +187,17 @@ public class UserService : IUserService
             : User.Instance.AllDeckWolf.First();
         
         InitDeckButton?.Invoke(Util.Faction);
+    }
+
+    public async Task LoadTestUser(int userId)
+    {
+        var loadTestUserPacket = new LoadTestUserPacketRequired{ UserId = userId };
+        var task = _webService.SendWebRequestAsync<LoadTestUserPacketResponse>(
+            "UserAccount/LoadTestUser", "POST", loadTestUserPacket);
+        
+        await task;
+        
+        _tokenService.SaveAccessToken(task.Result.AccessToken);
+        _tokenService.SaveRefreshToken(task.Result.RefreshToken);
     }
 }

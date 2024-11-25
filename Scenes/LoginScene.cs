@@ -7,10 +7,6 @@ using Zenject;
 
 public class LoginScene : BaseScene
 {
-    
-    private float _verticalSpeed = 500.0f;
-    private float _destPos;
-    private RectTransform _rtBoard;
 
     protected override void Init()
     {
@@ -18,18 +14,6 @@ public class LoginScene : BaseScene
         
         SceneType = Define.Scene.Login;
         Managers.UI.ShowSceneUI<UI_Login>();
-        
-        _rtBoard = GameObject.Find("LoginBoard").GetComponent<RectTransform>();
-        _destPos = _rtBoard.anchoredPosition.y;
-        _rtBoard.anchoredPosition = Vector2.up * _rtBoard.rect.height;
-    }
-
-    void Update()
-    {
-        if (_rtBoard.anchoredPosition.y > _destPos)
-        {
-            _rtBoard.anchoredPosition += Vector2.down * (_verticalSpeed * Time.deltaTime);
-        }
     }
     
     public override void Clear()

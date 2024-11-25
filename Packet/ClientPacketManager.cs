@@ -25,6 +25,8 @@ class PacketManager
 	{		
 		_onRecv.Add((ushort)MessageId.SEnterGame, MakePacket<S_EnterGame>);
 		_handler.Add((ushort)MessageId.SEnterGame, PacketHandler.S_EnterGameHandler);		
+		_onRecv.Add((ushort)MessageId.SConnectSession, MakePacket<S_ConnectSession>);
+		_handler.Add((ushort)MessageId.SConnectSession, PacketHandler.S_ConnectSessionHandler);		
 		_onRecv.Add((ushort)MessageId.SLeaveGame, MakePacket<S_LeaveGame>);
 		_handler.Add((ushort)MessageId.SLeaveGame, PacketHandler.S_LeaveGameHandler);		
 		_onRecv.Add((ushort)MessageId.SSpawn, MakePacket<S_Spawn>);
@@ -107,10 +109,10 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SSetBaseSkillCost, PacketHandler.S_SetBaseSkillCostHandler);		
 		_onRecv.Add((ushort)MessageId.SSendWarningInGame, MakePacket<S_SendWarningInGame>);
 		_handler.Add((ushort)MessageId.SSendWarningInGame, PacketHandler.S_SendWarningInGameHandler);		
-		_onRecv.Add((ushort)MessageId.SShowResultScene, MakePacket<S_ShowResultScene>);
-		_handler.Add((ushort)MessageId.SShowResultScene, PacketHandler.S_ShowResultSceneHandler);		
 		_onRecv.Add((ushort)MessageId.SShowResultPopup, MakePacket<S_ShowResultPopup>);
-		_handler.Add((ushort)MessageId.SShowResultPopup, PacketHandler.S_ShowResultPopupHandler);
+		_handler.Add((ushort)MessageId.SShowResultPopup, PacketHandler.S_ShowResultPopupHandler);		
+		_onRecv.Add((ushort)MessageId.SMatchMakingSuccess, MakePacket<S_MatchMakingSuccess>);
+		_handler.Add((ushort)MessageId.SMatchMakingSuccess, PacketHandler.S_MatchMakingSuccessHandler);
 	}
 
 	public void OnRecvPacket(PacketSession session, ArraySegment<byte> buffer)

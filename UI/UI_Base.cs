@@ -75,6 +75,22 @@ public abstract class UI_Base : MonoBehaviour
                 dict.Add(txt.name, txt);
             }
         }
+        else if (typeof(T) == typeof(TMP_InputField))
+        {
+            for (int i = 0; i < Objects[typeof(T)].Length; i++)
+            {
+                GameObject input = GetTextInput(i).gameObject;
+                dict.Add(input.name, input);
+            }
+        }
+        else if (typeof(T) == typeof(Toggle))
+        {
+            for (int i = 0; i < Objects[typeof(T)].Length; i++)
+            {
+                GameObject toggle = GetToggle(i).gameObject;
+                dict.Add(toggle.name, toggle);
+            }
+        }
         
         Objects.Clear();
     }
@@ -102,6 +118,7 @@ public abstract class UI_Base : MonoBehaviour
     protected TMP_InputField GetTextInput(int idx) { return Get<TMP_InputField>(idx); }
     protected Button GetButton(int idx) { return Get<Button>(idx); }
     protected Image GetImage(int idx) { return Get<Image>(idx); }
+    protected Toggle GetToggle(int idx) { return Get<Toggle>(idx); }
 
     public static void BindEvent(GameObject go, Action<PointerEventData> action,
         Define.UIEvent type = Define.UIEvent.Click)

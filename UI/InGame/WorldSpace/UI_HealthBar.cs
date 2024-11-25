@@ -31,6 +31,7 @@ public class UI_HealthBar : MonoBehaviour
         switch (type)
         {
             case GameObjectType.Fence:
+            case GameObjectType.Portal:
                 var sizeX = gameObject.GetComponent<BoxCollider>().size.x;
                 _sliderRect.localScale = new Vector3(0.005f * sizeX, 0.01f, 0.01f);
                 break;
@@ -46,6 +47,8 @@ public class UI_HealthBar : MonoBehaviour
 
     void Update()
     {
+        if (_camera == null) return;
+        
         if (_cc.ShieldAdd <= 0)
         {
             _shieldSlider.value = 0;
@@ -60,16 +63,16 @@ public class UI_HealthBar : MonoBehaviour
         }
         
         _slider.rotation = _camera.transform.rotation;
-        float ratio = _cc.Hp / (float)_cc.MaxHp * 100;
+        float ratio = _cc.Hp / (float)_cc.MaxHp;
         _hpSlider.value = ratio;
-        _slider.gameObject.SetActive(ratio <= 99.8f || _shieldSlider.value > 0);
+        _slider.gameObject.SetActive(ratio <= 0.9999f || _shieldSlider.value > 0);
         
         switch (ratio)
         {
-            case > 70.0f:
+            case > 0.7f:
                 _hpSliderFill.color = Color.green;
                 break;
-            case < 30.0f:
+            case < 0.3f:
                 _hpSliderFill.color = Color.red;
                 break;
             default:

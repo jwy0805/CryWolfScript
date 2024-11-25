@@ -11,8 +11,9 @@ using UnityEngine;
 
 public class NetworkManager
 {
-    private readonly ServerSession _session = new();
-    // private readonly int _environment = 0;    // 0 => Local, 1 => Server
+    private ServerSession _session = new();
+    
+    public Env Environment => Env.Local;
 
     public void Send(IMessage packet)
     {
@@ -32,12 +33,35 @@ public class NetworkManager
     public async void ConnectGameSession(bool test = false)
     {
         // DNS (Domain Name System)
-        var host = Dns.GetHostName();
-        var ipHost = await Dns.GetHostEntryAsync(host); 
-        var ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.ToString().Contains("172."));
+        string host;
+        int port;
+        IPHostEntry ipHost;
+        IPAddress ipAddress;
+        
+        switch (Environment)
+        {
+            case Env.Local:
+                host = Dns.GetHostName();
+                port = 7777;
+                ipHost = await Dns.GetHostEntryAsync(host);
+                ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.ToString().Contains("172."));
+                break;
+            case Env.Dev:
+                host = "hamonstudio.net";
+                port = 7780;
+                ipHost = await Dns.GetHostEntryAsync(host);
+                ipAddress = ipHost.AddressList.FirstOrDefault();
+                break;
+            case Env.Stage:
+            case Env.Prod:
+            default:
+                return;
+        }
+        
         if (ipAddress == null) return;
         Debug.Log(ipAddress);
-        var endPointLocal = new IPEndPoint(ipAddress, 7777);
+        var endPointLocal = new IPEndPoint(ipAddress, port);
+        _session = new ServerSession();
         new Connector().Connect(endPointLocal, () => _session, test);
     }
     

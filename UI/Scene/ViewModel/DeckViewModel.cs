@@ -34,7 +34,7 @@ public class DeckViewModel
         var deckPacket = new GetInitDeckPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            Environment = _webService.Environment
+            Environment = Managers.Network.Environment
         };
         
         var deckTask = _webService.SendWebRequestAsync<GetInitDeckPacketResponse>(
@@ -44,14 +44,17 @@ public class DeckViewModel
         var deckResponse = deckTask.Result;
         if (deckResponse.GetDeckOk == false) return;
 
+        User.Instance.AllDeckSheep.Clear();
+        User.Instance.AllDeckWolf.Clear();
+        
         foreach (var deckInfo in deckResponse.DeckList)
         {
             _userService.LoadDeck(deckInfo);
         }
         
         _userService.LoadBattleSetting(deckResponse.BattleSetting);
-        
         _userService.BindDeck();
+        
         OnDeckInitialized?.Invoke(Util.Faction);
     }
 

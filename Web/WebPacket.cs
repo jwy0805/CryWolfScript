@@ -8,6 +8,16 @@ using UnityEngine;
 // ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable CollectionNeverUpdated.Global
 
+public class UserInfo
+{
+    public string UserName { get; set; }
+    public int Level { get; set; }
+    public int Exp { get; set; }
+    public int RankPoint { get; set; }
+    public int Gold { get; set; }
+    public int Spinel { get; set; }
+}
+
 public class ProductInfo
 {
     public int Id { get; set; }
@@ -132,6 +142,18 @@ public class UnitMaterialInfo
     public List<OwnedMaterialInfo> Materials { get; set; }
 }
 
+public class ValidateNewAccountPacketRequired
+{
+    public string UserAccount { get; set; }
+    public string Password { get; set; }
+}
+
+public class ValidateNewAccountPacketResponse
+{
+    public bool ValidateOk { get; set; }
+    public int ErrorCode { get; set; }
+}
+
 public class CreateUserAccountPacketRequired
 {
     public string UserAccount { get; set; }
@@ -160,7 +182,7 @@ public class LoginUserAccountPacketResponse
 public class ChangeActPacketRequired
 {
     public string AccessToken { get; set; }
-    public UserAct Act { get; set; }
+    public int SessionId { get; set; }
     public Faction Faction { get; set; }
     public int MapId { get; set; }
 }
@@ -168,6 +190,39 @@ public class ChangeActPacketRequired
 public class ChangeActPacketResponse
 {
     public bool ChangeOk { get; set; }
+}
+
+public class ChangeActTestPacketRequired
+{
+    public string AccessToken { get; set; }
+    public int SessionId { get; set; }
+    public Faction Faction { get; set; }
+    public int MapId { get; set; }
+}
+
+public class ChangeActTestPacketResponse
+{
+    public bool ChangeOk { get; set; }
+}
+
+public class CancelMatchPacketRequired
+{
+    public string AccessToken { get; set; }
+}
+
+public class CancelMatchPacketResponse
+{
+    public bool CancelOk { get; set; }
+}
+
+public class SurrenderPacketRequired
+{
+    public string AccessToken { get; set; }
+}
+
+public class SurrenderPacketResponse
+{
+    public bool SurrenderOk { get; set; }
 }
 
 public class LoadInfoPacketRequired
@@ -185,6 +240,40 @@ public class LoadInfoPacketResponse
     public List<MaterialInfo> MaterialInfos { get; set; }
     public List<ReinforcePointInfo> ReinforcePoints { get; set; }
     public List<UnitMaterialInfo> CraftingMaterials { get; set; }
+}
+
+public class LoadUserInfoPacketRequired
+{
+    public string AccessToken { get; set; }
+}
+
+public class LoadUserInfoPacketResponse
+{
+    public bool LoadUserInfoOk { get; set; }
+    public UserInfo UserInfo { get; set; }
+}
+
+public class LoadTestUserPacketRequired
+{
+    public int UserId { get; set; }
+}
+
+public class LoadTestUserPacketResponse
+{
+    public bool LoadTestUserOk { get; set; }
+    public string AccessToken { get; set; }
+    public string RefreshToken { get; set; }
+}
+
+public class UpdateUserInfoPacketRequired
+{
+    public string AccessToken { get; set; }
+    public UserInfo UserInfo { get; set; }
+}
+
+public class UpdateUserInfoPacketResponse
+{
+    public bool UpdateUserInfoOk { get; set; }
 }
 
 public class RefreshTokenRequired

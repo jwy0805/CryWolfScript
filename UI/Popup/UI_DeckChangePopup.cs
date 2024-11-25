@@ -28,11 +28,6 @@ public class UI_DeckChangePopup : UI_Popup
     {
         ExitButton,
         EnterButton,
-        DeckButton1,
-        DeckButton2,
-        DeckButton3,
-        DeckButton4,
-        DeckButton5,
     }
 
     private enum Texts
@@ -90,10 +85,6 @@ public class UI_DeckChangePopup : UI_Popup
                 _deckVm.UpdateDeck(card, SelectedCard);
                 Managers.UI.ShowPopupUI<UI_DeckChangeScrollPopup>();
             });
-            
-            cardFrame.TryGetComponent(out RectTransform rectTransform);
-            rectTransform.anchorMax = new Vector2(1, 1);
-            rectTransform.anchorMin = new Vector2(0, 0);
         }
     }
 
@@ -102,8 +93,8 @@ public class UI_DeckChangePopup : UI_Popup
         var parent = GetImage((int)Images.CardPanel).transform;
         var cardFrame = Util.GetCardResources<UnitId>(SelectedCard, parent);
         cardFrame.TryGetComponent(out RectTransform rectTransform);
-        rectTransform.anchorMax = new Vector2(1, 1);
-        rectTransform.anchorMin = new Vector2(0, 0);
+        rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
     }
     
     private void ClosePopup(PointerEventData data)

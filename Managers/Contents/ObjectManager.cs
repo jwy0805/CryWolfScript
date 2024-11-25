@@ -31,16 +31,6 @@ public class ObjectManager
                 if (myPlayer)
                 {
                     var isSheep = Util.Faction == Faction.Sheep;
-                    var battleSetting = User.Instance.BattleSetting;
-                    var enterPacket = new C_EnterGame
-                    {
-                        IsSheep = isSheep,
-                        CharacterId = battleSetting.CharacterInfo.Id,
-                        AssetId = isSheep ? battleSetting.SheepInfo.Id : battleSetting.EnchantInfo.Id
-                    };
-                
-                    Managers.Network.Send(enterPacket);
-                    
                     var controller = go.AddComponent<MyPlayerController>();
                     Object.FindObjectOfType<SceneContext>().Container.Inject(controller);
                     
@@ -86,20 +76,10 @@ public class ObjectManager
                 else
                 {
                     var isSheep = Util.Faction != Faction.Sheep;
-                    var enterPacket = new C_EnterGameNpc
-                    {
-                        IsSheep = isSheep,
-                        CharacterId = 2001,
-                        AssetId = isSheep ? 901 : 1001
-                    };
-                
-                    Managers.Network.Send(enterPacket);
-                    
-                    go.AddComponent<PlayerController>();
+                    var pc = go.GetOrAddComponent<PlayerController>();
                     go.name = info.Name;
                     _objects.Add(info.ObjectId, go);
                     
-                    var pc = go.GetComponent<PlayerController>();
                     pc.Id = info.ObjectId;
                     pc.PosInfo = info.PosInfo;
                     pc.Faction = isSheep ? Faction.Sheep : Faction.Wolf;

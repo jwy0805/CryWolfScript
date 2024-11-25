@@ -79,12 +79,13 @@ public class UI_GameSingleWay : UI_Game
     // Set the selected units in the main lobby to the log bar
     private void SetLog()
     {   
-        for (var i = 0; i < Util.Deck.UnitsOnDeck.Length; i++)
+        var deck = Util.Faction == Faction.Sheep ? User.Instance.DeckSheep : User.Instance.DeckWolf;
+        for (var i = 0; i < deck.UnitsOnDeck.Length ; i++)
         {
             var prefab = Managers.Resource.InstantiateFromContainer(
                 "UI/InGame/SkillPanel/Portrait", _dictPortrait[$"UnitPanel{i}"].transform);
-            var level = Util.Deck.UnitsOnDeck[i].Level;
-            var initPortraitId = (int)Util.Deck.UnitsOnDeck[i].Id - (level - 1);
+            var level = deck.UnitsOnDeck[i].Level;
+            var initPortraitId = deck.UnitsOnDeck[i].Id - (level - 1);
             var portrait = prefab.GetComponent<UI_Portrait>();
             portrait.UnitId = (UnitId)initPortraitId;
             
@@ -213,6 +214,11 @@ public class UI_GameSingleWay : UI_Game
         Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
     }
 
+    private void OnMenuClicked(PointerEventData data)
+    {
+        Managers.UI.ShowPopupUI<UI_GameMenuPopup>();
+    }
+    
     #endregion
     
     protected override void BindObjects()
@@ -222,6 +228,11 @@ public class UI_GameSingleWay : UI_Game
         Bind<TextMeshProUGUI>(typeof(Texts));
         
         SetLog();
+    }
+
+    protected override void InitButtonEvents()
+    {
+        GetButton((int)Buttons.MenuButton).gameObject.BindEvent(OnMenuClicked);
     }
     
     protected override void InitUI()

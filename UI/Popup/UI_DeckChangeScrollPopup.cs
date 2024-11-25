@@ -141,9 +141,9 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         {
             var cardFrame = Util.GetCardResources<UnitId>(unit, parent, OnDeckCardClicked);
             cardFrame.TryGetComponent(out RectTransform rectTransform);
-            rectTransform.anchorMax = new Vector2(1, 1);
-            rectTransform.anchorMin = new Vector2(0, 0);
         }
+        
+        _deckVm.ResetDeckUI(Util.Faction);
     }
 
     private void SetCollectionInPopup()

@@ -8,7 +8,8 @@ public class Connector
     private Func<Session> _sessionFactory;
 
     public void Connect(IPEndPoint endPoint, Func<Session> sessionFactory, bool test, int count = 1)
-    {   // 이 시점에서 서버에 연결 시도
+    {   
+        // 이 시점에서 서버에 연결 시도
         for (int i = 0; i < count; i++)
         {
             Socket socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);

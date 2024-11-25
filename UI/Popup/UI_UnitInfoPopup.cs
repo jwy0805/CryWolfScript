@@ -431,8 +431,7 @@ public class UI_UnitInfoPopup : UI_Popup
         var skillDescriptionGoldText = GetText((int)Texts.SkillDescriptionGoldText);
         var skillName = data.pointerPress.name.Replace("Button", "");
         var skillNumber = Managers.Data.SkillDict.Values
-            .FirstOrDefault(skill => skill.Id == (int)skillName.ToEnum<Skill>())?
-            .Id;
+            .FirstOrDefault(skill => skill.Id == (int)skillName.ToEnum<Skill>())?.Id;
         
         if (skillNumber == null) return;
         Managers.Data.SkillDict.TryGetValue((int)skillNumber, out var skillData);

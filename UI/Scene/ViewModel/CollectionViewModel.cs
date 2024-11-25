@@ -31,9 +31,8 @@ public class CollectionViewModel
         #pragma warning disable CS4014
         LoadInfoAsync();
         #pragma warning restore CS4014
-        
-        await InitializeCards();
-        await Task.WhenAll(InitializeSheep(), InitializeEnchants(), InitializeCharacters(), InitializeMaterials());
+        await Task.WhenAll(
+            InitializeCards(), InitializeSheep(), InitializeEnchants(), InitializeCharacters(), InitializeMaterials());
         
         OnCardInitialized?.Invoke(Util.Faction);
     }
@@ -66,7 +65,7 @@ public class CollectionViewModel
         var cardPacket = new InitCardsPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            Environment = _webService.Environment
+            Environment = Managers.Network.Environment
         };
         
         var cardTask = _webService.SendWebRequestAsync<InitCardsPacketResponse>(
@@ -81,16 +80,9 @@ public class CollectionViewModel
             _tokenService.SaveAccessToken(cardResponse.AccessToken);
             _tokenService.SaveRefreshToken(cardResponse.RefreshToken);
         }
-        
-        foreach (var unitInfo in cardResponse.OwnedCardList)
-        {
-            _userService.LoadOwnedUnit(unitInfo);
-        }
 
-        foreach (var unitInfo in cardResponse.NotOwnedCardList)
-        {
-            _userService.LoadNotOwnedUnit(unitInfo);
-        }
+        _userService.LoadOwnedUnit(cardResponse.OwnedCardList);
+        _userService.LoadNotOwnedUnit(cardResponse.NotOwnedCardList);
     }
 
     private async Task InitializeSheep()
@@ -98,7 +90,7 @@ public class CollectionViewModel
         var sheepPacket = new InitSheepPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            Environment = _webService.Environment
+            Environment = Managers.Network.Environment
         };
         
         var sheepTask = _webService.SendWebRequestAsync<InitSheepPacketResponse>(
@@ -113,16 +105,9 @@ public class CollectionViewModel
             _tokenService.SaveAccessToken(sheepResponse.AccessToken);
             _tokenService.SaveRefreshToken(sheepResponse.RefreshToken);
         }
-        
-        foreach (var sheepInfo in sheepResponse.OwnedSheepList)
-        {
-            _userService.LoadOwnedSheep(sheepInfo);
-        }
 
-        foreach (var sheepInfo in sheepResponse.NotOwnedSheepList)
-        {
-            _userService.LoadNotOwnedSheep(sheepInfo);
-        }
+        _userService.LoadOwnedSheep(sheepResponse.OwnedSheepList);
+        _userService.LoadNotOwnedSheep(sheepResponse.NotOwnedSheepList);
     }
 
     private async Task InitializeEnchants()
@@ -130,7 +115,7 @@ public class CollectionViewModel
         var enchantPacket = new InitEnchantPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            Environment = _webService.Environment
+            Environment = Managers.Network.Environment
         };
         
         var enchantTask = _webService.SendWebRequestAsync<InitEnchantPacketResponse>(
@@ -145,16 +130,9 @@ public class CollectionViewModel
             _tokenService.SaveAccessToken(enchantResponse.AccessToken);
             _tokenService.SaveRefreshToken(enchantResponse.RefreshToken);
         }
-        
-        foreach (var enchantInfo in enchantResponse.OwnedEnchantList)
-        {
-            _userService.LoadOwnedEnchant(enchantInfo);
-        }
-        
-        foreach (var enchantInfo in enchantResponse.NotOwnedEnchantList)
-        {
-            _userService.LoadNotOwnedEnchant(enchantInfo);
-        }
+
+        _userService.LoadOwnedEnchant(enchantResponse.OwnedEnchantList);
+        _userService.LoadNotOwnedEnchant(enchantResponse.NotOwnedEnchantList);
     }
 
     private async Task InitializeCharacters()
@@ -162,7 +140,7 @@ public class CollectionViewModel
         var characterPacket = new InitCharacterPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            Environment = _webService.Environment
+            Environment = Managers.Network.Environment
         };
         
         var characterTask = _webService.SendWebRequestAsync<InitCharacterPacketResponse>(
@@ -177,16 +155,9 @@ public class CollectionViewModel
             _tokenService.SaveAccessToken(characterResponse.AccessToken);
             _tokenService.SaveRefreshToken(characterResponse.RefreshToken);
         }
-        
-        foreach (var characterInfo in characterResponse.OwnedCharacterList)
-        {
-            _userService.LoadOwnedCharacter(characterInfo);
-        }
-        
-        foreach (var characterInfo in characterResponse.NotOwnedCharacterList)
-        {
-            _userService.LoadNotOwnedCharacter(characterInfo);
-        }
+
+        _userService.LoadOwnedCharacter(characterResponse.OwnedCharacterList);
+        _userService.LoadNotOwnedCharacter(characterResponse.NotOwnedCharacterList);
     }
     
     private async Task InitializeMaterials()
@@ -194,7 +165,7 @@ public class CollectionViewModel
         var materialPacket = new InitMaterialPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            Environment = _webService.Environment
+            Environment = Managers.Network.Environment
         };
         
         var materialTask = _webService.SendWebRequestAsync<InitMaterialPacketResponse>(
@@ -210,10 +181,7 @@ public class CollectionViewModel
             _tokenService.SaveRefreshToken(materialResponse.RefreshToken);
         }
         
-        foreach (var materialInfo in materialResponse.OwnedMaterialList)
-        {
-            _userService.LoadOwnedMaterial(materialInfo);
-        }
+        _userService.LoadOwnedMaterial(materialResponse.OwnedMaterialList);
     }
     
     public int GetLevelFromUiObject(UnitId unitId)

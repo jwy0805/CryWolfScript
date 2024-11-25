@@ -1,3 +1,4 @@
+using Google.Protobuf.Protocol;
 using UnityEngine;
 
 public class GameScene : BaseScene
@@ -21,5 +22,7 @@ public class GameScene : BaseScene
     {
         var subject = new GameObject { name = "Subject", tag = "SkillSubject" };
         subject.GetOrAddComponent<SkillSubject>();
+        
+        Managers.Network.Send(new C_StartGameScene());
     }
 }

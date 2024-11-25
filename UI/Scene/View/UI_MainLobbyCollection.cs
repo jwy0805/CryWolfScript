@@ -42,13 +42,11 @@ public partial class UI_MainLobby
         var deck = _deckVm.GetDeck(faction);
         var deckImage = GetImage((int)Images.Deck);
         var lobbyDeckImage = GetImage((int)Images.LobbyDeck);
-        var deckParent = Util.FindChild(gameObject, deckImage.name, true, true).transform;
-        var lobbyDeckParent = Util.FindChild(gameObject, lobbyDeckImage.name, true, true).transform;
-        
+            
         foreach (var unit in deck.UnitsOnDeck)
         {
-            Util.GetCardResources<UnitId>(unit, deckParent, OnCardClicked);
-            Util.GetCardResources<UnitId>(unit, lobbyDeckParent);
+            Util.GetCardResources<UnitId>(unit, deckImage.transform, OnCardClicked);
+            Util.GetCardResources<UnitId>(unit, lobbyDeckImage.transform);
         }
 
         var assetParent = GetImage((int)Images.BattleSettingPanel).transform;
@@ -123,7 +121,7 @@ public partial class UI_MainLobby
             {
                 var cardFrame = 
                     Util.GetCardResources<SheepId>(sheep, _assetNoCollection, OnCardClicked);
-                var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
+                var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
                 var path = $"Sprites/Portrait/{((SheepId)sheep.Id).ToString()}_gray";
                 cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
             }
@@ -141,7 +139,7 @@ public partial class UI_MainLobby
             {
                 var cardFrame = 
                     Util.GetCardResources<EnchantId>(enchant, _assetNoCollection, OnCardClicked);
-                var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
+                var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
                 var path = $"Sprites/Portrait/{((EnchantId)enchant.Id).ToString()}_gray";
                 cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
             }
@@ -159,7 +157,7 @@ public partial class UI_MainLobby
         {
             var cardFrame = 
                 Util.GetCardResources<CharacterId>(character, _characterNoCollection, OnCardClicked);
-            var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
+            var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
             var path = $"Sprites/Portrait/{((CharacterId)character.Id).ToString()}_gray";
             cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
         }

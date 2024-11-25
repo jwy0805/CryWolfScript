@@ -8,13 +8,14 @@ public class PoolManager
     #region Pool
     class Pool
     {
+        private readonly Stack<Poolable> _poolStack = new();
+
         public GameObject Original { get; private set; }
         public Transform Root { get; set; }
-
-        private Stack<Poolable> _poolStack = new Stack<Poolable>();
-
+        
         public void Init(GameObject original, int count = 7)
         {
+            _poolStack.Clear();
             Original = original;
             Root = new GameObject().transform;
             Root.name = $"{original.name}_Root";
@@ -44,9 +45,7 @@ public class PoolManager
 
         public Poolable Pop(Transform parent)
         {
-            Poolable poolable;
-            
-            poolable = _poolStack.Count > 0 ? _poolStack.Pop() : Create();
+            var poolable = _poolStack.Count > 0 ? _poolStack.Pop() : Create();
             poolable.gameObject.SetActive(true);
             
             // Initializing
@@ -54,10 +53,10 @@ public class PoolManager
             if (poolable.gameObject.TryGetComponent(out BaseController bc)) bc.State = State.Idle;
             
             // DontDestroyOnLoad 해제 용도
-            if (parent == null)
-                poolable.transform.parent = GameObject.FindObjectOfType<Managers>().transform;
+            // if (parent == null)
+            //     poolable.transform.parent = Object.FindObjectOfType<Managers>().transform;
 
-            poolable.transform.parent = parent;
+            poolable.transform.parent = parent == null ? null : parent;
             poolable.IsUsing = true;
 
             return poolable;
@@ -72,8 +71,7 @@ public class PoolManager
     {
         if (_root == null)
         {
-            _root = new GameObject() { name = "@Pool_Root" }.transform;
-            Object.DontDestroyOnLoad(_root);
+            _root = new GameObject { name = "@Pool_Root" }.transform;
         }
     }
 
@@ -91,7 +89,7 @@ public class PoolManager
         string name = poolable.gameObject.name;
         if (_pool.ContainsKey(name) == false)
         {
-            GameObject.Destroy(poolable.gameObject);
+            Object.Destroy(poolable.gameObject);
             return;
         }
         
@@ -108,16 +106,17 @@ public class PoolManager
 
     public GameObject GetOriginal(string name)
     {
-        if (_pool.ContainsKey(name) == false)
-            return null;
-        return _pool[name].Original;
+        return _pool.TryGetValue(name, out var value) == false ? null : value.Original;
     }
 
     public void Clear()
     {
-        foreach (Transform child in _root)
-            GameObject.Destroy(child.gameObject);
-
         _pool.Clear();
+        if (_root == null) return;
+        
+        foreach (Transform child in _root)
+        {
+            Object.Destroy(child.gameObject);
+        }
     }
 }

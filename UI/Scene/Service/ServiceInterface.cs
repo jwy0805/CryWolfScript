@@ -5,25 +5,27 @@ using Google.Protobuf.Protocol;
 
 public interface IUserService
 {
-    void LoadOwnedUnit(OwnedUnitInfo units);
-    void LoadNotOwnedUnit(UnitInfo unitInfo);
-    void LoadOwnedSheep(OwnedSheepInfo sheepInfo);
-    void LoadNotOwnedSheep(SheepInfo sheepInfo);
-    void LoadOwnedEnchant(OwnedEnchantInfo enchantInfo);
-    void LoadNotOwnedEnchant(EnchantInfo enchantInfo);
-    void LoadOwnedCharacter(OwnedCharacterInfo characterInfo);
-    void LoadNotOwnedCharacter(CharacterInfo characterInfo);
-    void LoadOwnedMaterial(OwnedMaterialInfo materialInfo);
+    void LoadOwnedUnit(List<OwnedUnitInfo> units);
+    void LoadNotOwnedUnit(List<UnitInfo> units);
+    void LoadOwnedSheep(List<OwnedSheepInfo> sheepInfo);
+    void LoadNotOwnedSheep(List<SheepInfo> sheepInfo);
+    void LoadOwnedEnchant(List<OwnedEnchantInfo> enchantInfo);
+    void LoadNotOwnedEnchant(List<EnchantInfo> enchantInfo);
+    void LoadOwnedCharacter(List<OwnedCharacterInfo> characterInfo);
+    void LoadNotOwnedCharacter(List<CharacterInfo> characterInfo);
+    void LoadOwnedMaterial(List<OwnedMaterialInfo> materialInfo);
     void LoadBattleSetting(BattleSettingInfo battleSettingInfo);
     void LoadDeck(DeckInfo deckInfo);
     void SaveDeck(DeckInfo deckInfo);
+    Task LoadUserInfo();
     void BindDeck();
+    Task LoadTestUser(int userId);
     event Action<Faction> InitDeckButton;
+    UserInfo UserInfo { get; set; }
 }
 
 public interface IWebService
 {
-    Env Environment { get; set; }
     Task<T> SendWebRequestAsync<T>(string url, string method, object obj);
     Task SendWebRequest<T>(string url, string method, object obj, Action<T> responseAction);
 }

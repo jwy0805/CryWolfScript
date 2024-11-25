@@ -28,11 +28,7 @@ public class ServerSession : PacketSession
             PacketQueue.Instance.Push(i, m); 
         };
         
-        var sessionPacket = new C_SetSession
-        {
-            UserAccount = User.Instance.UserAccount, Faction = Util.Faction, Test = test
-        };
-        Send(sessionPacket);
+        // The earliest a packet can be sent from the client to the server.
     }
 
     public override void OnDisconnected(EndPoint endPoint)

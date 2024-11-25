@@ -64,10 +64,6 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private SelectModeEnums _selectMode;
     private GameModeEnums _gameMode;
     private ArrangeModeEnums _arrangeMode = ArrangeModeEnums.All;
-
-    private Color ThemeColor => Util.Faction == Faction.Sheep
-        ? new Color(39 / 255f, 107 / 255f, 214 / 255f)
-        : new Color(133 / 255f, 29 / 255f, 72 / 255f);
     
     private SelectModeEnums SelectMode
     {
@@ -109,10 +105,10 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
             _cardPopup = value;
         }
     }
-
+    
     #region Enums
 
-    private enum GameModeEnums
+    public enum GameModeEnums
     {
         RankGame = 0,
         FriendlyMatch = 1,
@@ -189,10 +185,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     {
         GoldText,
         SpinelText,
-        
-        RankScoreText,
-        RankingText,
-        RankNameText,
+        LevelText,
+        ExpText,
         
         CraftCountText,
         
@@ -211,15 +205,14 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         
         FactionButtonIcon,
         
-        FriendlyMatchPanel,
         RankGamePanel,
+        FriendlyMatchPanel,
         SinglePlayPanel,
         
         ShopBackground,
         ItemBackground,
-        
-        RankStar,
-        RankTextIcon,
+        EventBackground,
+        ClanBackground,
         
         DeckScrollView,
         CollectionScrollView,
@@ -335,7 +328,6 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         BindObjects();
         InitButtonEvents();
 
-        Util.Faction = Faction.Sheep;
 #pragma warning disable CS4014 // 이 호출을 대기하지 않으므로 호출이 완료되기 전에 현재 메서드가 계속 실행됩니다.
         InitMainLobby();
 #pragma warning restore CS4014 // 이 호출을 대기하지 않으므로 호출이 완료되기 전에 현재 메서드가 계속 실행됩니다.
@@ -599,7 +591,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     
     private void OnPlayButtonClicked(PointerEventData data)
     {
-        
+        _lobbyVm.OnPlayButtonClicked(_gameMode);
     }
 
     private void OnModeSelectButtonClicked(PointerEventData data, int direction)
@@ -719,6 +711,14 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     {
         var activeUis = new[] { "CraftingBackButtonPanel", "CraftingCraftPanel", "MaterialScrollView" };
         SetActivePanels(_craftingUiDict, activeUis);
+        
+        if (_selectedCard == null || _selectedCardForCrafting == null)
+        {
+            var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
+            popup.SetWarning("카드를 선택해주세요.");
+            return;
+        }
+        
         InitCraftPanel();
     }
     
@@ -960,16 +960,11 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     
     private async Task InitMainLobby()
     {
-        GetImage((int)Images.TopPanel).color = ThemeColor;
-        GetImage((int)Images.GameImageGlow).color = ThemeColor;
-        
+        SwitchLobbyUI(Util.Faction);
         SetObjectSize(GetButton((int)Buttons.FactionButton).gameObject, 0.95f);
 
         // 이미지 크기 조정을 위해 캔버스 강제 업데이트
         Canvas.ForceUpdateCanvases();
-        SetObjectSize(GetImage((int)Images.RankStar).gameObject, 0.9f);
-        SetObjectSize(GetImage((int)Images.RankTextIcon).gameObject, 0.25f);
-        
         SetBottomButton("GameButton");
         
         // Init GameMode
@@ -982,18 +977,32 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
             iconRect.anchorMin = new Vector2(iconRect.anchorMin.x, 0.66f);
             iconRect.anchorMax = new Vector2(iconRect.anchorMax.x, 0.66f);
         }
-        
+
+        // Test
+        await _userService.LoadTestUser(userId: 1);
+
         // MainLobby_Item Setting
-        await InitCollection();
-        await InitShop();
+        await Task.WhenAll(InitCollection(), InitShop(), _userService.LoadUserInfo());
+        
+        BindUserInfo();
     }
 
+    private void BindUserInfo()
+    {
+        var userInfo = _userService.UserInfo;
+        GetText((int)Texts.GoldText).text = userInfo.Gold.ToString();
+        GetText((int)Texts.SpinelText).text = userInfo.Spinel.ToString();
+        GetText((int)Texts.LevelText).text = userInfo.Level.ToString();
+    }
+    
     private void SwitchLobbyUI(Faction faction)
     {
-        GetImage((int)Images.TopPanel).color = ThemeColor;
-        GetImage((int)Images.GameImageGlow).color = ThemeColor;
-        GetImage((int)Images.ItemBackground).color = ThemeColor;
-        GetImage((int)Images.ShopBackground).color = ThemeColor;
+        GetImage((int)Images.TopPanel).color = Util.ThemeColor;
+        GetImage((int)Images.GameImageGlow).color = Util.ThemeColor;
+        GetImage((int)Images.ItemBackground).color = Util.ThemeColor;
+        GetImage((int)Images.ShopBackground).color = Util.ThemeColor;
+        GetImage((int)Images.EventBackground).color = Util.ThemeColor;
+        GetImage((int)Images.ClanBackground).color = Util.ThemeColor;
         
         var gamePanelImage = GetImage((int)Images.GamePanelBackground);
         var factionButtonIcon = GetImage((int)Images.FactionButtonIcon);

@@ -125,9 +125,14 @@ public class UI_ProductInfoPopup : UI_Popup
             var productFrame = Managers.Resource.Instantiate(framePath, contentsPanel.transform);
             var countText = Util.FindChild(productFrame, "TextNum", true);
             var layoutElement = productFrame.AddComponent<LayoutElement>();
+            var count = composition.Count;
+            var minCount = composition.MinCount;
+            var maxCount = composition.MaxCount;
+            
             layoutElement.preferredWidth = Screen.width * 0.15f;
             layoutElement.preferredHeight = Screen.height * 0.15f;
-            countText.GetComponent<TextMeshProUGUI>().text = composition.Count.ToString();
+            countText.GetComponent<TextMeshProUGUI>().text = count == 0 
+                ? $"{minCount} - {maxCount}" : composition.Count.ToString();
 
             string productName;
             string path;

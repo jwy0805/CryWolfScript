@@ -42,41 +42,41 @@ public class MyPlayerController : PlayerController
         _cameraObject = GameObject.FindWithTag("CameraFocus");
 
         // Test - Unit Spawn
-        C_Spawn spawnPacket = new()
-        {
-            Type = GameObjectType.Monster,
-            Num = (int)UnitId.Werewolf,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = -1, PosY = 6, PosZ = 14, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(spawnPacket);
-        
-        C_Spawn spawnPacket1 = new()
-        {
-            Type = GameObjectType.Monster,
-            Num = (int)UnitId.Werewolf,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 2, PosY = 6, PosZ = 15, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(spawnPacket1);
-        
-        C_Spawn spawnPacket2 = new()
-        {
-            Type = GameObjectType.Monster,
-            Num = (int)UnitId.Wolf,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 1, PosY = 6, PosZ = 13, Dir = 180 },
-            Way = SpawnWay.North,
-        };
-        Managers.Network.Send(spawnPacket2);
-        
-        C_Spawn spawnPacket3 = new()
-        {
-            Type = GameObjectType.Tower,
-            Num = (int)UnitId.PracticeDummy,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = -1, PosY = 6, PosZ = -6, Dir = 180 },
-            Way = SpawnWay.North,
-        };
-        Managers.Network.Send(spawnPacket3);
+        // C_Spawn spawnPacket = new()
+        // {
+        //     Type = GameObjectType.Monster,
+        //     Num = (int)UnitId.Werewolf,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = -1, PosY = 6, PosZ = 14, Dir = 180 },
+        //     Way = SpawnWay.North
+        // };
+        // Managers.Network.Send(spawnPacket);
+        //
+        // C_Spawn spawnPacket1 = new()
+        // {
+        //     Type = GameObjectType.Monster,
+        //     Num = (int)UnitId.Werewolf,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 2, PosY = 6, PosZ = 15, Dir = 180 },
+        //     Way = SpawnWay.North
+        // };
+        // Managers.Network.Send(spawnPacket1);
+        //
+        // C_Spawn spawnPacket2 = new()
+        // {
+        //     Type = GameObjectType.Monster,
+        //     Num = (int)UnitId.Wolf,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = 1, PosY = 6, PosZ = 13, Dir = 180 },
+        //     Way = SpawnWay.North,
+        // };
+        // Managers.Network.Send(spawnPacket2);
+        //
+        // C_Spawn spawnPacket3 = new()
+        // {
+        //     Type = GameObjectType.Tower,
+        //     Num = (int)UnitId.PracticeDummy,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = -1, PosY = 6, PosZ = -6, Dir = 180 },
+        //     Way = SpawnWay.North,
+        // };
+        // Managers.Network.Send(spawnPacket3);
     }
     
     private void OnMouseEvent(Define.MouseEvent evt)
@@ -107,14 +107,30 @@ public class MyPlayerController : PlayerController
                     var direction = axisYInversion ? currentMousePos.y - pressedY : pressedY - currentMousePos.y;
                     var moveZ = direction * Time.deltaTime * 0.08f;
 
-                    switch (_cameraObject.transform.position.z)
+                    if (Faction == Faction.Sheep)
                     {
-                        case < -12.1f when moveZ < 0:
-                        case > 12.1f when moveZ > 0:
-                            return;
-                        default:
-                            _cameraObject.transform.Translate(0, 0, moveZ);
-                            break;
+                        switch (_cameraObject.transform.position.z)
+                        {
+                            case < -12.1f when moveZ < 0:
+                            case > 12.1f when moveZ > 0:
+                                return;
+                            default:
+                                _cameraObject.transform.Translate(0, 0, moveZ);
+                                break;
+                        }
+                    }
+
+                    if (Faction == Faction.Wolf)
+                    {
+                        switch (_cameraObject.transform.position.z)
+                        {
+                            case < -12.1f when moveZ > 0:
+                            case > 12.1f when moveZ < 0:
+                                return;
+                            default:
+                                _cameraObject.transform.Translate(0, 0, moveZ);
+                                break;
+                        }
                     }
                 }
                 break;

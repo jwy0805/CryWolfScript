@@ -79,7 +79,7 @@ public class CreatureController : BaseController, ISkillObserver
         base.Init();
         SkillSubject = GameObject.Find("Subject").GetComponent<SkillSubject>();
         SkillSubject.AddObserver(this);
-        // Instantiate Health bar
+        // Instantiate Health Circle
         Managers.Resource.Instantiate("WorldObjects/HealthCircle", transform);
         Util.GetOrAddComponent<UI_HealthCircle>(gameObject);
     }

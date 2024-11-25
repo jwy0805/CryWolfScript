@@ -25,6 +25,9 @@ public class LoginViewModel
         set => User.Instance.UserAccount = value;
     }
     public string Password { get; set; }
+    public bool RememberMe { get; set; }
+    public bool ReadPolicy { get; set; }
+    public bool ReadTerms { get; set; }
     
     [Inject]
     public LoginViewModel(IUserService userService, IWebService webService, ITokenService tokenService)
@@ -44,11 +47,10 @@ public class LoginViewModel
                 if (response.LoginOk)
                 {
                     // Login Success
-                    Managers.Scene.LoadScene(Define.Scene.MainLobby);
-                    Managers.Clear();
-                    
                     _tokenService.SaveAccessToken(response.AccessToken);
                     _tokenService.SaveRefreshToken(response.RefreshToken);
+                    
+                    Managers.Scene.LoadScene(Define.Scene.MainLobby);
                 }
                 else
                 {
@@ -59,8 +61,18 @@ public class LoginViewModel
             });
     }
 
+    public void SignIn()
+    {
+        Managers.UI.ShowPopupUI<UI_SignInPopup>();
+    }
+    
     public void SignUp()
     {
         Managers.UI.ShowPopupUI<UI_SignUpPopup>();
+    }
+
+    public void ForgotPassword()
+    {
+        
     }
 }

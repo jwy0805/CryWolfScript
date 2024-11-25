@@ -11,21 +11,20 @@ using UnityEngine.Networking;
 public class WebService : IWebService
 {
     private const string LocalPort = "7270";
-    private const string DevPort = "499";
-    private const string StagePort = "";
-    
-    public Env Environment { get; set; } = Env.Local;
+    private const string DevPort = "443";
+    private const string StagePort = "443";
+    private const string Address = "hamonstudio.net";
 
     private string BaseUrl
     {
         get
         {
-            return Environment switch
+            return Managers.Network.Environment switch
             {
                 Env.Local => $"https://localhost:{LocalPort}/api",
-                Env.Dev => $"https://localhost:{DevPort}/api",
-                Env.Stage => $"https://localhost:{StagePort}/api",
-                Env.Prod => $"https://localhost:{StagePort}/api",
+                Env.Dev => $"https://{Address}/api",
+                Env.Stage => $"https://{Address}:{StagePort}/api",
+                Env.Prod => $"https://{Address}:{StagePort}/api",
                 _ => throw new ArgumentOutOfRangeException()
             };
         }

@@ -18,6 +18,8 @@ public class Card : MonoBehaviour, IAsset, IBeginDragHandler, IDragHandler, IEnd
 
     private void Start()
     {
+        if (Managers.Scene.CurrentScene.GetType() != typeof(MainLobbyScene)) return;
+        
         var panel = GameObject.Find("DeckCollectionPanel");
         _scrollRect = panel.GetComponentInChildren<ScrollRect>();
         
