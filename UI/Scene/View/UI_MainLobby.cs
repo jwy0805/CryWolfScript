@@ -144,6 +144,13 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         ClanButtonFocus,
         
         FactionButton,
+        
+        SettingsButton,
+        FriendsButton,
+        MailButton,
+        MissionButton,
+        GiftButton,
+        
         PlayButton,
         ModeSelectButtonLeft,
         ModeSelectButtonRight,
@@ -587,6 +594,31 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         Util.DestroyAllChildren(GetImage((int)Images.CraftingCardPanel).transform);
         
         SwitchLobbyUI(Util.Faction);
+    }
+
+    private void OnSettingsClicked(PointerEventData data)
+    {
+        
+    }
+    
+    private void OnFriendsClicked(PointerEventData data)
+    {
+        
+    }
+    
+    private void OnMailClicked(PointerEventData data)
+    {
+        
+    }
+    
+    private void OnMissionClicked(PointerEventData data)
+    {
+        
+    }
+    
+    private void OnGiftClicked(PointerEventData data)
+    {
+        
     }
     
     private void OnPlayButtonClicked(PointerEventData data)
