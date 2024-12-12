@@ -101,6 +101,8 @@ public enum ProductId
     RandomKnightMaterialBox,
     RandomNobleKnightMaterialBox,
     RandomBaronMaterialBox,
+    GoldenPass,
+    RandomBaron3Box,
 }
 
 public enum ProductType

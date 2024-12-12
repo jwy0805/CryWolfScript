@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
+using JetBrains.Annotations;
 
 public interface IUserService
 {
@@ -25,7 +26,7 @@ public interface IUserService
 }
 
 public interface IWebService
-{
+{ 
     Task<T> SendWebRequestAsync<T>(string url, string method, object obj);
     Task SendWebRequest<T>(string url, string method, object obj, Action<T> responseAction);
 }
@@ -36,4 +37,23 @@ public interface ITokenService
     void SaveRefreshToken(string refreshToken);
     string GetAccessToken();
     string GetRefreshToken();
+}
+
+public interface ISignalRClient
+{
+    [CanBeNull] Action<FriendRequestPacketResponse> OnFriendRequestNotificationReceived { get; set; }
+    Task Connect();
+    Task JoinLobby(string username);
+    Task LeaveLobby();
+    Task<FriendRequestPacketResponse> SendFriendRequest(FriendRequestPacketRequired required);
+    Task Disconnect();
+}
+
+public interface IPaymentService
+{
+    void Init();
+    void BuyCashProduct(string productId);
+    void BuyProduct(string productId);
+    event Action OnCashPaymentSuccess;
+    event Action OnPaymentSuccess;
 }

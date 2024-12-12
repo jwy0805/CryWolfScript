@@ -100,7 +100,7 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
         var parent = GetImage((int)Images.SelectedCardPanel).transform;
         foreach (Transform child in parent) Destroy(child.gameObject);
         
-        var cardFrame = Util.GetCardResources<TEnum>(SelectedCard, parent, data =>
+        var cardFrame = Managers.Resource.GetCardResources<TEnum>(SelectedCard, parent, data =>
         {
             SelectedCard = data.pointerPress.GetComponent<Card>();
             Changing = true;
@@ -128,7 +128,7 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
 
         foreach (var asset in assets)
         {
-            var cardFrame = Util.GetCardResources<TEnum>(asset, parent, data =>
+            var cardFrame = Managers.Resource.GetCardResources<TEnum>(asset, parent, data =>
             {
                 if (data.pointerPress.TryGetComponent(out Card card) == false) return;
 

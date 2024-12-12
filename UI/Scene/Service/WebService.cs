@@ -10,26 +10,6 @@ using UnityEngine.Networking;
 
 public class WebService : IWebService
 {
-    private const string LocalPort = "7270";
-    private const string DevPort = "443";
-    private const string StagePort = "443";
-    private const string Address = "hamonstudio.net";
-
-    private string BaseUrl
-    {
-        get
-        {
-            return Managers.Network.Environment switch
-            {
-                Env.Local => $"https://localhost:{LocalPort}/api",
-                Env.Dev => $"https://{Address}/api",
-                Env.Stage => $"https://{Address}:{StagePort}/api",
-                Env.Prod => $"https://{Address}:{StagePort}/api",
-                _ => throw new ArgumentOutOfRangeException()
-            };
-        }
-    }
-    
     public async Task<T> SendWebRequestAsync<T>(string url, string method, object obj)
     {
         var tcs = new TaskCompletionSource<T>();
@@ -39,7 +19,7 @@ public class WebService : IWebService
     
     public async Task SendWebRequest<T>(string url, string method, object obj, Action<T> responseAction)
     {
-        var sendUrl = $"{BaseUrl}/{url}";
+        var sendUrl = $"{Managers.Network.BaseUrl}/api/{url}";
         byte[] jsonBytes = null;
         
         if (obj != null)

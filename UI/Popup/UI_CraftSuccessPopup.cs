@@ -60,10 +60,10 @@ public class UI_CraftSuccessPopup : UI_Popup
         var parent = GetImage((int)Images.CardPanel).transform;
         var cardFrame = _craftingVm.CardToBeCrafted.AssetType switch
         {
-            Asset.Unit => Util.GetCardResources<UnitId>(_craftingVm.CardToBeCrafted, parent),
-            Asset.Sheep => Util.GetCardResources<SheepId>(_craftingVm.CardToBeCrafted, parent),
-            Asset.Enchant => Util.GetCardResources<EnchantId>(_craftingVm.CardToBeCrafted, parent),
-            Asset.Character => Util.GetCardResources<CharacterId>(_craftingVm.CardToBeCrafted, parent),
+            Asset.Unit => Managers.Resource.GetCardResources<UnitId>(_craftingVm.CardToBeCrafted, parent),
+            Asset.Sheep => Managers.Resource.GetCardResources<SheepId>(_craftingVm.CardToBeCrafted, parent),
+            Asset.Enchant => Managers.Resource.GetCardResources<EnchantId>(_craftingVm.CardToBeCrafted, parent),
+            Asset.Character => Managers.Resource.GetCardResources<CharacterId>(_craftingVm.CardToBeCrafted, parent),
             _ => null
         };
         

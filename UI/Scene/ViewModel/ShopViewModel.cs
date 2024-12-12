@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ public class ShopViewModel
     private readonly IUserService _userService;
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
+    private readonly IPaymentService _paymentService;
 
     public List<ProductInfo> SpecialPackages;
     public List<ProductInfo> BeginnerPackages;
@@ -24,13 +26,28 @@ public class ShopViewModel
     public List<ProductInfo> SpinelItems;
     
     public ProductInfo SelectedProduct { get; set; }
+    public List<CompositionInfo> ProductsToBeClaimed { get; } = new()
+    {
+        new CompositionInfo { CompositionId = 60, Type = ProductType.None },
+        new CompositionInfo { CompositionId = 61, Type = ProductType.None },
+        new CompositionInfo { CompositionId = 4001, Type = ProductType.Gold },
+        new CompositionInfo { CompositionId = 4002, Type = ProductType.Spinel },
+        new CompositionInfo { CompositionId = 21, Type = ProductType.None },
+        new CompositionInfo { CompositionId = 53, Type = ProductType.None },
+    };
     
     [Inject]
-    public ShopViewModel(IUserService userService, IWebService webService, ITokenService tokenService)
+    public ShopViewModel(
+        IUserService userService, 
+        IWebService webService,
+        ITokenService tokenService,
+        IPaymentService paymentService)
     {
         _userService = userService;
         _webService = webService;
         _tokenService = tokenService;
+        _paymentService = paymentService;
+        _paymentService.Init();
     }
     
     public async Task Initialize()
@@ -55,5 +72,18 @@ public class ShopViewModel
         SpinelPackages = productResponse.SpinelPackages.OrderBy(pi => pi.Price).ToList();
         GoldItems = productResponse.GoldItems.OrderBy(pi => pi.Price).ToList();
         SpinelItems = productResponse.SpinelItems.OrderBy(pi => pi.Price).ToList();
+    }
+
+    public void BuyProduct()
+    {
+        if (SelectedProduct == null) return;
+        if (SelectedProduct.CurrencyType == CurrencyType.Cash)
+        {
+            _paymentService.BuyCashProduct(SelectedProduct.ProductCode);
+        }
+        else
+        {
+            _paymentService.BuyProduct(SelectedProduct.ProductCode);
+        }
     }
 }

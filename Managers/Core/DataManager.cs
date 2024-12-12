@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
-using Newtonsoft.Json;
 using Unity.VisualScripting;
+using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -13,9 +13,9 @@ using UnityEngine.Networking;
    * Version : 1.013
    */
 
-public interface ILoader<Key, Value>
+public interface ILoader<TKey, TValue>
 {
-    Dictionary<Key, Value> MakeDict();
+    Dictionary<TKey, TValue> MakeDict();
 }
 
 public class DataManager

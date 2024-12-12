@@ -58,7 +58,7 @@ public class UI_RewardPopup : UI_Popup
             {
                 Managers.Data.MaterialInfoDict.TryGetValue(reward.ItemId, out var materialInfo);
                 if (materialInfo == null) continue;
-                var itemObject = Util.GetMaterialResources(materialInfo, _rewardPanel);
+                var itemObject = Managers.Resource.GetMaterialResources(materialInfo, _rewardPanel);
             }
             else
             {

@@ -163,6 +163,18 @@ public class UserService : IUserService
         }
     }
 
+    public void BindDeck()
+    {
+        User.Instance.DeckSheep = User.Instance.AllDeckSheep.Any(deck => deck.LastPicked) 
+            ? User.Instance.AllDeckSheep.First(deck => deck.LastPicked) 
+            : User.Instance.AllDeckSheep.First();
+        User.Instance.DeckWolf = User.Instance.AllDeckWolf.Any(deck => deck.LastPicked) 
+            ? User.Instance.AllDeckWolf.First(deck => deck.LastPicked) 
+            : User.Instance.AllDeckWolf.First();
+        
+        InitDeckButton?.Invoke(Util.Faction);
+    }
+    
     public async Task LoadUserInfo()
     {
         var loadUserInfoPacket = new LoadUserInfoPacketRequired{ AccessToken = _tokenService.GetAccessToken() };
@@ -176,18 +188,6 @@ public class UserService : IUserService
         
         UserInfo = loadUserInfoResponse.UserInfo;
     }
-    
-    public void BindDeck()
-    {
-        User.Instance.DeckSheep = User.Instance.AllDeckSheep.Any(deck => deck.LastPicked) 
-            ? User.Instance.AllDeckSheep.First(deck => deck.LastPicked) 
-            : User.Instance.AllDeckSheep.First();
-        User.Instance.DeckWolf = User.Instance.AllDeckWolf.Any(deck => deck.LastPicked) 
-            ? User.Instance.AllDeckWolf.First(deck => deck.LastPicked) 
-            : User.Instance.AllDeckWolf.First();
-        
-        InitDeckButton?.Invoke(Util.Faction);
-    }
 
     public async Task LoadTestUser(int userId)
     {
@@ -196,6 +196,8 @@ public class UserService : IUserService
             "UserAccount/LoadTestUser", "POST", loadTestUserPacket);
         
         await task;
+        
+        UserInfo = task.Result.UserInfo;
         
         _tokenService.SaveAccessToken(task.Result.AccessToken);
         _tokenService.SaveRefreshToken(task.Result.RefreshToken);

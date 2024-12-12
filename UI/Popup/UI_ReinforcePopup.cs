@@ -83,7 +83,7 @@ public class UI_ReinforcePopup : UI_Popup
         {
             float angle = i * Mathf.PI * 2 / unitCounts;
             Vector3 pos = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle)) * _radius;
-            var cardFrame = Util.GetCardResources<UnitId>(materialUnits[i], parent);
+            var cardFrame = Managers.Resource.GetCardResources<UnitId>(materialUnits[i], parent);
             var cardRect = cardFrame.GetComponent<RectTransform>();
             
             _cardRects.Add(cardRect);
@@ -147,7 +147,7 @@ public class UI_ReinforcePopup : UI_Popup
         var puffEffect = Managers.Resource.Instantiate(effectPath, _cardPanelRect);
         
         var newUnitInfo = Managers.Data.UnitInfoDict[(int)_newUnitId];
-        var cardFrame = Util.GetCardResources<UnitId>(newUnitInfo, _cardPanelRect);
+        var cardFrame = Managers.Resource.GetCardResources<UnitId>(newUnitInfo, _cardPanelRect);
         var cardFrameRect = cardFrame.GetComponent<RectTransform>();
         var textButton = GetButton((int)Buttons.TextButton).gameObject;
         

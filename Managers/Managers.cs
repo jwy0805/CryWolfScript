@@ -1,12 +1,13 @@
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting.Antlr3.Runtime;
+using System;
+using System.Threading.Tasks;
+using Unity.Services.Authentication;
+using Unity.Services.Core;
 using UnityEngine;
-using Zenject;
 
 public class Managers : MonoBehaviour
 {
     private static Managers s_instance;
+    private static bool _isSigningIn;
     public static Managers Instance { get { Init(); return s_instance; } }
 
     #region Contents
@@ -44,19 +45,19 @@ public class Managers : MonoBehaviour
 
     #endregion
     
-    void Start()
+    private void Start()
     {
         Init();
     }
 
-    void Update()
+    private void Update()
     {
         _input.OnUpdate();
         _sound.OnUpdate();
         _network.Update();
     }
 
-    static async void Init()
+    private static async void Init()
     {
         if (s_instance == null)
         {

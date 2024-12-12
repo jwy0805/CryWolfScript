@@ -28,9 +28,7 @@ public class CollectionViewModel
     public async Task Initialize()
     {
         // Load unit & item data
-        #pragma warning disable CS4014
-        LoadInfoAsync();
-        #pragma warning restore CS4014
+        await LoadInfoAsync();
         await Task.WhenAll(
             InitializeCards(), InitializeSheep(), InitializeEnchants(), InitializeCharacters(), InitializeMaterials());
         

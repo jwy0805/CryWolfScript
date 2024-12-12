@@ -10,7 +10,7 @@ public interface IServiceFactory
 
 public class ServiceInstaller
 {
-    private static bool _servicesBound = false;
+    private static bool _servicesBound;
     
     public void CreateFactory(string path, DiContainer container)
     {
@@ -38,6 +38,8 @@ public class ServiceInstaller
         container.Bind<IUserService>().To<UserService>().AsSingle();
         container.Bind<IWebService>().To<WebService>().AsSingle();
         container.Bind<ITokenService>().To<TokenService>().AsSingle();
+        container.Bind<IPaymentService>().To<PaymentService>().AsSingle();
+        container.Bind<ISignalRClient>().To<SignalRClient>().AsSingle();
 
         _servicesBound = true;
     }

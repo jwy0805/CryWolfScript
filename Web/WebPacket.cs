@@ -13,9 +13,32 @@ public class UserInfo
     public string UserName { get; set; }
     public int Level { get; set; }
     public int Exp { get; set; }
+    public int ExpToLevelUp { get; set; }
     public int RankPoint { get; set; }
+    public int HighestRankPoint { get; set; }
+    public int Victories { get; set; }
+    public int WinRate { get; set; }
     public int Gold { get; set; }
     public int Spinel { get; set; }
+}
+
+public class FriendUserInfo
+{
+    public string UserName { get; set; }
+    public int Level { get; set; }
+    public int RankPoint { get; set; }
+    public FriendStatus FriendStatus { get; set; }
+}
+
+public class MailInfo
+{
+    public int MailId { get; set; }
+    public DateTime SentAt { get; set; }
+    public DateTime ExpiresAt { get; set; }
+    public int ProductId { get; set; }
+    public ProductCategory ProductCategory { get; set; }
+    public bool Claimed { get; set; }
+    public string Message { get; set; }
 }
 
 public class ProductInfo
@@ -25,12 +48,13 @@ public class ProductInfo
     public int Price { get; set; }
     public CurrencyType CurrencyType { get; set; }
     public ProductCategory Category { get; set; }
+    public string ProductCode { get; set; }
 }
 
 public class CompositionInfo
 {
     public int Id { get; set; }
-    public int ProductId { get; set; }
+    public int CompositionId { get; set; }
     public ProductType Type { get; set; }
     public int Count { get; set; }
     public int MinCount { get; set; }
@@ -261,6 +285,7 @@ public class LoadTestUserPacketRequired
 public class LoadTestUserPacketResponse
 {
     public bool LoadTestUserOk { get; set; }
+    public UserInfo UserInfo { get; set; }
     public string AccessToken { get; set; }
     public string RefreshToken { get; set; }
 }
@@ -480,4 +505,109 @@ public class InitProductPacketResponse
     public List<ProductInfo> SpinelItems { get; set; }
     public List<ProductInfo> ReservedSales { get; set; }
     public List<DailyProductInfo> DailyDeals { get; set; }
+}
+
+public class FriendListPacketRequired
+{
+    public string AccessToken { get; set; }
+}
+
+public class FriendListPacketResponse
+{
+    public bool FriendListOk { get; set; }
+    public List<UserInfo> FriendList { get; set; }
+}
+
+public class SearchUsernamePacketRequired
+{
+    public string AccessToken { get; set; }
+    public string Username { get; set; }
+}
+
+public class SearchUsernamePacketResponse
+{
+    public bool SearchUsernameOk { get; set; }
+    public List<FriendUserInfo> FriendUserInfos { get; set; }
+}
+
+public class FriendRequestPacketRequired
+{
+    public string AccessToken { get; set; }
+    public string FriendUsername { get; set; }
+    public FriendStatus CurrentFriendStatus { get; set; }
+}
+
+public class FriendRequestPacketResponse
+{
+    public bool FriendRequestOk { get; set; }
+    public FriendStatus FriendStatus { get; set; }
+}
+
+public class LoadPendingFriendPacketRequired
+{
+    public string AccessToken { get; set; }
+}
+
+public class LoadPendingFriendPacketResponse
+{
+    public bool LoadPendingFriendOk { get; set; }
+    public List<FriendUserInfo> PendingFriendList { get; set; }
+}
+
+public class AcceptFriendPacketRequired
+{
+    public string AccessToken { get; set; }
+    public string FriendUsername { get; set; }
+    public bool Accept { get; set; }
+}
+
+public class AcceptFriendPacketResponse
+{
+    public bool AcceptFriendOk { get; set; }
+    public bool Accept { get; set; }
+}
+
+public class LoadPendingMailPacketRequired
+{
+    public string AccessToken { get; set; }
+}
+
+public class LoadPendingMailPacketResponse
+{
+    public bool LoadPendingMailOk { get; set; }
+    public List<MailInfo> PendingMailList { get; set; }
+}
+
+public class ClaimMailPacketRequired
+{
+    public string AccessToken { get; set; }
+    public int MailId { get; set; }
+}
+
+public class ClaimMailPacketResponse
+{
+    public bool ClaimMailOk { get; set; }
+}
+
+public class VirtualPaymentPacketRequired
+{
+    public string AccessToken { get; set; }
+    public string ProductCode { get; set; }
+}
+
+public class VirtualPaymentPacketResponse
+{
+    public bool PaymentOk { get; set; }
+}
+
+public class CashPaymentPacketRequired
+{
+    public string AccessToken { get; set; }
+    public string Receipt { get; set; }
+    public string ProductCode { get; set; }
+}
+
+public class CashPaymentPacketResponse
+{
+    public bool PaymentOk { get; set; }
 }

@@ -7,14 +7,29 @@ using Docker.DotNet;
 using Docker.DotNet.Models;
 using Google.Protobuf;
 using Google.Protobuf.Protocol;
+using Microsoft.AspNetCore.SignalR.Client;
 using UnityEngine;
 
 public class NetworkManager
 {
     private ServerSession _session = new();
+    private const string LocalPort = "7270";
+    private const string Address = "hamonstudio.net";
     
     public Env Environment => Env.Local;
 
+    public string BaseUrl
+    {
+        get
+        {
+            return Managers.Network.Environment switch
+            {
+                Env.Dev => $"https://{Address}",
+                _ => $"https://localhost:{LocalPort}"
+            };
+        }
+    }
+    
     public void Send(IMessage packet)
     {
         _session.Send(packet);
@@ -46,12 +61,14 @@ public class NetworkManager
                 ipHost = await Dns.GetHostEntryAsync(host);
                 ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.ToString().Contains("172."));
                 break;
+            
             case Env.Dev:
                 host = "hamonstudio.net";
                 port = 7780;
                 ipHost = await Dns.GetHostEntryAsync(host);
                 ipAddress = ipHost.AddressList.FirstOrDefault();
                 break;
+            
             case Env.Stage:
             case Env.Prod:
             default:
@@ -65,6 +82,7 @@ public class NetworkManager
         new Connector().Connect(endPointLocal, () => _session, test);
     }
     
+    // Disconnect TCP Connection
     public void Disconnect()
     {
         _session.Disconnect();

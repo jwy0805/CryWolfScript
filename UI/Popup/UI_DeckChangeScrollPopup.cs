@@ -139,7 +139,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         var deck = _deckVm.GetDeck(Util.Faction).UnitsOnDeck;
         foreach (var unit in deck)
         {
-            var cardFrame = Util.GetCardResources<UnitId>(unit, parent, OnDeckCardClicked);
+            var cardFrame = Managers.Resource.GetCardResources<UnitId>(unit, parent, OnDeckCardClicked);
             cardFrame.TryGetComponent(out RectTransform rectTransform);
         }
         
@@ -160,7 +160,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         foreach (var unit in units)
         {
             var cardFrame = 
-                Util.GetCardResources<UnitId>(unit.UnitInfo, parent, OnCollectionCardClicked);
+                Managers.Resource.GetCardResources<UnitId>(unit.UnitInfo, parent, OnCollectionCardClicked);
             cardFrame.TryGetComponent(out RectTransform rectTransform);
             rectTransform.anchorMax = Vector2.one;
             rectTransform.anchorMin = Vector2.zero;

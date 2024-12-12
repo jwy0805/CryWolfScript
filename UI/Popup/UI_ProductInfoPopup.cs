@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -140,14 +141,14 @@ public class UI_ProductInfoPopup : UI_Popup
             switch (composition.Type)
             {
                 case ProductType.None:
-                    productName = ((ProductId)composition.ProductId).ToString();
+                    productName = ((ProductId)composition.CompositionId).ToString();
                     path = $"UI/Shop/{productName}";
                     product = Managers.Resource.Instantiate(path, productFrame.transform);
                     break;
                 
                 case ProductType.Unit:
-                    productName = ((UnitId)composition.ProductId).ToString();
-                    Managers.Data.UnitInfoDict.TryGetValue(composition.ProductId, out var unit);
+                    productName = ((UnitId)composition.CompositionId).ToString();
+                    Managers.Data.UnitInfoDict.TryGetValue(composition.CompositionId, out var unit);
                     path = $"UI/Shop/OtherProducts/Product{unit?.Class}";
                     product = Managers.Resource.Instantiate(path, productFrame.transform);
                     var image = Util.FindChild(product, "CardUnit", true).GetComponent<Image>();
@@ -155,8 +156,8 @@ public class UI_ProductInfoPopup : UI_Popup
                     break;
                 
                 case ProductType.Material:
-                    Managers.Data.MaterialInfoDict.TryGetValue(composition.ProductId, out var material);
-                    product = Util.GetMaterialResources(material, productFrame.transform);                  
+                    Managers.Data.MaterialInfoDict.TryGetValue(composition.CompositionId, out var material);
+                    product = Managers.Resource.GetMaterialResources(material, productFrame.transform);                  
                     break;
                 
                 case ProductType.Enchant:
@@ -179,7 +180,7 @@ public class UI_ProductInfoPopup : UI_Popup
             var productRect = product.GetComponent<RectTransform>();
             var width = layoutElement.preferredWidth;
             var rectSize = productRect.sizeDelta;
-                    
+            
             product.transform.localScale = rectSize.x == 0 ? Vector3.one : width * Vector3.one / rectSize.x * 0.8f;
             productRect.anchoredPosition = Vector2.zero;
             productRect.anchorMin = new Vector2(0.5f, 0.55f);
@@ -189,7 +190,7 @@ public class UI_ProductInfoPopup : UI_Popup
     
     private void OnBuyButtonClicked(PointerEventData data)
     {
-        
+        _shopVm.BuyProduct();
     }
     
     private void ClosePopup(PointerEventData data)

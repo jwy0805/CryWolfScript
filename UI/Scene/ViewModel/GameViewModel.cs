@@ -34,10 +34,10 @@ public class GameViewModel
     public bool OnSlotDrag { get; set; }
     public ObservableCollection<int> SelectedObjectIds { get; set; } = new();
     public List<Skill> SkillsUpgraded { get; set; } = new();
+    public GameObject DeleteImage => CapacityWindow.GetDeleteImage();
     public ISkillWindow SkillWindow { get; set; }
     public IUnitControlWindow UnitControlWindow { get; set; }
     public ICapacityWindow CapacityWindow { get; set; }
-    public GameObject DeleteImage => CapacityWindow.GetDeleteImage();
     public IBaseSkillWindow SubResourceWindow { get; set; }
     public IPortrait CurrentSelectedPortrait { get; set; }
     public ISkillButton CurrentSelectedSkillButton { get; set; }

@@ -103,7 +103,7 @@ public class UI_MatchMaking : UI_Scene
         
         foreach (var unit in deck.UnitsOnDeck)
         {
-            Util.GetCardResources<UnitId>(unit, deckImage.transform);
+            Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform);
         }
     }
     
@@ -127,7 +127,7 @@ public class UI_MatchMaking : UI_Scene
         {
             Managers.Data.UnitInfoDict.TryGetValue(unitId, out var unitInfo);
             if (unitInfo == null) continue;
-            Util.GetCardResources<UnitId>(unitInfo, deckImage.transform);
+            Managers.Resource.GetCardResources<UnitId>(unitInfo, deckImage.transform);
         }
 
         StartCoroutine(CountDown());

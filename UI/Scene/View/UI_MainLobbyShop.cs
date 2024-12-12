@@ -30,7 +30,8 @@ public partial class UI_MainLobby
         
         InitSpecialPackage();
         InitBeginnerPackages();
-        InitPackages(_shopVm.ReservedSales, _reservedSalePanel);
+        
+        InitReservedPackages();
         InitDailyDeal();
         InitPackages(_shopVm.GoldPackages, _goldPackagePanel);
         InitPackages(_shopVm.SpinelPackages, _spinelPackagePanel);
@@ -49,7 +50,7 @@ public partial class UI_MainLobby
             var priceText = Util.FindChild(item, "TextPrice", true, true);
             
             priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
-            item.BindEvent(data => OnProductClicked(data, item));
+            item.BindEvent(OnProductClicked);
         }
     }
     
@@ -62,10 +63,24 @@ public partial class UI_MainLobby
             var priceText = Util.FindChild(item, "TextPrice", true, true);
             
             priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
-            item.BindEvent(data => OnProductClicked(data, item));
+            item.BindEvent(OnProductClicked);
         }
     }
 
+    private void InitReservedPackages()
+    {
+        foreach (var productInfo in _shopVm.ReservedSales)
+        {
+            var itemName = ((ProductId)productInfo.Id).ToString();
+            var item = InitiateProduct(itemName, productInfo, _reservedSalePanel);
+            var priceText = Util.FindChild(item, "TextPrice", true, true);
+            var frameObject = Util.FindChild(item, "ItemIcon", true, true);
+            
+            priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
+            item.BindEvent(OnReservedSalesClicked);
+        }
+    }
+    
     private void InitPackages(IEnumerable<ProductInfo> packages, Transform panel)
     {
         foreach (var productInfo in packages)
@@ -76,7 +91,7 @@ public partial class UI_MainLobby
             var frameObject = Util.FindChild(item, "ItemIcon", true, true);
             
             priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
-            item.BindEvent(data => OnProductClicked(data, frameObject));
+            item.BindEvent(OnProductClicked);
         }
     }
     
@@ -99,7 +114,7 @@ public partial class UI_MainLobby
                 .FirstOrDefault(c => c.Id == productInfo.Id)?
                 .Count.ToString();
             priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
-            item.BindEvent(data => OnProductClicked(data, frameObject));
+            item.BindEvent(OnProductClicked);
         }
     }
     
@@ -116,6 +131,7 @@ public partial class UI_MainLobby
                 .FirstOrDefault(c => c.Id == productInfo.Id)?
                 .Count.ToString();
             priceText.GetComponent<TextMeshProUGUI>().text = "KRW " + productInfo.Price.ToString("N0");
+            item.BindEvent(OnProductClicked);
         }
     }
 

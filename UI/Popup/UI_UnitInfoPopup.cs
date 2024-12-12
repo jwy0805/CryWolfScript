@@ -230,7 +230,7 @@ public class UI_UnitInfoPopup : UI_Popup
         SetObjectSize(GetImage((int)Images.CardPanel).gameObject, 0.7f, 1.12f);
         
         var parent = GetImage((int)Images.CardPanel).transform;
-        var cardFrame = Util.GetCardResources<UnitId>(asset, parent);
+        var cardFrame = Managers.Resource.GetCardResources<UnitId>(asset, parent);
         var rect = cardFrame.GetComponent<RectTransform>();
         
         Util.FindChild(cardFrame, "UnitNameText", true).SetActive(false);

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -98,7 +99,7 @@ public class UI_ProductInfoSimplePopup : UI_Popup
     
     private void OnBuyButtonClicked(PointerEventData data)
     {
-        
+        _shopVm.BuyProduct();
     }
     
     private void ClosePopup(PointerEventData data)

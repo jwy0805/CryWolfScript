@@ -31,7 +31,9 @@ public partial class UI_MainLobby
             _lobbyDeckButtonDict[$"LobbyDeckButton{i}"].GetComponent<DeckButtonInfo>().DeckIndex = i;
         }
 
-        await Task.WhenAll(_deckVm.Initialize(), _collectionVm.Initialize());
+        await _collectionVm.Initialize();
+        await _deckVm.Initialize();
+        
         Debug.Log("Set Cards");
         InitCollectionUI();
     }
@@ -45,8 +47,8 @@ public partial class UI_MainLobby
             
         foreach (var unit in deck.UnitsOnDeck)
         {
-            Util.GetCardResources<UnitId>(unit, deckImage.transform, OnCardClicked);
-            Util.GetCardResources<UnitId>(unit, lobbyDeckImage.transform);
+            Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform, OnCardClicked);
+            Managers.Resource.GetCardResources<UnitId>(unit, lobbyDeckImage.transform);
         }
 
         var assetParent = GetImage((int)Images.BattleSettingPanel).transform;
@@ -55,12 +57,12 @@ public partial class UI_MainLobby
         // Set Asset Frame
         IAsset asset = faction == Faction.Sheep ? User.Instance.BattleSetting.SheepInfo : User.Instance.BattleSetting.EnchantInfo;
         var assetFrame = faction == Faction.Sheep ?
-            Util.GetCardResources<SheepId>(asset, assetParent, OnCardClicked):
-            Util.GetCardResources<EnchantId>(asset, assetParent, OnCardClicked);
+            Managers.Resource.GetCardResources<SheepId>(asset, assetParent, OnCardClicked):
+            Managers.Resource.GetCardResources<EnchantId>(asset, assetParent, OnCardClicked);
         
         // Set Character Frame
         var character = User.Instance.BattleSetting.CharacterInfo;
-        Util.GetCardResources<CharacterId>(character, assetParent, OnCardClicked);
+        Managers.Resource.GetCardResources<CharacterId>(character, assetParent, OnCardClicked);
     }
     
     private void SetCollectionUI(Faction faction)
@@ -95,13 +97,13 @@ public partial class UI_MainLobby
         foreach (var unit in ownedUnits)
         {
             var cardFrame = 
-                Util.GetCardResources<UnitId>(unit.UnitInfo, _unitCollection, OnCardClicked);
+                Managers.Resource.GetCardResources<UnitId>(unit.UnitInfo, _unitCollection, OnCardClicked);
             GetCountText(cardFrame.transform, unit.Count);
         }
 
         foreach (var unit in notOwnedUnits)
         {
-            var cardFrame = Util.GetCardResources<UnitId>(unit, _unitNoCollection, OnCardClicked);
+            var cardFrame = Managers.Resource.GetCardResources<UnitId>(unit, _unitNoCollection, OnCardClicked);
             var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
             var path = $"Sprites/Portrait/{((UnitId)unit.Id).ToString()}_gray";
             cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
@@ -113,14 +115,14 @@ public partial class UI_MainLobby
             foreach (var sheep in ownedSheep)
             {
                 var cardFrame = 
-                    Util.GetCardResources<SheepId>(sheep.SheepInfo, _assetCollection, OnCardClicked);
+                    Managers.Resource.GetCardResources<SheepId>(sheep.SheepInfo, _assetCollection, OnCardClicked);
                 GetCountText(cardFrame.transform, sheep.Count);
             }
 
             foreach (var sheep in notOwnedSheep)
             {
                 var cardFrame = 
-                    Util.GetCardResources<SheepId>(sheep, _assetNoCollection, OnCardClicked);
+                    Managers.Resource.GetCardResources<SheepId>(sheep, _assetNoCollection, OnCardClicked);
                 var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
                 var path = $"Sprites/Portrait/{((SheepId)sheep.Id).ToString()}_gray";
                 cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
@@ -131,14 +133,14 @@ public partial class UI_MainLobby
             foreach (var enchant in ownedEnchants)
             {
                 var cardFrame = 
-                    Util.GetCardResources<EnchantId>(enchant.EnchantInfo, _assetCollection, OnCardClicked);
+                    Managers.Resource.GetCardResources<EnchantId>(enchant.EnchantInfo, _assetCollection, OnCardClicked);
                 GetCountText(cardFrame.transform, enchant.Count);
             }
 
             foreach (var enchant in notOwnedEnchants)     
             {
                 var cardFrame = 
-                    Util.GetCardResources<EnchantId>(enchant, _assetNoCollection, OnCardClicked);
+                    Managers.Resource.GetCardResources<EnchantId>(enchant, _assetNoCollection, OnCardClicked);
                 var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
                 var path = $"Sprites/Portrait/{((EnchantId)enchant.Id).ToString()}_gray";
                 cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
@@ -149,14 +151,14 @@ public partial class UI_MainLobby
         foreach (var character in ownedCharacters)
         {
             var cardFrame = 
-                Util.GetCardResources<CharacterId>(character.CharacterInfo, _characterCollection, OnCardClicked);
+                Managers.Resource.GetCardResources<CharacterId>(character.CharacterInfo, _characterCollection, OnCardClicked);
             GetCountText(cardFrame.transform, character.Count);
         }
         
         foreach (var character in notOwnedCharacters)
         {
             var cardFrame = 
-                Util.GetCardResources<CharacterId>(character, _characterNoCollection, OnCardClicked);
+                Managers.Resource.GetCardResources<CharacterId>(character, _characterNoCollection, OnCardClicked);
             var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
             var path = $"Sprites/Portrait/{((CharacterId)character.Id).ToString()}_gray";
             cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
@@ -165,7 +167,7 @@ public partial class UI_MainLobby
         // Materials in collection UI
         foreach (var material in ownedMaterials)
         {
-            var cardFrame = Util.GetMaterialResources(material.MaterialInfo, _materialCollection);
+            var cardFrame = Managers.Resource.GetMaterialResources(material.MaterialInfo, _materialCollection);
             GetCountText(cardFrame.transform, material.Count);
         }
     }
@@ -317,10 +319,10 @@ public partial class UI_MainLobby
         Util.DestroyAllChildren(parent);
         var cardFrame = card.AssetType switch
         {
-            Asset.Unit => Util.GetCardResources<UnitId>(card, parent),
-            Asset.Sheep => Util.GetCardResources<SheepId>(card, parent),
-            Asset.Enchant => Util.GetCardResources<EnchantId>(card, parent),
-            Asset.Character => Util.GetCardResources<CharacterId>(card, parent),
+            Asset.Unit => Managers.Resource.GetCardResources<UnitId>(card, parent),
+            Asset.Sheep => Managers.Resource.GetCardResources<SheepId>(card, parent),
+            Asset.Enchant => Managers.Resource.GetCardResources<EnchantId>(card, parent),
+            Asset.Character => Managers.Resource.GetCardResources<CharacterId>(card, parent),
             _ => null
         };
         
@@ -359,9 +361,9 @@ public partial class UI_MainLobby
         
         _ = _selectedCardForCrafting.AssetType switch
         {
-            Asset.Unit => Util.GetCardResources<UnitId>(_selectedCardForCrafting, parent.transform),
-            Asset.Sheep => Util.GetCardResources<SheepId>(_selectedCardForCrafting, parent.transform),
-            Asset.Enchant => Util.GetCardResources<EnchantId>(_selectedCardForCrafting, parent.transform),
+            Asset.Unit => Managers.Resource.GetCardResources<UnitId>(_selectedCardForCrafting, parent.transform),
+            Asset.Sheep => Managers.Resource.GetCardResources<SheepId>(_selectedCardForCrafting, parent.transform),
+            Asset.Enchant => Managers.Resource.GetCardResources<EnchantId>(_selectedCardForCrafting, parent.transform),
             _ => null
         };    
         
@@ -379,7 +381,7 @@ public partial class UI_MainLobby
         foreach (var material in craftingMaterials)
         {
             var craftingFrame = Managers.Resource.Instantiate("UI/Deck/CraftingMaterialFrame", parent);
-            var itemPanel =  Util.GetMaterialResources(material.MaterialInfo, craftingFrame.transform);
+            var itemPanel =  Managers.Resource.GetMaterialResources(material.MaterialInfo, craftingFrame.transform);
             var itemPanelRect = itemPanel.GetComponent<RectTransform>();
             // var itemFrame = Util.FindChild(itemPanel, "Frame", true);
             var needText = Util.FindChild(craftingFrame, "NeedCountText", true);
@@ -455,8 +457,8 @@ public partial class UI_MainLobby
 
         var selectedUnit = Managers.Data.UnitInfoDict[_selectedCardForCrafting.Id];
         var resultUnit = Managers.Data.UnitInfoDict[_selectedCardForCrafting.Id + 1];
-        var cardFrame = Util.GetCardResources<UnitId>(selectedUnit, cardParent);
-        var resultFrame = Util.GetCardResources<UnitId>(resultUnit, resultParent);
+        var cardFrame = Managers.Resource.GetCardResources<UnitId>(selectedUnit, cardParent);
+        var resultFrame = Managers.Resource.GetCardResources<UnitId>(resultUnit, resultParent);
         var cardFrameRect = cardFrame.GetComponent<RectTransform>();
         var resultFrameRect = resultFrame.GetComponent<RectTransform>();
         var cardNumberText = GetText((int)Texts.ReinforceCardNumberText);
@@ -539,7 +541,7 @@ public partial class UI_MainLobby
         foreach (var unit in units)
         {
             var cardFrame = 
-                Util.GetCardResources<UnitId>(unit.UnitInfo, _unitCollection, OnCardClicked);
+                Managers.Resource.GetCardResources<UnitId>(unit.UnitInfo, _unitCollection, OnCardClicked);
             GetCountText(cardFrame.transform, unit.Count);
             if (_craftingVm.IsUnitInDecks(unit.UnitInfo)) GetInDeckText(cardFrame.transform);
         }

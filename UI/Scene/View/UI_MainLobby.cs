@@ -22,6 +22,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     
     private IUserService _userService;
     private ITokenService _tokenService;
+    private IPaymentService _paymentService;
     private MainLobbyViewModel _lobbyVm;
     private DeckViewModel _deckVm;
     private CollectionViewModel _collectionVm;
@@ -29,7 +30,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private ShopViewModel _shopVm;
 
     private readonly float _modeChangeTime = 0.25f;
-    
+
+    private Slider _expSlider;
     private int _currentModeIndex;
     private bool _isCraftingPanelOpen;
     private Card _selectedCard;
@@ -145,6 +147,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         
         FactionButton,
         
+        ProfilePanelButton,
         SettingsButton,
         FriendsButton,
         MailButton,
@@ -195,6 +198,9 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         LevelText,
         ExpText,
         
+        UsernameText,
+        RankText,
+        
         CraftCountText,
         
         ReinforceCardSelectText,
@@ -211,6 +217,10 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         LobbyDeck,
         
         FactionButtonIcon,
+        ExpSliderBackground,
+        
+        FriendAlertIcon,
+        MailAlertIcon,
         
         RankGamePanel,
         FriendlyMatchPanel,
@@ -278,6 +288,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     public void Construct(
         IUserService userService,
         ITokenService tokenService,
+        IPaymentService paymentService,
         MainLobbyViewModel viewModel,
         DeckViewModel deckViewModel,
         CollectionViewModel collectionViewModel,
@@ -286,6 +297,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     {
         _userService = userService;
         _tokenService = tokenService;
+        _paymentService = paymentService;
         _lobbyVm = viewModel;
         _deckVm = deckViewModel;
         _collectionVm = collectionViewModel;
@@ -298,11 +310,24 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         _lobbyVm.Initialize(Util.FindChild(gameObject, "HorizontalContents", true)
             .transform.childCount);
 
+        _lobbyVm.OnFriendRequestNotificationReceived -= OnFriendAlert;
+        _lobbyVm.OnFriendRequestNotificationReceived += OnFriendAlert;
+        _lobbyVm.OnFriendRequestNotificationOff -= OffFriendAlert;
+        _lobbyVm.OnFriendRequestNotificationOff += OffFriendAlert;
+        _lobbyVm.OnMailAlert -= OnMailAlert;
+        _lobbyVm.OnMailAlert += OnMailAlert;
+        _lobbyVm.OffMailAlert -= OffMailAlert;
+        _lobbyVm.OffMailAlert += OffMailAlert;
         _lobbyVm.OnPageChanged -= UpdateScrollbar;
         _lobbyVm.OnPageChanged += UpdateScrollbar;
         _lobbyVm.ChangeButtonFocus -= ChangeButtonFocus;
         _lobbyVm.ChangeButtonFocus += ChangeButtonFocus;
 
+        _paymentService.OnPaymentSuccess -= OnMailAlert;
+        _paymentService.OnPaymentSuccess += OnMailAlert;
+        _paymentService.OnCashPaymentSuccess -= OnMailAlert;
+        _paymentService.OnCashPaymentSuccess += OnMailAlert;
+        
         _deckVm.OnDeckInitialized -= SetDeckUI;
         _deckVm.OnDeckInitialized += SetDeckUI;
         _deckVm.OnDeckSwitched -= SetDeckButtonUI;
@@ -328,18 +353,17 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         _userService.InitDeckButton += SetDeckButtonUI;
     }
 
-    protected override void Init()
+    protected override async void Init()
     {
         base.Init();
 
         BindObjects();
         InitButtonEvents();
 
-#pragma warning disable CS4014 // 이 호출을 대기하지 않으므로 호출이 완료되기 전에 현재 메서드가 계속 실행됩니다.
-        InitMainLobby();
-#pragma warning restore CS4014 // 이 호출을 대기하지 않으므로 호출이 완료되기 전에 현재 메서드가 계속 실행됩니다.
-        
         _lobbyVm.SetCurrentPage(2);
+
+        await InitMainLobby();
+        await _lobbyVm.JoinLobby(_userService.UserInfo.UserName);
     }
 
     private void Update()
@@ -596,6 +620,12 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         SwitchLobbyUI(Util.Faction);
     }
 
+    private void OnProfileClicked(PointerEventData data)
+    {
+        var popup = Managers.UI.ShowPopupUI<UI_PlayerProfilePopup>();
+        popup.PlayerUserInfo = _userService.UserInfo;
+    }
+    
     private void OnSettingsClicked(PointerEventData data)
     {
         
@@ -603,12 +633,12 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     
     private void OnFriendsClicked(PointerEventData data)
     {
-        
+        Managers.UI.ShowPopupUI<UI_FriendsListPopup>();
     }
     
     private void OnMailClicked(PointerEventData data)
     {
-        
+        Managers.UI.ShowPopupUI<UI_MailBoxPopup>();
     }
     
     private void OnMissionClicked(PointerEventData data)
@@ -718,7 +748,9 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
             _craftingVm.AddNewUnitMaterial(unitInfo);
             
             var parent = GetImage((int)Images.MaterialPanel).transform;
-            var cardFrame = Util.GetCardResources<UnitId>(unitInfo, parent, OnReinforceMaterialClicked);
+            var cardFrame = 
+                Managers.Resource.GetCardResources<UnitId>(unitInfo, parent, OnReinforceMaterialClicked);
+            
             Util.FindChild(cardFrame, "Role").SetActive(false);
             UpdateReinforcePanel();
             ResetCollectionUIForReinforce();
@@ -821,28 +853,44 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         popup.SetWarning("준비중인 기능입니다.");
     }
 
-    private void OnProductClicked(PointerEventData data, GameObject frameObject)
+    private void OnProductClicked(PointerEventData data)
     {
         Product product = null;
-        if (data.pointerPress.TryGetComponent(out ProductSimple productSimple))
+        var go = data.pointerPress.gameObject;
+        if (go.TryGetComponent(out ProductSimple productSimple))
         {
             if (productSimple.IsDragging) return;
             var simplePopup = Managers.UI.ShowPopupUI<UI_ProductInfoSimplePopup>();
-            simplePopup.FrameObject = Instantiate(frameObject);
+            simplePopup.FrameObject = Instantiate(go);
             product = productSimple;
         }
         
-        if (data.pointerPress.TryGetComponent(out ProductPackage productPackage))
+        if (go.TryGetComponent(out ProductPackage productPackage))
         {
             if (productPackage.IsDragging) return;
             var packagePopup = Managers.UI.ShowPopupUI<UI_ProductInfoPopup>();
-            packagePopup.FrameObject = Instantiate(frameObject);
-            packagePopup.FrameSize = frameObject.GetComponent<RectTransform>().sizeDelta;
+            packagePopup.FrameObject = Instantiate(go);
+            packagePopup.FrameSize = go.GetComponent<RectTransform>().sizeDelta;
             product = productPackage;
         }
 
         if (product == null) return;
         _shopVm.SelectedProduct = product.ProductInfo;
+    }
+    
+    private void OnReservedSalesClicked(PointerEventData data)
+    {
+        var go = data.pointerPress.gameObject;
+        if (go.TryGetComponent(out ProductPackage package) == false) return;
+        
+        var popup = Managers.UI.ShowPopupUI<UI_ProductReservedInfoPopup>();
+        var info = Managers.Data.MaterialInfoDict[package.ProductInfo.Compositions[0].CompositionId];
+        var parent = Util.FindChild(popup.gameObject, "Frame", true).transform;
+        var size = popup.GetComponent<RectTransform>().sizeDelta.x * 0.42f;
+        
+        popup.FrameObject = Managers.Resource.GetMaterialResources(info, parent);
+        popup.FrameSize = new Vector2(size, size);
+        _shopVm.SelectedProduct = package.ProductInfo;
     }
     
     #endregion
@@ -855,6 +903,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         Bind<Button>(typeof(Buttons));
         Bind<Image>(typeof(Images));
         Bind<TextMeshProUGUI>(typeof(Texts));
+
+        _expSlider = GetImage((int)Images.ExpSliderBackground).transform.parent.GetComponent<Slider>();
         _craftingScrollRect = GetImage((int)Images.CollectionScrollView).GetComponent<ScrollRect>();
         
         _modes = new List<GameObject>
@@ -961,6 +1011,9 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
             pair.Value.BindEvent(OnDeckButtonClicked);
         }
         
+        GetButton((int)Buttons.ProfilePanelButton).gameObject.BindEvent(OnProfileClicked);
+        GetButton((int)Buttons.FriendsButton).gameObject.BindEvent(OnFriendsClicked);
+        GetButton((int)Buttons.MailButton).gameObject.BindEvent(OnMailClicked);
         GetButton((int)Buttons.FactionButton).gameObject.BindEvent(OnFactionButtonClicked);
         GetButton((int)Buttons.PlayButton).gameObject.BindEvent(OnPlayButtonClicked);
         GetButton((int)Buttons.ModeSelectButtonLeft).gameObject
@@ -994,6 +1047,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     {
         SwitchLobbyUI(Util.Faction);
         SetObjectSize(GetButton((int)Buttons.FactionButton).gameObject, 0.95f);
+        GetImage((int)Images.FriendAlertIcon).gameObject.SetActive(false);
+        GetImage((int)Images.MailAlertIcon).gameObject.SetActive(false);
 
         // 이미지 크기 조정을 위해 캔버스 강제 업데이트
         Canvas.ForceUpdateCanvases();
@@ -1012,9 +1067,9 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
 
         // Test
         await _userService.LoadTestUser(userId: 1);
-
         // MainLobby_Item Setting
-        await Task.WhenAll(InitCollection(), InitShop(), _userService.LoadUserInfo());
+        // await _userService.LoadUserInfo();
+        await Task.WhenAll(InitCollection(), InitShop(), _lobbyVm.InitFriendAlert(), _lobbyVm.InitMailAlert());
         
         BindUserInfo();
     }
@@ -1022,9 +1077,17 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private void BindUserInfo()
     {
         var userInfo = _userService.UserInfo;
+        var exp = userInfo.Exp;
+        var expMax = userInfo.ExpToLevelUp;
+
+        _expSlider.value = exp / (float)expMax;
+        
         GetText((int)Texts.GoldText).text = userInfo.Gold.ToString();
         GetText((int)Texts.SpinelText).text = userInfo.Spinel.ToString();
         GetText((int)Texts.LevelText).text = userInfo.Level.ToString();
+        GetText((int)Texts.UsernameText).text = userInfo.UserName;
+        GetText((int)Texts.RankText).text = userInfo.RankPoint.ToString();
+        GetText((int)Texts.ExpText).text = $"{exp.ToString()} / {expMax.ToString()}";
     }
     
     private void SwitchLobbyUI(Faction faction)
@@ -1052,6 +1115,26 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         }
     }
 
+    private void OnFriendAlert()
+    {
+        GetImage((int)Images.FriendAlertIcon).gameObject.SetActive(true);
+    }
+    
+    private void OffFriendAlert()
+    {
+        GetImage((int)Images.FriendAlertIcon).gameObject.SetActive(false);
+    }
+    
+    private void OnMailAlert()
+    {
+        GetImage((int)Images.MailAlertIcon).gameObject.SetActive(true);
+    }
+    
+    private void OffMailAlert()
+    {
+        GetImage((int)Images.MailAlertIcon).gameObject.SetActive(false);
+    }
+    
     private void SetActivePanels(Dictionary<string, GameObject> dictionary, string[] uiNames)
     {
         foreach (var pair in dictionary)
@@ -1108,10 +1191,16 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
 
     #endregion
 
-    private void OnDestroy()
+    private async void OnDestroy()
     {
+        _lobbyVm.OnFriendRequestNotificationReceived -= OnFriendAlert;
+        _lobbyVm.OnFriendRequestNotificationOff -= OffFriendAlert;
+        _lobbyVm.OnMailAlert -= OnMailAlert;
+        _lobbyVm.OffMailAlert -= OffMailAlert;
         _lobbyVm.OnPageChanged -= UpdateScrollbar;
         _lobbyVm.ChangeButtonFocus -= ChangeButtonFocus;
+        _paymentService.OnPaymentSuccess -= OnMailAlert;
+        _paymentService.OnCashPaymentSuccess -= OnMailAlert;
         _deckVm.OnDeckInitialized -= SetDeckUI;
         _deckVm.OnDeckSwitched -= SetDeckButtonUI;
         _deckVm.OnDeckSwitched -= ResetDeckUI;
@@ -1122,5 +1211,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         _craftingVm.InitCraftingPanel -= InitCraftingPanel;
         _craftingVm.SetCollectionUI -= SetCollectionUI;
         _userService.InitDeckButton -= SetDeckButtonUI;
+        
+        await _lobbyVm.LeaveLobby();
+        _lobbyVm.Dispose();
     }
 }
