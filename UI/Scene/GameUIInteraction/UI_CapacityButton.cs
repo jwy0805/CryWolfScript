@@ -32,8 +32,8 @@ public class UI_CapacityButton :
 
     private void Start()
     {
-        _raycaster = FindObjectOfType<GraphicRaycaster>();
-        _eventSystem = FindObjectOfType<EventSystem>();
+        _raycaster = FindAnyObjectByType<GraphicRaycaster>();
+        _eventSystem = FindAnyObjectByType<EventSystem>();
     }
 
     public void OnBeginDrag(PointerEventData eventData)

@@ -208,8 +208,6 @@ public partial class UI_MainLobby
         CardPopup.CardPosition = _selectedCard.transform.position - new Vector3(0, 60);
         CardPopup.FromDeck = card.gameObject.transform.parent == GetImage((int)Images.Deck).transform 
                              || card.gameObject.transform.parent == GetImage((int)Images.BattleSettingPanel).transform;
-        
-        // TODO: Set Size By Various Resolution
     }
 
     private void FocusTabButton(string tabButtonName)

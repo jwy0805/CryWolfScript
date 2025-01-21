@@ -12,6 +12,7 @@ using Zenject;
 
 public interface IUnitControlWindow
 {
+    GameObject SelectedUnit { get; set; }
     void UpdateUpgradeCostText(int cost);
     void UpdateDeleteCostText(int cost);
     void UpdateRepairCostText(int cost);
@@ -69,7 +70,7 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
     private TextMeshProUGUI _hpText;
     private TextMeshProUGUI _mpText;
     private Camera _portraitCamera;
-
+    
     public GameObject SelectedUnit
     {
         get => _selectedUnit;
@@ -141,8 +142,16 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         switch (_cc.ObjectType)
         {
             case GameObjectType.Tower:
-                images.AddRange(new[] 
-                    { Images.UnitUpgradePanel, Images.UnitDeletePanel, Images.UnitSkillPanel });
+                if (_gameVm.GetLevelFromUiObject(_cc.UnitId) < 3)
+                {
+                    images.AddRange(new[] 
+                        { Images.UnitUpgradePanel, Images.UnitDeletePanel, Images.UnitSkillPanel });
+                }
+                else
+                {
+                    images.AddRange(new[] 
+                        { Images.UnitDeletePanel, Images.UnitSkillPanel });
+                }
                 break;
             case GameObjectType.Fence:
                 images.AddRange(new[] { Images.UnitRepairPanel });
@@ -154,13 +163,25 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
                 images.AddRange(new[] { Images.UnitSkillPanel });
                 break;
             case GameObjectType.MonsterStatue:
-                images.AddRange(new[]
+                if (_gameVm.GetLevelFromUiObject(_cc.UnitId) < 3)
                 {
-                    Images.UnitUpgradePanel,
-                    Images.UnitDeletePanel,
-                    Images.UnitRepairPanel,
-                    Images.UnitSkillPanel
-                });
+                    images.AddRange(new[]
+                    {
+                        Images.UnitUpgradePanel,
+                        Images.UnitDeletePanel,
+                        Images.UnitRepairPanel,
+                        Images.UnitSkillPanel
+                    });
+                }
+                else
+                {
+                    images.AddRange(new[]
+                    {
+                        Images.UnitDeletePanel,
+                        Images.UnitRepairPanel,
+                        Images.UnitSkillPanel
+                    });
+                }
                 break;
         }
         
@@ -191,6 +212,7 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
             GetImage((int)hiddenImage).gameObject.SetActive(false);
         }
         
+        // Set the position of the images by the number of images (The number of images is different for each object type)
         Image image;
         float increment;
         switch (images.Count)

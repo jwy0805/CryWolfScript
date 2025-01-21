@@ -78,14 +78,16 @@ public class UIManager
         return Util.GetOrAddComponent<T>(gameObject);
     }
 
-    public void ShowSceneUI<T>(string name = null) where T : UI_Scene
+    public async void ShowSceneUI<T>(string name = null) where T : UI_Scene
     {
         if (string.IsNullOrEmpty(name))
         {
             name = typeof(T).Name;
         }
         
-        Managers.Resource.InstantiateFromContainer($"UI/Scene/{name}", Root.transform);
+        await Managers.Data.InitAsync();
+        var sceneUI = Managers.Resource.InstantiateFromContainer($"UI/Scene/{name}", Root.transform);
+        sceneUI.GetComponent<UI_Scene>().Clear();
     }
     
     private Type GetType<T>()
@@ -114,8 +116,8 @@ public class UIManager
         
         gameObject.transform.SetParent(Root.transform);
 
-        var sceneContext = Object.FindObjectOfType<SceneContext>().Container;
-        sceneContext.Inject(popup);
+        var sceneContainer = Object.FindAnyObjectByType<SceneContext>().Container;
+        sceneContainer.Inject(popup);
 
         return popup;
     }
@@ -133,7 +135,7 @@ public class UIManager
         
         gameObject.transform.SetParent(Root.transform);
 
-        var sceneContext = Object.FindObjectOfType<SceneContext>().Container;
+        var sceneContext = Object.FindAnyObjectByType<SceneContext>().Container;
         sceneContext.Inject(popup);
 
         return popup;

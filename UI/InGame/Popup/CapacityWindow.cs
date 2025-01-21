@@ -25,6 +25,7 @@ public interface ICapacityWindow
     GameObjectType ObjectType { get; set; }
 }
 
+// Windows that show the plural units in the game
 public class CapacityWindow : UI_Popup, ICapacityWindow
 {
     #region Enums
@@ -125,34 +126,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         InitUI();
         InitButtonEvents();
         InitSlot(0);
-        SubscribeEvents();
-    }
-    
-    public void InitSlot(int index)
-    {
-        var id = _gameVm.SelectedObjectIds[index];
-        var go = Managers.Object.FindById(id);
-        var slotPanel = _imageDict[$"NorthUnitPanel{index}"];
-        var slotButtonImage = _buttonDict[$"NorthUnitButton{index}"];
-
-        if (go == null)
-        {
-            SetObjectSize(slotPanel, 0);
-            return;    
-        }
-        
-        var unitId = go.GetComponent<CreatureController>().UnitId;
-        var image = slotButtonImage.GetComponent<Image>();
-        var path = ObjectType switch
-        {
-            GameObjectType.Tower => $"Sprites/Portrait/{unitId.ToString()}",
-            GameObjectType.Fence => $"Sprites/Portrait/{unitId.ToString()}",
-            GameObjectType.MonsterStatue => $"Sprites/Portrait/{unitId.ToString()}Statue",
-            _ => throw new ArgumentOutOfRangeException()
-        };
-        
-        image.sprite = Managers.Resource.Load<Sprite>(path);
-        SetObjectSize(slotPanel, 0.25f);   
+        InitEvents();
     }
 
     protected override void BindObjects()
@@ -169,7 +143,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
             _buttonArray[i] = _buttonDict[$"NorthUnitButton{i}"];
         }
     }
-
+    
     protected override void InitUI()
     {
         var images = new List<Images>();
@@ -229,6 +203,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
                     image.GetComponent<RectTransform>().anchorMin = new Vector2(0.1f + increment * i, 0f);
                     image.GetComponent<RectTransform>().anchorMax = new Vector2(0.5f + increment * i, 1f);
                 }
+
                 break;
             case 3:
                 increment = 0.33f;
@@ -238,6 +213,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
                     image.GetComponent<RectTransform>().anchorMin = new Vector2(0f + increment * i, 0f);
                     image.GetComponent<RectTransform>().anchorMax = new Vector2(0.33f + increment * i, 1f);
                 }
+
                 break;
         }
     }
@@ -253,8 +229,39 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         _buttonDict["UnitDeleteButton"].BindEvent(OnDeleteClicked);
         _buttonDict["UnitRepairButton"].BindEvent(OnRepairClicked);
     }
+    
+    public void InitSlot(int index)
+    {
+        _gameVm.UpdateUnitUpgradeCostRequired(_gameVm.SelectedObjectIds.ToArray());
+        _gameVm.UpdateUnitDeleteCostRequired(_gameVm.SelectedObjectIds.ToArray());
+        _gameVm.UpdateUnitRepairCostRequired(_gameVm.SelectedObjectIds.ToArray());
+        
+        var id = _gameVm.SelectedObjectIds[index];
+        var go = Managers.Object.FindById(id);
+        var slotPanel = _imageDict[$"NorthUnitPanel{index}"];
+        var slotButtonImage = _buttonDict[$"NorthUnitButton{index}"];
 
-    private void SubscribeEvents()
+        if (go == null)
+        {
+            SetObjectSize(slotPanel, 0);
+            return;    
+        }
+        
+        var unitId = go.GetComponent<CreatureController>().UnitId;
+        var image = slotButtonImage.GetComponent<Image>();
+        var path = ObjectType switch
+        {
+            GameObjectType.Tower => $"Sprites/Portrait/{unitId.ToString()}",
+            GameObjectType.Fence => $"Sprites/Portrait/{unitId.ToString()}",
+            GameObjectType.MonsterStatue => $"Sprites/Portrait/{unitId.ToString()}Statue",
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        
+        image.sprite = Managers.Resource.Load<Sprite>(path);
+        SetObjectSize(slotPanel, 0.25f);   
+    }
+    
+    private void InitEvents()
     {
         _gameVm.SetDeleteImageOnWindowEvent -= SetDeleteImage;
         _gameVm.SetDeleteImageOnWindowEvent += SetDeleteImage;

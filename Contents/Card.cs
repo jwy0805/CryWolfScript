@@ -1,4 +1,5 @@
 using Google.Protobuf.Protocol;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -26,6 +27,12 @@ public class Card : MonoBehaviour, IAsset, IBeginDragHandler, IDragHandler, IEnd
         if (_scrollRect == null) Debug.Log("ScrollRect is null");
     }
 
+    public void SetLocalScale(float proportion, bool activeText = true)
+    {
+        Util.FindChild<TextMeshProUGUI>(gameObject, "UnitNameText").gameObject.SetActive(activeText);
+        transform.localScale = new Vector3(proportion, proportion, 1);
+    }
+    
     public void OnBeginDrag(PointerEventData eventData)
     {
         IsDragging = true;

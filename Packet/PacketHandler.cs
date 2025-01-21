@@ -27,9 +27,8 @@ public class PacketHandler
     public static void S_ConnectSessionHandler(PacketSession session, IMessage packet)
     {
         var connectPacket = (S_ConnectSession)packet;
+        Managers.Network.SessionId = connectPacket.SessionId;
         Debug.Log(connectPacket.SessionId);
-        var ui = GameObject.FindWithTag("UI").GetComponent<UI_MatchMaking>();
-        ui.StartMatchMaking(connectPacket.SessionId);
     }
     
     public static void S_LeaveGameHandler(PacketSession session, IMessage packet)
@@ -105,9 +104,9 @@ public class PacketHandler
         bc.PosInfo = movePacket.PosInfo;
     }
 
-    public static void S_MoveForwardObjectHandler(PacketSession session, IMessage packet)
+    public static void S_InstantMoveHandler(PacketSession session, IMessage packet)
     {
-        var movePacket = (S_MoveForwardObject)packet;
+        var movePacket = (S_InstantMove)packet;
         var go = Managers.Object.FindById(movePacket.ObjectId);
         if (go == null) return;
         if (go.TryGetComponent(out BaseController bc) == false) return;
@@ -364,6 +363,7 @@ public class PacketHandler
         var textUI = Util.FindChild(ui.gameObject, textName, true).GetComponent<TextMeshProUGUI>();
         if (textUI.text.Contains("/"))
         {
+            // About capacity text
             const string regularExpression = @"^(\d{1,2})/(\d{1,2})$";
             var match = Regex.Match(textUI.text, regularExpression);
             if (!match.Success) return;

@@ -82,13 +82,17 @@ public class UI_GameSingleWay : UI_Game
         var deck = Util.Faction == Faction.Sheep ? User.Instance.DeckSheep : User.Instance.DeckWolf;
         for (var i = 0; i < deck.UnitsOnDeck.Length ; i++)
         {
+            var parent = _dictPortrait[$"UnitPanel{i}"].transform;
             var prefab = Managers.Resource.InstantiateFromContainer(
-                "UI/InGame/SkillPanel/Portrait", _dictPortrait[$"UnitPanel{i}"].transform);
+                "UI/InGame/SkillPanel/Portrait", parent);
+            var costText = Util.FindChild(parent.gameObject, "UnitCostText", true);
             var level = deck.UnitsOnDeck[i].Level;
             var initPortraitId = deck.UnitsOnDeck[i].Id - (level - 1);
             var portrait = prefab.GetComponent<UI_Portrait>();
+
             portrait.UnitId = (UnitId)initPortraitId;
-            
+            costText.GetComponent<TextMeshProUGUI>().text =
+                Managers.Data.UnitDict[initPortraitId].Stat.RequiredResources.ToString();
             prefab.GetComponent<Image>().sprite = 
                 Managers.Resource.Load<Sprite>($"Sprites/Portrait/{portrait.UnitId}");
             prefab.BindEvent(OnPortraitClicked);
@@ -128,6 +132,10 @@ public class UI_GameSingleWay : UI_Game
         
         // Update Skill panel to match the new unit
         _gameVm.UpdateSkillPanel(portrait);
+        
+        // Update the cost of the unit
+        var costText = Util.FindChild(go.transform.parent.gameObject, "UnitCostText", true);
+        costText.GetComponent<TextMeshProUGUI>().text = Managers.Data.UnitDict[(int)portrait.UnitId].Stat.RequiredResources.ToString();
     }
 
     private void TurnOnSelectRing(int id)
@@ -161,7 +169,8 @@ public class UI_GameSingleWay : UI_Game
     private void TurnOffOneSelectRing(int id)
     {
         var go = Managers.Object.FindById(id);
-        var selectRing = go?.transform.Find("SelectRing");
+        if (go == null) return;
+        var selectRing = go.transform.Find("SelectRing");
         if (selectRing != null)
         {
             Managers.Resource.Destroy(selectRing.gameObject);
@@ -223,6 +232,9 @@ public class UI_GameSingleWay : UI_Game
     
     protected override void BindObjects()
     {
+        _dictPortrait.Clear();
+        _selectedObjects.Clear();
+        
         BindData<Image>(typeof(Images), _dictPortrait);
         Bind<Button>(typeof(Buttons));
         Bind<TextMeshProUGUI>(typeof(Texts));
@@ -247,5 +259,7 @@ public class UI_GameSingleWay : UI_Game
         _gameVm.TurnOffOneSelectRingEvent -= TurnOffOneSelectRing;
         _gameVm.TurnOffSelectRingEvent -= TurnOffSelectRing;
         _gameVm.SelectedObjectIds.CollectionChanged -= OnSlotIdChanged;
+        _gameVm.Dispose();
+        _gameVm = null;
     }
 }

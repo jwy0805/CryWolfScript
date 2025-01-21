@@ -14,7 +14,7 @@ public class Product : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragH
     public ProductInfo ProductInfo { get; set; }
     public bool IsDragging { get; set; }
 
-    private void Start()
+    public void Init()
     {
         var panel = GameObject.Find("ShopPanel");
         _scrollRect = panel.GetComponentInChildren<ScrollRect>();

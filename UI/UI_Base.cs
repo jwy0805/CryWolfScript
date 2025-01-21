@@ -26,17 +26,17 @@ public abstract class UI_Base : MonoBehaviour
     {
         string[] names = Enum.GetNames(type);
         Object[] objects = new Object[names.Length];
-        Objects.Add(typeof(T), objects);
+        Objects.TryAdd(typeof(T), objects);
         
         for (int i = 0; i < names.Length; i++)
         {
             if (typeof(T) == typeof(GameObject))
             {
-                objects[i] = Util.FindChild(gameObject, names[i], true);
+                objects[i] = Util.FindChild(gameObject, names[i], true, true);
             }
             else
             {
-                objects[i] = Util.FindChild<T>(gameObject, names[i], true);
+                objects[i] = Util.FindChild<T>(gameObject, names[i], true, true);
             }
 
             if (objects[i] == null)
@@ -56,7 +56,7 @@ public abstract class UI_Base : MonoBehaviour
             for (int i = 0; i < Objects[typeof(T)].Length; i++)
             {
                 GameObject btn = GetButton(i).gameObject;
-                dict.Add(btn.name, btn); 
+                dict.TryAdd(btn.name, btn); 
             }
         }
         else if (typeof(T) == typeof(Image))
@@ -64,7 +64,7 @@ public abstract class UI_Base : MonoBehaviour
             for (int i = 0; i < Objects[typeof(T)].Length; i++)
             {
                 GameObject img = GetImage(i).gameObject;
-                dict.Add(img.name, img);
+                dict.TryAdd(img.name, img);
             }
         }
         else if (typeof(T) == typeof(TextMeshProUGUI))
@@ -72,7 +72,7 @@ public abstract class UI_Base : MonoBehaviour
             for (int i = 0; i < Objects[typeof(T)].Length; i++)
             {
                 GameObject txt = GetText(i).gameObject;
-                dict.Add(txt.name, txt);
+                dict.TryAdd(txt.name, txt);
             }
         }
         else if (typeof(T) == typeof(TMP_InputField))
@@ -80,7 +80,7 @@ public abstract class UI_Base : MonoBehaviour
             for (int i = 0; i < Objects[typeof(T)].Length; i++)
             {
                 GameObject input = GetTextInput(i).gameObject;
-                dict.Add(input.name, input);
+                dict.TryAdd(input.name, input);
             }
         }
         else if (typeof(T) == typeof(Toggle))
@@ -88,11 +88,11 @@ public abstract class UI_Base : MonoBehaviour
             for (int i = 0; i < Objects[typeof(T)].Length; i++)
             {
                 GameObject toggle = GetToggle(i).gameObject;
-                dict.Add(toggle.name, toggle);
+                dict.TryAdd(toggle.name, toggle);
             }
         }
         
-        Objects.Clear();
+        // Objects.Clear();
     }
 
     private T Get<T>(int idx) where T : Object

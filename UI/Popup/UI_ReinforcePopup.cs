@@ -16,6 +16,7 @@ public class UI_ReinforcePopup : UI_Popup
 {
     private CraftingViewModel _craftingVm;
     
+    private readonly Dictionary<string, GameObject> _textDict = new();
     private readonly List<RectTransform> _cardRects = new();
     private readonly List<float> _angles = new();
     private RectTransform _cardPanelRect;
@@ -40,7 +41,7 @@ public class UI_ReinforcePopup : UI_Popup
 
     private enum Texts
     {
-        
+        ReinforceTouchText,
     }
     
     [Inject]
@@ -157,15 +158,17 @@ public class UI_ReinforcePopup : UI_Popup
         if (_isSuccess == false)
         {
             var path = $"Sprites/Portrait/{((UnitId)newUnitInfo.Id).ToString()}_gray";
-            var cardUnit = cardFrame.transform.Find("CardUnit").gameObject;
+            var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
+            var successText = textButton.GetComponentInChildren<TextMeshProUGUI>();
             cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
-            textButton.GetComponentInChildren<TextMeshProUGUI>().text = "Failed";
+            successText.text = Managers.Localization.GetLocalizedValue(successText, "reinforce_complete_text_fail");
         }
         else
         {
             var successEffectPath = (int)newUnitInfo.Class >= 5 ? "UIEffects/SuccessHigh" : "UIEffects/SuccessLow";
+            var successText = textButton.GetComponentInChildren<TextMeshProUGUI>();
             Managers.Resource.Instantiate(successEffectPath, _cardPanelRect);
-            textButton.GetComponentInChildren<TextMeshProUGUI>().text = "Success !";
+            successText.text = Managers.Localization.GetLocalizedValue(successText, "reinforce_complete_text_success");
             cardFrameRect.SetAsLastSibling();
         }
         
@@ -180,10 +183,12 @@ public class UI_ReinforcePopup : UI_Popup
     
     protected override void BindObjects()
     {
+        BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
-        Bind<TextMeshProUGUI>(typeof(Texts));
 
+        Managers.Localization.UpdateTextAndFont(_textDict);
+        
         _rect = GetComponent<RectTransform>();
         _radius = _rect.rect.width / 3;
         _cardPanelRect = GetImage((int)Images.CardPanel).GetComponent<RectTransform>();

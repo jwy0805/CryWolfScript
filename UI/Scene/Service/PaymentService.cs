@@ -85,7 +85,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
             "Payment/Purchase", UnityWebRequest.kHttpVerbPOST, packet);
         
         var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-        popup.Text = "Payment Success!";
+        // popup.Text = "Payment Success!";
         OnPaymentSuccess?.Invoke();
     }
 
@@ -129,7 +129,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         {
             _storeController.ConfirmPendingPurchase(purchaseProduct);
             var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-            popup.Text = "Payment Success!";
+            // popup.Text = "Payment Success!";
             OnCashPaymentSuccess?.Invoke();
         }
         else

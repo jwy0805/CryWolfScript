@@ -11,12 +11,25 @@ public class UI_SignInPopup : UI_Popup
     private IWebService _webService;
     private LoginViewModel _loginViewModel;
     
+    private readonly Dictionary<string, GameObject> _textDict = new();
+    
     private enum Buttons
     {
         ExitButton,
         LoginButton,
         SignUpButton,
         ForgotPasswordButton,
+    }
+
+    private enum Texts
+    {
+        SignInLoginTitleText,
+        SignInRememberMeText,
+        SignInEmailText,
+        SignInPasswordText,
+        SignInLoginButtonText,
+        SignInSignUpButtonText,
+        SignInForgotPasswordButtonText,
     }
     
     private enum TextInputs
@@ -50,9 +63,14 @@ public class UI_SignInPopup : UI_Popup
     
     protected override void BindObjects()
     {
+        BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         Bind<TMP_InputField>(typeof(TextInputs));
         Bind<Toggle>(typeof(Toggles));
+        
+        Managers.Localization.UpdateTextAndFont(_textDict);
+        Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.EmailInput));
+        Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.PasswordInput));
     }
 
     protected override void InitButtonEvents()

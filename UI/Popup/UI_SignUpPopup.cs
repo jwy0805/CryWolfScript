@@ -13,6 +13,7 @@ public class UI_SignUpPopup : UI_Popup
     private IWebService _webService;
     private LoginViewModel _loginViewModel;
     
+    private readonly Dictionary<string, GameObject> _textDict = new();
     private const string AllowedSpecialCharacters = "!@#$%^&*()-_=+[]{};:,.?";
 
     private enum Buttons
@@ -32,7 +33,16 @@ public class UI_SignUpPopup : UI_Popup
 
     private enum Texts
     {
-        WarningText,
+        SignUpTitleText,
+        SignUpWarningText,
+        SignUpEmailText,
+        SignUpPasswordText,
+        SignUpPasswordConfirmText,
+        SignUpPasswordRuleText,
+        SignUpPrivacyPolicyText,
+        SignUpTermOfServiceText,
+        SignUpPolicyInfoText,
+        SignUpEmailVerificationText,
     }
 
     private enum Toggles
@@ -59,10 +69,15 @@ public class UI_SignUpPopup : UI_Popup
 
     protected override void BindObjects()
     {
+        BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
-        Bind<TextMeshProUGUI>(typeof(Texts));
         Bind<TMP_InputField>(typeof(TextInputs));
         Bind<Toggle>(typeof(Toggles));
+        
+        Managers.Localization.UpdateTextAndFont(_textDict);
+        Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.EmailInput));
+        Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.PasswordInput));
+        Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.PasswordConfirmInput));
     }
     
     protected override void InitButtonEvents()
@@ -84,7 +99,7 @@ public class UI_SignUpPopup : UI_Popup
 
     protected override void InitUI()
     {
-        GetText((int)Texts.WarningText).gameObject.SetActive(false);
+        _textDict["SignUpWarningText"].gameObject.SetActive(false);
     }
     
     private void OnExitClicked(PointerEventData data)
@@ -116,10 +131,11 @@ public class UI_SignUpPopup : UI_Popup
                 }
                 else
                 {
-                    var warningText = GetText((int)Texts.WarningText);
-                    warningText.gameObject.SetActive(true);
-                    warningText.GetComponent<TextMeshProUGUI>().text = 
-                        "The special characters allowed in the password are\n" + AllowedSpecialCharacters;
+                    var warningText = _textDict["SignUpWarningText"].gameObject;
+                    warningText.SetActive(true);
+                    Managers.Localization.UpdateTextAndFont(warningText, 
+                        "sign_up_warning_text_allowed_special_characters", 
+                        $"\n{AllowedSpecialCharacters}");
                     return;
                 }
             }
@@ -132,31 +148,31 @@ public class UI_SignUpPopup : UI_Popup
 
         if (text.Length < 8)
         {
-            var warningText = GetText((int)Texts.WarningText);
-            warningText.gameObject.SetActive(true);
-            warningText.GetComponent<TextMeshProUGUI>().text = "Invalid password.";
+            var warningText = _textDict["SignUpWarningText"].gameObject;
+            warningText.SetActive(true);
+            Managers.Localization.UpdateTextAndFont(warningText.gameObject, "sign_up_warning_text_password_length");
         }
         
         if (hasNumber && hasLetter && hasSpecialChar)
         {
-            GetText((int)Texts.WarningText).gameObject.SetActive(false);
+            _textDict["SignUpWarningText"].gameObject.SetActive(false);
         }
         else
         {
-            var warningText = GetText((int)Texts.WarningText);
-            warningText.gameObject.SetActive(true);
-            warningText.GetComponent<TextMeshProUGUI>().text = "Invalid password.";
+            var warningText = _textDict["SignUpWarningText"].gameObject;
+            warningText.SetActive(true);
+            Managers.Localization.UpdateTextAndFont(warningText.gameObject, "sign_up_warning_text_invalid_password");
         }
     }
     
     private void OnPasswordConfirmInputEnd(string text)
     {
-        var warningText = GetText((int)Texts.WarningText);
+        var warningText = _textDict["SignUpWarningText"].gameObject;
 
         if (text != GetTextInput((int)TextInputs.PasswordInput).text)
         {
             warningText.gameObject.SetActive(true);
-            warningText.GetComponent<TextMeshProUGUI>().text = "The password does not match";
+            Managers.Localization.UpdateTextAndFont(warningText.gameObject, "sign_up_warning_text_password_not_match");
         }
         else
         {
@@ -168,9 +184,9 @@ public class UI_SignUpPopup : UI_Popup
     {
         if (_loginViewModel.ReadPolicy == false || _loginViewModel.ReadTerms == false)
         {
-            var text = GetText((int)Texts.WarningText);
-            text.gameObject.SetActive(true);
-            text.GetComponent<TextMeshProUGUI>().text = "Must agree to the terms and policies";
+            var text = _textDict["SignUpWarningText"].gameObject;
+            text.SetActive(true);
+            Managers.Localization.UpdateTextAndFont(text.gameObject, "sign_up_warning_text_must_agree");
             return;
         }
         
@@ -194,8 +210,9 @@ public class UI_SignUpPopup : UI_Popup
             if (completedTask == timeoutTask)
             {
                 var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-                popup.Title = "Network Error";
-                popup.Text = "Time out - Please check your network connection.";
+                Managers.Localization.UpdateNotifyPopupText(popup, 
+                    "notify_network_error_title", 
+                    "notify_network_error_message");
             }
             
             var response = await task;
@@ -203,39 +220,39 @@ public class UI_SignUpPopup : UI_Popup
             if (response.ValidateOk)
             {
                 var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-                popup.Title = "Validation Email Sent";
-                popup.Text = "Please check your email to verify your account.";
+                Managers.Localization.UpdateNotifyPopupText(popup, 
+                    "notify_validation_email_sent_title", 
+                    "notify_validation_email_sent_message");
             }
             else
             {
                 var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-                popup.Title = "Sign Up Error";
 
                 switch (response.ErrorCode)
                 {
                     case 0:
                         break;
                     case 1:
-                        popup.Text = "The email address is already in use.";
+                        Managers.Localization.UpdateNotifyPopupText(popup,
+                            "notify_sign_up_error_title", 
+                            "notify_sign_up_error_message_email_in_use");
                         break;
                     case 2:
-                        popup.Text = "The password is invalid.";
+                        Managers.Localization.UpdateNotifyPopupText(popup,
+                            "notify_sign_up_error_title", 
+                            "notify_sign_up_error_message_invalid_password");
                         break;
                     default:
                         break;
                 }
             }
         }
-        catch (Exception e)
+        catch (Exception)
         {
             var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-            popup.Title = "Unexpected Error";
-            popup.Text = $"An unexpected error occurred - {e}. Please try again later.";
+            Managers.Localization.UpdateNotifyPopupText(popup, 
+                "notify_sign_up_unexpected_error_title", 
+                "notify_sign_up_unexpected_error_message");
         }
-        
-        // var createAccountPacket = new CreateUserAccountPacketRequired { UserAccount = account, Password = password };
-        // var response = await _webService.SendWebRequestAsync<CreateUserAccountPacketResponse>(
-        //     "UserAccount/CreateAccount", "POST", createAccountPacket);
-        // if (response.CreateOk == false) Debug.LogError("유저 정보 초기화 오류");
     }
 }

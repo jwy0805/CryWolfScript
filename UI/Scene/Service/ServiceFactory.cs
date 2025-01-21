@@ -25,6 +25,12 @@ public class ServiceInstaller
             case "UI/Scene/UI_MatchMaking":
                 new MatchMakingServiceFactory().Bind(container);
                 break;
+            case "UI/Scene/UI_FriendlyMatch":
+                new FriendlyMatchServiceFactory().Bind(container);
+                break;
+            case "UI/Scene/UI_SinglePlay":
+                new SinglePlayServiceFactory().Bind(container);
+                break;
             case "UI/Scene/UI_GameSingleWay":
                 new GameServiceFactory().Bind(container);
                 break;
@@ -39,7 +45,7 @@ public class ServiceInstaller
         container.Bind<IWebService>().To<WebService>().AsSingle();
         container.Bind<ITokenService>().To<TokenService>().AsSingle();
         container.Bind<IPaymentService>().To<PaymentService>().AsSingle();
-        container.Bind<ISignalRClient>().To<SignalRClient>().AsSingle();
+        container.BindInterfacesAndSelfTo<SignalRClient>().AsSingle();
 
         _servicesBound = true;
     }
@@ -62,6 +68,7 @@ public class MainLobbyServiceFactory : IServiceFactory
         container.Bind<CollectionViewModel>().AsSingle();
         container.Bind<CraftingViewModel>().AsSingle();
         container.Bind<ShopViewModel>().AsSingle();
+        container.Bind<TutorialViewModel>().AsSingle();
     }
 }
 
@@ -71,6 +78,26 @@ public class MatchMakingServiceFactory : IServiceFactory
     {
         container.Bind<MatchMakingViewModel>().AsSingle();
         container.Bind<DeckViewModel>().AsSingle();
+    }
+}
+
+public class FriendlyMatchServiceFactory : IServiceFactory
+{
+    public void Bind(DiContainer container)
+    {
+        container.Bind<MainLobbyViewModel>().AsSingle();
+        container.Bind<FriendlyMatchViewModel>().AsSingle();
+        container.Bind<MatchMakingViewModel>().AsSingle();
+        container.Bind<DeckViewModel>().AsSingle();
+    }
+}
+
+public class SinglePlayServiceFactory : IServiceFactory
+{
+    public void Bind(DiContainer container)
+    {
+        container.Bind<DeckViewModel>().AsSingle();
+        container.Bind<SinglePlayViewModel>().AsSingle();
     }
 }
 

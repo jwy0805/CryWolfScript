@@ -12,6 +12,7 @@ using Zenject;
 public class UI_Login : UI_Scene
 {
     private LoginViewModel _viewModel;
+    private Dictionary<string, GameObject> _textDict = new();
     
     private enum Buttons
     {
@@ -24,7 +25,11 @@ public class UI_Login : UI_Scene
 
     private enum Texts
     {
-        
+        GoogleButtonText,
+        FacebookButtonText,
+        AppleButtonText,
+        SignUpButtonText,
+        GuestLoginButtonText,
     }
 
     private enum Images
@@ -50,8 +55,11 @@ public class UI_Login : UI_Scene
 
     protected override void BindObjects()
     {
+        BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         Bind<Image>(typeof(Images));
+        
+        Managers.Localization.UpdateTextAndFont(_textDict);
     }
 
     protected override void InitButtonEvents()

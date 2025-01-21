@@ -22,6 +22,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
     private UI_CardClickPopup _cardPopup;
     private bool _changing;
     private Dictionary<string, GameObject> _deckButtonDict;
+    private readonly Dictionary<string, GameObject> _textDict = new();
     
     public Card SelectedCard { get; set; }
     public List<Card[]> Decks { get; set; }
@@ -68,7 +69,8 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
 
     private enum Texts
     {
-        WarningText,
+        DeckChangeScrollWarningText,
+        DeckChangeScrollSelectText,
     }
 
     #endregion
@@ -92,9 +94,11 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
 
     protected override void BindObjects()
     {
+        BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
-        Bind<TextMeshProUGUI>(typeof(Texts));
+        
+        Managers.Localization.UpdateTextAndFont(_textDict);
         
         _deckButtonDict = new Dictionary<string, GameObject>
         {

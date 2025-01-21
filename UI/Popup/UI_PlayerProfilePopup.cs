@@ -8,12 +8,14 @@ using UnityEngine.UI;
 public class UI_PlayerProfilePopup : UI_Popup
 {
     private Slider _expSlider;
+    private readonly Dictionary<string, GameObject> _textDict = new();
     
     public UserInfo PlayerUserInfo { get; set; }
     
     private enum Images
     {
-        SliderBackground
+        SliderBackground,
+        Flag
     }
 
     private enum Buttons
@@ -23,6 +25,11 @@ public class UI_PlayerProfilePopup : UI_Popup
 
     private enum Texts
     {
+        PlayerProfileTitleText,
+        PlayerProfileRankingTitleText,
+        PlayerProfileVictoriesTitleText,
+        PlayerProfileWinRateTitleText,
+        
         UsernameText,
         RankPointText,
         LevelText,
@@ -45,11 +52,15 @@ public class UI_PlayerProfilePopup : UI_Popup
 
     protected override void BindObjects()
     {
+        BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
-        Bind<TextMeshProUGUI>(typeof(Texts));
 
-        _expSlider = GetImage((int)Images.SliderBackground).transform.parent.GetComponent<Slider>();
+        Managers.Localization.UpdateTextAndFont(_textDict);
+        Managers.Localization.UpdateTextFont(_textDict["UsernameText"]);
+        
+        var background = GetImage((int)Images.SliderBackground);
+        _expSlider = background.transform.parent.GetComponent<Slider>();
     }
 
     protected override void InitButtonEvents()

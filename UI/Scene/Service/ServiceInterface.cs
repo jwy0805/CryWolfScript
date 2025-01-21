@@ -41,10 +41,14 @@ public interface ITokenService
 
 public interface ISignalRClient
 {
+    [CanBeNull] Action OnInvitationSent { get; set; }
+    [CanBeNull] Action<AcceptInvitationPacketResponse> OnInvitationSuccess { get; set; }
     [CanBeNull] Action<FriendRequestPacketResponse> OnFriendRequestNotificationReceived { get; set; }
-    Task Connect();
-    Task JoinLobby(string username);
+    Task Connect(string username);
+    Task JoinLobby();
     Task LeaveLobby();
+    Task<InviteFriendlyMatchPacketRequired> SendInvitation(InviteFriendlyMatchPacketRequired required);
+    Task<AcceptInvitationPacketResponse> SendAcceptInvitation(AcceptInvitationPacketRequired required);
     Task<FriendRequestPacketResponse> SendFriendRequest(FriendRequestPacketRequired required);
     Task Disconnect();
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -89,7 +90,7 @@ public class ResourceManager
         installer.CreateFactoryOnProjectContext(projectContext);
         
         // Register services that are needed for the scene (especially view models)
-        var sceneContext = Object.FindObjectOfType<SceneContext>().Container;
+        var sceneContext = Object.FindAnyObjectByType<SceneContext>().Container;
         installer.CreateFactory(path, sceneContext);
         
         var instance = sceneContext.InstantiatePrefab(original, parent);
@@ -187,14 +188,13 @@ public class ResourceManager
             return cardFrame;
         }
         if (Managers.Data.UnitInfoDict.TryGetValue(asset.Id, out var unitInfo) == false) return cardFrame;
-        var starPanel = cardFrame.transform.Find("StarPanel").gameObject;
+        var starPanel = cardFrame.transform.Find("StarPanel");
         var nameText = Util.FindChild(cardFrame, "UnitNameText", true).GetComponent<TextMeshProUGUI>();
         nameText.text = ((UnitId)unitInfo.Id).ToString();
             
-        for (var i = 1; i <= unitInfo.Level; i++)
+        for (var i = 0; i < 3; i++)
         {
-            var star = Util.FindChild(starPanel, $"GradeStar{i}", true, true);
-            star.SetActive(true);
+            starPanel.GetChild(i).gameObject.SetActive(i < unitInfo.Level);
         }
         
         return cardFrame;
@@ -313,39 +313,98 @@ public class ResourceManager
         return go.transform.parent.parent.GetChild(1).GetComponent<Image>();
     }
 
-    public GameObject GetFriendFrame(UserInfo userInfo, Transform parent, Action<PointerEventData> action = null)
+    public GameObject GetFriendFrame(FriendUserInfo friendInfo, Transform parent, Action<PointerEventData> action = null)
     {
         var frame = Instantiate("UI/Deck/FriendInfo", parent);
         var nameText = Util.FindChild(frame, "NameText", true).GetComponent<TextMeshProUGUI>();
         var rankText = Util.FindChild(frame, "RankText", true).GetComponent<TextMeshProUGUI>();
+        var actText = Util.FindChild(frame, "UserActText", true).GetComponent<TextMeshProUGUI>();
         
-        nameText.text = userInfo.UserName;
-        rankText.text = userInfo.RankPoint.ToString();
-        frame.GetOrAddComponent<Friend>().Name = userInfo.UserName;
+        nameText.text = friendInfo.UserName;
+        rankText.text = friendInfo.RankPoint.ToString();
+        actText.text = friendInfo.Act.ToString();
+        frame.GetOrAddComponent<Friend>().FriendName = friendInfo.UserName;
+        frame.BindEvent(action);
+        
+        return frame;
+    }
+
+    public GameObject GetFriendInviteFrame(
+        FriendUserInfo friendInfo,
+        Transform parent,
+        Action<PointerEventData> action = null)
+    {
+        var frame = Instantiate("UI/Deck/FriendInviteFrame", parent);
+        var nameText = Util.FindChild(frame, "NameText", true).GetComponent<TextMeshProUGUI>();
+        var rankText = Util.FindChild(frame, "RankText", true).GetComponent<TextMeshProUGUI>();
+        var actText = Util.FindChild(frame, "UserActText", true).GetComponent<TextMeshProUGUI>();
+        
+        nameText.text = friendInfo.UserName;
+        rankText.text = friendInfo.RankPoint.ToString();
+        actText.text = friendInfo.Act.ToString();
+        frame.GetOrAddComponent<Friend>().FriendName = friendInfo.UserName;
         frame.BindEvent(action);
         
         return frame;
     }
     
-    public GameObject GetFriendRequestFrame(UserInfo userInfo, Transform parent, Action<PointerEventData> action = null)
+    public GameObject GetFriendRequestFrame(
+        FriendUserInfo friendInfo, 
+        Transform parent, 
+        Action<PointerEventData> action = null)
     {
         var frame = Instantiate("UI/Deck/FriendRequestInfo", parent);
         var nameText = Util.FindChild(frame, "NameText", true).GetComponent<TextMeshProUGUI>();
         var rankText = Util.FindChild(frame, "RankText", true).GetComponent<TextMeshProUGUI>();
         
-        nameText.text = userInfo.UserName;
-        rankText.text = userInfo.RankPoint.ToString();
-        frame.GetOrAddComponent<Friend>().Name = userInfo.UserName;
+        nameText.text = friendInfo.UserName;
+        rankText.text = friendInfo.RankPoint.ToString();
+        frame.GetOrAddComponent<Friend>().FriendName = friendInfo.UserName;
         frame.BindEvent(action);
         
         return frame;
     }
 
-    public GameObject GetMailFrame(MailInfo mailInfo, Transform parent, Action<PointerEventData> action = null)
+    public GameObject GetProductMailFrame(MailInfo mailInfo, Transform parent, Action<PointerEventData> action = null)
     {
-        var frame = Instantiate("UI/Deck/MailInfo", parent);
-        frame.BindEvent(action);
+        var frame = Instantiate("UI/Deck/MailInfoProduct", parent);
+        var claimButton = Util.FindChild(frame, "ClaimButton", true);
+        var countText = Util.FindChild(frame, "CountText", true).GetComponent<TextMeshProUGUI>();
+        var infoText = Util.FindChild(frame, "InfoText", true).GetComponent<TextMeshProUGUI>();
+        var expiresText = Util.FindChild(frame, "ExpiresText", true).GetComponent<TextMeshProUGUI>();  
+        
+        frame.GetComponent<Mail>().MailId = mailInfo.MailId;
+        countText.gameObject.SetActive(false);
+        infoText.text = mailInfo.Message;
+        expiresText.text = mailInfo.ExpiresAt.ToString(CultureInfo.CurrentCulture);
+        claimButton.BindEvent(action);
 
+        return frame;
+    }
+
+    public GameObject GetInviteMailFrame(MailInfo mailInfo, Transform parent)
+    {
+        var frame = Instantiate("UI/Deck/MailInfoInvitation", parent);
+        var infoText = Util.FindChild(frame, "InfoText", true).GetComponent<TextMeshProUGUI>();
+        var expireText = Util.FindChild(frame, "ExpireText", true).GetComponent<TextMeshProUGUI>();
+        
+        frame.GetComponent<Mail>().MailId = mailInfo.MailId;
+        infoText.text = mailInfo.Message;
+        expireText.text = mailInfo.ExpiresAt.ToString(CultureInfo.CurrentCulture);
+        
+        return frame;
+    }
+    
+    public GameObject GetNotifyMailFrame(MailInfo mailInfo, Transform parent, Action<PointerEventData> action = null)
+    {
+        var frame = Instantiate("UI/Deck/MailInfoNotification", parent);
+        var claimButton = Util.FindChild(frame, "ClaimButton", true);
+        var infoText = Util.FindChild(frame, "InfoText", true).GetComponent<TextMeshProUGUI>();
+        
+        frame.GetComponent<Mail>().MailId = mailInfo.MailId;
+        infoText.text = mailInfo.Message;
+        claimButton.BindEvent(action);
+        
         return frame;
     }
 }

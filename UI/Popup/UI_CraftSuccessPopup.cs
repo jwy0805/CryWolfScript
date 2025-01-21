@@ -11,6 +11,8 @@ public class UI_CraftSuccessPopup : UI_Popup
 {
     private CraftingViewModel _craftingVm;
     
+    private readonly Dictionary<string, GameObject> _textDict = new();
+    
     private enum Images
     {
         CardPanel,
@@ -23,7 +25,8 @@ public class UI_CraftSuccessPopup : UI_Popup
 
     private enum Texts
     {
-        
+        CraftSuccessCompleteText,
+        CraftSuccessTouchText,
     }
     
     [Inject]
@@ -45,9 +48,11 @@ public class UI_CraftSuccessPopup : UI_Popup
     
     protected override void BindObjects()
     {
+        BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
-        Bind<TextMeshProUGUI>(typeof(Texts));
+        
+        Managers.Localization.UpdateTextAndFont(_textDict);
     }
     
     protected override void InitButtonEvents()

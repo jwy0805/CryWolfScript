@@ -16,9 +16,9 @@ public class Define
         Login,
         MainLobby,
         Game,
-        Result,
-        Store,
-        MatchMaking
+        MatchMaking,
+        FriendlyMatch,
+        SinglePlay,
     }
     
     public enum Sound

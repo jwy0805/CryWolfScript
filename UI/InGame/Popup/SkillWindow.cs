@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -12,7 +13,7 @@ using Button = UnityEngine.UI.Button;
 
 public interface ISkillWindow
 {
-    void InitUI(IPortrait portrait);
+    void InitUI(UnitId unitId);
     void InitUpgradeButton();
     void UpdateSkillButton();
     void UpdateUpgradeCost(int cost);
@@ -34,7 +35,8 @@ public class SkillWindow : UI_Popup, ISkillWindow
     {
         CurrentName,
         CurrentPercent,
-        GoldText,
+        SkillWindowUpgradeText,
+        SkillWindowUpgradeGoldText,
     }
     
     private GameViewModel _gameVm;
@@ -56,10 +58,12 @@ public class SkillWindow : UI_Popup, ISkillWindow
         BindObjects();
         InitButtonEvents();
         InitUpgradeButton();
-        InitUI(_gameVm.CurrentSelectedPortrait);
+        InitUI(_gameVm.UnitControlWindow == null
+            ? _gameVm.CurrentSelectedPortrait.UnitId
+            : _gameVm.UnitControlWindow.SelectedUnit.GetComponent<CreatureController>().UnitId);
     }
 
-    public void InitUI(IPortrait portrait)
+    public void InitUI(UnitId unitId)
     {
         // Destroy the previous skill panel
         if (_skillPanel != null)
@@ -72,7 +76,6 @@ public class SkillWindow : UI_Popup, ISkillWindow
         rect.anchoredPosition = new Vector2(0, 0);
         rect.sizeDelta = new Vector2(0, 0);
         
-        var unitId = portrait.UnitId;
         _skillPanel = Managers.Resource.Instantiate($"UI/InGame/SkillPanel/{unitId.ToString()}SkillPanel");
         _skillPanel.transform.SetParent(Util.FindChild(gameObject, "SkillPanel", true).transform);
         var panelRect = _skillPanel.GetComponent<RectTransform>();
@@ -111,7 +114,7 @@ public class SkillWindow : UI_Popup, ISkillWindow
     // Update the cost(gold text) in the upgrade button
     public void UpdateUpgradeCost(int cost)
     {
-        GetText((int)Texts.GoldText).text = cost.ToString();
+        GetText((int)Texts.SkillWindowUpgradeGoldText).text = cost.ToString();
     }
 
     #region Button Events
@@ -155,22 +158,50 @@ public class SkillWindow : UI_Popup, ISkillWindow
     public void InitUpgradeButton()
     {
         var button = GetButton((int)Buttons.UpgradeButton);
-        SetObjectSize(button.gameObject, 0.95f);
+        SetObjectSize(button.gameObject);
         if (_gameVm.CurrentSelectedPortrait == null) return;
-
-        if (_gameVm.GetLevelFromUiObject(_gameVm.CurrentSelectedPortrait.UnitId) == 3)
+        
+        var unitLevel = _gameVm.GetLevelFromUiObject(_gameVm.CurrentSelectedPortrait.UnitId);
+        var buyObject = Util.FindChild(button.gameObject, "BuyPanel", false, true);
+        var completeObject = Util.FindChild(button.gameObject, "CompletePanel", false, true);
+        
+        if (unitLevel == 3)
         {
             button.interactable = false;
-            Util.FindChild(button.gameObject, "BuyPanel", false, true).SetActive(false);
-            Util.FindChild(button.gameObject, "CompletePanel", false, true).SetActive(true);
+            buyObject.SetActive(false);
+            completeObject.SetActive(true);
+            Debug.Log("Unit is already at max level");
         }
         else
         {
-            button.interactable = true;
-            Util.FindChild(button.gameObject, "CompletePanel", false, true).SetActive(false);
-            Util.FindChild(button.gameObject, "BuyPanel", false, true).SetActive(true);
+            var unitIds = Util.Faction == Faction.Sheep
+                ? User.Instance.DeckSheep.UnitsOnDeck.Select(info => info.Id).ToArray()
+                : User.Instance.DeckWolf.UnitsOnDeck.Select(info => info.Id).ToArray();
+            var availableUnits = new List<int>();
+            availableUnits.AddRange(
+                unitIds.SelectMany(id =>
+                {
+                    var level = id % 100 % 3;
+                    return level switch
+                    {
+                        0 => new[] { id, id - 1, id - 2 },
+                        1 => new[] { id },
+                        2 => new[] { id, id - 1 },
+                        _ => Array.Empty<int>()
+                    };
+                })
+            );
             
-            _gameVm.UpdateUpgradeCostRequired();
+            var isOwned = availableUnits.Contains((int)_gameVm.CurrentSelectedPortrait.UnitId + 1);
+            
+            button.interactable = isOwned;
+            buyObject.SetActive(isOwned);
+            completeObject.SetActive(!isOwned);
+
+            if (isOwned)
+            {
+                _gameVm.UpdateUpgradeCostRequired();
+            }
         }
     }
 }

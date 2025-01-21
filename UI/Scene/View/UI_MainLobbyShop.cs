@@ -21,10 +21,10 @@ public partial class UI_MainLobby
         _beginnerPackagePanel = GetImage((int)Images.BeginnerPackagePanel).transform;
         _reservedSalePanel = GetImage((int)Images.ReservedSalePanel).transform;
         _dailyDealPanel = GetImage((int)Images.DailyDealPanel).transform;
+        _goldStorePanel = GetImage((int)Images.GoldStorePanel).transform;
+        _spinelStorePanel = GetImage((int)Images.SpinelStorePanel).transform;
         _goldPackagePanel = GetImage((int)Images.GoldPackagePanel).transform;
         _spinelPackagePanel = GetImage((int)Images.SpinelPackagePanel).transform;
-        _goldItemsPanel = GetImage((int)Images.GoldItemPanel).transform;
-        _spinelItemsPanel = GetImage((int)Images.SpinelItemPanel).transform;
         
         await _shopVm.Initialize();
         
@@ -33,8 +33,8 @@ public partial class UI_MainLobby
         
         InitReservedPackages();
         InitDailyDeal();
-        InitPackages(_shopVm.GoldPackages, _goldPackagePanel);
-        InitPackages(_shopVm.SpinelPackages, _spinelPackagePanel);
+        InitPackages(_shopVm.GoldPackages, _goldStorePanel);
+        InitPackages(_shopVm.SpinelPackages, _spinelStorePanel);
         InitGoldItems();
         InitSpinelItems();
     }
@@ -105,7 +105,7 @@ public partial class UI_MainLobby
         foreach (var productInfo in _shopVm.GoldItems)
         {
             var itemName = ((ProductId)productInfo.Id).ToString();
-            var item = InitiateProduct(itemName, productInfo, _goldItemsPanel);
+            var item = InitiateProduct(itemName, productInfo, _goldPackagePanel);
             var countText = Util.FindChild(item, "TextNum", true, true);
             var priceText = Util.FindChild(item, "TextPrice", true, true);
             var frameObject = Util.FindChild(item, "ItemIcon", true, true);
@@ -123,7 +123,7 @@ public partial class UI_MainLobby
         foreach (var productInfo in _shopVm.SpinelItems)
         {
             var itemName = ((ProductId)productInfo.Id).ToString();
-            var item = InitiateProduct(itemName, productInfo, _spinelItemsPanel);
+            var item = InitiateProduct(itemName, productInfo, _spinelPackagePanel);
             var countText = Util.FindChild(item, "TextNum", true, true);
             var priceText = Util.FindChild(item, "TextPrice", true, true);
             
@@ -140,6 +140,7 @@ public partial class UI_MainLobby
     {
         var panel = Managers.Resource.Instantiate($"UI/Shop/{prefabPath}", parent);
         var product = panel.GetOrAddComponent<Product>();
+        product.Init();
         product.ProductInfo = productInfo;
         
         if (action != null) panel.BindEvent(action);

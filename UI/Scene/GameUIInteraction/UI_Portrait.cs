@@ -48,13 +48,18 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
     public void OnBeginDrag(PointerEventData eventData)
     {
         Managers.UI.CloseAllPopupUI();
-        var go = gameObject;
         var tf = transform;
         var bounce = GetComponent<ButtonBounce>();
         bounce.Selected = false;
         
         // Drag start
-        _gameVm.CurrentSelectedPortrait = go.GetComponent<UI_Portrait>();
+        if (gameObject.TryGetComponent(out UI_Portrait portrait) == false)
+        {
+            Debug.Log("UI_Portrait is null");
+            return;
+        }
+        
+        _gameVm.CurrentSelectedPortrait = portrait;
         _gameVm.OnPortraitDrag = true;
         _originalPos = tf.position;
         _lastSendTime = 0;

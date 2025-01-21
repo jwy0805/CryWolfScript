@@ -27,6 +27,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private DeckViewModel _deckVm;
     private CollectionViewModel _collectionVm;
     private CraftingViewModel _craftingVm;
+    private TutorialViewModel _tutorialVm;
     private ShopViewModel _shopVm;
 
     private readonly float _modeChangeTime = 0.25f;
@@ -39,6 +40,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private UI_CardClickPopup _cardPopup;
     private RectTransform _craftingPanel;
     private ScrollRect _craftingScrollRect;
+    private Camera _tutorialCamera;
     private Transform _unitCollection;
     private Transform _unitNoCollection;
     private Transform _assetCollection;
@@ -50,10 +52,10 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private Transform _beginnerPackagePanel;
     private Transform _reservedSalePanel;
     private Transform _dailyDealPanel;
-    private Transform _goldPackagePanel;
+    private Transform _goldStorePanel;
+    private Transform _spinelStorePanel;
     private Transform _spinelPackagePanel;
-    private Transform _spinelItemsPanel;
-    private Transform _goldItemsPanel;
+    private Transform _goldPackagePanel;
     private List<GameObject> _modes;
     private Dictionary<string, GameObject> _craftingUiDict;
     private Dictionary<string, GameObject> _collectionUiDict;
@@ -63,6 +65,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private Dictionary<string, GameObject> _tabButtonDict;
     private Dictionary<string, GameObject> _deckButtonDict;
     private Dictionary<string, GameObject> _lobbyDeckButtonDict;
+    private Dictionary<string, GameObject> _textDict = new();
     private SelectModeEnums _selectMode;
     private GameModeEnums _gameMode;
     private ArrangeModeEnums _arrangeMode = ArrangeModeEnums.All;
@@ -201,12 +204,53 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         UsernameText,
         RankText,
         
-        CraftCountText,
+        MainSettingsButtonText,
+        MainFriendsButtonText,
+        MainMailButtonText,
+        MainMissionButtonText,
+        MainGiftButtonText,
+        MainPlayButtonText,
+        FriendlyMatchPanelText,
+        RankGamePanelText,
+        SinglePlayPanelText,
+        MainShopButtonText,
+        MainItemButtonText,
+        MainBattleButtonText,
+        MainEventButtonText,
+        MainClanButtonText,
         
+        MainDeckLabelText,
+        MainBattleSettingLabelText,
+        MainCraftingButtonText,
+        MainReinforcingButtonText,
+        MainRecyclingButtonText,
+        MainCraftText,
+        CraftCountText,
+        MainTempText,
         ReinforceCardSelectText,
         ReinforceCardNumberText,
         SuccessRateText,
         SuccessText,
+        
+        HoldingLabelText,
+        NotHoldingLabelText,
+        AssetHoldingLabelText,
+        AssetNotHoldingLabelText,
+        CharacterHoldingLabelText,
+        CharacterNotHoldingLabelText,
+        MaterialHoldingLabelText,
+        
+        SpecialDealText,
+        SpecialPackageLabelText,
+        BeginnerPackageLabelText,
+        ReservedSaleLabelText,
+        DailyDealLabelText,
+        SpinelStoreLabelText,
+        GoldStoreLabelText,
+        GoldPackageLabelText,
+        SpinelPackageLabelText,
+        
+        
     }
 
     private enum Images
@@ -276,10 +320,10 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         SpecialPackagePanel,
         ReservedSalePanel,
         DailyDealPanel,
+        SpinelStorePanel,
+        GoldStorePanel,
         GoldPackagePanel,
         SpinelPackagePanel,
-        SpinelItemPanel,
-        GoldItemPanel
     }
 
     #endregion
@@ -293,6 +337,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         DeckViewModel deckViewModel,
         CollectionViewModel collectionViewModel,
         CraftingViewModel craftingViewModel,
+        TutorialViewModel tutorialViewModel,
         ShopViewModel shopViewModel)
     {
         _userService = userService;
@@ -302,6 +347,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         _deckVm = deckViewModel;
         _collectionVm = collectionViewModel;
         _craftingVm = craftingViewModel;
+        _tutorialVm = tutorialViewModel;
         _shopVm = shopViewModel;
     }
 
@@ -349,6 +395,9 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         _craftingVm.SetCollectionUI -= SetCollectionUI;
         _craftingVm.SetCollectionUI += SetCollectionUI;
         
+        _tutorialVm.OnInitTutorialCamera -= InitTutorialCamera;
+        _tutorialVm.OnInitTutorialCamera += InitTutorialCamera;
+        
         _userService.InitDeckButton -= SetDeckButtonUI;
         _userService.InitDeckButton += SetDeckButtonUI;
     }
@@ -363,7 +412,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         _lobbyVm.SetCurrentPage(2);
 
         await InitMainLobby();
-        await _lobbyVm.JoinLobby(_userService.UserInfo.UserName);
+        await _lobbyVm.JoinLobby();
     }
 
     private void Update()
@@ -863,6 +912,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
             var simplePopup = Managers.UI.ShowPopupUI<UI_ProductInfoSimplePopup>();
             simplePopup.FrameObject = Instantiate(go);
             product = productSimple;
+            simplePopup.FrameObject.GetComponent<ProductSimple>().ProductInfo = product.ProductInfo;
         }
         
         if (go.TryGetComponent(out ProductPackage productPackage))
@@ -872,6 +922,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
             packagePopup.FrameObject = Instantiate(go);
             packagePopup.FrameSize = go.GetComponent<RectTransform>().sizeDelta;
             product = productPackage;
+            packagePopup.FrameObject.GetComponent<ProductPackage>().ProductInfo = product.ProductInfo;
         }
 
         if (product == null) return;
@@ -900,9 +951,12 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     
     protected override void BindObjects()
     {
+        BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         Bind<Image>(typeof(Images));
-        Bind<TextMeshProUGUI>(typeof(Texts));
+        
+        Managers.Localization.UpdateTextAndFont(_textDict);
+        Managers.Localization.UpdateTextFont(_textDict["UsernameText"]);
 
         _expSlider = GetImage((int)Images.ExpSliderBackground).transform.parent.GetComponent<Slider>();
         _craftingScrollRect = GetImage((int)Images.CollectionScrollView).GetComponent<ScrollRect>();
@@ -1067,11 +1121,22 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
 
         // Test
         await _userService.LoadTestUser(userId: 1);
-        // MainLobby_Item Setting
-        // await _userService.LoadUserInfo();
-        await Task.WhenAll(InitCollection(), InitShop(), _lobbyVm.InitFriendAlert(), _lobbyVm.InitMailAlert());
+        // //MainLobby_Item Setting
+        //await _userService.LoadUserInfo();
+        await Task.WhenAll(
+            InitCollection(),
+            InitShop(),
+            _lobbyVm.InitFriendAlert(),
+            _lobbyVm.InitMailAlert(),
+            _lobbyVm.ConnectSignalR(_userService.UserInfo.UserName));
         
         BindUserInfo();
+        
+        // Process Tutorial
+        if (_userService.UserInfo.BattleTutorialDone == false)
+        {
+            var tutorialPopup = Managers.UI.ShowPopupUI<UI_TutorialPopup>();
+        }
     }
 
     private void BindUserInfo()
@@ -1082,12 +1147,12 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
 
         _expSlider.value = exp / (float)expMax;
         
-        GetText((int)Texts.GoldText).text = userInfo.Gold.ToString();
-        GetText((int)Texts.SpinelText).text = userInfo.Spinel.ToString();
-        GetText((int)Texts.LevelText).text = userInfo.Level.ToString();
-        GetText((int)Texts.UsernameText).text = userInfo.UserName;
-        GetText((int)Texts.RankText).text = userInfo.RankPoint.ToString();
-        GetText((int)Texts.ExpText).text = $"{exp.ToString()} / {expMax.ToString()}";
+        _textDict["GoldText"].GetComponent<TextMeshProUGUI>().text = userInfo.Gold.ToString();
+        _textDict["SpinelText"].GetComponent<TextMeshProUGUI>().text = userInfo.Spinel.ToString();
+        _textDict["LevelText"].GetComponent<TextMeshProUGUI>().text = userInfo.Level.ToString();
+        _textDict["UsernameText"].GetComponent<TextMeshProUGUI>().text = userInfo.UserName;
+        _textDict["RankText"].GetComponent<TextMeshProUGUI>().text = userInfo.RankPoint.ToString();
+        _textDict["ExpText"].GetComponent<TextMeshProUGUI>().text = $"{exp.ToString()} / {expMax.ToString()}";
     }
     
     private void SwitchLobbyUI(Faction faction)
@@ -1163,6 +1228,13 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
             pair.Value.SetActive(pair.Key == $"{buttonName}Focus");
         }
     }
+
+    private void InitTutorialCamera(Vector3 npcPos, Vector3 cameraPos)
+    {
+        _tutorialCamera = GameObject.FindGameObjectWithTag("Camera").GetComponent<Camera>();
+        _tutorialCamera.transform.position = cameraPos;
+        _tutorialCamera.transform.LookAt(npcPos);
+    }
     
     #endregion
     
@@ -1210,6 +1282,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         _craftingVm.SetMaterialsOnCraftPanel -= InitMaterialsOnCraftPanel;
         _craftingVm.InitCraftingPanel -= InitCraftingPanel;
         _craftingVm.SetCollectionUI -= SetCollectionUI;
+        _tutorialVm.OnInitTutorialCamera -= InitTutorialCamera;
         _userService.InitDeckButton -= SetDeckButtonUI;
         
         await _lobbyVm.LeaveLobby();

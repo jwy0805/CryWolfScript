@@ -122,14 +122,23 @@ public enum ProductCategory
     None = 0,
     SpecialPackage = 1,
     BeginnerPackage = 2,
-    GoldPackage = 3,
-    SpinelPackage = 4,
-    GoldItem = 5,
-    SpinelItem = 6,
+    GoldStore = 3,
+    SpinelStore = 4,
+    GoldPackage = 5,
+    SpinelPackage = 6,
     ReservedSale = 7,
     DailyDeal = 8,
-    Other = 9,
+    Pass = 9,
+    Other = 100,
 }   
+
+public enum MailType
+{
+    None,
+    Notice,
+    Invite,
+    Product,
+}
 
 public enum CurrencyType
 {

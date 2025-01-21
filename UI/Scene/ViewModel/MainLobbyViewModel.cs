@@ -51,17 +51,23 @@ public class MainLobbyViewModel : IDisposable
         _webService = webService;
         _tokenService = tokenService;
         _signalRClient = signalRClient;
-        _signalRClient.Connect();
         
         BindEvents();
     }
     
     private void BindEvents()
     {
+        _signalRClient.OnInvitationSent -= RefreshMailAlert;
+        _signalRClient.OnInvitationSent += RefreshMailAlert;
         _signalRClient.OnFriendRequestNotificationReceived -= FriendRequestNotificationReceived;
         _signalRClient.OnFriendRequestNotificationReceived += FriendRequestNotificationReceived;
     }
 
+    public async Task ConnectSignalR(string username)
+    {
+        await _signalRClient.Connect(username);
+    }
+    
     public async Task InitFriendAlert()
     {
         var friendTask = await LoadPendingFriends();
@@ -83,27 +89,32 @@ public class MainLobbyViewModel : IDisposable
             OffMailAlert?.Invoke();
         }
     }
+
+    public void RefreshMailAlert()
+    {
+        OnMailAlert?.Invoke();
+    }
     
     public void OnPlayButtonClicked(UI_MainLobby.GameModeEnums mode)
     {
         switch (mode)
         {
             case UI_MainLobby.GameModeEnums.FriendlyMatch:
+                Managers.Scene.LoadScene(Define.Scene.FriendlyMatch);
+                Managers.Network.IsFriendlyMatchHost = true;
                 break;
+            
             case UI_MainLobby.GameModeEnums.RankGame:
-                LoadMatchMakingScene();
+                Managers.Scene.LoadScene(Define.Scene.MatchMaking);
                 break;
+            
             case UI_MainLobby.GameModeEnums.SinglePlay:
+                Managers.Scene.LoadScene(Define.Scene.SinglePlay);
                 break;
         }
     }
     
-    private void LoadMatchMakingScene()
-    {
-        Managers.Scene.LoadScene(Define.Scene.MatchMaking);
-    }
-    
-    public async Task<List<UserInfo>> GetFriendList()
+    public async Task<List<FriendUserInfo>> GetFriendList()
     {
         var packet = new FriendListPacketRequired
         {
@@ -114,7 +125,7 @@ public class MainLobbyViewModel : IDisposable
 
         await task;
 
-        return task.Result.FriendList;
+        return task.Result.FriendList.OrderBy(friendInfo => GetFriendOrderPriority(friendInfo.Act)).ToList();
     }
     
     public async Task<List<FriendUserInfo>> LoadPendingFriends()
@@ -220,10 +231,30 @@ public class MainLobbyViewModel : IDisposable
     {
         OnUpdateFriendList?.Invoke();
     }
-    
-    public async Task JoinLobby(string username)
+
+    private int GetFriendOrderPriority(UserAct act)
     {
-        await _signalRClient.JoinLobby(username);
+        switch (act)
+        {
+            case UserAct.InLobby:
+                return 0;
+            case UserAct.InCustomGame:
+            case UserAct.InMultiGame:
+            case UserAct.InRankGame:
+            case UserAct.InSingleGame:
+            case UserAct.InTutorial:
+            case UserAct.MatchMaking:
+                return 1;
+            case UserAct.Offline:
+            case UserAct.Pending:
+            default:
+                return 2;
+        }
+    }
+    
+    public async Task JoinLobby()
+    {
+        await _signalRClient.JoinLobby();
     }
     
     public async Task LeaveLobby()
@@ -294,6 +325,14 @@ public class MainLobbyViewModel : IDisposable
     
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+    
+    private void Dispose(bool disposing)
+    {
+        if (!disposing) return;
+        _signalRClient.OnInvitationSent -= RefreshMailAlert;
         _signalRClient.OnFriendRequestNotificationReceived -= FriendRequestNotificationReceived;
     }
 }

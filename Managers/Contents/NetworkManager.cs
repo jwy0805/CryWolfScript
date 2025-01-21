@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Google.Protobuf;
@@ -13,11 +14,34 @@ using UnityEngine;
 public class NetworkManager
 {
     private ServerSession _session = new();
+    private int _sessionId;
     private const string LocalPort = "7270";
     private const string Address = "hamonstudio.net";
     
     public Env Environment => Env.Local;
+    public bool IsFriendlyMatchHost { get; set; }
 
+    public int SessionId
+    {
+        get => _sessionId;
+        set
+        {
+            _sessionId = value;
+
+            if (_sessionId == -1) return;
+            
+            if (GameObject.FindWithTag("UI").TryGetComponent(out UI_MatchMaking uiMatchMaking))
+            {
+                uiMatchMaking.StartMatchMaking(_sessionId);
+            }
+            
+            if (GameObject.FindWithTag("UI").TryGetComponent(out UI_SinglePlay uiSinglePlay))
+            {
+                uiSinglePlay.StartSinglePlay(_sessionId);
+            }
+        }
+    }
+    
     public string BaseUrl
     {
         get
@@ -45,7 +69,7 @@ public class NetworkManager
         }
     }
 
-    public async void ConnectGameSession(bool test = false)
+    public async Task ConnectGameSession(bool test = false)
     {
         // DNS (Domain Name System)
         string host;
@@ -86,5 +110,6 @@ public class NetworkManager
     public void Disconnect()
     {
         _session.Disconnect();
+        _sessionId = -1;
     }
 }

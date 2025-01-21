@@ -81,13 +81,14 @@ public class UI_ProductInfoSimplePopup : UI_Popup
             ? "Sprites/ShopIcons/icon_spinel"
             : "Sprites/ShopIcons/icon_gold";
         var composition = _productInfo.Compositions.FirstOrDefault(c => c.Id == _productInfo.Id);
-        var str = _productInfo.Category == ProductCategory.GoldItem ? "" : "X";
+        var str = _productInfo.Category == ProductCategory.GoldPackage ? "" : "X";
         
         _icon.sprite = Managers.Resource.Load<Sprite>(iconPath);
         FrameObject.transform.SetParent(_frame.transform);
         FrameObject.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
         
-        GetText((int)Texts.TextName).text = ((ProductId)_productInfo.Id).ToString();
+        var productText = GetText((int)Texts.TextName);
+        productText.text = Managers.Localization.GetLocalizedValue(productText, _productInfo.ProductCode);
         GetText((int)Texts.TextNum).text = str + composition?.Count;
         GetText((int)Texts.TextPrice).text = _productInfo.Price.ToString();
     }

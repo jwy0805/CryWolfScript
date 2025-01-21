@@ -23,6 +23,7 @@ public class DataManager
     public Dictionary<int, Contents.UnitData> UnitDict { get; private set; } = new();
     public Dictionary<int, Contents.ObjectData> ObjectDict { get; private set; } = new();
     public Dictionary<int, Contents.SkillData> SkillDict { get; private set; } = new();
+    public Dictionary<string, Dictionary<string, Contents.LocalizationEntry>> LocalizationDict { get; set; } = new();
 
     public Dictionary<UnitId, List<Skill>> MainSkillDict { get; } = new()
     {
@@ -94,9 +95,24 @@ public class DataManager
 
     public async Task InitAsync()
     {
-        UnitDict = (await LoadJsonAsync<Contents.UnitLoader, int, Contents.UnitData>("UnitData"))!.MakeDict();
-        ObjectDict = (await LoadJsonAsync<Contents.ObjectLoader, int, Contents.ObjectData>("ObjectData"))!.MakeDict();
-        SkillDict = (await LoadJsonAsync<Contents.SkillLoader, int, Contents.SkillData>("SkillData"))!.MakeDict();
+        if (UnitDict.Count != 0 && ObjectDict.Count != 0 && SkillDict.Count != 0 && LocalizationDict.Count != 0)
+        {
+            return;
+        }
+        
+        var unitDictTask = LoadJsonAsync<Contents.UnitLoader, int, Contents.UnitData>("UnitData");
+        var objectDictTask = LoadJsonAsync<Contents.ObjectLoader, int, Contents.ObjectData>("ObjectData");
+        var skillDictTask = LoadJsonAsync<Contents.SkillLoader, int, Contents.SkillData>("SkillData");
+        // var localizationDictTask = LoadJsonAsync<
+        //     Contents.LanguageLoader, string, Dictionary<string, Contents.LocalizationEntry>>("LanguageData");
+        var localizationDictTask = LoadJsonAsync<string, Dictionary<string, Contents.LocalizationEntry>>("LanguageData");
+
+        await Task.WhenAll(unitDictTask, objectDictTask, skillDictTask, localizationDictTask);
+        
+        UnitDict = unitDictTask.Result!.MakeDict();
+        ObjectDict = objectDictTask.Result!.MakeDict();
+        SkillDict = skillDictTask.Result!.MakeDict();
+        LocalizationDict = localizationDictTask.Result;
     }
     
     private async Task<TLoader> LoadJsonAsync<TLoader, TKey, TValue>(string data) where TLoader : ILoader<TKey, TValue>
@@ -104,39 +120,52 @@ public class DataManager
         var filePath = Path.Combine(Application.streamingAssetsPath, $"{data}.json");
         string jsonContent;
 
-        if (Application.platform == RuntimePlatform.Android)
+        if (File.Exists(filePath))
         {
-            // Android
-            using var www = UnityWebRequest.Get(filePath);
-            var operation = www.SendWebRequest();
-
-            while (operation.isDone == false)
-            {
-                await Task.Yield();
-            }
-            
-            if (www.result != UnityWebRequest.Result.Success)
-            {
-                Debug.LogError($"Failed to load {data}.json");
-                return default;
-            }
-
-            jsonContent = www.downloadHandler.text;
+            jsonContent = await File.ReadAllTextAsync(filePath);
         }
         else
         {
-            // Other platforms
-            if (File.Exists(filePath))
-            {
-                jsonContent = await File.ReadAllTextAsync(filePath);
-            }
-            else
-            {
-                Debug.LogError($"Cannot find {data}.json");
-                return default;
-            }
+            Debug.LogError($"Cannot find {data}.json");
+            return default;
         }
 
-        return JsonConvert.DeserializeObject<TLoader>(jsonContent);
+        try
+        {
+            return JsonConvert.DeserializeObject<TLoader>(jsonContent);
+
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"JSON deserialization error: {e.Message}");
+            throw;
+        }
+    }
+    
+    private async Task<Dictionary<TKey, TValue>> LoadJsonAsync<TKey, TValue>(string data)
+    {
+        var filePath = Path.Combine(Application.streamingAssetsPath, $"{data}.json");
+        string jsonContent;
+
+        if (File.Exists(filePath))
+        {
+            jsonContent = await File.ReadAllTextAsync(filePath);
+        }
+        else
+        {
+            Debug.LogError($"Cannot find {data}.json");
+            return default;
+        }
+
+        try
+        {
+            return JsonConvert.DeserializeObject<Dictionary<TKey, TValue>>(jsonContent);
+
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"JSON deserialization error: {e.Message}");
+            throw;
+        }
     }
 }

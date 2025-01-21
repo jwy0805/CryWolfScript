@@ -15,6 +15,7 @@ public class UI_FriendsAddPopup : UI_Popup
     private MainLobbyViewModel _lobbyVm;
     
     private List<FriendUserInfo> _pendingFriends;
+    private readonly Dictionary<string, GameObject> _textDict = new();
 
     private enum Images
     {
@@ -27,6 +28,12 @@ public class UI_FriendsAddPopup : UI_Popup
         BackButton,
         SearchButton,
         ExitButton
+    }
+    
+    private enum Texts
+    {
+        FriendsAddTitleText,
+        FriendsAddUsernameText,
     }
 
     private enum TextInputs
@@ -52,9 +59,13 @@ public class UI_FriendsAddPopup : UI_Popup
 
     protected override void BindObjects()
     {
+        BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         Bind<TMP_InputField>(typeof(TextInputs));
         Bind<Image>(typeof(Images));
+        
+        Managers.Localization.UpdateTextAndFont(_textDict);
+        Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.UsernameInput));
     }
 
     protected override void InitButtonEvents()
@@ -89,14 +100,7 @@ public class UI_FriendsAddPopup : UI_Popup
         
         foreach (var friendInfo in friendList)
         {
-            var userInfo = new UserInfo
-            {
-                UserName = friendInfo.UserName,
-                Level = friendInfo.Level,
-                RankPoint = friendInfo.RankPoint
-            };
-
-            var frame = Managers.Resource.GetFriendRequestFrame(userInfo, parent);
+            var frame = Managers.Resource.GetFriendRequestFrame(friendInfo, parent);
             var acceptButton = Util.FindChild(frame, "AcceptButton", true).GetComponent<Button>();
             var denyButton = Util.FindChild(frame, "DenyButton", true).GetComponent<Button>();
             
@@ -112,14 +116,7 @@ public class UI_FriendsAddPopup : UI_Popup
         
         foreach (var friendInfo in userInfoList)
         {
-            var userInfo = new UserInfo
-            {
-                UserName = friendInfo.UserName,
-                Level = friendInfo.Level,
-                RankPoint = friendInfo.RankPoint
-            };
-
-            var frame = Managers.Resource.GetFriendFrame(userInfo, parent);
+            var frame = Managers.Resource.GetFriendFrame(friendInfo, parent);
             BindFriendRequestButton(frame, friendInfo);
         }
     }
@@ -172,7 +169,7 @@ public class UI_FriendsAddPopup : UI_Popup
     {
         if (data.pointerPress.transform.parent.TryGetComponent(out Friend friend) == false) return;
 
-        await _lobbyVm.AcceptFriend(friend.Name, true);
+        await _lobbyVm.AcceptFriend(friend.FriendName, true);
         await LoadPendingFriends();
         _lobbyVm.UpdateFriendList();
     }
@@ -181,7 +178,7 @@ public class UI_FriendsAddPopup : UI_Popup
     {
         if (data.pointerPress.transform.parent.TryGetComponent(out Friend friend) == false) return;
 
-        await _lobbyVm.AcceptFriend(friend.Name, false);
+        await _lobbyVm.AcceptFriend(friend.FriendName, false);
         await LoadPendingFriends();
     }
 

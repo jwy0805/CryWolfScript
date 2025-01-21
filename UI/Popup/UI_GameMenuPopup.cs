@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -10,11 +11,20 @@ public class UI_GameMenuPopup : UI_Popup
     private IWebService _webService;
     private ITokenService _tokenService;
     
+    private readonly Dictionary<string, GameObject> _textDict = new();
+    
     private enum Buttons
     {
         ExitButton,
         SurrenderButton,
         OptionButton
+    }
+
+    private enum Texts
+    {
+        GameMenuTitleText,
+        GameMenuSurrenderText,
+        GameMenuOptionText
     }
     
     [Inject]
@@ -28,11 +38,17 @@ public class UI_GameMenuPopup : UI_Popup
     {
         base.Init();
         
-        Bind<Button>(typeof(Buttons));
+        BindObjects();
         
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(ClosePopup);
         GetButton((int)Buttons.SurrenderButton).gameObject.BindEvent(OnSurrenderClicked);
         GetButton((int)Buttons.OptionButton).gameObject.BindEvent(OnOptionClicked);
+    }
+
+    protected override void BindObjects()
+    {
+        BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
+        Bind<Button>(typeof(Buttons));
     }
 
     private void OnSurrenderClicked(PointerEventData data)

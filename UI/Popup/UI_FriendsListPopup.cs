@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -12,6 +13,8 @@ public class UI_FriendsListPopup : UI_Popup
 {
     private MainLobbyViewModel _lobbyVm;
     private Friend _selectedFriend;
+    
+    private readonly Dictionary<string, GameObject> _textDict = new();
     
     private enum Images
     {
@@ -28,7 +31,9 @@ public class UI_FriendsListPopup : UI_Popup
 
     private enum Texts
     {
-        
+        FriendsListTitleText,
+        FriendsListNoFriendText,
+        FriendsListInviteButtonText,
     }
     
     [Inject]
@@ -59,9 +64,11 @@ public class UI_FriendsListPopup : UI_Popup
     
     protected override void BindObjects()
     {
+        BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         Bind<Image>(typeof(Images));
-        Bind<TextMeshProUGUI>(typeof(Texts));
+        
+        Managers.Localization.UpdateTextAndFont(_textDict);
     }
 
     protected override void InitButtonEvents()
@@ -82,27 +89,21 @@ public class UI_FriendsListPopup : UI_Popup
 
         await Task.WhenAll(friendListTask, initAlertsTask);
         
-        var friendList = friendListTask.Result;
         var parent = Util.FindChild(gameObject, "Content", true).transform;
-        Util.DestroyAllChildren(parent);
+        var friendList = friendListTask.Result;
         
+        Util.DestroyAllChildren(parent);
         if (friendList.Count == 0)
         {
             GetImage((int)Images.NoFriendBackground).gameObject.SetActive(true);
         }
         else
         {
-            foreach (var userInfo in friendList)
+            foreach (var friendInfo in friendList)
             {
-                var friendUserInfo = new FriendUserInfo
-                {
-                    UserName = userInfo.UserName,
-                    Level = userInfo.Level,
-                    RankPoint = userInfo.RankPoint,
-                    FriendStatus = FriendStatus.Accepted
-                };
-                var friendFrame = Managers.Resource.GetFriendFrame(userInfo, parent, OnSelectFriend);
-                BindFriendRequestButton(friendFrame, friendUserInfo);
+                friendInfo.FriendStatus = FriendStatus.Accepted;
+                var friendFrame = Managers.Resource.GetFriendFrame(friendInfo, parent, OnSelectFriend);
+                BindFriendRequestButton(friendFrame, friendInfo);
             }
         }
         

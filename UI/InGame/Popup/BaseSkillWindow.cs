@@ -10,7 +10,7 @@ using Zenject;
 
 public interface IBaseSkillWindow
 {
-    
+    void UpdateBaseSkillCost(S_SetBaseSkillCost packet);
 }
 
 public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
@@ -46,6 +46,11 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
         RepairText,
         ResourceText,
         AssetText,
+        
+        BaseUpgradeGoldText,
+        RepairGoldText,
+        ResourceGoldText,
+        AssetGoldText,
     }
     
     #endregion
@@ -63,8 +68,9 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
     protected override void Init()
     {
         base.Init();
-        _gameVm.SubResourceWindow = this;
-        
+        _gameVm.BaseSkillWindow = this;
+        _gameVm.SetBaseSkillCostRequired();
+
         BindObjects();
         InitUI();
         InitButtonEvents();
@@ -98,11 +104,10 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
         SetObjectSize(GetImage((int)Images.ResourceGoldImage).gameObject, 0.15f, 0.15f);
         SetObjectSize(GetImage((int)Images.AssetGoldImage).gameObject, 0.15f, 0.15f);
     }
-
+    
     protected override void BindObjects()
     {
         BindData<Button>(typeof(Buttons), _buttonDict);
-
         Bind<Image>(typeof(Images));
         Bind<TextMeshProUGUI>(typeof(Texts));
     }
@@ -134,5 +139,13 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
         var camp = Util.Faction.ToString();
         var skillNameCamp = $"{skillName}{camp}";
         _gameVm.ShowUpgradePopupNoCost(skillNameCamp);
+    }
+
+    public void UpdateBaseSkillCost(S_SetBaseSkillCost packet)
+    {
+        GetText((int)Texts.BaseUpgradeGoldText).text = packet.UpgradeCost.ToString();
+        GetText((int)Texts.RepairGoldText).text = packet.RepairCost.ToString();
+        GetText((int)Texts.ResourceGoldText).text = packet.ResourceCost.ToString();
+        GetText((int)Texts.AssetGoldText).text = packet.AssetCost.ToString();
     }
 }

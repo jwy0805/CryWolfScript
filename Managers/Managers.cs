@@ -29,6 +29,7 @@ public class Managers : MonoBehaviour
 
     private readonly DataManager _data = new();
     private readonly InputManager _input = new();
+    private readonly LocalizationManager _localization = new();
     private readonly PoolManager _pool = new();
     private readonly ResourceManager _resource = new();
     private readonly SoundManager _sound = new();
@@ -37,6 +38,7 @@ public class Managers : MonoBehaviour
 
     public static DataManager Data => Instance._data;
     public static InputManager Input => Instance._input;
+    public static LocalizationManager Localization => Instance._localization;
     public static PoolManager Pool => Instance._pool;
     public static ResourceManager Resource => Instance._resource;
     public static SoundManager Sound => Instance._sound;
@@ -57,7 +59,7 @@ public class Managers : MonoBehaviour
         _network.Update();
     }
 
-    private static async void Init()
+    private static void Init()
     {
         if (s_instance == null)
         {
@@ -70,10 +72,9 @@ public class Managers : MonoBehaviour
 
             DontDestroyOnLoad(go);
             s_instance = go.GetComponent<Managers>();
-            
+            s_instance._localization.Init();
             s_instance._pool.Init();
             s_instance._sound.Init();
-            await s_instance._data.InitAsync();
         }
     }
     
@@ -83,6 +84,7 @@ public class Managers : MonoBehaviour
         Sound.Clear();
         Scene.Clear();
         Pool.Clear();
+        Object.Clear();
         UI.Clear();
     }
 }

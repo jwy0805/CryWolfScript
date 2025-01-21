@@ -55,9 +55,9 @@ public class UI_ProductInfoPopup : UI_Popup
     {
         base.Init();
         
+        GetProductInfo();
         BindObjects();
         InitButtonEvents();
-        GetProductInfo();
         InitUI();
     }
 
@@ -97,7 +97,8 @@ public class UI_ProductInfoPopup : UI_Popup
             priceText.SetActive(false);
         }
         
-        GetText((int)Texts.TextName).text = ((ProductId)_productInfo.Id).ToString();
+        var productText = GetText((int)Texts.TextName);
+        productText.text = Managers.Localization.GetLocalizedValue(productText, _productInfo.ProductCode);
         GetText((int)Texts.TextPrice).text = _productInfo.Price.ToString();
         GetText((int)Texts.TextNum).gameObject.SetActive(false);
         SetContents();
@@ -142,14 +143,14 @@ public class UI_ProductInfoPopup : UI_Popup
             {
                 case ProductType.None:
                     productName = ((ProductId)composition.CompositionId).ToString();
-                    path = $"UI/Shop/{productName}";
+                    path = $"UI/Shop/NormalizedProducts/{productName}";
                     product = Managers.Resource.Instantiate(path, productFrame.transform);
                     break;
                 
                 case ProductType.Unit:
                     productName = ((UnitId)composition.CompositionId).ToString();
                     Managers.Data.UnitInfoDict.TryGetValue(composition.CompositionId, out var unit);
-                    path = $"UI/Shop/OtherProducts/Product{unit?.Class}";
+                    path = $"UI/Shop/NormalizedProducts/Product{unit?.Class}";
                     product = Managers.Resource.Instantiate(path, productFrame.transform);
                     var image = Util.FindChild(product, "CardUnit", true).GetComponent<Image>();
                     image.sprite = Managers.Resource.Load<Sprite>($"Sprites/Portrait/{productName}");
@@ -168,20 +169,20 @@ public class UI_ProductInfoPopup : UI_Popup
                 default:
                     path = composition.Count switch
                     {
-                        >= 50000 => "UI/Shop/OtherProducts/GoldVault",
-                        >= 25000 => "UI/Shop/OtherProducts/GoldBasket",
-                        >= 2500 => "UI/Shop/OtherProducts/GoldPouch",
-                        _ => "UI/Shop/OtherProducts/GoldPile"
+                        >= 50000 => "UI/Shop/NormalizedProducts/GoldVault",
+                        >= 25000 => "UI/Shop/NormalizedProducts/GoldBasket",
+                        >= 2500 => "UI/Shop/NormalizedProducts/GoldPouch",
+                        _ => "UI/Shop/NormalizedProducts/GoldPile"
                     };
                     product = Managers.Resource.Instantiate(path, productFrame.transform);
                     break;
             }
             
-            var productRect = product.GetComponent<RectTransform>();
+            if (product.TryGetComponent(out RectTransform productRect) == false) continue;
             var width = layoutElement.preferredWidth;
             var rectSize = productRect.sizeDelta;
             
-            product.transform.localScale = rectSize.x == 0 ? Vector3.one : width * Vector3.one / rectSize.x * 0.8f;
+            product.transform.localScale = rectSize.x == 0 ? Vector3.one : width * Vector3.one / rectSize.x;
             productRect.anchoredPosition = Vector2.zero;
             productRect.anchorMin = new Vector2(0.5f, 0.55f);
             productRect.anchorMax = new Vector2(0.5f, 0.55f);

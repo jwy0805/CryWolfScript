@@ -23,7 +23,7 @@ public class MatchMakingViewModel
 
     public void ConnectSocketServer()
     {
-        Managers.Network.ConnectGameSession();
+        _ = Managers.Network.ConnectGameSession();
     }
     
     public void StartMatchMaking()
@@ -41,6 +41,12 @@ public class MatchMakingViewModel
             .SendWebRequest<ChangeActPacketResponse>("Match/ChangeActByMatchMaking", "PUT", packet, _ => { });
         
         OnMatchMakingStarted?.Invoke();
+    }
+
+    public void EnterGame(int mapId = 1)
+    {
+        Managers.Map.MapId = mapId;
+        Managers.Scene.LoadScene(Define.Scene.Game);
     }
 
     public void TestMatchMaking()

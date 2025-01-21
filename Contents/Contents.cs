@@ -36,7 +36,24 @@ public class Contents
     {
         public int Id { get; set; }
         public string Explanation { get; set; }
+        public int Value { get; set; }
+        public float Coefficient { get; set; }
         public int Cost { get; set; }
+    }
+    
+    [Serializable]
+    public class LocalizationEntry
+    {
+        public string Text { get; set; }
+        public string Font { get; set; }
+        public int FontSize { get; set; }
+    }
+
+    [Serializable]
+    public class LocalizationItem
+    {
+        public string Key { get; set; }
+        public Dictionary<string, LocalizationEntry> Translations { get; set; }
     }
     
     [Serializable]
@@ -69,6 +86,17 @@ public class Contents
         public Dictionary<int, SkillData> MakeDict()
         {
             return Skills.ToDictionary(skill => skill.Id);
+        }
+    }
+
+    [Serializable]
+    public class LanguageLoader : ILoader<string, Dictionary<string, LocalizationEntry>>
+    {
+        public List<LocalizationItem> Texts { get; set; } = new();
+        
+        public Dictionary<string, Dictionary<string, LocalizationEntry>> MakeDict()
+        {
+            return Texts.ToDictionary(item => item.Key, item => item.Translations);
         }
     }
 }

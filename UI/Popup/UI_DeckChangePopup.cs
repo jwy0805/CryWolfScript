@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -14,6 +15,8 @@ public class UI_DeckChangePopup : UI_Popup
 {
     private DeckViewModel _deckVm;
     private IUserService _userService;
+    
+    private readonly Dictionary<string, GameObject> _textDict = new();
     
     public Card SelectedCard { get; set; }
     
@@ -32,7 +35,8 @@ public class UI_DeckChangePopup : UI_Popup
 
     private enum Texts
     {
-        
+        DeckChangeWarningText,
+        DeckChangeInfoText,
     }
     
     [Inject]
@@ -55,9 +59,11 @@ public class UI_DeckChangePopup : UI_Popup
 
     protected override void BindObjects()
     {
+        BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
-        Bind<TextMeshProUGUI>(typeof(Texts));
+        
+        Managers.Localization.UpdateTextAndFont(_textDict);
     }
 
     protected override void InitButtonEvents()

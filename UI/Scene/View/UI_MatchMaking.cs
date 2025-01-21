@@ -11,7 +11,6 @@ using Zenject;
 public class UI_MatchMaking : UI_Scene
 {
     private IUserService _userService;
-    private ITokenService _tokenService;
     private MatchMakingViewModel _matchMakingVm;
     private DeckViewModel _deckVm;
     
@@ -50,12 +49,10 @@ public class UI_MatchMaking : UI_Scene
     [Inject]
     public void Construct(
         IUserService userService,
-        ITokenService tokenService,
         MatchMakingViewModel matchMakingVm,
         DeckViewModel deckVm)
     {
         _userService = userService;
-        _tokenService = tokenService;
         _matchMakingVm = matchMakingVm;
         _deckVm = deckVm;
     }
@@ -144,13 +141,7 @@ public class UI_MatchMaking : UI_Scene
             yield return new WaitForSeconds(1);
         }
         
-        EnterGame();
-    }
-    
-    private void EnterGame()
-    {
-        Managers.Map.MapId = 1;
-        Managers.Scene.LoadScene(Define.Scene.Game);
+        _matchMakingVm.EnterGame();
     }
     
     // Button Events

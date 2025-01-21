@@ -19,6 +19,8 @@ public class UI_CardClickPopup : UI_Popup
     private IUserService _userService;
     private CraftingViewModel _craftingVm;
     
+    private readonly Dictionary<string, GameObject> _textDict = new();
+    
     public Vector3 CardPosition { get; set; }
     public Vector2 Size { get; set; }
     public bool FromDeck { get; set; }
@@ -41,8 +43,9 @@ public class UI_CardClickPopup : UI_Popup
 
     private enum Texts
     {
-        UnitNameText,
-        UnitSelectText,
+        CardClickUnitInfoText,
+        CardClickUnitSelectText,
+        CardClickUnitCraftText,
     }
     
     [Inject]
@@ -79,9 +82,11 @@ public class UI_CardClickPopup : UI_Popup
 
     protected override void BindObjects()
     {
+        BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
-        Bind<TextMeshProUGUI>(typeof(Texts));
+        
+        Managers.Localization.UpdateTextAndFont(_textDict);
     }
 
     protected override void InitButtonEvents()
@@ -96,22 +101,22 @@ public class UI_CardClickPopup : UI_Popup
     {
         GetImage((int)Images.CardClickPanel).TryGetComponent(out RectTransform rt);
         rt.position = CardPosition;
-        rt.sizeDelta = Size;
+        // rt.sizeDelta = Size;
         
-        var unitSelectText = GetText((int)Texts.UnitSelectText);
-        if (SelectedCard.transform.parent.name == "Deck") unitSelectText.text = "CHANGE";
+        var unitSelectText = GetText((int)Texts.CardClickUnitSelectText);
+        if (SelectedCard.transform.parent.name == "Deck")
+        {
+            Managers.Localization.UpdateTextAndFont(unitSelectText.gameObject, "card_click_unit_select_text_change");
+        }
         
         var deck = Util.Faction == Faction.Sheep 
             ? User.Instance.DeckSheep.UnitsOnDeck 
             : User.Instance.DeckWolf.UnitsOnDeck;
         var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == SelectedCard.Id);
-        
-        GetButton((int)Buttons.UnitSelectButton).interactable = index == -1 || FromDeck;
-        GetText((int)Texts.UnitNameText).text = SelectedCard switch
-        {
-            { AssetType: Asset.Unit } => Managers.Data.UnitDict[SelectedCard.Id].Name,
-            _ => Managers.Data.UnitDict[SelectedCard.Id].Name ?? string.Empty
-        };
+        var isOwned = User.Instance.OwnedUnitList.Exists(info => info.UnitInfo.Id == SelectedCard.Id);
+        var interactable = (index == -1 || FromDeck) && isOwned;
+
+        GetButton((int)Buttons.UnitSelectButton).interactable = interactable;
     }
 
     private void SetCardInPopup<TEnum>() where TEnum : struct, Enum
@@ -140,6 +145,14 @@ public class UI_CardClickPopup : UI_Popup
 
     private void OnSelectClicked(PointerEventData data)
     {
+        var deck = Util.Faction == Faction.Sheep 
+            ? User.Instance.DeckSheep.UnitsOnDeck 
+            : User.Instance.DeckWolf.UnitsOnDeck;
+        var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == SelectedCard.Id);
+        var isOwned = User.Instance.OwnedUnitList.Exists(info => info.UnitInfo.Id == SelectedCard.Id);
+        var interactable = (index == -1 || FromDeck) && isOwned;
+        if (interactable == false) return;
+        
         if (SelectedCard.AssetType == Asset.Unit)
         {
             if (FromDeck)

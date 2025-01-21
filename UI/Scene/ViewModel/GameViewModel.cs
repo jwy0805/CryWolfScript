@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class GameViewModel
+public class GameViewModel : IDisposable
 {
     /*
      * The principles of using events and interfaces in the ViewModel are as follows:
@@ -38,18 +38,25 @@ public class GameViewModel
     public ISkillWindow SkillWindow { get; set; }
     public IUnitControlWindow UnitControlWindow { get; set; }
     public ICapacityWindow CapacityWindow { get; set; }
-    public IBaseSkillWindow SubResourceWindow { get; set; }
+    public IBaseSkillWindow BaseSkillWindow { get; set; }
     public IPortrait CurrentSelectedPortrait { get; set; }
     public ISkillButton CurrentSelectedSkillButton { get; set; }
 
     public GameViewModel()
     {
+        Managers.Event.StopListening("ShowRings", OnReceiveRanges);
         Managers.Event.StartListening("ShowRings", OnReceiveRanges);
+        Managers.Event.StopListening("ShowBounds", OnReceiveBounds);
         Managers.Event.StartListening("ShowBounds", OnReceiveBounds);
+        Managers.Event.StopListening("CanSpawn", OnCanSpawn);
         Managers.Event.StartListening("CanSpawn", OnCanSpawn);
+        Managers.Event.StopListening("UpdateUpgradeCost", UpdateUnitUpgradeCostResponse);
         Managers.Event.StartListening("UpdateUnitUpgradeCost", UpdateUnitUpgradeCostResponse);
+        Managers.Event.StopListening("UpdateUnitDeleteCost", UpdateUnitDeleteCostResponse);
         Managers.Event.StartListening("UpdateUnitDeleteCost", UpdateUnitDeleteCostResponse);
+        Managers.Event.StopListening("UpdateUnitRepairCost", UpdateUnitRepairCostResponse);
         Managers.Event.StartListening("UpdateUnitRepairCost", UpdateUnitRepairCostResponse);
+        Managers.Event.StopListening("SetBaseSkillCost", SetBaseSkillCostResponse);
         Managers.Event.StartListening("SetBaseSkillCost", SetBaseSkillCostResponse);
     }
     
@@ -71,6 +78,7 @@ public class GameViewModel
             Managers.Network.Send(new C_SetUpgradePopup { SkillId = (int)skill });
         }
     }
+    
     public void ShowUpgradePopupNoCost(string name = null)
     {
         Managers.UI.ShowPopupUiInGame<UI_UpgradePopupNoCost>();
@@ -114,7 +122,7 @@ public class GameViewModel
     {
         portrait.UnitId += 1;
         SkillWindow?.InitUpgradeButton();
-        SkillWindow?.InitUI(portrait);
+        SkillWindow?.InitUI(portrait.UnitId);
     }
 
     public void OnSkillUpgraded(Skill skill)
@@ -172,34 +180,37 @@ public class GameViewModel
     {
         var packet = (S_SetUnitRepairCost)eventData;
         CapacityWindow?.UpdateRepairCostText(packet.Cost);
-        UnitControlWindow.UpdateRepairCostText(packet.Cost);
+        UnitControlWindow?.UpdateRepairCostText(packet.Cost);
     }
     
-    private void SetBaseSkillCostRequired()
+    public void SetBaseSkillCostRequired()
     {
         var packet = new C_SetBaseSkillCost { Faction = Util.Faction };
+        Managers.Network.Send(packet);
     }
     
     private void SetBaseSkillCostResponse(object eventData)
     {
-        
+        var packet = (S_SetBaseSkillCost)eventData;
+        BaseSkillWindow?.UpdateBaseSkillCost(packet);
     }
     
     private void OnReceiveRanges(object eventData)
     {
         var packet = (S_GetRanges)eventData;
-        CurrentSelectedPortrait.ShowRing(packet.AttackRange, packet.SkillRange);
+        CurrentSelectedPortrait?.ShowRing(packet.AttackRange, packet.SkillRange);
     }
 
     private void OnReceiveBounds(object eventData)
     {
         var packet = (S_GetSpawnableBounds)eventData;
-        CurrentSelectedPortrait.ShowSpawnableBounds(packet.MinZ, packet.MaxZ);
+        CurrentSelectedPortrait?.ShowSpawnableBounds(packet.MinZ, packet.MaxZ);
     }
     
     private void OnCanSpawn(object eventData)
     {
         var packet = (S_UnitSpawnPos)eventData;
+        if (CurrentSelectedPortrait == null) return;
         CurrentSelectedPortrait.CanSpawn = packet.CanSpawn;
     }
     
@@ -302,7 +313,7 @@ public class GameViewModel
     public void OnUnitDeleteClicked(IEnumerable<int> ids)
     {
         var packet = new C_UnitDelete();
-        packet.ObjectId.AddRange(ids);
+        packet.ObjectIds.AddRange(ids);
         Managers.Network.Send(packet);
         
         TurnOffSelectRing();
@@ -330,5 +341,24 @@ public class GameViewModel
     public void OnResourceClicked()
     {
         
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+    
+    private void Dispose(bool disposing)
+    {
+        if (!disposing) return;
+        SelectedObjectIds = null;
+        SkillsUpgraded = null;
+        SkillWindow = null;
+        UnitControlWindow = null;
+        CapacityWindow = null;
+        BaseSkillWindow = null;
+        CurrentSelectedPortrait = null;
+        CurrentSelectedSkillButton = null;    
     }
 }

@@ -30,6 +30,7 @@ public class UI_UnitInfoPopup : UI_Popup
     private GameObject _mainSkillTextPanel;
     private GameObject _mainSkillPanel;
     private GameObject _mainSkillIcon;
+    private readonly Dictionary<string, GameObject> _textDict = new();
     private readonly Dictionary<int, Button> _levelButtons = new();
 
     public Card SelectedCard { get; set; }
@@ -40,8 +41,9 @@ public class UI_UnitInfoPopup : UI_Popup
         set
         {
             _showDetails = value;
-            var detailButtonText = GetText((int)Texts.DetailButtonText).GetComponent<TextMeshProUGUI>();
-            detailButtonText.text = _showDetails ? "Summary" : "Detail";
+            var detailButtonText = GetText((int)Texts.UnitInfoDetailButtonText).GetComponent<TextMeshProUGUI>();
+            var key = _showDetails ? "unit_info_detail_button_text_summary" : "unit_info_detail_button_text_detail";
+            detailButtonText.text = Managers.Localization.GetLocalizedValue(detailButtonText, key);
             ToggleStatDetailPanel();
         }
     }
@@ -108,8 +110,15 @@ public class UI_UnitInfoPopup : UI_Popup
 
     private enum Texts
     {
-        UnitNameText,
-        DetailButtonText,
+        UnitInfoNameText,
+        UnitInfoDetailButtonText,
+        
+        UnitInfoClassTitleText,
+        UnitInfoRegionTitleText,
+        UnitInfoRoleTitleText,
+        UnitInfoLocationTitleText,
+        UnitInfoTypeTitleText,
+        UnitInfoAttackTypeTitleText,
         
         UnitClassText,
         UnitRegionText,
@@ -118,9 +127,24 @@ public class UI_UnitInfoPopup : UI_Popup
         UnitTypeText,
         UnitAttackTypeText,
         
+        UnitInfoSkillTreeText,
         SkillDescriptionText,
         SkillDescriptionGoldText,
-        MainSkillDescriptionText,
+        UnitInfoMainSkillText,
+        UnitInfoMainSkillDescriptionText,
+        
+        UnitInfoHpTitleText,
+        UnitInfoMpTitleText,
+        UnitInfoAttackTitleText,
+        UnitInfoMagicalAttackTitleText,
+        UnitInfoAttackSpeedTitleText,
+        UnitInfoMoveSpeedTitleText,
+        UnitInfoDefenceTitleText,
+        UnitInfoMagicalDefenceTitleText,
+        UnitInfoFireResistTitleText,
+        UnitInfoPoisonResistTitleText,
+        UnitInfoAttackRangeTitleText,
+        UnitInfoSkillRangeTitleText,
         
         UnitHpText,
         UnitMpText,
@@ -151,9 +175,11 @@ public class UI_UnitInfoPopup : UI_Popup
 
     protected override void BindObjects()
     {
+        BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
-        Bind<TextMeshProUGUI>(typeof(Texts));
+        
+        Managers.Localization.UpdateTextAndFont(_textDict);
         
         _levelButtons.Add(1, GetButton((int)Buttons.LevelButton1));
         _levelButtons.Add(2, GetButton((int)Buttons.LevelButton2));
@@ -258,6 +284,9 @@ public class UI_UnitInfoPopup : UI_Popup
         
         var typePath = $"Sprites/Icons/icon_type_{type}";
         var attackTypePath = $"Sprites/Icons/icon_attack_{attackType}";
+        var tmp = GetText((int)Texts.UnitInfoNameText);
+        var key = string.Concat("unit_name_", Managers.Localization.GetConvertedString(_unitData.Name));
+        tmp.text = Managers.Localization.GetLocalizedValue(tmp, key);
         
         GetImage((int)Images.UnitClassImage).sprite = Resources.Load<Sprite>(classPath);
         GetImage((int)Images.UnitRegionImage).sprite = Resources.Load<Sprite>(regionPath);
@@ -266,7 +295,6 @@ public class UI_UnitInfoPopup : UI_Popup
         GetImage((int)Images.UnitTypeImage).sprite = Resources.Load<Sprite>(typePath);
         GetImage((int)Images.UnitAttackTypeImage).sprite = Resources.Load<Sprite>(attackTypePath);
         
-        GetText((int)Texts.UnitNameText).text = _unitData.Name;
         GetText((int)Texts.UnitClassText).text = _unitInfo.Class.ToString();
         GetText((int)Texts.UnitRegionText).text = _unitInfo.Region.ToString();
         GetText((int)Texts.UnitRoleText).text = _unitInfo.Role.ToString();
@@ -324,7 +352,7 @@ public class UI_UnitInfoPopup : UI_Popup
             _mainSkillPanel.SetActive(true);
 
             var skillId = mainSkill[0];
-            var mainSkillText = GetText((int)Texts.MainSkillDescriptionText);
+            var mainSkillText = GetText((int)Texts.UnitInfoMainSkillDescriptionText);
             var mainSkillImage = GetImage((int)Images.MainSkillImage);
             var mainSkillIcon = _currentSkillPanel.GetComponentsInChildren<Button>()
                 .FirstOrDefault(button => button.name.Contains(skillId.ToString()))?
@@ -336,8 +364,7 @@ public class UI_UnitInfoPopup : UI_Popup
 
             Managers.Data.SkillDict.TryGetValue((int)skillId, out var skillData);
             if (skillData == null || mainSkillIcon == null) return;
-            
-            mainSkillText.text = skillData.Explanation;
+            Managers.Localization.GetLocalizedSkillText(mainSkillText, skillData, _unitInfo.Id);
             mainSkillImageRect.sizeDelta = new Vector2(Screen.width * 0.1f, Screen.width * 0.1f);
             
             _mainSkillIcon.transform.SetParent(mainSkillImage.transform);
@@ -357,7 +384,6 @@ public class UI_UnitInfoPopup : UI_Popup
         GetText((int)Texts.UnitAttackSpeedText).text = _unitData.Stat.AttackSpeed.ToString();
         GetText((int)Texts.UnitMoveSpeedText).text = _unitData.Stat.MoveSpeed.ToString();
         GetText((int)Texts.UnitDefenceText).text = _unitData.Stat.Defence.ToString();
-        // TODO: Add Magical Defence Stat
         GetText((int)Texts.UnitMagicalDefenceText).text = _unitData.Stat.Defence.ToString();
         GetText((int)Texts.UnitFireResistText).text = _unitData.Stat.FireResist + " %";
         GetText((int)Texts.UnitPoisonResistText).text = _unitData.Stat.PoisonResist + " %";
@@ -438,7 +464,7 @@ public class UI_UnitInfoPopup : UI_Popup
 
         if (skillData == null) return;
         skillDescriptionGoldImage.rectTransform.sizeDelta = new Vector2(Screen.width * 0.045f, Screen.width * 0.045f);
-        skillDescriptionText.text = skillData.Explanation;
+        Managers.Localization.GetLocalizedSkillText(skillDescriptionText, skillData, _unitInfo.Id);
         skillDescriptionGoldText.text = skillData.Cost.ToString();
     }
     
