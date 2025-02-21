@@ -19,6 +19,7 @@ public class GameViewModel : IDisposable
      */
     
     // Events using in UI_GameSingleWay
+    public event Func<UnitId, IPortrait> SetPortraitFromFieldUnitEvent;  
     public event Action<IPortrait, bool> OnPortraitClickedEvent;   // Show Portrait Select Effect
     public event Action<int> TurnOnSelectRingCoroutineEvent;
     public event Action<int> TurnOffOneSelectRingEvent;
@@ -104,7 +105,7 @@ public class GameViewModel : IDisposable
     {
         var skillName = CurrentSelectedSkillButton.Name.Replace("Button", "") switch
         {
-            "Upgrade" => Util.Faction == Faction.Sheep ? "UpgradeSheep" : "UpgradeWolf",
+            "BaseUpgrade" => Util.Faction == Faction.Sheep ? "BaseUpgradeSheep" : "BaseUpgradeWolf",
             "Repair" => Util.Faction == Faction.Sheep ? "RepairSheep" : "RepairWolf",
             "Resource" => Util.Faction == Faction.Sheep ? "ResourceSheep" : "ResourceWolf",
             "Asset" => Util.Faction == Faction.Sheep ? "AssetSheep" : "AssetWolf",
@@ -226,6 +227,11 @@ public class GameViewModel : IDisposable
         OnPortraitClickedEvent?.Invoke(portrait, true);
     }
 
+    public void SetPortraitFromFieldUnit(UnitId unitId)
+    {
+        CurrentSelectedPortrait = SetPortraitFromFieldUnitEvent?.Invoke(unitId);
+    }
+    
     public void CancelClickedEffect()
     {
         if (CurrentSelectedPortrait != null)

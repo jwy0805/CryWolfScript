@@ -59,6 +59,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SSetAnimSpeed, PacketHandler.S_SetAnimSpeedHandler);		
 		_onRecv.Add((ushort)MessageId.SSkill, MakePacket<S_Skill>);
 		_handler.Add((ushort)MessageId.SSkill, PacketHandler.S_SkillHandler);		
+		_onRecv.Add((ushort)MessageId.SBaseUpgrade, MakePacket<S_BaseUpgrade>);
+		_handler.Add((ushort)MessageId.SBaseUpgrade, PacketHandler.S_BaseUpgradeHandler);		
 		_onRecv.Add((ushort)MessageId.SSkillUpgrade, MakePacket<S_SkillUpgrade>);
 		_handler.Add((ushort)MessageId.SSkillUpgrade, PacketHandler.S_SkillUpgradeHandler);		
 		_onRecv.Add((ushort)MessageId.SSkillUpdate, MakePacket<S_SkillUpdate>);
@@ -109,8 +111,10 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SSetBaseSkillCost, PacketHandler.S_SetBaseSkillCostHandler);		
 		_onRecv.Add((ushort)MessageId.SSendWarningInGame, MakePacket<S_SendWarningInGame>);
 		_handler.Add((ushort)MessageId.SSendWarningInGame, PacketHandler.S_SendWarningInGameHandler);		
-		_onRecv.Add((ushort)MessageId.SShowResultPopup, MakePacket<S_ShowResultPopup>);
-		_handler.Add((ushort)MessageId.SShowResultPopup, PacketHandler.S_ShowResultPopupHandler);		
+		_onRecv.Add((ushort)MessageId.SShowRankResultPopup, MakePacket<S_ShowRankResultPopup>);
+		_handler.Add((ushort)MessageId.SShowRankResultPopup, PacketHandler.S_ShowRankResultPopupHandler);		
+		_onRecv.Add((ushort)MessageId.SShowSingleResultPopup, MakePacket<S_ShowSingleResultPopup>);
+		_handler.Add((ushort)MessageId.SShowSingleResultPopup, PacketHandler.S_ShowSingleResultPopupHandler);		
 		_onRecv.Add((ushort)MessageId.SMatchMakingSuccess, MakePacket<S_MatchMakingSuccess>);
 		_handler.Add((ushort)MessageId.SMatchMakingSuccess, PacketHandler.S_MatchMakingSuccessHandler);
 	}

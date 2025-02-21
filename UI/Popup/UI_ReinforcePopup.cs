@@ -23,10 +23,10 @@ public class UI_ReinforcePopup : UI_Popup
     private RectTransform _rect;
     private float _radius;
     private float _elapsedTime;
-    private readonly float _standbyTime = 4f;
+    private readonly float _standbyTime = 2.5f;
     private readonly float _emitterThreshold = 120f;
     private bool _showEffect;
-    private UnitId? _newUnitId = null;
+    private UnitId? _newUnitId;
     private bool _isSuccess;
     
     private enum Images
@@ -91,7 +91,7 @@ public class UI_ReinforcePopup : UI_Popup
             _angles.Add(angle);
             
             cardRect.localPosition = pos;
-            cardRect.sizeDelta = new Vector2(200, 320);
+            cardRect.sizeDelta = new Vector2(300, 480);
         }
     }
 
@@ -102,7 +102,10 @@ public class UI_ReinforcePopup : UI_Popup
             float angle = _angles[i] + 10 * Time.deltaTime;
             Vector3 newPos = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle)) * _radius;
             _elapsedTime += Time.deltaTime;
-            float time = _elapsedTime / 10;
+            
+            // Divide the elapsed time by 10 to determine a time-based factor,
+            // which will be used for modifying the radius.
+            float time = _elapsedTime / 3;
 
             if (_radius < _emitterThreshold)
             {
@@ -119,7 +122,7 @@ public class UI_ReinforcePopup : UI_Popup
             }
             else
             {
-                _radius -= time * 2f;
+                _radius -= time * 2;
             }
             
             _angles[i] = angle;
@@ -146,13 +149,14 @@ public class UI_ReinforcePopup : UI_Popup
         
         var effectPath = "UIEffects/Puff";
         var puffEffect = Managers.Resource.Instantiate(effectPath, _cardPanelRect);
+        puffEffect.transform.localScale = new Vector3(3f, 3f, 3f);
         
         var newUnitInfo = Managers.Data.UnitInfoDict[(int)_newUnitId];
-        var cardFrame = Managers.Resource.GetCardResources<UnitId>(newUnitInfo, _cardPanelRect);
+        var cardFrame = Managers.Resource.GetCardResources<UnitId>(newUnitInfo, _cardPanelRect, ClosePopup);
         var cardFrameRect = cardFrame.GetComponent<RectTransform>();
         var textButton = GetButton((int)Buttons.TextButton).gameObject;
         
-        cardFrameRect.sizeDelta = new Vector2(250, 400);
+        cardFrameRect.sizeDelta = new Vector2(350, 560);
         textButton.SetActive(true);
 
         if (_isSuccess == false)

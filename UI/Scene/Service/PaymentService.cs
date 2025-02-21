@@ -114,7 +114,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         return PurchaseProcessingResult.Pending;
     }
 
-    private async void SendReceiptToServer(string receipt, UnityEngine.Purchasing.Product purchaseProduct)
+    private async void SendReceiptToServer(string receipt, Product purchaseProduct)
     {
         var packet = new CashPaymentPacketRequired
         {
@@ -139,12 +139,12 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         }
     }
 
-    public void OnPurchaseFailed(UnityEngine.Purchasing.Product product, PurchaseFailureReason failureReason)
+    public void OnPurchaseFailed(Product product, PurchaseFailureReason failureReason)
     {
         Debug.LogError($"Purchase failed: {product.definition.id}, Reason: {failureReason}");
     }
     
-    public void OnPurchaseFailed(UnityEngine.Purchasing.Product product, PurchaseFailureDescription failureDescription)
+    public void OnPurchaseFailed(Product product, PurchaseFailureDescription failureDescription)
     {
         Debug.LogError($"Purchase failed: {product.definition.id}, Reason: {failureDescription.reason}, Message: {failureDescription.message}");
     }

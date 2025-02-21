@@ -58,9 +58,10 @@ public class SkillWindow : UI_Popup, ISkillWindow
         BindObjects();
         InitButtonEvents();
         InitUpgradeButton();
-        InitUI(_gameVm.UnitControlWindow == null
-            ? _gameVm.CurrentSelectedPortrait.UnitId
-            : _gameVm.UnitControlWindow.SelectedUnit.GetComponent<CreatureController>().UnitId);
+        // InitUI(_gameVm.UnitControlWindow == null
+        //     ? _gameVm.CurrentSelectedPortrait.UnitId
+        //     : _gameVm.UnitControlWindow.SelectedUnit.GetComponent<CreatureController>().UnitId);
+        InitUI(_gameVm.CurrentSelectedPortrait.UnitId);
     }
 
     public void InitUI(UnitId unitId)
@@ -170,7 +171,6 @@ public class SkillWindow : UI_Popup, ISkillWindow
             button.interactable = false;
             buyObject.SetActive(false);
             completeObject.SetActive(true);
-            Debug.Log("Unit is already at max level");
         }
         else
         {

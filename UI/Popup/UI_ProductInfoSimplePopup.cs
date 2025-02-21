@@ -91,11 +91,18 @@ public class UI_ProductInfoSimplePopup : UI_Popup
         productText.text = Managers.Localization.GetLocalizedValue(productText, _productInfo.ProductCode);
         GetText((int)Texts.TextNum).text = str + composition?.Count;
         GetText((int)Texts.TextPrice).text = _productInfo.Price.ToString();
+        // SetInfoText();
     }
     
     private void GetProductInfo()
     {
         _productInfo = _shopVm.SelectedProduct;
+    }
+    
+    private void SetInfoText()
+    {
+        var infoText = GetText((int)Texts.TextInfo);
+        Managers.Localization.GetLocalizedValue(infoText, $"product_info_{_productInfo.ProductCode}");
     }
     
     private void OnBuyButtonClicked(PointerEventData data)

@@ -167,6 +167,13 @@ public class ObjectManager
                     poc.Stat = info.StatInfo;
                 }
                 break;
+            
+            case GameObjectType.Storage:
+                go = Managers.Game.Spawn($"Storages/{info.Name}");
+                _objects.Add(info.ObjectId, go);
+                PositionInfo storagePos = info.PosInfo;
+                go.transform.position = new Vector3(0, 6, storagePos.PosZ);
+                break;
         }
     }
     
@@ -197,6 +204,15 @@ public class ObjectManager
         go.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
     }
 
+    public void UpgradeStorage(int level, float posZ)
+    {
+        var storage = GameObject.FindWithTag("Storage");
+        if (storage == null) return;
+        Managers.Resource.Destroy(storage);
+        var newStorage = Managers.Game.Spawn($"Storages/StorageLv{level}");
+        newStorage.transform.position = new Vector3(0, 6, posZ);
+    }
+    
     public void Remove(int id)
     {
         _objects.Remove(id);

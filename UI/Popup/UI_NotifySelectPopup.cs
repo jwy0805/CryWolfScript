@@ -1,14 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Net.Mime;
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UIElements;
-using Button = UnityEngine.UI.Button;
-using Image = UnityEngine.UI.Image;
+using UnityEngine.UI;
 
-public class UI_NotifyPopup : UI_Popup
+public class UI_NotifySelectPopup : UI_Popup
 {
     public string TitleText { get; set; }
     public TMP_FontAsset TitleFont { get; set; }
@@ -19,21 +15,21 @@ public class UI_NotifyPopup : UI_Popup
     public string ButtonText { get; set; }
     public TMP_FontAsset ButtonFont { get; set; }
     public int ButtonFontSize { get; set; }
-    public bool Failed { get; set; }
-    
+    public Action YesCallback { get; set; }
+
     private enum Buttons
     {
-        ConfirmButton,
+        YesButton,
+        NoButton,
         ExitButton,
     }
-    
+
     private enum Texts
     {
-        NotifyTitle,
-        NotifyText,
-        ConfirmButtonText,
+        YesText,
+        NoText,
     }
-
+    
     protected override void Init()
     {
         base.Init();
@@ -42,46 +38,50 @@ public class UI_NotifyPopup : UI_Popup
         InitButtonEvents();
         InitUI();
     }
-
+    
     protected override void BindObjects()
     {
         Bind<Button>(typeof(Buttons));
         Bind<TextMeshProUGUI>(typeof(Texts));
     }
-
+    
     protected override void InitButtonEvents()
     {
-        GetButton((int)Buttons.ConfirmButton).gameObject.BindEvent(OnNotifyClicked);
+        GetButton((int)Buttons.YesButton).gameObject.BindEvent(OnYesClicked);
+        GetButton((int)Buttons.NoButton).gameObject.BindEvent(OnNoClicked);
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(OnExitClicked);
     }
     
     protected override void InitUI()
     {
-        GetText((int)Texts.NotifyTitle).text = TitleText;
-        GetText((int)Texts.NotifyTitle).font = TitleFont;
-        if (TitleFontSize != 0)
-        {
-            GetText((int)Texts.NotifyTitle).fontSize = TitleFontSize;
-        }
-        
-        GetText((int)Texts.NotifyText).text = MessageText;
-        GetText((int)Texts.NotifyText).font = MessageFont;
-        if (MessageFontSize != 0)
-        {
-            GetText((int)Texts.NotifyText).fontSize = MessageFontSize;
-        }
-        
-        GetText((int)Texts.ConfirmButtonText).text = ButtonText;
-        GetText((int)Texts.ConfirmButtonText).font = ButtonFont;
+        var yesText = GetText((int)Texts.YesText);
+        yesText.text = Managers.Localization.GetLocalizedValue(yesText, "yes_text");
         if (ButtonFontSize != 0)
         {
-            GetText((int)Texts.ConfirmButtonText).fontSize = ButtonFontSize;
+            GetText((int)Texts.YesText).fontSize = ButtonFontSize;
+        }
+
+        var noText = GetText((int)Texts.NoText);
+        noText.text = Managers.Localization.GetLocalizedValue(noText, "no_text");
+        if (ButtonFontSize != 0)
+        {
+            GetText((int)Texts.NoText).fontSize = ButtonFontSize;
         }
     }
     
-    private void OnNotifyClicked(PointerEventData data)
+    public void SetYesCallback(Action callback)
     {
-        Managers.UI.ClosePopupUI();
+        YesCallback = callback;
+    }
+
+    private void OnYesClicked(PointerEventData data)
+    {
+        YesCallback?.Invoke();
+    }
+    
+    private void OnNoClicked(PointerEventData data)
+    {
+        Managers.UI.ClosePopupUI<UI_NotifySelectPopup>();
     }
     
     private void OnExitClicked(PointerEventData data)

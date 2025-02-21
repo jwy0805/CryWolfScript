@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
-public class ProductPackage : Product
+public class ProductPackage : GameProduct
 {
     private void Start()
     {

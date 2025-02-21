@@ -23,6 +23,7 @@ public class DataManager
     public Dictionary<int, Contents.UnitData> UnitDict { get; private set; } = new();
     public Dictionary<int, Contents.ObjectData> ObjectDict { get; private set; } = new();
     public Dictionary<int, Contents.SkillData> SkillDict { get; private set; } = new();
+    public Dictionary<TutorialType, Contents.TutorialData> TutorialDict { get; private set; } = new();
     public Dictionary<string, Dictionary<string, Contents.LocalizationEntry>> LocalizationDict { get; set; } = new();
 
     public Dictionary<UnitId, List<Skill>> MainSkillDict { get; } = new()
@@ -95,7 +96,11 @@ public class DataManager
 
     public async Task InitAsync()
     {
-        if (UnitDict.Count != 0 && ObjectDict.Count != 0 && SkillDict.Count != 0 && LocalizationDict.Count != 0)
+        if (UnitDict.Count != 0 
+            && ObjectDict.Count != 0 
+            && SkillDict.Count != 0 
+            && TutorialDict.Count != 0
+            && LocalizationDict.Count != 0)
         {
             return;
         }
@@ -103,15 +108,15 @@ public class DataManager
         var unitDictTask = LoadJsonAsync<Contents.UnitLoader, int, Contents.UnitData>("UnitData");
         var objectDictTask = LoadJsonAsync<Contents.ObjectLoader, int, Contents.ObjectData>("ObjectData");
         var skillDictTask = LoadJsonAsync<Contents.SkillLoader, int, Contents.SkillData>("SkillData");
-        // var localizationDictTask = LoadJsonAsync<
-        //     Contents.LanguageLoader, string, Dictionary<string, Contents.LocalizationEntry>>("LanguageData");
+        var tutorialDictTask = LoadJsonAsync<Contents.TutorialLoader, TutorialType, Contents.TutorialData>("TutorialData");
         var localizationDictTask = LoadJsonAsync<string, Dictionary<string, Contents.LocalizationEntry>>("LanguageData");
 
-        await Task.WhenAll(unitDictTask, objectDictTask, skillDictTask, localizationDictTask);
+        await Task.WhenAll(unitDictTask, objectDictTask, skillDictTask, tutorialDictTask, localizationDictTask);
         
         UnitDict = unitDictTask.Result!.MakeDict();
         ObjectDict = objectDictTask.Result!.MakeDict();
         SkillDict = skillDictTask.Result!.MakeDict();
+        TutorialDict = tutorialDictTask.Result!.MakeDict();
         LocalizationDict = localizationDictTask.Result;
     }
     
@@ -133,7 +138,6 @@ public class DataManager
         try
         {
             return JsonConvert.DeserializeObject<TLoader>(jsonContent);
-
         }
         catch (Exception e)
         {

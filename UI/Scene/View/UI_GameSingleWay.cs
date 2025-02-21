@@ -39,6 +39,7 @@ public class UI_GameSingleWay : UI_Game
     #endregion
     
     private GameViewModel _gameVm;
+    private GameObject _log;
 
     private readonly List<GameObject> _selectedObjects = new();
     private readonly Dictionary<string, GameObject> _dictPortrait = new();
@@ -64,6 +65,8 @@ public class UI_GameSingleWay : UI_Game
     
     private void Awake()
     {
+        _gameVm.SetPortraitFromFieldUnitEvent -= SetPortraitFromFieldUnit;
+        _gameVm.SetPortraitFromFieldUnitEvent += SetPortraitFromFieldUnit;
         _gameVm.OnPortraitClickedEvent -= ShowPortraitSelectEffect;
         _gameVm.OnPortraitClickedEvent += ShowPortraitSelectEffect;
         _gameVm.TurnOnSelectRingCoroutineEvent -= SelectRingCoroutine;
@@ -77,7 +80,7 @@ public class UI_GameSingleWay : UI_Game
     }
     
     // Set the selected units in the main lobby to the log bar
-    private void SetLog()
+    private GameObject SetLog()
     {   
         var deck = Util.Faction == Faction.Sheep ? User.Instance.DeckSheep : User.Instance.DeckWolf;
         for (var i = 0; i < deck.UnitsOnDeck.Length ; i++)
@@ -97,6 +100,24 @@ public class UI_GameSingleWay : UI_Game
                 Managers.Resource.Load<Sprite>($"Sprites/Portrait/{portrait.UnitId}");
             prefab.BindEvent(OnPortraitClicked);
         }
+        
+        return _dictPortrait["UnitPanel0"].transform.parent.gameObject;
+    }
+
+    private IPortrait SetPortraitFromFieldUnit(UnitId unitId)
+    {
+        var portraits = _log.GetComponentsInChildren<UI_Portrait>();
+        
+        foreach (var p in portraits)
+        {
+            if ((int)p.UnitId - (int)unitId < 3 && (int)p.UnitId - (int)unitId >= 0)
+            {
+                IPortrait portrait = p;
+                return portrait;
+            }
+        }
+        
+        return null;
     }
     
     // Show portrait select effect
@@ -104,6 +125,14 @@ public class UI_GameSingleWay : UI_Game
     {
         if (portrait is not MonoBehaviour mono) return;
         var go = mono.gameObject;
+        var parent = go.transform.parent;
+        var glows = parent.GetComponentsInChildren<GlowCycle>();
+        
+        foreach (var glowCycle in glows)
+        {
+            glowCycle.Selected = false;
+        }
+        
         var glowObject = go.transform.parent.GetChild(1).gameObject;
         glowObject.TryGetComponent(out GlowCycle glow);
         if (go.TryGetComponent(out ButtonBounce bounce) == false) return;
@@ -239,7 +268,7 @@ public class UI_GameSingleWay : UI_Game
         Bind<Button>(typeof(Buttons));
         Bind<TextMeshProUGUI>(typeof(Texts));
         
-        SetLog();
+        _log = SetLog();
     }
 
     protected override void InitButtonEvents()

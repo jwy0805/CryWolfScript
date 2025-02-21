@@ -206,6 +206,29 @@ public class LocalizationManager
         }
     }
 
+    public void UpdateNotifySelectPopupText(UI_NotifySelectPopup popup, string titleKey, string messageKey)
+    {
+        if (_localizationDict == null || _localizationDict.Count == 0)
+        {
+            _localizationDict = Managers.Data.LocalizationDict;
+        }
+        
+        if (_localizationDict[titleKey].TryGetValue(_language2Letter, out var titleEntry) &&
+            _localizationDict[messageKey].TryGetValue(_language2Letter, out var messageEntry))
+        {
+            popup.TitleText = titleEntry.Text;
+            popup.TitleFont = GetFont(titleEntry.Font);
+            popup.TitleFontSize = titleEntry.FontSize;
+            popup.MessageText = messageEntry.Text;
+            popup.MessageFont = GetFont(messageEntry.Font);
+            popup.MessageFontSize = messageEntry.FontSize;
+        }
+        else
+        {
+            Debug.LogError($"Translation key not found: {titleKey} or {messageKey}");
+        }
+    }
+
     public void UpdateInputFieldFont(TMP_InputField inputField, string fontName = null)
     {
         if (fontName == null)

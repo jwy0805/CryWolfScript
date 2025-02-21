@@ -73,6 +73,7 @@ public partial class UI_MainLobby
 
     private void SetCollectionUIDetails(Faction faction)
     {
+        var verticalContent = _unitCollection.parent.GetComponent<RectTransform>();
         var ownedUnits = OrderOwnedUnits();
         var ownedSheep = OrderOwnedSheep();
         var ownedEnchants = OrderOwnedEnchants();
@@ -170,6 +171,8 @@ public partial class UI_MainLobby
             var cardFrame = Managers.Resource.GetMaterialResources(material.MaterialInfo, _materialCollection);
             GetCountText(cardFrame.transform, material.Count);
         }
+        
+        LayoutRebuilder.ForceRebuildLayoutImmediate(verticalContent);
     }
     
      private void SetDeckButtonUI(Faction faction)
@@ -340,8 +343,16 @@ public partial class UI_MainLobby
 
         if (_selectedCard == null) return;
         _selectedCardForCrafting = _selectedCard;
-        var unitLevel = _collectionVm.GetLevelFromUiObject((UnitId)_selectedCard.Id);
-        GetButton((int)Buttons.ReinforcingButton).interactable = unitLevel != 3;
+        var type = _selectedCard.GetComponent<Card>().AssetType;
+        
+        switch (type)
+        {
+            case Asset.Unit:
+                var unitLevel = _collectionVm.GetLevelFromUiObject((UnitId)_selectedCard.Id);
+                GetButton((int)Buttons.ReinforcingButton).interactable = unitLevel != 3;
+                GetButton((int)Buttons.CraftingButton).interactable = unitLevel == 1;
+                break;
+        }
     }
     
     private void InitCraftPanel()
@@ -381,11 +392,12 @@ public partial class UI_MainLobby
             var craftingFrame = Managers.Resource.Instantiate("UI/Deck/CraftingMaterialFrame", parent);
             var itemPanel =  Managers.Resource.GetMaterialResources(material.MaterialInfo, craftingFrame.transform);
             var itemPanelRect = itemPanel.GetComponent<RectTransform>();
-            // var itemFrame = Util.FindChild(itemPanel, "Frame", true);
-            var needText = Util.FindChild(craftingFrame, "NeedCountText", true);
-            var ownedText = Util.FindChild(craftingFrame, "OwnedCountText", true);
-            var nameText = Util.FindChild(craftingFrame, "MaterialNameText", true);
-            var materialName = ((MaterialId)material.MaterialInfo.Id).ToString();
+            var countTextObject = Util.FindChild(craftingFrame, "CountText", true);
+            var countText = countTextObject.GetComponent<TextMeshProUGUI>();
+            var nameTextObject = Util.FindChild(craftingFrame, "MaterialNameText", true);
+            var nameText = nameTextObject.GetComponent<TextMeshProUGUI>();
+            var key = $"material_id_{material.MaterialInfo.Id}";
+            var materialName = Managers.Localization.GetLocalizedValue(nameText, key);
             if (materialName.Length > 11)
             {
                 materialName = materialName.Substring(0, 9) + "..";
@@ -397,9 +409,8 @@ public partial class UI_MainLobby
             
             var ownedCount = ownedMaterials.FirstOrDefault(info =>
                 info.MaterialInfo.Id == material.MaterialInfo.Id)?.Count ?? 0;
-            needText.GetComponent<TextMeshProUGUI>().text = material.Count.ToString();
-            ownedText.GetComponent<TextMeshProUGUI>().text = ownedCount.ToString();
-            nameText.GetComponent<TextMeshProUGUI>().text = materialName;
+            countText.text = $"{ownedCount} / {material.Count}";
+            nameText.text = materialName;
 
             CheckAndSetColorOnMaterialFrame(material, craftingFrame);
         }
@@ -409,15 +420,12 @@ public partial class UI_MainLobby
     {
         var ownedCount = User.Instance.OwnedMaterialList
             .FirstOrDefault(info => info.MaterialInfo.Id == material.MaterialInfo.Id)?.Count ?? 0;
-        var needText = Util.FindChild(craftingFrame, "NeedCountText", true);
-        var slash = Util.FindChild(craftingFrame, "Slash", true);
-        var ownedText = Util.FindChild(craftingFrame, "OwnedCountText", true);
-        needText.GetComponent<TextMeshProUGUI>().color = material.Count <= ownedCount ? Color.white : Color.red;
-        slash.GetComponent<TextMeshProUGUI>().color = material.Count <= ownedCount ? Color.white : Color.red;
-        ownedText.GetComponent<TextMeshProUGUI>().color = material.Count <= ownedCount ? Color.white : Color.red;
+        var countTextObject = Util.FindChild(craftingFrame, "CountText", true);
+        var countText = countTextObject.GetComponent<TextMeshProUGUI>();
+        countText.color = ownedCount >= material.Count ? Color.green : Color.red;
     }
     
-    private void UpdateCraftingMaterials()
+    private void UpdateCraftingMaterials(List<OwnedMaterialInfo> ownedMaterials)
     {
         _craftingVm.TotalCraftingMaterials = _craftingVm.CraftingMaterials.Select(info => new OwnedMaterialInfo 
         {
@@ -435,13 +443,16 @@ public partial class UI_MainLobby
         for (var i = 0; i < childCount; i++)
         {
             var materialFrame = materialPanel.GetChild(i);
-            var itemFrame = Util.FindChild(materialFrame.gameObject, "Frame", true);
-            var needText = Util.FindChild(materialFrame.gameObject, "NeedCountText", true);
+            var itemFrame = Util.FindChild(materialFrame.gameObject, "ItemFrame", true);
+            var countText = Util.FindChild(materialFrame.gameObject, "CountText", true);
             var material = _craftingVm.TotalCraftingMaterials
                 .FirstOrDefault(info => info.MaterialInfo.Id == materialFrame.GetComponentInChildren<MaterialItem>().Id);
+            var ownedCount = ownedMaterials
+                .FirstOrDefault(info => info.MaterialInfo.Id == material?.MaterialInfo.Id)?.Count ?? 0;
             if (material == null) continue;
-            needText.GetComponent<TextMeshProUGUI>().text = material.Count.ToString();
-            CheckAndSetColorOnMaterialFrame(material, itemFrame);
+            
+            countText.GetComponent<TextMeshProUGUI>().text = $"{ownedCount} / {material.Count}";
+            CheckAndSetColorOnMaterialFrame(material, materialFrame.gameObject);
         }
     }
     

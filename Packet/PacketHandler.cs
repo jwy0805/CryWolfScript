@@ -196,6 +196,21 @@ public class PacketHandler
         
     }
 
+    public static void S_BaseUpgradeHandler(PacketSession session, IMessage packet)
+    {
+        var upgradePacket = (S_BaseUpgrade)packet;
+
+        if (upgradePacket.Faction == Faction.Wolf)
+        {
+            var portal = GameObject.FindWithTag("Portal").GetComponent<PortalController>();
+            portal.UpgradePortal(upgradePacket.Level);
+        }
+        else
+        {
+            Managers.Object.UpgradeStorage(upgradePacket.Level, upgradePacket.BaseZ);
+        }
+    }
+    
     public static void S_SkillUpgradeHandler(PacketSession session, IMessage packet)
     {
         var upgradePacket = (S_SkillUpgrade)packet;
@@ -233,23 +248,25 @@ public class PacketHandler
         // Floating text instantiate
         var floatingTextObject = Managers.Resource.Instantiate("WorldObjects/DmgText");
         floatingTextObject.transform.position = go.transform.position + Vector3.up;
-        floatingTextObject.GetComponentInChildren<TextAnimatorPlayer>().ShowText($"{damagePacket.Damage}");
+        // floatingTextObject.GetComponentInChildren<TextAnimatorPlayer>().ShowText($"{damagePacket.Damage}");
         var text = floatingTextObject.GetComponentInChildren<TextMeshPro>();
         switch (damagePacket.DamageType)
         {
             case Damage.Normal:
                 text.color = new Color32(255, 114, 4, 255);
-                text.outlineColor = new Color32(255, 30, 0, 255);
+                // text.outlineColor = new Color32(255, 30, 0, 255);
                 break;
             case Damage.Magical:
                 text.color = new Color32(0, 255, 245, 255);
-                text.outlineColor = new Color32(0, 35, 255, 255);
+                // text.outlineColor = new Color32(0, 35, 255, 255);
                 break;
             case Damage.Poison:
                 text.color = new Color32(177, 0, 255, 255);
-                text.outlineColor = new Color32(57, 0, 255, 255);
+                // text.outlineColor = new Color32(57, 0, 255, 255);
                 break;
             case Damage.True:
+                text.color = new Color32(255, 255, 186, 255);
+                break;
             case Damage.None:
             case Damage.Fire:
             default:
@@ -462,9 +479,9 @@ public class PacketHandler
         popup.GetComponent<UI_WarningPopup>().SetWarning(popupPacket.Warning);
     }
 
-    public static void S_ShowResultPopupHandler(PacketSession session, IMessage packet)
+    public static void S_ShowRankResultPopupHandler(PacketSession session, IMessage packet)
     {
-        var resultPacket = (S_ShowResultPopup)packet;
+        var resultPacket = (S_ShowRankResultPopup)packet;
         Managers.UI.CloseAllPopupUI();
         Managers.Game.GameResult = resultPacket.Win;
         
@@ -481,6 +498,27 @@ public class PacketHandler
             popup.RankPointValue = resultPacket.RankPointValue;
             popup.RankPoint = resultPacket.RankPoint;
             popup.Reward = resultPacket.Rewards.ToList();
+        }
+    }
+
+    public static void S_ShowSingleResultPopupHandler(PacketSession session, IMessage packet)
+    {
+        var resultPacket = (S_ShowSingleResultPopup)packet;
+        Managers.UI.CloseAllPopupUI();
+        Managers.Game.GameResult = resultPacket.Win;
+        
+        if (resultPacket.Win)
+        {
+            var popup = Managers.UI.ShowPopupUI<UI_ResultSingleVictoryPopup>();
+            popup.Star = resultPacket.Star;
+            popup.Reward = resultPacket.SingleRewards.Select(sr => new Reward
+            {
+                ItemId = sr.ItemId, Count = sr.Count
+            }).ToList();
+        }
+        else
+        {
+            Managers.UI.ShowPopupUI<UI_ResultSingleDefeatPopup>();
         }
     }
     

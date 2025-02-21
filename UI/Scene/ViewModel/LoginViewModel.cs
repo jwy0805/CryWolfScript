@@ -75,4 +75,14 @@ public class LoginViewModel
     {
         
     }
+
+    public void HandleAppleSignInSuccess()
+    {
+        // 서버 연동, 계정 처리 로직
+    }
+    
+    public void HandleAppleSignInFailed()
+    {
+        
+    }
 }

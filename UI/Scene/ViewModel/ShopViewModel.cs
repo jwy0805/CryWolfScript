@@ -26,7 +26,7 @@ public class ShopViewModel
     public List<ProductInfo> SpinelItems;
     
     public ProductInfo SelectedProduct { get; set; }
-    public List<CompositionInfo> ProductsToBeClaimed { get; } = new()
+    public List<CompositionInfo> ReservedProductsToBeClaimed { get; } = new()
     {
         new CompositionInfo { CompositionId = 60, Type = ProductType.None },
         new CompositionInfo { CompositionId = 61, Type = ProductType.None },
@@ -34,6 +34,16 @@ public class ShopViewModel
         new CompositionInfo { CompositionId = 4002, Type = ProductType.Spinel },
         new CompositionInfo { CompositionId = 21, Type = ProductType.None },
         new CompositionInfo { CompositionId = 53, Type = ProductType.None },
+    };
+
+    public List<string> ReservedProductKeys { get; } = new()
+    {
+        "reserved_product_1",
+        "reserved_product_2",
+        "reserved_product_3",
+        "reserved_product_4",
+        "reserved_product_5",
+        "reserved_product_6",
     };
     
     [Inject]

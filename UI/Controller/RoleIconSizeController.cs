@@ -28,6 +28,7 @@ public class RoleIconSizeController : MonoBehaviour
         var parentRectWidth = parentRect.rect.width;
         
         rect.sizeDelta = new Vector2(parentRectWidth * _widthRatio, parentRectWidth * _widthRatio);
+        rect.anchoredPosition = new Vector2(parentRectWidth * 0.2f, -parentRectWidth * 0.2f);
         childRect.sizeDelta = new Vector2(rect.rect.width * _childWidthRatio, rect.rect.width * _childWidthRatio);
     }
 

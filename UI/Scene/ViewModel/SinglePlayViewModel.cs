@@ -12,6 +12,7 @@ public class SinglePlayViewModel : IDisposable
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
     
+    public int SelectedStageId { get; set; }
     public int StageLevel { get; set; }
     public List<UserStageInfo> UserStageInfos { get; set; }
     public List<StageEnemyInfo> StageEnemyInfos { get; set; }
@@ -44,20 +45,26 @@ public class SinglePlayViewModel : IDisposable
         StageRewardInfos = stageTask.Result.StageRewardInfos;
     }
 
-    public async Task StartSinglePlay(int stageId)
+    public async Task ConnectGameSession()
+    {
+        var sessionTask = Managers.Network.ConnectGameSession();
+        
+        await sessionTask;
+    }
+
+    public async Task StartSinglePlay(int sessionId)
     {
         var changePacket = new ChangeActPacketSingleRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            SessionId = Managers.Network.SessionId,
-            StageId = stageId,
+            SessionId = sessionId,
+            StageId = SelectedStageId,
             Faction = Util.Faction
         };
         var apiTask = _webService.SendWebRequestAsync<ChangeActPacketSingleResponse>(
             "SinglePlay/StartGame", UnityWebRequest.kHttpVerbPUT, changePacket);
-        var sessionTask = Managers.Network.ConnectGameSession();
-        
-        await Task.WhenAll(apiTask, sessionTask);
+
+        await apiTask;
         
         if (apiTask.Result.ChangeOk)
         {

@@ -42,7 +42,7 @@ public enum MaterialId
 public enum ProductId
 {
     None = 0,
-    AbundantHarvest,
+    OverPower,
     BeginningOfTheLegend1,
     BeginningOfTheLegend2,
     BeginnersSpirit,
@@ -117,6 +117,14 @@ public enum ProductType
     Spinel,
 }
 
+public enum TutorialType
+{
+    Main = 0,
+    Battle = 1,
+    Collection = 2,
+    Reinforce = 3
+}
+
 public enum ProductCategory
 {
     None = 0,
@@ -138,6 +146,7 @@ public enum MailType
     Notice,
     Invite,
     Product,
+    Reward
 }
 
 public enum CurrencyType

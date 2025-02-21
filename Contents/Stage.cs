@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Google.Protobuf.Protocol;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
@@ -13,7 +14,7 @@ public class Stage : MonoBehaviour
     private SinglePlayViewModel _singlePlayVm;
 
     public Faction Faction => Util.Faction;
-    public List<UserStageInfo> UserStageInfo { get; set; } = new();
+    [CanBeNull] public UserStageInfo UserStageInfo { get; set; }
     public List<UnitInfo> EnemyInfo { get; set; } = new();
     public List<SingleRewardInfo> RewardInfo { get; set; } = new();
     
@@ -37,7 +38,7 @@ public class Stage : MonoBehaviour
     
     private void BindObjects()
     {
-        UserStageInfo = _singlePlayVm.UserStageInfos;
+        UserStageInfo = _singlePlayVm.UserStageInfos.FirstOrDefault(usi => usi.StageId == stageId);
 
         var unitIds = _singlePlayVm.StageEnemyInfos.FirstOrDefault(sei => sei.StageId == stageId)?.UnitIds;
         if (unitIds != null)
@@ -50,31 +51,23 @@ public class Stage : MonoBehaviour
 
     private void InitUI()
     {
-        if (UserStageInfo.Select(usi => usi.StageId).Contains(stageId))
+        var starPanel = transform.Find("Star");
+        if (UserStageInfo == null)
         {
-            var stageStars = UserStageInfo.FirstOrDefault(usi => usi.StageId == stageId)?.StageStar;
-            if (stageStars != null)
-            {
-                var stars = stageStars.Value;
-                var starPanel = transform.Find("Star");
-                for (var i = 0; i < 3; i++)
-                {
-                    starPanel.GetChild(i).gameObject.SetActive(i < stars);
-                }
-            }
-            GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>("Sprites/UIIcons/stage_cleared");
-        }
-        else
-        {
-            GetComponent<Image>().sprite = 
-                Managers.Resource.Load<Sprite>(UserStageInfo.Max(usi => usi.StageId) + 1 == stageId 
-                    ? "Sprites/UIIcons/stage_unlocked" 
-                    : "Sprites/UIIcons/stage_locked");
-            
-            var starPanel = transform.Find("Star");
+            GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>("Sprites/UIIcons/stage_locked");
             for (var i = 0; i < 3; i++)
             {
                 starPanel.GetChild(i).gameObject.SetActive(false);
+            }
+        }
+        else
+        {
+            GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(
+                UserStageInfo.IsCleared ? "Sprites/UIIcons/stage_cleared" : "Sprites/UIIcons/stage_unlocked");
+            var stars = UserStageInfo.StageStar;
+            for (var i = 0; i < 3; i++)
+            {
+                starPanel.GetChild(i).gameObject.SetActive(i < stars);
             }
         }
     }

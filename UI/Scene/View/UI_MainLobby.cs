@@ -40,7 +40,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private UI_CardClickPopup _cardPopup;
     private RectTransform _craftingPanel;
     private ScrollRect _craftingScrollRect;
-    private Camera _tutorialCamera;
+    private Camera _tutorialCamera1;
+    private Camera _tutorialCamera2;
     private Transform _unitCollection;
     private Transform _unitNoCollection;
     private Transform _assetCollection;
@@ -209,7 +210,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         MainMailButtonText,
         MainMissionButtonText,
         MainGiftButtonText,
-        MainPlayButtonText,
+        PlayButtonText,
         FriendlyMatchPanelText,
         RankGamePanelText,
         SinglePlayPanelText,
@@ -301,7 +302,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         CraftingCardPanel,
         CardPedestal,
         
-        CraftingBackButtonPanel,
+        CraftingBackButtonFakePanel,
         CraftingSelectPanel,
         CraftingCraftPanel,
         CraftCardPanel,
@@ -395,8 +396,10 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         _craftingVm.SetCollectionUI -= SetCollectionUI;
         _craftingVm.SetCollectionUI += SetCollectionUI;
         
-        _tutorialVm.OnInitTutorialCamera -= InitTutorialCamera;
-        _tutorialVm.OnInitTutorialCamera += InitTutorialCamera;
+        _tutorialVm.OnInitTutorialCamera1 -= InitTutorialMainCamera1;
+        _tutorialVm.OnInitTutorialCamera1 += InitTutorialMainCamera1;
+        _tutorialVm.OnInitTutorialCamera2 -= InitTutorialMainCamera2;
+        _tutorialVm.OnInitTutorialCamera2 += InitTutorialMainCamera2;
         
         _userService.InitDeckButton -= SetDeckButtonUI;
         _userService.InitDeckButton += SetDeckButtonUI;
@@ -822,7 +825,10 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     
     private void OnCraftingClicked(PointerEventData data)
     {
-        var activeUis = new[] { "CraftingBackButtonPanel", "CraftingCraftPanel", "MaterialScrollView" };
+        var activeUis = new[]
+        {
+            "CraftingBackButtonFakePanel", "CraftingCraftPanel", "MaterialScrollView"
+        };
         SetActivePanels(_craftingUiDict, activeUis);
         
         if (_selectedCard == null || _selectedCardForCrafting == null)
@@ -838,7 +844,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private void OnReinforcingClicked(PointerEventData data)
     {
         if (_selectedCard == null || _selectedCardForCrafting == null) return;
-        var activeUis = new[] { "CraftingBackButtonPanel", "CraftingReinforcePanel", "MaterialScrollView" };
+        var activeUis = new[] { "CraftingBackButtonFakePanel", "CraftingReinforcePanel", "MaterialScrollView" };
         SetActivePanels(_craftingUiDict, activeUis);
         InitReinforcePanel();
         ResetCollectionUIForReinforce();
@@ -867,14 +873,14 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     {
         if (_craftingVm.CraftingCount >= 100) return;
         _craftingVm.CraftingCount++;
-        UpdateCraftingMaterials();        
+        UpdateCraftingMaterials(User.Instance.OwnedMaterialList);        
     }
     
     private void OnCraftLowerArrowClicked(PointerEventData data)
     {
         if (_craftingVm.CraftingCount <= 1) return;
         _craftingVm.CraftingCount--;
-        UpdateCraftingMaterials();
+        UpdateCraftingMaterials(User.Instance.OwnedMaterialList);
     }
 
     private void OnReinforceMaterialClicked(PointerEventData data)
@@ -904,7 +910,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
 
     private void OnProductClicked(PointerEventData data)
     {
-        Product product = null;
+        GameProduct product = null;
         var go = data.pointerPress.gameObject;
         if (go.TryGetComponent(out ProductSimple productSimple))
         {
@@ -970,7 +976,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         
         _craftingUiDict = new Dictionary<string, GameObject>
         {
-            { "CraftingBackButtonPanel", GetImage((int)Images.CraftingBackButtonPanel).gameObject },
+            { "CraftingBackButtonFakePanel", GetImage((int)Images.CraftingBackButtonFakePanel).gameObject },
             { "CraftingSelectPanel", GetImage((int)Images.CraftingSelectPanel).gameObject },
             { "CraftingCraftPanel", GetImage((int)Images.CraftingCraftPanel).gameObject },
             { "CraftingReinforcePanel", GetImage((int)Images.CraftingReinforcePanel).gameObject },
@@ -1135,7 +1141,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         // Process Tutorial
         if (_userService.UserInfo.BattleTutorialDone == false)
         {
-            var tutorialPopup = Managers.UI.ShowPopupUI<UI_TutorialPopup>();
+            var tutorialPopup = Managers.UI.ShowPopupUI<UI_TutorialMainPopup>();
         }
     }
 
@@ -1229,11 +1235,24 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         }
     }
 
-    private void InitTutorialCamera(Vector3 npcPos, Vector3 cameraPos)
+    private void InitTutorialMainCamera1(Vector3 npcPos, Vector3 cameraPos)
     {
-        _tutorialCamera = GameObject.FindGameObjectWithTag("Camera").GetComponent<Camera>();
-        _tutorialCamera.transform.position = cameraPos;
-        _tutorialCamera.transform.LookAt(npcPos);
+        var cameraObjects = GameObject.FindGameObjectsWithTag("Camera");
+        var cameraObject = cameraObjects.FirstOrDefault(go => go.name == "TutorialCamera1");
+        if (cameraObject == null) return;
+        _tutorialCamera1 = cameraObject.GetComponent<Camera>();
+        _tutorialCamera1.transform.position = cameraPos;
+        _tutorialCamera1.transform.LookAt(npcPos);
+    }
+
+    private void InitTutorialMainCamera2(Vector3 npcPos, Vector3 cameraPos)
+    {
+        var cameraObjects = GameObject.FindGameObjectsWithTag("Camera");
+        var cameraObject = cameraObjects.FirstOrDefault(go => go.name == "TutorialCamera2");
+        if (cameraObject == null) return;
+        _tutorialCamera2 = cameraObject.GetComponent<Camera>();
+        _tutorialCamera2.transform.position = cameraPos;
+        _tutorialCamera2.transform.LookAt(npcPos);
     }
     
     #endregion
@@ -1282,7 +1301,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         _craftingVm.SetMaterialsOnCraftPanel -= InitMaterialsOnCraftPanel;
         _craftingVm.InitCraftingPanel -= InitCraftingPanel;
         _craftingVm.SetCollectionUI -= SetCollectionUI;
-        _tutorialVm.OnInitTutorialCamera -= InitTutorialCamera;
+        _tutorialVm.OnInitTutorialCamera1 -= InitTutorialMainCamera1;
+        _tutorialVm.OnInitTutorialCamera2 -= InitTutorialMainCamera2;
         _userService.InitDeckButton -= SetDeckButtonUI;
         
         await _lobbyVm.LeaveLobby();

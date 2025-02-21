@@ -108,7 +108,7 @@ public class UI_SinglePlay : UI_Scene
 
     public void StartSinglePlay(int sessionId)
     {
-        
+        _ = _singlePlayVm.StartSinglePlay(sessionId);
     }
     
     private void OnBackClicked(PointerEventData data)

@@ -94,8 +94,14 @@ public class UI_SinglePlayMapPopup : UI_Popup
         var rewardPanel = stageInfoPanel.Find("Reward");
         var unitInfos = stage.EnemyInfo.OrderByDescending(info => info.Class).ToList();
         var singleRewardInfos = stage.RewardInfo.OrderBy(info => info.Star).ToList();
+        var available = stage.UserStageInfo?.IsAvailable ?? false;
         
         stageInfoPanel.gameObject.SetActive(true);
+        
+        if (available == false)
+        {
+            GetButton((int)Buttons.FightButton).interactable = false;
+        }
         
         Util.DestroyAllChildren(deckPanel);
         Util.DestroyAllChildren(rewardPanel);
@@ -183,13 +189,15 @@ public class UI_SinglePlayMapPopup : UI_Popup
     {
         var stage = data.pointerPress.GetComponent<Stage>();
         _selectedStage = stage;
+        _singlePlayVm.SelectedStageId = stage.stageId;
         BindStageInfoPanel(stage);
     }
     
     private void OnFightClicked(PointerEventData data)
     {
         if (_selectedStage == null) return;
-        _ = _singlePlayVm.StartSinglePlay(_selectedStage.stageId);
+        if (_selectedStage.UserStageInfo == null || _selectedStage.UserStageInfo.IsAvailable == false) return;
+        _ = _singlePlayVm.ConnectGameSession();
     }
     
     private void CloseInfoPanel(PointerEventData data)

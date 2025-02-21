@@ -152,7 +152,10 @@ public class ResourceManager
     }
     
     public GameObject GetCardResources<TEnum>(
-        IAsset asset, Transform parent, Action<PointerEventData> action = null) where TEnum : struct, Enum
+        IAsset asset, 
+        Transform parent, 
+        Action<PointerEventData> action = null, 
+        bool activateText = false) where TEnum : struct, Enum
     {
         var cardFrame = Instantiate("UI/Deck/CardFrame", parent);
         var unitInCard = Util.FindChild(cardFrame, "CardUnit", true);
@@ -189,8 +192,15 @@ public class ResourceManager
         }
         if (Managers.Data.UnitInfoDict.TryGetValue(asset.Id, out var unitInfo) == false) return cardFrame;
         var starPanel = cardFrame.transform.Find("StarPanel");
-        var nameText = Util.FindChild(cardFrame, "UnitNameText", true).GetComponent<TextMeshProUGUI>();
-        nameText.text = ((UnitId)unitInfo.Id).ToString();
+        
+        var nameTextObject = Util.FindChild(cardFrame, "UnitNameText", true, true);
+        nameTextObject.SetActive(activateText);
+        if (activateText)
+        {
+            var key = $"UnitName{((UnitId)unitInfo.Id).ToString()}";
+            var convertedKey = Managers.Localization.GetConvertedString(key);
+            Managers.Localization.UpdateTextAndFont(nameTextObject, convertedKey);
+        }
             
         for (var i = 0; i < 3; i++)
         {
@@ -386,7 +396,7 @@ public class ResourceManager
     {
         var frame = Instantiate("UI/Deck/MailInfoInvitation", parent);
         var infoText = Util.FindChild(frame, "InfoText", true).GetComponent<TextMeshProUGUI>();
-        var expireText = Util.FindChild(frame, "ExpireText", true).GetComponent<TextMeshProUGUI>();
+        var expireText = Util.FindChild(frame, "ExpiresText", true).GetComponent<TextMeshProUGUI>();
         
         frame.GetComponent<Mail>().MailId = mailInfo.MailId;
         infoText.text = mailInfo.Message;

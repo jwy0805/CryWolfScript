@@ -72,6 +72,7 @@ public class UI_ProductReservedInfoPopup : UI_Popup
     protected override void InitUI()
     {
         SetContents();
+        SetInfoText();
     }
     
     private void GetProductInfo()
@@ -83,8 +84,10 @@ public class UI_ProductReservedInfoPopup : UI_Popup
     {
         var contentsPanel = Util.FindChild(gameObject, "Content", true);
 
-        foreach (var composition in _shopVm.ProductsToBeClaimed)
+        for (var i = 0; i < _shopVm.ReservedProductsToBeClaimed.Count; i++)
         {
+            var composition = _shopVm.ReservedProductsToBeClaimed[i];
+            var key = _shopVm.ReservedProductKeys[i];
             var framePath = $"UI/Deck/ProductDetailInfo";
             var productFrame = Managers.Resource.Instantiate(framePath, contentsPanel.transform);
             var frame = Util.FindChild(productFrame, "Frame", true);
@@ -103,7 +106,25 @@ public class UI_ProductReservedInfoPopup : UI_Popup
             var productRect = product.GetComponent<RectTransform>();
             var size = productFrame.GetComponent<RectTransform>().sizeDelta.y * 0.9f;
             productRect.sizeDelta = new Vector2(size, size);
+            
+            // Set description text
+            var text = Util.FindChild(productFrame, "TextDescription", true).GetComponent<TextMeshProUGUI>();
+            text.text = Managers.Localization.GetLocalizedValue(text, key);
         }
+    }
+
+    private void SetInfoText()
+    {
+        var composition = _productInfo.Compositions.FirstOrDefault(c => c.Id == _productInfo.Id);
+        var str = _productInfo.Category == ProductCategory.GoldPackage ? "" : "X";
+        var productText = GetText((int)Texts.TextName);
+        productText.text = Managers.Localization.GetLocalizedValue(productText, _productInfo.ProductCode);
+        GetText((int)Texts.TextNum).text = str + composition?.Count;
+        GetText((int)Texts.TextPrice).text = _productInfo.Price.ToString();
+        
+        var infoText = GetText((int)Texts.TextInfo);
+        var key = $"product_info_{_productInfo.ProductCode}";
+        infoText.text = Managers.Localization.GetLocalizedValue(infoText, key);
     }
     
     private void OnBuyButtonClicked(PointerEventData data)

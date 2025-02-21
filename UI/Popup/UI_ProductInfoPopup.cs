@@ -102,6 +102,7 @@ public class UI_ProductInfoPopup : UI_Popup
         GetText((int)Texts.TextPrice).text = _productInfo.Price.ToString();
         GetText((int)Texts.TextNum).gameObject.SetActive(false);
         SetContents();
+        // SetInfoText();
     }
     
     private void GetProductInfo()
@@ -187,6 +188,12 @@ public class UI_ProductInfoPopup : UI_Popup
             productRect.anchorMin = new Vector2(0.5f, 0.55f);
             productRect.anchorMax = new Vector2(0.5f, 0.55f);
         }
+    }
+    
+    private void SetInfoText()
+    {
+        var infoText = GetText((int)Texts.TextInfo);
+        Managers.Localization.GetLocalizedValue(infoText, $"product_info_{_productInfo.ProductCode}");
     }
     
     private void OnBuyButtonClicked(PointerEventData data)

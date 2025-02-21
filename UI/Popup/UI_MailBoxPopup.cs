@@ -82,7 +82,6 @@ public class UI_MailBoxPopup : UI_Popup
     protected override async void InitUI()
     {
         GetImage((int)Images.NoMailBackground).gameObject.SetActive(false);
-        GetButton((int)Buttons.ExitButton).interactable = false;
 
         var mailTask = _lobbyVm.GetMailList();
 
@@ -129,7 +128,7 @@ public class UI_MailBoxPopup : UI_Popup
             case MailType.Invite:
                 mailFrame = Managers.Resource.GetInviteMailFrame(mailInfo, frameParent);
                 var acceptButton = Util.FindChild(mailFrame, "AcceptButton", true);
-                var rejectButton = Util.FindChild(mailFrame, "RejectButton", true);
+                var rejectButton = Util.FindChild(mailFrame, "DenyButton", true);
                 acceptButton.BindEvent(OnInvitationAccept);
                 rejectButton.BindEvent(OnInvitationReject);
                 break;

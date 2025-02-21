@@ -55,7 +55,7 @@ public class MatchMakingViewModel
         {
             AccessToken = _tokenService.GetAccessToken(),
             SessionId = SessionId,
-            Faction = Util.Faction,
+            Faction = Util.Faction == Faction.Wolf ? Faction.Sheep : Faction.Wolf,
             MapId = Managers.Map.MapId
         };
         

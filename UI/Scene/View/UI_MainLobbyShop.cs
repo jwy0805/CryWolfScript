@@ -139,7 +139,7 @@ public partial class UI_MainLobby
         Action<PointerEventData> action = null)
     {
         var panel = Managers.Resource.Instantiate($"UI/Shop/{prefabPath}", parent);
-        var product = panel.GetOrAddComponent<Product>();
+        var product = panel.GetOrAddComponent<GameProduct>();
         product.Init();
         product.ProductInfo = productInfo;
         

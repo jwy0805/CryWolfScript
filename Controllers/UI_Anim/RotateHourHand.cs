@@ -5,7 +5,7 @@ using UnityEngine;
 public class RotateHourHand : MonoBehaviour
 {
     private Quaternion _rotation;
-    private readonly float _rotationSpeed = -18.5f;
+    private readonly float _rotationSpeed = -360/25f;
     
     public bool RotationStart { get; set; }
     

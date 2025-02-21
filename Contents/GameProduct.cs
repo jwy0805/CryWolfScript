@@ -4,10 +4,10 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-/* Last Modified : 24. 10. 30
+/* Last Modified : 25. 02. 14
  * Version : 1.02
  */
-public class Product : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class GameProduct : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     private ScrollRect _scrollRect;
     

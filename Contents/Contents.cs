@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf.Protocol;
-using Unity.Plastic.Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -39,6 +38,23 @@ public class Contents
         public int Value { get; set; }
         public float Coefficient { get; set; }
         public int Cost { get; set; }
+    }
+
+    [Serializable]
+    public class TutorialData
+    {
+        public TutorialType Type { get; set; }
+        public List<TutorialStep> Steps { get; set; }
+    }
+
+    [Serializable]
+    public class TutorialStep
+    {
+        public int Step { get; set; }
+        public string DialogKey { get; set; }
+        public string Speaker { get; set; }
+        public string BubblePosition { get; set; }
+        public List<string> Events { get; set; }
     }
     
     [Serializable]
@@ -88,15 +104,15 @@ public class Contents
             return Skills.ToDictionary(skill => skill.Id);
         }
     }
-
+    
     [Serializable]
-    public class LanguageLoader : ILoader<string, Dictionary<string, LocalizationEntry>>
+    public class TutorialLoader : ILoader<TutorialType, TutorialData>
     {
-        public List<LocalizationItem> Texts { get; set; } = new();
+        public List<TutorialData> Tutorials { get; set; } = new();
         
-        public Dictionary<string, Dictionary<string, LocalizationEntry>> MakeDict()
+        public Dictionary<TutorialType, TutorialData> MakeDict()
         {
-            return Texts.ToDictionary(item => item.Key, item => item.Translations);
+            return Tutorials.ToDictionary(tutorial => tutorial.Type);
         }
     }
 }

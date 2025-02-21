@@ -122,7 +122,7 @@ public class UI_CardClickPopup : UI_Popup
     private void SetCardInPopup<TEnum>() where TEnum : struct, Enum
     {
         var parent = GetImage((int)Images.CardPanel).transform;
-        var cardFrame = Managers.Resource.GetCardResources<TEnum>(SelectedCard, parent, ClosePopup);
+        var cardFrame = Managers.Resource.GetCardResources<TEnum>(SelectedCard, parent, ClosePopup, true);
         var cardFrameRect = cardFrame.GetComponent<RectTransform>();
         cardFrameRect.sizeDelta = new Vector2(200, 320);
         cardFrameRect.anchorMin = new Vector2(0.5f, 0.5f);

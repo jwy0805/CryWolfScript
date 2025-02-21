@@ -11,6 +11,7 @@ public class UI_RewardPopup : UI_Popup
     private Transform _rewardPanel;
     
     public List<Reward> Rewards { get; set; }
+    public bool FromRank { get; set; }
     
     private enum Images
     {
@@ -71,7 +72,7 @@ public class UI_RewardPopup : UI_Popup
     
     private void OnPanelClicked(PointerEventData data)
     {
-        Managers.Scene.LoadScene(Define.Scene.MainLobby);
+        Managers.Scene.LoadScene(FromRank ? Define.Scene.MainLobby : Define.Scene.SinglePlay);
         Managers.UI.ClosePopupUI();
     }
 }

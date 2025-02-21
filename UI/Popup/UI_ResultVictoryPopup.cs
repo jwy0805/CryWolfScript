@@ -8,6 +8,8 @@ using UnityEngine.UI;
 
 public class UI_ResultVictoryPopup : UI_Popup
 {
+    private readonly Dictionary<string, GameObject> _textDict = new();
+    
     public int RankPointValue { get; set; }
     public int RankPoint { get; set; }
     public List<Reward> Reward { get; set; }
@@ -24,6 +26,8 @@ public class UI_ResultVictoryPopup : UI_Popup
 
     private enum Texts
     {
+        ResultRankPointText,
+        
         RankValueText,
         RankText,
     }
@@ -43,6 +47,8 @@ public class UI_ResultVictoryPopup : UI_Popup
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
         Bind<TextMeshProUGUI>(typeof(Texts));
+        
+        Managers.Localization.UpdateTextAndFont(_textDict);
     }
     
     protected override void InitButtonEvents()
@@ -65,5 +71,6 @@ public class UI_ResultVictoryPopup : UI_Popup
     {
         var popup = Managers.UI.ShowPopupUI<UI_RewardPopup>();
         popup.Rewards = Reward;
+        popup.FromRank = true;
     }
 }

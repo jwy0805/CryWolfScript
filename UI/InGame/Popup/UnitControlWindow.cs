@@ -78,6 +78,9 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         {
             _selectedUnit = value;
             _cc = _selectedUnit.GetComponent<CreatureController>();
+            
+            // set selected portrait 
+            _gameVm.SetPortraitFromFieldUnit(_cc.UnitId);
         }
     }
     
