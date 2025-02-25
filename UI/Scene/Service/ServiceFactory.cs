@@ -106,5 +106,6 @@ public class GameServiceFactory : IServiceFactory
     public void Bind(DiContainer container)
     {
         container.Bind<GameViewModel>().AsSingle();
+        container.Bind<TutorialViewModel>().AsSingle();
     }
 }

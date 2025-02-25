@@ -12,8 +12,6 @@ public class UI_NotifySelectPopup : UI_Popup
     public string MessageText { get; set; }
     public TMP_FontAsset MessageFont { get; set; }
     public int MessageFontSize { get; set; }
-    public string ButtonText { get; set; }
-    public TMP_FontAsset ButtonFont { get; set; }
     public int ButtonFontSize { get; set; }
     public Action YesCallback { get; set; }
 
@@ -26,6 +24,8 @@ public class UI_NotifySelectPopup : UI_Popup
 
     private enum Texts
     {
+        NotifyTitle,
+        NotifyText,
         YesText,
         NoText,
     }
@@ -54,6 +54,15 @@ public class UI_NotifySelectPopup : UI_Popup
     
     protected override void InitUI()
     {
+        var title = GetText((int)Texts.NotifyTitle).GetComponent<TextMeshProUGUI>();
+        var message = GetText((int)Texts.NotifyText).GetComponent<TextMeshProUGUI>();
+        title.font = TitleFont;
+        title.fontSize = TitleFontSize;
+        message.font = MessageFont;
+        message.fontSize = MessageFontSize;
+        title.text = TitleText;
+        message.text = MessageText;
+        
         var yesText = GetText((int)Texts.YesText);
         yesText.text = Managers.Localization.GetLocalizedValue(yesText, "yes_text");
         if (ButtonFontSize != 0)

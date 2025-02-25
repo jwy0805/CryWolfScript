@@ -30,14 +30,27 @@ public class NetworkManager
 
             if (_sessionId == -1) return;
             
+            var uiArray = GameObject.FindGameObjectsWithTag("UI");
+
+            foreach (var ui in uiArray)
+            {
+                if (ui.TryGetComponent(out UI_TutorialMainPopup uiTutorialMainPopup))
+                {
+                    uiTutorialMainPopup.StartTutorial(_sessionId);
+                    return;
+                }
+            }
+            
             if (GameObject.FindWithTag("UI").TryGetComponent(out UI_MatchMaking uiMatchMaking))
             {
                 uiMatchMaking.StartMatchMaking(_sessionId);
+                return;
             }
             
             if (GameObject.FindWithTag("UI").TryGetComponent(out UI_SinglePlay uiSinglePlay))
             {
                 uiSinglePlay.StartSinglePlay(_sessionId);
+                return;
             }
         }
     }

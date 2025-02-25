@@ -259,7 +259,6 @@ public class UI_UnitInfoPopup : UI_Popup
         var cardFrame = Managers.Resource.GetCardResources<UnitId>(asset, parent);
         var rect = cardFrame.GetComponent<RectTransform>();
         
-        Util.FindChild(cardFrame, "UnitNameText", true).SetActive(false);
         Util.FindChild(cardFrame, "Role", true).SetActive(false);
         rect.sizeDelta = new Vector2(Screen.width * 0.3f, Screen.width * 0.48f);
         rect.anchorMin = new Vector2(0.5f, 0.5f);

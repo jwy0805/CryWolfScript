@@ -41,15 +41,15 @@ public class MyPlayerController : PlayerController
         Managers.Input.MouseAction += OnMouseEvent;
         _cameraObject = GameObject.FindWithTag("CameraFocus");
 
-        // Test - Unit Spawn
-        // C_Spawn spawnPacket = new()
+        // // Test - Unit Spawn
+        // C_Spawn spawnPacket1 = new()
         // {
         //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.Werewolf,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = -1, PosY = 6, PosZ = 14, Dir = 180 },
+        //     Num = (int)UnitId.Wolf,
+        //     PosInfo = new PositionInfo { State = State.Idle, PosX = -1.5f, PosY = 6, PosZ = 14, Dir = 180 },
         //     Way = SpawnWay.North
         // };
-        // Managers.Network.Send(spawnPacket);
+        // Managers.Network.Send(spawnPacket1);
     }
     
     private void OnMouseEvent(Define.MouseEvent evt)

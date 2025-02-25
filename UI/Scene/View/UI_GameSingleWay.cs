@@ -39,7 +39,9 @@ public class UI_GameSingleWay : UI_Game
     #endregion
     
     private GameViewModel _gameVm;
+    private TutorialViewModel _tutorialVm;
     private GameObject _log;
+    private bool _isTutorial;
 
     private readonly List<GameObject> _selectedObjects = new();
     private readonly Dictionary<string, GameObject> _dictPortrait = new();
@@ -48,21 +50,12 @@ public class UI_GameSingleWay : UI_Game
     public Faction Faction { get; set; }
     
     [Inject]
-    public void Construct(GameViewModel gameViewModel)
+    public void Construct(GameViewModel gameViewModel, TutorialViewModel tutorialViewModel)
     {
         _gameVm = gameViewModel;
+        _tutorialVm = tutorialViewModel;
     }
 
-    protected override void Init()
-    {
-        base.Init();
-        Faction = Util.Faction;
-        
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
-    }
-    
     private void Awake()
     {
         _gameVm.SetPortraitFromFieldUnitEvent -= SetPortraitFromFieldUnit;
@@ -77,6 +70,51 @@ public class UI_GameSingleWay : UI_Game
         _gameVm.TurnOffSelectRingEvent += TurnOffSelectRing;
         _gameVm.SelectedObjectIds.CollectionChanged -= OnSlotIdChanged;
         _gameVm.SelectedObjectIds.CollectionChanged += OnSlotIdChanged;
+    }
+    
+    protected override void Init()
+    {
+        base.Init();
+        Faction = Util.Faction;
+        
+        if (Managers.Game.IsTutorial)
+        {
+            _isTutorial = true;
+            Managers.Game.IsTutorial = false;
+        }
+        
+        BindObjects();
+        InitButtonEvents();
+        InitUI();
+
+        Managers.UI.ShowPopupUI<UI_TutorialBattleSheepPopup>();
+    }
+    
+    protected override void BindObjects()
+    {
+        _dictPortrait.Clear();
+        _selectedObjects.Clear();
+        
+        BindData<Image>(typeof(Images), _dictPortrait);
+        Bind<Button>(typeof(Buttons));
+        Bind<TextMeshProUGUI>(typeof(Texts));
+        
+        _log = SetLog();
+    }
+    
+    protected override void InitButtonEvents()
+    {
+        GetButton((int)Buttons.MenuButton).gameObject.BindEvent(OnMenuClicked);
+    }
+    
+    protected override void InitUI()
+    {
+        GetText((int)Texts.ResourceText).text = "0";
+
+        if (_isTutorial)
+        {
+            // SetTutorialUI();
+        }
     }
     
     // Set the selected units in the main lobby to the log bar
@@ -258,29 +296,12 @@ public class UI_GameSingleWay : UI_Game
     }
     
     #endregion
-    
-    protected override void BindObjects()
-    {
-        _dictPortrait.Clear();
-        _selectedObjects.Clear();
-        
-        BindData<Image>(typeof(Images), _dictPortrait);
-        Bind<Button>(typeof(Buttons));
-        Bind<TextMeshProUGUI>(typeof(Texts));
-        
-        _log = SetLog();
-    }
 
-    protected override void InitButtonEvents()
+    private void SetTutorialUI()
     {
-        GetButton((int)Buttons.MenuButton).gameObject.BindEvent(OnMenuClicked);
+        _tutorialVm.SendHoldPacket(true);
     }
     
-    protected override void InitUI()
-    {
-        GetText((int)Texts.ResourceText).text = "0";
-    }
-
     private void OnDestroy()
     {
         _gameVm.OnPortraitClickedEvent -= ShowPortraitSelectEffect;

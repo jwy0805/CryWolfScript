@@ -10,6 +10,7 @@ public class GameManager
 {
     public Action<int> OnSpawnEvent;
     public bool GameResult { get; set; }
+    public bool IsTutorial { get; set; }
     
     private GameObject _player;
     private GameObject _sheep;

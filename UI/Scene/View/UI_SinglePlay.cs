@@ -124,6 +124,6 @@ public class UI_SinglePlay : UI_Scene
     
     private void OnStartClicked(PointerEventData data)
     {
-        Managers.Scene.LoadScene(Define.Scene.Game);
+        // Managers.Scene.LoadScene(Define.Scene.Game);
     }
 }

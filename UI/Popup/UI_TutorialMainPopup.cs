@@ -1,11 +1,14 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using AssetKits.ParticleImage;
+using Febucci.UI;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using UnityEngine.Video;
 using Zenject;
 
 public class UI_TutorialMainPopup : UI_Popup
@@ -21,11 +24,15 @@ public class UI_TutorialMainPopup : UI_Popup
     private GameObject _continueButton;
     private GameObject _selectPanel;
     private GameObject _buttonSelectEffect;
-    private TextMeshProUGUI _text;
+    private GameObject _masking;
+    private TextMeshProUGUI _tutorialMainSelectText;
+    private TextMeshProUGUI _speechBubbleText;
     private TextMeshProUGUI _factionText;
     private TextMeshProUGUI _factionInfoText;
+    private VideoPlayer _videoPlayer;
+    private Dictionary<string, VideoClip> _videoClips = new();
     private int _step;
-    private Faction _selectedFaction;
+    private Faction _selectedFaction = Faction.None;
 
     private enum Images
     {
@@ -38,7 +45,8 @@ public class UI_TutorialMainPopup : UI_Popup
         ExitButton,
         
         WolfButton,
-        SheepButton
+        SheepButton,
+        PlayButton
     }
 
     private enum Texts
@@ -74,9 +82,15 @@ public class UI_TutorialMainPopup : UI_Popup
         _speaker2Bubble = Util.FindChild(_speaker2Panel, "SpeechBubbleRight");
         _continueButton = Util.FindChild(gameObject, "ContinueButton");
         _selectPanel = Util.FindChild(gameObject, "SelectPanel");
+        _tutorialMainSelectText = Util.FindChild(_selectPanel, "TutorialMainSelectText", true).GetComponent<TextMeshProUGUI>();
         _factionText = Util.FindChild(_selectPanel, "FactionText", true).GetComponent<TextMeshProUGUI>();
         _factionInfoText = Util.FindChild(_selectPanel, "FactionInfoText", true).GetComponent<TextMeshProUGUI>();
         _buttonSelectEffect = Managers.Resource.Instantiate("UIEffects/ButtonSelectEffect", _selectPanel.transform);
+        _videoPlayer = Util.FindChild(_selectPanel, "VideoPlayer", true).GetComponent<VideoPlayer>();
+        _masking = Util.FindChild(_selectPanel, "TutorialMainVideoMasking", true);
+        
+        _videoClips.Add("Wolf", Resources.Load<VideoClip>("VideoClips/TutorialWolf"));
+        _videoClips.Add("Sheep", Resources.Load<VideoClip>("VideoClips/TutorialSheep"));
     }
 
     private void BindActions()
@@ -103,6 +117,7 @@ public class UI_TutorialMainPopup : UI_Popup
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(OnExitButtonClicked);
         GetButton((int)Buttons.WolfButton).gameObject.BindEvent(OnWolfClicked);
         GetButton((int)Buttons.SheepButton).gameObject.BindEvent(OnSheepClicked);
+        GetButton((int)Buttons.PlayButton).gameObject.BindEvent(OnPlayClicked);
     }
     
     protected override void InitUI()
@@ -203,15 +218,15 @@ public class UI_TutorialMainPopup : UI_Popup
             _tutorialVm.MainEventDict[eventString]?.Invoke();
         }
         
-        var textContent = Managers.Localization.GetLocalizedValue(_text, step.DialogKey);
-        _text.text = textContent;
+        var textContent = Managers.Localization.GetLocalizedValue(_speechBubbleText, step.DialogKey);
+        _speechBubbleText.text = textContent;
     }
 
     private void ShowSpeaker()
     {
         _speaker1Panel.SetActive(true);
         _continueButton.SetActive(true);
-        _text = Util.FindChild(_speaker1Panel, "SpeechBubbleText", true).GetComponent<TextMeshProUGUI>();
+        _speechBubbleText = Util.FindChild(_speaker1Panel, "SpeechBubbleText", true).GetComponent<TextMeshProUGUI>();
     }
     
     private void ShowNewSpeaker()
@@ -219,7 +234,7 @@ public class UI_TutorialMainPopup : UI_Popup
         _speaker2Panel.SetActive(true);
         _speaker1Bubble.SetActive(false);
         _continueButton.SetActive(true);
-        _text = Util.FindChild(_speaker2Panel, "SpeechBubbleText", true).GetComponent<TextMeshProUGUI>();
+        _speechBubbleText = Util.FindChild(_speaker2Panel, "SpeechBubbleText", true).GetComponent<TextMeshProUGUI>();
     }
 
     private void ChangeSpeaker()
@@ -232,7 +247,7 @@ public class UI_TutorialMainPopup : UI_Popup
             _speaker1Bubble.SetActive(false);
             _speaker2Panel.transform.SetSiblingIndex(index1);
             _speaker2Bubble.SetActive(true);
-            _text = Util.FindChild(_speaker2Panel, "SpeechBubbleText", true).GetComponent<TextMeshProUGUI>();
+            _speechBubbleText = Util.FindChild(_speaker2Panel, "SpeechBubbleText", true).GetComponent<TextMeshProUGUI>();
         }
         else
         {
@@ -240,13 +255,14 @@ public class UI_TutorialMainPopup : UI_Popup
             _speaker1Bubble.SetActive(true);
             _speaker2Panel.transform.SetSiblingIndex(index1);
             _speaker2Bubble.SetActive(false);
-            _text = Util.FindChild(_speaker1Panel, "SpeechBubbleText", true).GetComponent<TextMeshProUGUI>();
+            _speechBubbleText = Util.FindChild(_speaker1Panel, "SpeechBubbleText", true).GetComponent<TextMeshProUGUI>();
         }
     }
     
     private void ShowFactionSelectPopup()
     {
         _selectPanel.SetActive(true);
+        _masking.SetActive(false);
         
         var playButtonText = Util.FindChild(_selectPanel, "PlayButtonText", true).GetComponent<TextMeshProUGUI>();
         var titleText = Util.FindChild(_selectPanel, "TutorialMainSelectText", true).GetComponent<TextMeshProUGUI>();
@@ -271,6 +287,22 @@ public class UI_TutorialMainPopup : UI_Popup
         Util.DestroyAllChildren(_flowerFace.transform);
         Managers.Resource.Instantiate("Npc/Face Cry", _flowerFace.transform);
     }
+
+    public void StartTutorial(int sessionId)
+    {
+        _tutorialVm.StartTutorial(_selectedFaction, sessionId);
+    }
+
+    private IEnumerator AlertRoutine()
+    {
+        var text = _tutorialMainSelectText;
+        // var textAnimator = text.GetComponent<TextAnimator_TMP>();
+        // var events = textAnimator.DefaultAppearancesTags;
+        
+        text.color = Color.red;
+        yield return new WaitForSeconds(0.75f);
+        text.color = Color.white;
+    }
     
     private void OnContinueButtonClicked(PointerEventData data)
     {
@@ -280,22 +312,51 @@ public class UI_TutorialMainPopup : UI_Popup
 
     private void OnWolfClicked(PointerEventData data)
     {
+        if (_masking.activeSelf == false)
+        {
+            _masking.SetActive(true);
+        }
+
+        Util.Faction = Faction.Wolf;
         _selectedFaction = Faction.Wolf;
         _factionText.text = Managers.Localization.GetLocalizedValue(_factionText, "wolf_text");
         _factionInfoText.text = Managers.Localization.GetLocalizedValue(_factionInfoText, "faction_info_text_wolf");
         _buttonSelectEffect.SetActive(true);
         _buttonSelectEffect.transform.position = GetButton((int)Buttons.WolfButton).transform.position;
         _buttonSelectEffect.GetComponent<ParticleImage>().Play();
+        _videoPlayer.source = VideoSource.VideoClip;
+        _videoPlayer.clip = _videoClips["Wolf"];
+        _videoPlayer.Play();
     }
     
     private void OnSheepClicked(PointerEventData data)
     {
+        if (_masking.activeSelf == false)
+        {
+            _masking.SetActive(true);
+        }
+        
+        Util.Faction = Faction.Sheep;
         _selectedFaction = Faction.Sheep;
         _factionText.text = Managers.Localization.GetLocalizedValue(_factionText, "sheep_text");
         _factionInfoText.text = Managers.Localization.GetLocalizedValue(_factionInfoText, "faction_info_text_sheep");
         _buttonSelectEffect.SetActive(true);
         _buttonSelectEffect.transform.position = GetButton((int)Buttons.SheepButton).transform.position;
         _buttonSelectEffect.GetComponent<ParticleImage>().Play();
+        _videoPlayer.source = VideoSource.VideoClip;
+        _videoPlayer.clip = _videoClips["Sheep"];
+        _videoPlayer.Play();
+    }
+
+    private void OnPlayClicked(PointerEventData data)
+    {
+        if (_selectedFaction == Faction.None)
+        {
+            StartCoroutine(nameof(AlertRoutine));
+            return;
+        }
+
+        _ = Managers.Network.ConnectGameSession();
     }
     
     private void OnExitButtonClicked(PointerEventData data)
