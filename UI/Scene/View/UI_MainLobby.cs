@@ -1137,12 +1137,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
             _lobbyVm.ConnectSignalR(_userService.UserInfo.UserName));
         
         BindUserInfo();
-        
-        // Process Tutorial
-        if (_userService.UserInfo.BattleTutorialDone == false)
-        {
-            var tutorialPopup = Managers.UI.ShowPopupUI<UI_TutorialMainPopup>();
-        }
+        ProcessTutorial();
     }
 
     private void BindUserInfo()
@@ -1159,6 +1154,36 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         _textDict["UsernameText"].GetComponent<TextMeshProUGUI>().text = userInfo.UserName;
         _textDict["RankText"].GetComponent<TextMeshProUGUI>().text = userInfo.RankPoint.ToString();
         _textDict["ExpText"].GetComponent<TextMeshProUGUI>().text = $"{exp.ToString()} / {expMax.ToString()}";
+    }
+
+    private void ProcessTutorial()
+    {
+        if (_userService.TutorialWolfEnded ^ _userService.TutorialSheepEnded)
+        {
+            if (_userService.TutorialWolfEnded)
+            {
+                _tutorialVm.ShowTutorialContinueNotifyPopupWolf();   
+            }
+
+            if (_userService.TutorialSheepEnded)
+            {
+                _tutorialVm.ShowTutorialContinueNotifyPopupSheep();
+            }
+
+            return;
+        }
+        
+        if (_userService.TutorialWolfEnded && _userService.TutorialSheepEnded)
+        {
+            _userService.UserInfo.BattleTutorialDone = true;
+            _tutorialVm.CompleteBattleTutorial();
+            return;
+        }
+        
+        if (_userService.UserInfo.BattleTutorialDone == false)
+        {
+            Managers.UI.ShowPopupUI<UI_TutorialMainPopup>();
+        }
     }
     
     private void SwitchLobbyUI(Faction faction)

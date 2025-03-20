@@ -13,6 +13,8 @@ public class UserService : IUserService
     public event Action<Faction> InitDeckButton;
     
     public UserInfo UserInfo { get; set; }
+    public bool TutorialSheepEnded { get; set; }
+    public bool TutorialWolfEnded { get; set; }
     
     [Inject]
     public UserService(ITokenService tokenService, IWebService webService)

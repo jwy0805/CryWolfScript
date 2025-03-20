@@ -14,6 +14,7 @@ public class MyPlayerController : PlayerController
     [SerializeField] private bool axisYInversion;
 
     private GameViewModel _gameVm;
+    private TutorialViewModel _tutorialVm;
     
     private int _resource;
     private bool _arrived;
@@ -28,9 +29,10 @@ public class MyPlayerController : PlayerController
 
     
     [Inject]
-    public void Construct(GameViewModel gameVm)
+    public void Construct(GameViewModel gameViewModel, TutorialViewModel tutorialViewModel)
     {
-        _gameVm = gameVm;
+        _gameVm = gameViewModel;
+        _tutorialVm = tutorialViewModel;
     }
     
     protected override void Init()
@@ -98,6 +100,7 @@ public class MyPlayerController : PlayerController
                         switch (_cameraObject.transform.position.z)
                         {
                             case < -12.1f when moveZ > 0:
+                                return;
                             case > 12.1f when moveZ < 0:
                                 return;
                             default:
@@ -149,6 +152,13 @@ public class MyPlayerController : PlayerController
                 if (Faction == Faction.Sheep)
                 {
                     AdjustUI<UnitControlWindow>(go, GameObjectType.Tower);
+                    _gameVm.SetPortraitFromFieldUnit(cc.UnitId);
+                    
+                    // Tutorial
+                    if (_tutorialVm.Step == 9 && Faction == Faction.Sheep)
+                    {
+                        _tutorialVm.StepTutorialByClickingUI();
+                    }
                 }
                 break;
                     
@@ -171,6 +181,13 @@ public class MyPlayerController : PlayerController
                 if (Faction == Faction.Wolf)
                 {
                     AdjustUI<UnitControlWindow>(go, GameObjectType.MonsterStatue);
+                    _gameVm.SetPortraitFromFieldUnit(cc.UnitId);
+                    
+                    // Tutorial
+                    if (_tutorialVm.Step == 7 && Faction == Faction.Wolf)
+                    {
+                        _tutorialVm.StepTutorialByClickingUI();
+                    }
                 }
                 break;
             
@@ -178,6 +195,12 @@ public class MyPlayerController : PlayerController
                 if (Faction == Faction.Sheep)
                 {
                     AdjustUI<UnitControlWindow>(go, GameObjectType.Fence);
+                    
+                    // Tutorial
+                    if (_tutorialVm.Step == 13 && Faction == Faction.Sheep)
+                    {
+                        _tutorialVm.StepTutorialByClickingUI();
+                    }
                 }
                 break;
             

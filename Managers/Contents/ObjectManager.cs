@@ -10,8 +10,9 @@ using Object = UnityEngine.Object;
 public class ObjectManager
 {
     public MyPlayerController MyPlayer { get; set; }
+    
     private readonly Dictionary<int, GameObject> _objects = new();
-
+    
     public static GameObjectType GetObjectTypeById(int id)
     {
         int type = (id >> 24) & 0x7F;
@@ -96,7 +97,7 @@ public class ObjectManager
                 if (go.TryGetComponent(out TowerController tc) == false) return;
                 tc.Id = info.ObjectId;
                 tc.PosInfo = towerPos;
-                tc.Stat = info.StatInfo; 
+                tc.Stat = info.StatInfo;
                 break;
             
             case GameObjectType.Monster:
@@ -120,6 +121,7 @@ public class ObjectManager
                 msc.Id = info.ObjectId;
                 msc.PosInfo = info.PosInfo;
                 msc.Stat = info.StatInfo;
+                
                 break;
             
             case GameObjectType.Fence:

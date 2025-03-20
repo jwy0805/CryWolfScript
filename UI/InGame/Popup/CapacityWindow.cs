@@ -93,6 +93,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
     #endregion
     
     private GameViewModel _gameVm;
+    private TutorialViewModel _tutorialVm;
     
     private readonly Dictionary<string, GameObject> _buttonDict = new();
     private readonly Dictionary<string, GameObject> _imageDict = new();
@@ -102,9 +103,11 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
     public GameObjectType ObjectType { get; set; }
     
     [Inject]
-    public void Construct(GameViewModel gameViewModel)
+    public void Construct(GameViewModel gameViewModel, TutorialViewModel tutorialViewModel)
     {
         _gameVm = gameViewModel;
+        _tutorialVm = tutorialViewModel;
+        
         InjectDependenciesToChildren();
     }
 
@@ -127,6 +130,13 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         InitButtonEvents();
         InitSlot(0);
         InitEvents();
+        
+        // Tutorial
+        if ((_tutorialVm.Step == 16 && Util.Faction == Faction.Wolf) ||
+            (_tutorialVm.Step == 21 && Util.Faction == Faction.Sheep))
+        {
+            _tutorialVm.ShowTutorialPopup();
+        }
     }
 
     protected override void BindObjects()

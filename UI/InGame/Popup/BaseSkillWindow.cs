@@ -56,13 +56,15 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
     #endregion
     
     private GameViewModel _gameVm;
+    private TutorialViewModel _tutorialVm;
 
     private readonly Dictionary<string, GameObject> _buttonDict = new();
     
     [Inject]
-    public void Construct(GameViewModel gameViewModel)
+    public void Construct(GameViewModel gameViewModel, TutorialViewModel tutorialViewModel)
     {
         _gameVm = gameViewModel;
+        _tutorialVm = tutorialViewModel;
     }
     
     protected override void Init()
@@ -74,6 +76,13 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
         BindObjects();
         InitUI();
         InitButtonEvents();
+        
+        // Tutorial
+        if ((_tutorialVm.Step == 13 && Util.Faction == Faction.Wolf) ||
+            (_tutorialVm.Step == 17 && Util.Faction == Faction.Sheep))
+        {
+            _tutorialVm.StepTutorialByClickingUI();
+        }
     }
 
     protected override void InitUI()

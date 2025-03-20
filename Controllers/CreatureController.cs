@@ -8,7 +8,7 @@ public class CreatureController : BaseController, ISkillObserver
 {
     private readonly StatInfo _stat = new();
     
-    public UnitId UnitId { get; protected set; }
+    public UnitId UnitId { get; set; }
 
     public virtual StatInfo Stat
     {

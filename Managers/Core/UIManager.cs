@@ -141,6 +141,14 @@ public class UIManager
         return popup;
     }
 
+    public void ShowNotifySelectPopup(string titleKey, string messageKey, Action yesCallback, Action noCallback)
+    {
+        var popup = ShowPopupUI<UI_NotifySelectPopup>();
+        Managers.Localization.UpdateNotifySelectPopupText(popup, titleKey, messageKey);
+        popup.SetYesCallback(yesCallback);
+        popup.SetNoCallBack(noCallback);
+    }
+    
     public void CloseUpgradePopup()
     {
         if (PopupList.Count == 0) return;

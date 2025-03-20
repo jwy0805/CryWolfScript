@@ -12,6 +12,7 @@ public class UI_RewardPopup : UI_Popup
     
     public List<Reward> Rewards { get; set; }
     public bool FromRank { get; set; }
+    public bool FromTutorial { get; set; }
     
     private enum Images
     {
@@ -55,24 +56,38 @@ public class UI_RewardPopup : UI_Popup
     {
         foreach (var reward in Rewards)
         {
-            if (reward.ProductType == Google.Protobuf.Protocol.ProductType.Material)
+            switch (reward.ProductType)
             {
-                Managers.Data.MaterialInfoDict.TryGetValue(reward.ItemId, out var materialInfo);
-                if (materialInfo == null) continue;
-                var itemObject = Managers.Resource.GetMaterialResources(materialInfo, _rewardPanel);
-            }
-            else
-            {
-                var itemObject = Managers.Resource.Instantiate("UI/Deck/ItemFrameGold", _rewardPanel);
-                var countText = Util.FindChild(itemObject, "CountText", true, true);
-                countText.GetComponent<TextMeshProUGUI>().text = reward.Count.ToString();
+                case Google.Protobuf.Protocol.ProductType.Material:
+                {
+                    Managers.Data.MaterialInfoDict.TryGetValue(reward.ItemId, out var materialInfo);
+                    if (materialInfo == null) continue;
+                    var itemObject = Managers.Resource.GetMaterialResources(materialInfo, _rewardPanel);
+                    break;
+                }
+                case Google.Protobuf.Protocol.ProductType.Unit:
+                {
+                    // Unit
+                    Managers.Data.UnitInfoDict.TryGetValue(reward.ItemId, out var unitInfo);
+                    if (unitInfo == null) continue;
+                    var itemObject = Managers.Resource.GetCardResources<UnitId>(unitInfo, _rewardPanel);
+                    break;
+                }
+                default:
+                {
+                    var itemObject = Managers.Resource.Instantiate("UI/Deck/ItemFrameGold", _rewardPanel);
+                    var countText = Util.FindChild(itemObject, "CountText", true, true);
+                    countText.GetComponent<TextMeshProUGUI>().text = reward.Count.ToString();
+                    break;
+                }
             }
         }
     }
     
     private void OnPanelClicked(PointerEventData data)
     {
-        Managers.Scene.LoadScene(FromRank ? Define.Scene.MainLobby : Define.Scene.SinglePlay);
+        var scene = FromRank ? Define.Scene.MainLobby : FromTutorial ? Define.Scene.MainLobby : Define.Scene.SinglePlay;
+        Managers.Scene.LoadScene(scene);
         Managers.UI.ClosePopupUI();
     }
 }

@@ -12,10 +12,10 @@ using Zenject;
 
 public interface IUnitControlWindow
 {
-    GameObject SelectedUnit { get; set; }
     void UpdateUpgradeCostText(int cost);
     void UpdateDeleteCostText(int cost);
     void UpdateRepairCostText(int cost);
+    void UpdateRepairAllCostText(int cost);
 }
 
 public class UnitControlWindow : UI_Popup, IUnitControlWindow
@@ -27,6 +27,7 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         UnitUpgradeButton,
         UnitDeleteButton,
         UnitRepairButton,
+        UnitRepairAllButton,
         UnitSkillButton,
     }
 
@@ -35,17 +36,20 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         UnitUpgradePanel,
         UnitDeletePanel,
         UnitRepairPanel,
+        UnitRepairAllPanel,
         UnitSkillPanel,
         
         UnitUpgradeButtonPanel,
         UnitDeleteButtonPanel,
         UnitRepairButtonPanel,
+        UnitRepairAllButtonPanel,
         UnitSkillButtonPanel,
 
         UnitUpgradeGoldImage,
         UnitDeleteGoldImage,
         UnitDeleteGoldPlusImage,
         UnitRepairGoldImage,
+        UnitRepairAllGoldImage,
     }
     
     private enum Texts
@@ -53,6 +57,7 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         UnitUpgradeGoldText,
         UnitDeleteGoldText,
         UnitRepairGoldText,
+        UnitRepairAllGoldText,
         HpText,
         MpText
     }
@@ -80,7 +85,10 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
             _cc = _selectedUnit.GetComponent<CreatureController>();
             
             // set selected portrait 
-            _gameVm.SetPortraitFromFieldUnit(_cc.UnitId);
+            if (_cc.UnitId != UnitId.UnknownUnit)
+            {
+                _gameVm.SetPortraitFromFieldUnit(_cc.UnitId);
+            }
         }
     }
     
@@ -157,7 +165,7 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
                 }
                 break;
             case GameObjectType.Fence:
-                images.AddRange(new[] { Images.UnitRepairPanel });
+                images.AddRange(new[] { Images.UnitRepairPanel, Images.UnitRepairAllPanel });
                 break;
             case GameObjectType.Sheep:
                 images.AddRange(new[] { Images.UnitSkillPanel });
@@ -192,11 +200,13 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         SetObjectSize(GetImage((int)Images.UnitUpgradeButtonPanel).gameObject, 0.7f);
         SetObjectSize(GetImage((int)Images.UnitDeleteButtonPanel).gameObject, 0.7f);
         SetObjectSize(GetImage((int)Images.UnitRepairButtonPanel).gameObject, 0.7f);
+        SetObjectSize(GetImage((int)Images.UnitRepairAllButtonPanel).gameObject, 0.7f);
         SetObjectSize(GetImage((int)Images.UnitSkillButtonPanel).gameObject, 0.7f);
         SetObjectSize(GetImage((int)Images.UnitUpgradeGoldImage).gameObject, 0.15f);
         SetObjectSize(GetImage((int)Images.UnitDeleteGoldImage).gameObject, 0.15f);
         SetObjectSize(GetImage((int)Images.UnitDeleteGoldPlusImage).gameObject, 0.1f);
         SetObjectSize(GetImage((int)Images.UnitRepairGoldImage).gameObject, 0.15f);
+        SetObjectSize(GetImage((int)Images.UnitRepairAllGoldImage).gameObject, 0.15f);
     }
 
     private void BindControlButtons(List<Images> images)
@@ -206,6 +216,7 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
             Images.UnitUpgradePanel,
             Images.UnitDeletePanel,
             Images.UnitRepairPanel,
+            Images.UnitRepairAllPanel,
             Images.UnitSkillPanel
         };
         
@@ -274,6 +285,7 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         GetButton((int)Buttons.UnitUpgradeButton).gameObject.BindEvent(OnUpgradeClicked);
         GetButton((int)Buttons.UnitDeleteButton).gameObject.BindEvent(OnDeleteClicked);
         GetButton((int)Buttons.UnitRepairButton).gameObject.BindEvent(OnRepairClicked);
+        GetButton((int)Buttons.UnitRepairAllButton).gameObject.BindEvent(OnRepairAllClicked);
         GetButton((int)Buttons.UnitSkillButton).gameObject.BindEvent(OnSkillClicked);
     }
     
@@ -292,6 +304,11 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         GetText((int)Texts.UnitRepairGoldText).text = cost.ToString();
     }
     
+    public void UpdateRepairAllCostText(int cost)
+    {
+        GetText((int)Texts.UnitRepairAllGoldText).text = cost.ToString();
+    }
+    
     private void OnUpgradeClicked(PointerEventData data)
     {
         if (_cc == null) return;
@@ -308,6 +325,11 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
     {
         if (_cc == null) return;
         _gameVm.OnUnitRepairClicked(new[] { _cc.Id });
+    }
+    
+    private void OnRepairAllClicked(PointerEventData data)
+    {
+        _gameVm.OnUnitRepairAllClicked();
     }
 
     private void OnSkillClicked(PointerEventData data)

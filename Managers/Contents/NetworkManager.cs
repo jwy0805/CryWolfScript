@@ -10,6 +10,7 @@ using Google.Protobuf;
 using Google.Protobuf.Protocol;
 using Microsoft.AspNetCore.SignalR.Client;
 using UnityEngine;
+using Zenject;
 
 public class NetworkManager
 {
@@ -30,27 +31,30 @@ public class NetworkManager
 
             if (_sessionId == -1) return;
             
-            var uiArray = GameObject.FindGameObjectsWithTag("UI");
-
-            foreach (var ui in uiArray)
+            var sceneContext = UnityEngine.Object.FindAnyObjectByType<SceneContext>();
+            if (sceneContext == null) return;
+        
+            var tutorialVm = sceneContext.Container.TryResolve<TutorialViewModel>();
+            if (tutorialVm == null)
             {
-                if (ui.TryGetComponent(out UI_TutorialMainPopup uiTutorialMainPopup))
+                if (GameObject.FindWithTag("UI").TryGetComponent(out UI_MatchMaking uiMatchMaking))
                 {
-                    uiTutorialMainPopup.StartTutorial(_sessionId);
+                    uiMatchMaking.StartMatchMaking(_sessionId);
+                    return;
+                }
+            
+                if (GameObject.FindWithTag("UI").TryGetComponent(out UI_SinglePlay uiSinglePlay))
+                {
+                    uiSinglePlay.StartSinglePlay(_sessionId);
                     return;
                 }
             }
-            
-            if (GameObject.FindWithTag("UI").TryGetComponent(out UI_MatchMaking uiMatchMaking))
+            else
             {
-                uiMatchMaking.StartMatchMaking(_sessionId);
-                return;
-            }
-            
-            if (GameObject.FindWithTag("UI").TryGetComponent(out UI_SinglePlay uiSinglePlay))
-            {
-                uiSinglePlay.StartSinglePlay(_sessionId);
-                return;
+                if (tutorialVm.ProcessTutorial)
+                {
+                    _ = tutorialVm.StartTutorial(tutorialVm.TutorialFaction, _sessionId);
+                }
             }
         }
     }
@@ -96,7 +100,7 @@ public class NetworkManager
                 host = Dns.GetHostName();
                 port = 7777;
                 ipHost = await Dns.GetHostEntryAsync(host);
-                ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.ToString().Contains("172."));
+                ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.ToString().Contains("192."));
                 break;
             
             case Env.Dev:

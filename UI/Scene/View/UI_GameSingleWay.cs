@@ -40,9 +40,10 @@ public class UI_GameSingleWay : UI_Game
     
     private GameViewModel _gameVm;
     private TutorialViewModel _tutorialVm;
+    
+    private Camera _tutorialCamera;
     private GameObject _log;
     private bool _isTutorial;
-
     private readonly List<GameObject> _selectedObjects = new();
     private readonly Dictionary<string, GameObject> _dictPortrait = new();
     
@@ -58,18 +59,15 @@ public class UI_GameSingleWay : UI_Game
 
     private void Awake()
     {
-        _gameVm.SetPortraitFromFieldUnitEvent -= SetPortraitFromFieldUnit;
         _gameVm.SetPortraitFromFieldUnitEvent += SetPortraitFromFieldUnit;
-        _gameVm.OnPortraitClickedEvent -= ShowPortraitSelectEffect;
         _gameVm.OnPortraitClickedEvent += ShowPortraitSelectEffect;
-        _gameVm.TurnOnSelectRingCoroutineEvent -= SelectRingCoroutine;
         _gameVm.TurnOnSelectRingCoroutineEvent += SelectRingCoroutine;
-        _gameVm.TurnOffOneSelectRingEvent -= TurnOffOneSelectRing;
         _gameVm.TurnOffOneSelectRingEvent += TurnOffOneSelectRing;
-        _gameVm.TurnOffSelectRingEvent -= TurnOffSelectRing;
         _gameVm.TurnOffSelectRingEvent += TurnOffSelectRing;
-        _gameVm.SelectedObjectIds.CollectionChanged -= OnSlotIdChanged;
         _gameVm.SelectedObjectIds.CollectionChanged += OnSlotIdChanged;
+        _tutorialVm.OnInitTutorialCamera1 += InitTutorialBattleCamera;
+        _tutorialVm.OnGetTankerIndex += GetTankerIndex;
+        _tutorialVm.OnGetRangerIndex += GetRangerIndex;
     }
     
     protected override void Init()
@@ -86,8 +84,6 @@ public class UI_GameSingleWay : UI_Game
         BindObjects();
         InitButtonEvents();
         InitUI();
-
-        Managers.UI.ShowPopupUI<UI_TutorialBattleSheepPopup>();
     }
     
     protected override void BindObjects()
@@ -105,6 +101,8 @@ public class UI_GameSingleWay : UI_Game
     protected override void InitButtonEvents()
     {
         GetButton((int)Buttons.MenuButton).gameObject.BindEvent(OnMenuClicked);
+        GetButton((int)Buttons.CapacityButton).gameObject.BindEvent(OnCapacityClicked);
+        GetButton((int)Buttons.ResourceButton).gameObject.BindEvent(OnResourceClicked);
     }
     
     protected override void InitUI()
@@ -113,7 +111,7 @@ public class UI_GameSingleWay : UI_Game
 
         if (_isTutorial)
         {
-            // SetTutorialUI();
+            SetTutorialUI();
         }
     }
     
@@ -145,10 +143,12 @@ public class UI_GameSingleWay : UI_Game
     private IPortrait SetPortraitFromFieldUnit(UnitId unitId)
     {
         var portraits = _log.GetComponentsInChildren<UI_Portrait>();
+        var unitInfo = Managers.Data.UnitInfoDict[(int)unitId];
         
         foreach (var p in portraits)
         {
-            if ((int)p.UnitId - (int)unitId < 3 && (int)p.UnitId - (int)unitId >= 0)
+            var portraitUnitInfo = Managers.Data.UnitInfoDict[(int)p.UnitId];
+            if (unitInfo.Species == portraitUnitInfo.Species)
             {
                 IPortrait portrait = p;
                 return portrait;
@@ -203,6 +203,14 @@ public class UI_GameSingleWay : UI_Game
         // Update the cost of the unit
         var costText = Util.FindChild(go.transform.parent.gameObject, "UnitCostText", true);
         costText.GetComponent<TextMeshProUGUI>().text = Managers.Data.UnitDict[(int)portrait.UnitId].Stat.RequiredResources.ToString();
+        
+        // Tutorial
+        if ((_tutorialVm.Step == 9 && Util.Faction == Faction.Wolf) ||
+            (_tutorialVm.Step == 11 && Util.Faction == Faction.Sheep))
+        {
+            StepTutorial();
+            _tutorialVm.SendHoldPacket(true);
+        }
     }
 
     private void TurnOnSelectRing(int id)
@@ -284,7 +292,13 @@ public class UI_GameSingleWay : UI_Game
         _gameVm.OnPortraitClicked(portrait);
     }
     
-    private void OnSubResourceButtonClicked(PointerEventData data)
+    private void OnResourceClicked(PointerEventData data)
+    {
+        Managers.UI.CloseAllPopupUI();
+        Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
+    }
+    
+    private void OnCapacityClicked(PointerEventData data)
     {
         Managers.UI.CloseAllPopupUI();
         Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
@@ -297,10 +311,89 @@ public class UI_GameSingleWay : UI_Game
     
     #endregion
 
+    #region tutorial
+    private void StepTutorial()
+    {
+        _tutorialVm.StepTutorial();
+    }
+    
     private void SetTutorialUI()
     {
-        _tutorialVm.SendHoldPacket(true);
+        if (Faction == Faction.Sheep)
+        {
+            Managers.UI.ShowPopupUI<UI_TutorialBattleSheepPopup>();
+        }
+        else
+        {
+            Managers.UI.ShowPopupUI<UI_TutorialBattleWolfPopup>();
+        }
+        
+        _tutorialVm.ClearDictionary();
     }
+    
+    private void InitTutorialBattleCamera(Vector3 npcPos, Vector3 cameraPos)
+    {
+        var cameraObjects = GameObject.FindGameObjectsWithTag("Camera");
+        var cameraObject = cameraObjects.FirstOrDefault(go => go.name == "TutorialCamera");
+        if (cameraObject == null) return;
+        _tutorialCamera = cameraObject.GetComponent<Camera>();
+        _tutorialCamera.transform.position = cameraPos;
+        _tutorialCamera.transform.LookAt(npcPos);
+    }
+    
+    private int GetTankerIndex()
+    {
+        var portraits = _log.GetComponentsInChildren<UI_Portrait>();
+        var index = int.MinValue;
+        foreach (var portrait in portraits)
+        {
+            if (Managers.Data.UnitInfoDict.TryGetValue((int)portrait.UnitId, out var unitInfo))
+            {
+                if (unitInfo.Role is Role.Tanker or Role.Warrior)
+                {
+                    var parent = portrait.transform.parent;
+                    for (var i = 0; i < 6; i++)
+                    {
+                        if (parent.name == $"UnitPanel{i}")
+                        {
+                            index = i;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return index;
+    }
+    
+    private int GetRangerIndex()
+    {
+        var portraits = _log.GetComponentsInChildren<UI_Portrait>();
+        var index = int.MinValue;
+        foreach (var portrait in portraits)
+        {
+            if (Managers.Data.UnitInfoDict.TryGetValue((int)portrait.UnitId, out var unitInfo))
+            {
+                if (unitInfo.Role is Role.Ranger or Role.Mage)
+                {
+                    var parent = portrait.transform.parent;
+                    for (var i = 0; i < 6; i++)
+                    {
+                        if (parent.name == $"UnitPanel{i}")
+                        {
+                            index = i;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return index;
+    }
+    
+    #endregion
     
     private void OnDestroy()
     {
@@ -311,5 +404,11 @@ public class UI_GameSingleWay : UI_Game
         _gameVm.SelectedObjectIds.CollectionChanged -= OnSlotIdChanged;
         _gameVm.Dispose();
         _gameVm = null;
+        
+        _tutorialVm.OnInitTutorialCamera1 -= InitTutorialBattleCamera;
+        _tutorialVm.OnGetTankerIndex -= GetTankerIndex;
+        _tutorialVm.OnGetRangerIndex -= GetRangerIndex;
+        _tutorialVm.Dispose();
+        _tutorialVm = null;
     }
 }

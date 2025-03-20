@@ -40,14 +40,16 @@ public class SkillWindow : UI_Popup, ISkillWindow
     }
     
     private GameViewModel _gameVm;
+    private TutorialViewModel _tutorialVm;
     
     private GameObject _skillPanel;
     private Button[] _skillButtons;
     
     [Inject]
-    public void Construct(GameViewModel gameViewModel)
+    public void Construct(GameViewModel gameViewModel, TutorialViewModel tutorialViewModel)
     {
         _gameVm = gameViewModel;
+        _tutorialVm = tutorialViewModel;
     }
 
     protected override void Init()
@@ -58,10 +60,14 @@ public class SkillWindow : UI_Popup, ISkillWindow
         BindObjects();
         InitButtonEvents();
         InitUpgradeButton();
-        // InitUI(_gameVm.UnitControlWindow == null
-        //     ? _gameVm.CurrentSelectedPortrait.UnitId
-        //     : _gameVm.UnitControlWindow.SelectedUnit.GetComponent<CreatureController>().UnitId);
         InitUI(_gameVm.CurrentSelectedPortrait.UnitId);
+        
+        // Tutorial
+        if ((_tutorialVm.Step == 8 && Util.Faction == Faction.Wolf) ||
+            (_tutorialVm.Step == 10 && Util.Faction == Faction.Sheep))
+        {
+            _tutorialVm.StepTutorialByClickingUI();
+        }
     }
 
     public void InitUI(UnitId unitId)
@@ -122,6 +128,13 @@ public class SkillWindow : UI_Popup, ISkillWindow
 
     private void OnUpgradeClicked(PointerEventData data)
     {
+        // Tutorial
+        if ((_tutorialVm.Step == 9 && Util.Faction == Faction.Wolf) ||
+            (_tutorialVm.Step == 11 && Util.Faction == Faction.Sheep))
+        {
+            _tutorialVm.SendHoldPacket(false);
+        }
+        
         _gameVm.OnUpgradeButtonClicked();
     }
 

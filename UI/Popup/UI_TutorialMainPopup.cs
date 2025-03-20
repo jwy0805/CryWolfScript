@@ -14,6 +14,7 @@ using Zenject;
 public class UI_TutorialMainPopup : UI_Popup
 {
     private TutorialViewModel _tutorialVm;
+    
     private TutorialNpcInfo _tutorialNpcInfo1;
     private TutorialNpcInfo _tutorialNpcInfo2;
     private GameObject _flowerFace;
@@ -31,8 +32,6 @@ public class UI_TutorialMainPopup : UI_Popup
     private TextMeshProUGUI _factionInfoText;
     private VideoPlayer _videoPlayer;
     private Dictionary<string, VideoClip> _videoClips = new();
-    private int _step;
-    private Faction _selectedFaction = Faction.None;
 
     private enum Images
     {
@@ -95,25 +94,18 @@ public class UI_TutorialMainPopup : UI_Popup
 
     private void BindActions()
     {
-        _tutorialVm.OnShowSpeaker -= ShowSpeaker;
-        _tutorialVm.OnShowSpeaker += ShowSpeaker;
-        _tutorialVm.OnShowNewSpeaker -= ShowNewSpeaker;
+        _tutorialVm.OnShowSpeakerAfter3Sec += ShowSpeaker;
         _tutorialVm.OnShowNewSpeaker += ShowNewSpeaker;
-        _tutorialVm.OnChangeSpeaker -= ChangeSpeaker;
         _tutorialVm.OnChangeSpeaker += ChangeSpeaker;
-        _tutorialVm.OnShowFactionSelectPopup -= ShowFactionSelectPopup;
         _tutorialVm.OnShowFactionSelectPopup += ShowFactionSelectPopup;
-        _tutorialVm.OnChangeFaceCry -= ChangeFaceCry;
         _tutorialVm.OnChangeFaceCry += ChangeFaceCry;
-        _tutorialVm.OnChangeFaceHappy -= ChangeFaceHappy;
         _tutorialVm.OnChangeFaceHappy += ChangeFaceHappy;
-        _tutorialVm.OnChangeFaceNormal -= ChangeFaceNormal;
         _tutorialVm.OnChangeFaceNormal += ChangeFaceNormal;
     }
     
     protected override void InitButtonEvents()
     {
-        GetButton((int)Buttons.ContinueButton).gameObject.BindEvent(OnContinueButtonClicked);
+        GetButton((int)Buttons.ContinueButton).gameObject.BindEvent(OnContinueClicked);
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(OnExitButtonClicked);
         GetButton((int)Buttons.WolfButton).gameObject.BindEvent(OnWolfClicked);
         GetButton((int)Buttons.SheepButton).gameObject.BindEvent(OnSheepClicked);
@@ -142,8 +134,6 @@ public class UI_TutorialMainPopup : UI_Popup
         var camera1Pos = _tutorialNpcInfo1.CameraPosition;
         var camera2Pos = _tutorialNpcInfo2.CameraPosition;
         _tutorialVm.InitTutorialMain(npc1Pos, camera1Pos, npc2Pos, camera2Pos);
-
-        _step = 1;
         StepTutorial();
         StartCoroutine(nameof(SmoothAlphaRoutine));
     }
@@ -210,8 +200,9 @@ public class UI_TutorialMainPopup : UI_Popup
 
     private void StepTutorial()
     {
+        _tutorialVm.Step++;
         Managers.Data.TutorialDict.TryGetValue(TutorialType.Main, out var tutorialData);
-        var step = tutorialData?.Steps.Find(s => s.Step == _step);
+        var step = tutorialData?.Steps.Find(s => s.Step == _tutorialVm.Step);
         if (step == null) return;
         foreach (var eventString in step.Events)
         {
@@ -288,11 +279,6 @@ public class UI_TutorialMainPopup : UI_Popup
         Managers.Resource.Instantiate("Npc/Face Cry", _flowerFace.transform);
     }
 
-    public void StartTutorial(int sessionId)
-    {
-        _tutorialVm.StartTutorial(_selectedFaction, sessionId);
-    }
-
     private IEnumerator AlertRoutine()
     {
         var text = _tutorialMainSelectText;
@@ -304,9 +290,8 @@ public class UI_TutorialMainPopup : UI_Popup
         text.color = Color.white;
     }
     
-    private void OnContinueButtonClicked(PointerEventData data)
+    private void OnContinueClicked(PointerEventData data)
     {
-        _step++;
         StepTutorial();
     }
 
@@ -318,7 +303,7 @@ public class UI_TutorialMainPopup : UI_Popup
         }
 
         Util.Faction = Faction.Wolf;
-        _selectedFaction = Faction.Wolf;
+        _tutorialVm.TutorialFaction = Faction.Wolf;
         _factionText.text = Managers.Localization.GetLocalizedValue(_factionText, "wolf_text");
         _factionInfoText.text = Managers.Localization.GetLocalizedValue(_factionInfoText, "faction_info_text_wolf");
         _buttonSelectEffect.SetActive(true);
@@ -337,7 +322,7 @@ public class UI_TutorialMainPopup : UI_Popup
         }
         
         Util.Faction = Faction.Sheep;
-        _selectedFaction = Faction.Sheep;
+        _tutorialVm.TutorialFaction = Faction.Sheep;
         _factionText.text = Managers.Localization.GetLocalizedValue(_factionText, "sheep_text");
         _factionInfoText.text = Managers.Localization.GetLocalizedValue(_factionInfoText, "faction_info_text_sheep");
         _buttonSelectEffect.SetActive(true);
@@ -350,12 +335,13 @@ public class UI_TutorialMainPopup : UI_Popup
 
     private void OnPlayClicked(PointerEventData data)
     {
-        if (_selectedFaction == Faction.None)
+        if (_tutorialVm.TutorialFaction == Faction.None)
         {
             StartCoroutine(nameof(AlertRoutine));
             return;
         }
 
+        _tutorialVm.ProcessTutorial = true;
         _ = Managers.Network.ConnectGameSession();
     }
     
@@ -374,7 +360,9 @@ public class UI_TutorialMainPopup : UI_Popup
 
     private void OnDestroy()
     {
-        _tutorialVm.OnShowSpeaker -= ShowSpeaker;
+        _tutorialVm.ProcessTutorial = false;
+        
+        _tutorialVm.OnShowSpeakerAfter3Sec -= ShowSpeaker;
         _tutorialVm.OnShowNewSpeaker -= ShowNewSpeaker;
         _tutorialVm.OnChangeSpeaker -= ChangeSpeaker;
         _tutorialVm.OnShowFactionSelectPopup -= ShowFactionSelectPopup;

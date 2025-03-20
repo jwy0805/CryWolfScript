@@ -29,8 +29,12 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SConnectSession, PacketHandler.S_ConnectSessionHandler);		
 		_onRecv.Add((ushort)MessageId.SLeaveGame, MakePacket<S_LeaveGame>);
 		_handler.Add((ushort)MessageId.SLeaveGame, PacketHandler.S_LeaveGameHandler);		
+		_onRecv.Add((ushort)MessageId.SStepTutorial, MakePacket<S_StepTutorial>);
+		_handler.Add((ushort)MessageId.SStepTutorial, PacketHandler.S_StepTutorialHandler);		
 		_onRecv.Add((ushort)MessageId.SSpawn, MakePacket<S_Spawn>);
 		_handler.Add((ushort)MessageId.SSpawn, PacketHandler.S_SpawnHandler);		
+		_onRecv.Add((ushort)MessageId.SSpawnStatue, MakePacket<S_SpawnStatue>);
+		_handler.Add((ushort)MessageId.SSpawnStatue, PacketHandler.S_SpawnStatueHandler);		
 		_onRecv.Add((ushort)MessageId.SSpawnProjectile, MakePacket<S_SpawnProjectile>);
 		_handler.Add((ushort)MessageId.SSpawnProjectile, PacketHandler.S_SpawnProjectileHandler);		
 		_onRecv.Add((ushort)MessageId.SSpawnEffect, MakePacket<S_SpawnEffect>);
@@ -115,6 +119,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SShowRankResultPopup, PacketHandler.S_ShowRankResultPopupHandler);		
 		_onRecv.Add((ushort)MessageId.SShowSingleResultPopup, MakePacket<S_ShowSingleResultPopup>);
 		_handler.Add((ushort)MessageId.SShowSingleResultPopup, PacketHandler.S_ShowSingleResultPopupHandler);		
+		_onRecv.Add((ushort)MessageId.SSendTutorialReward, MakePacket<S_SendTutorialReward>);
+		_handler.Add((ushort)MessageId.SSendTutorialReward, PacketHandler.S_SendTutorialRewardHandler);		
 		_onRecv.Add((ushort)MessageId.SMatchMakingSuccess, MakePacket<S_MatchMakingSuccess>);
 		_handler.Add((ushort)MessageId.SMatchMakingSuccess, PacketHandler.S_MatchMakingSuccessHandler);
 	}

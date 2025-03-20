@@ -16,6 +16,7 @@ public interface IPortrait
 public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     private GameViewModel _gameVm;
+    private TutorialViewModel _tutorialVm;
     
     private readonly float _sendTick = 0.15f;
     private bool _canSpawn = true;
@@ -40,9 +41,10 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
     }
     
     [Inject]
-    public void Construct(GameViewModel gameViewModel)
+    public void Construct(GameViewModel gameViewModel, TutorialViewModel tutorialViewModel)
     {
         _gameVm = gameViewModel;
+        _tutorialVm = tutorialViewModel;
     }
     
     public void OnBeginDrag(PointerEventData eventData)
@@ -67,6 +69,9 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         // Send packet to show the range rings, spawnable bounds
         Managers.Network.Send(new C_GetRanges { UnitId = (int)_gameVm.CurrentSelectedPortrait.UnitId });
         Managers.Network.Send(new C_GetSpawnableBounds { Faction = Util.Faction });
+        
+        // Tutorial
+        _tutorialVm.PortraitDragStartHandler();
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -78,6 +83,7 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
             var ray = Camera.main.ScreenPointToRay(Input.mousePosition); 
             _hitPoint = Vector3.zero;
             if (Physics.Raycast(ray, out _, Mathf.Infinity, LayerMask.GetMask("UI"))) return;
+            if (Physics.Raycast(ray, out _, Mathf.Infinity, LayerMask.GetMask("Base"))) return;
             if (Physics.Raycast(ray, out var hit, Mathf.Infinity, LayerMask.GetMask("Ground")))
             {
                 _hitPoint = hit.point;
@@ -118,6 +124,9 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         if (CanSpawn == false) return;
         Managers.Game.Spawn(_gameVm.CurrentSelectedPortrait.UnitId, _hitPoint);
         _gameVm.TurnOffSelectRing();
+        
+        // Tutorial
+        _tutorialVm.PortraitDragEndHandler();
     }
     
     public void ShowRing(float attackRange, float skillRange)

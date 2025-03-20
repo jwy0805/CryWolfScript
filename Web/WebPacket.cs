@@ -357,6 +357,18 @@ public class UpdateUserInfoPacketResponse
     public bool UpdateUserInfoOk { get; set; }
 }
 
+public class UpdateTutorialRequired
+{
+    public string AccessToken { get; set; }
+    public TutorialType[] TutorialTypes { get; set; }
+    public bool Done { get; set; }
+}
+
+public class UpdateTutorialResponse
+{
+    public bool UpdateTutorialOk { get; set; }
+}
+
 public class RefreshTokenRequired
 {
     public string RefreshToken { get; set; }

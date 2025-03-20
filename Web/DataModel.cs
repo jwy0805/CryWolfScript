@@ -120,9 +120,10 @@ public enum ProductType
 public enum TutorialType
 {
     Main = 0,
-    Battle = 1,
-    Collection = 2,
-    Reinforce = 3
+    BattleWolf = 1,
+    BattleSheep = 2,
+    Collection = 3,
+    Crafting = 4
 }
 
 public enum ProductCategory

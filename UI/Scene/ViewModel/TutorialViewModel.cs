@@ -1,21 +1,34 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using UnityEngine;
 using UnityEngine.Networking;
 using Zenject;
 
-public class TutorialViewModel
+public class TutorialViewModel : IDisposable
 {
+    private readonly IUserService _userService;
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
     
     public readonly Dictionary<string, Action> MainEventDict = new();
     public readonly Dictionary<string, Action> BattleWolfEventDict = new();
     public readonly Dictionary<string, Action> BattleSheepEventDict = new();
+    public readonly Dictionary<string, Action> CollectionEventDict = new();
+    public readonly Dictionary<string, Action> CraftingEventDict = new();
+    
+    public bool ProcessTutorial { get; set; }
+    public Faction TutorialFaction { get; set; }
+    public int Step { get; set; }
+    public UnitId RewardUnitId { get; set; }
+    
+    #region Events 
     
     public event Action<Vector3, Vector3> OnInitTutorialCamera1;
     public event Action<Vector3, Vector3> OnInitTutorialCamera2;
+    public event Action OnStepTutorial;
+    public event Action OnShowSpeakerAfter3Sec;
     public event Action OnShowSpeaker;
     public event Action OnShowNewSpeaker;
     public event Action OnChangeSpeaker;
@@ -23,10 +36,34 @@ public class TutorialViewModel
     public event Action OnChangeFaceCry;
     public event Action OnChangeFaceHappy;
     public event Action OnChangeFaceNormal;
+    public event Action OnUiBlocker;
+    public event Action OffUiBlocker;
+    public event Action OnHandImage;
+    public event Action OffHandImage;
+    public event Action OffContinueButton;
+    public event Action OnContinueButton;
+    public event Action PointToTimePanel;
+    public event Action PointToResourcePanel;
+    public event Action PointToCapacityPanel;
+    public event Action PointToLog;
+    public event Action PointToUpgradeButton;
+    public event Action DragTankerUnit;
+    public event Action DragRangerUnit;
+    public event Action DragScene;
+    public event Action ShowSimpleTooltip;
+    public event Action ClearScene;
+    public event Func<int> OnGetTankerIndex;
+    public event Func<int> OnGetRangerIndex;
+    public event Action PointToSkillButtonAndPortrait;
+    public event Action AdjustUiBlockerSize;
+    public event Action ResumeGame;
+    
+    #endregion
     
     [Inject]
-    public TutorialViewModel(IWebService webService, ITokenService tokenService)
+    public TutorialViewModel(IUserService userService, IWebService webService, ITokenService tokenService)
     {
+        _userService = userService;
         _webService = webService;
         _tokenService = tokenService;
     }
@@ -36,34 +73,94 @@ public class TutorialViewModel
         OnInitTutorialCamera1?.Invoke(npc1Position, camera1Position);
         OnInitTutorialCamera2?.Invoke(npc2Position, camera2Position);
         
-        MainEventDict.Add("ShowSpeaker", OnShowSpeaker);
-        MainEventDict.Add("ShowNewSpeaker", OnShowNewSpeaker);
-        MainEventDict.Add("ChangeSpeaker", OnChangeSpeaker);
-        MainEventDict.Add("ShowFactionSelectPopup", OnShowFactionSelectPopup);
-        MainEventDict.Add("ChangeFaceCry", OnChangeFaceCry);
-        MainEventDict.Add("ChangeFaceHappy", OnChangeFaceHappy);
-        MainEventDict.Add("ChangeFaceNormal", OnChangeFaceNormal);
+        MainEventDict.TryAdd("ShowSpeaker", OnShowSpeakerAfter3Sec);
+        MainEventDict.TryAdd("ShowNewSpeaker", OnShowNewSpeaker);
+        MainEventDict.TryAdd("ChangeSpeaker", OnChangeSpeaker);
+        MainEventDict.TryAdd("ShowFactionSelectPopup", OnShowFactionSelectPopup);
+        MainEventDict.TryAdd("ChangeFaceCry", OnChangeFaceCry);
+        MainEventDict.TryAdd("ChangeFaceHappy", OnChangeFaceHappy);
+        MainEventDict.TryAdd("ChangeFaceNormal", OnChangeFaceNormal);
     }
 
     public void InitTutorialBattleWolf(Vector3 npcPosition, Vector3 cameraPosition)
     {
         OnInitTutorialCamera1?.Invoke(npcPosition, cameraPosition);
         
-        MainEventDict.Add("ShowSpeaker", OnShowSpeaker);
+        BattleWolfEventDict.TryAdd("OnUiBlocker", OnUiBlocker);
+        BattleWolfEventDict.TryAdd("OffUiBlocker", OffUiBlocker);
+        BattleWolfEventDict.TryAdd("OnHandImage", OnHandImage);
+        BattleWolfEventDict.TryAdd("OffHandImage", OffHandImage);
+        BattleWolfEventDict.TryAdd("OffContinueButton", OffContinueButton);
+        BattleWolfEventDict.TryAdd("OnContinueButton", OnContinueButton);
+        BattleWolfEventDict.TryAdd("ShowSpeakerAfter3Sec", OnShowSpeakerAfter3Sec);
+        BattleWolfEventDict.TryAdd("ShowSpeaker", OnShowSpeaker);
+        BattleWolfEventDict.TryAdd("PointToTimePanel", PointToTimePanel);
+        BattleWolfEventDict.TryAdd("PointToResourcePanel", PointToResourcePanel);
+        BattleWolfEventDict.TryAdd("PointToCapacityPanel", PointToCapacityPanel);
+        BattleWolfEventDict.TryAdd("PointToLog", PointToLog);
+        BattleWolfEventDict.TryAdd("PointToUpgradeButton", PointToUpgradeButton);
+        BattleWolfEventDict.TryAdd("DragTankerUnit", DragTankerUnit);
+        BattleWolfEventDict.TryAdd("DragRangerUnit", DragRangerUnit);
+        BattleWolfEventDict.TryAdd("DragScene", DragScene);
+        BattleWolfEventDict.TryAdd("ShowSimpleTooltip", ShowSimpleTooltip);
+        BattleWolfEventDict.TryAdd("ClearScene", ClearScene);
+        BattleWolfEventDict.TryAdd("PointToSkillButtonAndPortrait", PointToSkillButtonAndPortrait);
+        BattleWolfEventDict.TryAdd("AdjustUiBlockerSize", AdjustUiBlockerSize);
+        BattleWolfEventDict.TryAdd("ResumeGame", ResumeGame);
     }
 
     public void InitTutorialBattleSheep(Vector3 npcPosition, Vector3 cameraPosition)
     {
         OnInitTutorialCamera1?.Invoke(npcPosition, cameraPosition);
         
-        MainEventDict.Add("ShowSpeaker", OnShowSpeaker);
-        MainEventDict.Add("ChangeFaceCry", OnChangeFaceCry);
-        MainEventDict.Add("ChangeFaceHappy", OnChangeFaceHappy);
-        MainEventDict.Add("ChangeFaceNormal", OnChangeFaceNormal);
+        BattleSheepEventDict.TryAdd("OnUiBlocker", OnUiBlocker);
+        BattleSheepEventDict.TryAdd("OffUiBlocker", OffUiBlocker);
+        BattleSheepEventDict.TryAdd("OnHandImage", OnHandImage);
+        BattleSheepEventDict.TryAdd("OffHandImage", OffHandImage);
+        BattleSheepEventDict.TryAdd("OffContinueButton", OffContinueButton);
+        BattleSheepEventDict.TryAdd("OnContinueButton", OnContinueButton);
+        BattleSheepEventDict.TryAdd("ShowSpeakerAfter3Sec", OnShowSpeakerAfter3Sec);
+        BattleSheepEventDict.TryAdd("ShowSpeaker", OnShowSpeaker);
+        BattleSheepEventDict.TryAdd("PointToTimePanel", PointToTimePanel);
+        BattleSheepEventDict.TryAdd("PointToResourcePanel", PointToResourcePanel);
+        BattleSheepEventDict.TryAdd("PointToCapacityPanel", PointToCapacityPanel);
+        BattleSheepEventDict.TryAdd("PointToLog", PointToLog);
+        BattleSheepEventDict.TryAdd("PointToUpgradeButton", PointToUpgradeButton);
+        BattleSheepEventDict.TryAdd("DragTankerUnit", DragTankerUnit);
+        BattleSheepEventDict.TryAdd("DragRangerUnit", DragRangerUnit);
+        BattleSheepEventDict.TryAdd("DragScene", DragScene);
+        BattleSheepEventDict.TryAdd("ShowSimpleTooltip", ShowSimpleTooltip);
+        BattleSheepEventDict.TryAdd("ClearScene", ClearScene);
+        BattleSheepEventDict.TryAdd("PointToSkillButtonAndPortrait", PointToSkillButtonAndPortrait);
+        BattleSheepEventDict.TryAdd("AdjustUiBlockerSize", AdjustUiBlockerSize);
+        BattleSheepEventDict.TryAdd("ResumeGame", ResumeGame);
+    }
+
+    public void InitTutorialChangeFaction(Vector3 npcPosition, Vector3 cameraPosition)
+    {
+        OnInitTutorialCamera1?.Invoke(npcPosition, cameraPosition);
+    }
+    
+    public void InitTutorialCollection()
+    {
+        
+    }
+
+    public void InitTutorialCrafting()
+    {
         
     }
     
-    public async void StartTutorial(Faction faction, int sessionId)
+    public void ClearDictionary()
+    {
+        MainEventDict.Clear();
+        BattleWolfEventDict.Clear();
+        BattleSheepEventDict.Clear();
+        CollectionEventDict.Clear();
+        CraftingEventDict.Clear();
+    }
+    
+    public async Task StartTutorial(Faction faction, int sessionId)
     {
         Managers.Game.IsTutorial = true;
         
@@ -86,6 +183,11 @@ public class TutorialViewModel
         }
     }
 
+    public void StepTutorial()
+    {
+        OnStepTutorial?.Invoke();
+    }
+    
     public void SendHoldPacket(bool hold)
     {
         var holdPacket = new C_HoldGame
@@ -94,5 +196,188 @@ public class TutorialViewModel
         };
         
         Managers.Network.Send(holdPacket);
+    }
+
+    public void PortraitDragStartHandler()
+    {
+        if ((Step != 6 && Step != 10 && Step != 12 && Util.Faction == Faction.Wolf) ||
+            (Step != 6 && Step != 8 && Util.Faction == Faction.Sheep)) return;
+        
+        SendHoldPacket(false);
+    }
+
+    public void PortraitDragEndHandler()
+    {
+        if (Util.Faction == Faction.Wolf)
+        {
+            if (Step != 6 && Step != 12) return;
+        }
+
+        if (Util.Faction == Faction.Sheep)
+        {
+            if (Step != 6 && Step != 8) return;
+        }
+        
+        _ = ShowTutorialPopup();
+    }
+
+    public int GetTankerAnchorIndex()
+    {
+        return OnGetTankerIndex?.Invoke() ?? int.MinValue;
+    }
+    
+    public int GetRangerAnchorIndex()
+    {
+        return OnGetRangerIndex?.Invoke() ?? int.MinValue;
+    }
+    
+    public void StepTutorialByClickingUI(bool hold = true)
+    {
+        SendHoldPacket(hold);
+        
+        if (Util.Faction == Faction.Wolf)
+        {
+            Managers.UI.ClosePopupUI<UI_TutorialBattleWolfPopup>();
+        }
+        else
+        {
+            Managers.UI.ClosePopupUI<UI_TutorialBattleSheepPopup>();
+        }
+        
+        _ = ShowTutorialPopup();
+    }
+    
+    public async Task ShowTutorialPopup()
+    {
+        await Task.Delay(100);
+        
+        // Init method in popup implements step tutorial
+        if (Util.Faction == Faction.Wolf)
+        {
+            Managers.UI.ShowPopupUI<UI_TutorialBattleWolfPopup>();
+        }
+        else
+        {
+            Managers.UI.ShowPopupUI<UI_TutorialBattleSheepPopup>();
+        }
+        
+        ClearDictionary();
+    }
+
+    public void ShowTutorialContinueNotifyPopupSheep()
+    {
+        const string titleKey = "notify_select_tutorial_continue_title";
+        const string messageKey = "notify_select_tutorial_wolf_continue_message";
+        
+        Managers.UI.ShowNotifySelectPopup(titleKey, messageKey,
+            StartTutorialWolf, 
+            RejectFollowWolfTutorial);
+    }
+    
+    public void ShowTutorialContinueNotifyPopupWolf()
+    {
+        const string titleKey = "notify_select_tutorial_continue_title";
+        const string messageKey = "notify_select_tutorial_sheep_continue_message";
+        
+        Managers.UI.ShowNotifySelectPopup(titleKey, messageKey,
+            StartTutorialSheep, 
+            RejectFollowSheepTutorial);
+    }
+
+    private void StartTutorialSheep()
+    {
+        Util.Faction = Faction.Sheep;
+        TutorialFaction = Faction.Sheep;
+        StartTutorial();
+    }
+    
+    private void StartTutorialWolf()
+    {
+        Util.Faction = Faction.Wolf;
+        TutorialFaction = Faction.Wolf;
+        StartTutorial();
+    }
+
+    private void StartTutorial()
+    {
+        ProcessTutorial = true;
+        _ = Managers.Network.ConnectGameSession();
+    }
+
+    private void RejectFollowSheepTutorial()
+    {
+        const string titleKey = "notify_select_tutorial_omit_title";
+        const string messageKey = "notify_select_tutorial_omit_message";
+        
+        Managers.UI.ShowNotifySelectPopup(titleKey, messageKey,
+            OnRejectTutorial,
+            ShowTutorialContinueNotifyPopupWolf);
+    }
+
+    private void RejectFollowWolfTutorial()
+    {
+        const string titleKey = "notify_select_tutorial_omit_title";
+        const string messageKey = "notify_select_tutorial_omit_message";
+        
+        Managers.UI.ShowNotifySelectPopup(titleKey, messageKey,
+            OnRejectTutorial,
+            ShowTutorialContinueNotifyPopupSheep);
+    }
+
+    private void OnRejectTutorial()
+    {
+        Managers.UI.CloseAllPopupUI();
+    }
+
+    public void BattleTutorialEndHandler(Faction faction)
+    {
+        if (faction == Faction.Wolf)
+        {
+            _userService.TutorialWolfEnded = true;
+        }
+        else
+        {
+            _userService.TutorialSheepEnded = true;
+        }
+        
+        var popup = Managers.UI.ShowPopupUI<UI_RewardPopup>();
+        popup.FromTutorial = true;
+        popup.Rewards = new List<Reward>
+        {
+            new()
+            {
+                ProductType = Google.Protobuf.Protocol.ProductType.Unit,
+                ItemId = (int)RewardUnitId,
+                Count = 1
+            }
+        };
+        
+        Managers.Network.Disconnect();
+    }
+
+    public void CompleteBattleTutorial()
+    {
+        var packet = new UpdateTutorialRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            TutorialTypes = new[] { TutorialType.BattleSheep, TutorialType.BattleWolf },
+            Done = true
+        };
+
+        _ = _webService.SendWebRequestAsync<UpdateTutorialResponse>(
+            "UserAccount/UpdateTutorial", UnityWebRequest.kHttpVerbPUT, packet);
+
+        Managers.UI.ShowPopupUI<UI_FactionChangePopup>();
+    }
+    
+    public void SetTutorialReward(UnitId rewardUnitId)
+    {
+        RewardUnitId = rewardUnitId;
+        Debug.Log(rewardUnitId);
+    }
+    
+    public void Dispose()
+    {
+        ClearDictionary();
     }
 }

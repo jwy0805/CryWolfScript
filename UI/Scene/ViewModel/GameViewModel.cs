@@ -17,7 +17,7 @@ public class GameViewModel : IDisposable
      *  - Interfaces have to be used for data binding, initializing, and updating UI elements.
      * These principles must be observed especially managing popups. 
      */
-    
+
     // Events using in UI_GameSingleWay
     public event Func<UnitId, IPortrait> SetPortraitFromFieldUnitEvent;  
     public event Action<IPortrait, bool> OnPortraitClickedEvent;   // Show Portrait Select Effect
@@ -173,6 +173,7 @@ public class GameViewModel : IDisposable
     public void UpdateUnitRepairCostRequired(int[] objectIds)
     {
         var packet = new C_SetUnitRepairCost();
+        packet.Faction = Util.Faction;
         packet.ObjectIds.AddRange(objectIds);
         Managers.Network.Send(packet);
     }
@@ -182,6 +183,7 @@ public class GameViewModel : IDisposable
         var packet = (S_SetUnitRepairCost)eventData;
         CapacityWindow?.UpdateRepairCostText(packet.Cost);
         UnitControlWindow?.UpdateRepairCostText(packet.Cost);
+        UnitControlWindow?.UpdateRepairAllCostText(packet.CostAll);
     }
     
     public void SetBaseSkillCostRequired()
@@ -310,10 +312,7 @@ public class GameViewModel : IDisposable
         var packet = new C_UnitUpgrade();
         packet.ObjectId.AddRange(ids);
         Managers.Network.Send(packet);
-        
-        TurnOffSelectRing();
-        SelectedObjectIds.Clear();
-        Managers.UI.CloseAllPopupUI();
+        ClearSelectedObjects();
     }
 
     public void OnUnitDeleteClicked(IEnumerable<int> ids)
@@ -321,21 +320,29 @@ public class GameViewModel : IDisposable
         var packet = new C_UnitDelete();
         packet.ObjectIds.AddRange(ids);
         Managers.Network.Send(packet);
-        
-        TurnOffSelectRing();
-        SelectedObjectIds.Clear();
-        Managers.UI.CloseAllPopupUI();
+        ClearSelectedObjects();
     }
     
     public void OnUnitRepairClicked(IEnumerable<int> ids)
     {
         var packet = new C_UnitRepair();
         packet.ObjectId.AddRange(ids);
+        packet.RepairAll = false;
         Managers.Network.Send(packet);
-        
+        ClearSelectedObjects();
+    }
+
+    public void OnUnitRepairAllClicked()
+    {
+        Managers.Network.Send(new C_UnitRepair { RepairAll = true });
+        ClearSelectedObjects();
+    }
+    
+    private void ClearSelectedObjects()
+    {
+        Managers.UI.CloseAllPopupUI();
         TurnOffSelectRing();
         SelectedObjectIds.Clear();
-        Managers.UI.CloseAllPopupUI();
     }
 
     public void OnUnitSkillClicked()

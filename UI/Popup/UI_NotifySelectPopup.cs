@@ -6,6 +6,9 @@ using UnityEngine.UI;
 
 public class UI_NotifySelectPopup : UI_Popup
 {
+    private Action _yesCallback; 
+    private Action _noCallback;
+    
     public string TitleText { get; set; }
     public TMP_FontAsset TitleFont { get; set; }
     public int TitleFontSize { get; set; }
@@ -13,7 +16,6 @@ public class UI_NotifySelectPopup : UI_Popup
     public TMP_FontAsset MessageFont { get; set; }
     public int MessageFontSize { get; set; }
     public int ButtonFontSize { get; set; }
-    public Action YesCallback { get; set; }
 
     private enum Buttons
     {
@@ -80,17 +82,29 @@ public class UI_NotifySelectPopup : UI_Popup
     
     public void SetYesCallback(Action callback)
     {
-        YesCallback = callback;
+        _yesCallback = callback;
     }
 
     private void OnYesClicked(PointerEventData data)
     {
-        YesCallback?.Invoke();
+        _yesCallback?.Invoke();
+    }
+    
+    public void SetNoCallBack(Action callback)
+    {
+        _noCallback = callback;
     }
     
     private void OnNoClicked(PointerEventData data)
     {
-        Managers.UI.ClosePopupUI<UI_NotifySelectPopup>();
+        if (_noCallback != null)
+        {
+            _noCallback.Invoke();
+        }
+        else
+        {
+            Managers.UI.ClosePopupUI<UI_NotifySelectPopup>();
+        }
     }
     
     private void OnExitClicked(PointerEventData data)

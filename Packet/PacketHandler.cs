@@ -11,6 +11,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Zenject;
 using State = Google.Protobuf.Protocol.State;
 
 public class PacketHandler
@@ -49,6 +50,33 @@ public class PacketHandler
         }
     }
     
+    public static void S_StepTutorialHandler(PacketSession session, IMessage packet)
+    {
+        var stepPacket = (S_StepTutorial)packet;
+        var sceneContext = UnityEngine.Object.FindAnyObjectByType<SceneContext>();
+        if (sceneContext == null) return;
+        
+        var tutorialVm = sceneContext.Container.Resolve<TutorialViewModel>();
+        if (tutorialVm == null) return;
+        
+        if (stepPacket.Step != 0)
+        {
+            tutorialVm.Step = stepPacket.Step;
+        }
+            
+        if (stepPacket.Process == false)
+        {
+            // Show new window
+            tutorialVm.ShowTutorialPopup();
+            // ui.SetTutorialUI();
+        }
+        else
+        {
+            // Just step tutorial
+            tutorialVm.StepTutorial();
+        }
+    }
+    
     public static void S_SpawnHandler(PacketSession session, IMessage packet)
     {
         var spawnPacket = (S_Spawn)packet;
@@ -58,6 +86,15 @@ public class PacketHandler
         }
     }
 
+    public static void S_SpawnStatueHandler(PacketSession session, IMessage packet)
+    {
+        var spawnPacket = (S_SpawnStatue)packet;
+        var gameObject = Managers.Object.FindById(spawnPacket.StatueId);
+        var cc = gameObject?.GetComponent<CreatureController>();
+        if (cc == null) return;
+        cc.UnitId = spawnPacket.UnitId;
+    }
+    
     public static void S_SpawnProjectileHandler(PacketSession session, IMessage packet)
     {
         var spawnPacket = (S_SpawnProjectile)packet;
@@ -520,6 +557,21 @@ public class PacketHandler
         {
             Managers.UI.ShowPopupUI<UI_ResultSingleDefeatPopup>();
         }
+    }
+    
+    public static void S_SendTutorialRewardHandler(PacketSession session, IMessage packet)
+    {
+        var rewardPacket = (S_SendTutorialReward)packet;
+        var sceneContext = UnityEngine.Object.FindAnyObjectByType<SceneContext>();
+        if (sceneContext == null) return;
+        
+        var tutorialVm = sceneContext.Container.Resolve<TutorialViewModel>();
+        if (tutorialVm == null) return;
+
+        tutorialVm.Step = Util.Faction == Faction.Wolf ? 18 : 22;
+        tutorialVm.SetTutorialReward(rewardPacket.RewardUnitId);
+        
+        _ = tutorialVm.ShowTutorialPopup();
     }
     
     public static void S_MatchMakingSuccessHandler(PacketSession session, IMessage packet)
