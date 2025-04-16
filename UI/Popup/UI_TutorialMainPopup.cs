@@ -127,7 +127,7 @@ public class UI_TutorialMainPopup : UI_Popup
         var tutorialNpc2 = Managers.Resource.Instantiate("Npc/NpcFlower");
         _tutorialNpcInfo1 = tutorialNpc1.GetComponent<TutorialNpcInfo>();
         _tutorialNpcInfo2 = tutorialNpc2.GetComponent<TutorialNpcInfo>();
-        _flowerFace = Util.FindChild(_tutorialNpcInfo2.gameObject, "+ Head", true);
+        _flowerFace = Util.FindChild(tutorialNpc2, "+ Head", true);
         
         var npc1Pos = _tutorialNpcInfo1.Position;
         var npc2Pos = _tutorialNpcInfo2.Position;
@@ -282,8 +282,6 @@ public class UI_TutorialMainPopup : UI_Popup
     private IEnumerator AlertRoutine()
     {
         var text = _tutorialMainSelectText;
-        // var textAnimator = text.GetComponent<TextAnimator_TMP>();
-        // var events = textAnimator.DefaultAppearancesTags;
         
         text.color = Color.red;
         yield return new WaitForSeconds(0.75f);

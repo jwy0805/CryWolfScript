@@ -28,7 +28,7 @@ public class ObjectManager
         {
             case GameObjectType.Player:
 
-                go = Managers.Game.Spawn("PlayerCharacter");
+                go = Managers.Game.Spawn($"Characters/{info.Name}");
                 if (myPlayer)
                 {
                     var isSheep = Util.Faction == Faction.Sheep;

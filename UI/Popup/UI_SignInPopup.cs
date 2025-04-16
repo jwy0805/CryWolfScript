@@ -49,8 +49,8 @@ public class UI_SignInPopup : UI_Popup
         _webService = webService;
         _loginViewModel = loginViewModel;
         
-        _loginViewModel.OnLoginFailed -= ClearPasswordText;
-        _loginViewModel.OnLoginFailed += ClearPasswordText;
+        _loginViewModel.OnDirectLoginFailed -= ClearPasswordText;
+        _loginViewModel.OnDirectLoginFailed += ClearPasswordText;
     }
     
     protected override void Init()

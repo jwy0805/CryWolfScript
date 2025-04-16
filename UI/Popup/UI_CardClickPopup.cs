@@ -101,24 +101,49 @@ public class UI_CardClickPopup : UI_Popup
     {
         GetImage((int)Images.CardClickPanel).TryGetComponent(out RectTransform rt);
         rt.position = CardPosition;
-        // rt.sizeDelta = Size;
         
         var unitSelectText = GetText((int)Texts.CardClickUnitSelectText);
-        if (SelectedCard.transform.parent.name == "Deck")
+        var cardParentName = SelectedCard.transform.parent.name;
+        if (cardParentName is "Deck" or "BattleSettingPanel")
         {
             Managers.Localization.UpdateTextAndFont(unitSelectText.gameObject, "card_click_unit_select_text_change");
         }
-        
-        var deck = Util.Faction == Faction.Sheep 
-            ? User.Instance.DeckSheep.UnitsOnDeck 
-            : User.Instance.DeckWolf.UnitsOnDeck;
-        var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == SelectedCard.Id);
-        var isOwned = User.Instance.OwnedUnitList.Exists(info => info.UnitInfo.Id == SelectedCard.Id);
-        var interactable = (index == -1 || FromDeck) && isOwned;
 
-        GetButton((int)Buttons.UnitSelectButton).interactable = interactable;
+        ActiveUnitSelectButton();
     }
 
+    private void ActiveUnitSelectButton()
+    {
+        User user = User.Instance;
+        Faction faction = Util.Faction;
+        bool isOwned = false;
+        bool interactable = false;
+        
+        switch (SelectedCard.AssetType)
+        {
+            case Asset.Unit:
+                var deck = faction == Faction.Sheep ? user.DeckSheep.UnitsOnDeck : user.DeckWolf.UnitsOnDeck;
+                var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == SelectedCard.Id);
+                isOwned = User.Instance.OwnedUnitList.Exists(info => info.UnitInfo.Id == SelectedCard.Id);
+                interactable = (index == -1 || FromDeck) && isOwned;
+                break;
+            case Asset.Sheep:
+                isOwned = user.OwnedSheepList.Exists(info => info.SheepInfo.Id == SelectedCard.Id);
+                interactable = isOwned;
+                break;
+            case Asset.Enchant:
+                isOwned = user.OwnedEnchantList.Exists(info => info.EnchantInfo.Id == SelectedCard.Id);
+                interactable = isOwned;
+                break;
+            case Asset.Character:
+                isOwned = user.OwnedCharacterList.Exists(info => info.CharacterInfo.Id == SelectedCard.Id);
+                interactable = isOwned;
+                break;
+        }
+        
+        GetButton((int)Buttons.UnitSelectButton).interactable = interactable;
+    }
+    
     private void SetCardInPopup<TEnum>() where TEnum : struct, Enum
     {
         var parent = GetImage((int)Images.CardPanel).transform;
@@ -149,9 +174,21 @@ public class UI_CardClickPopup : UI_Popup
             ? User.Instance.DeckSheep.UnitsOnDeck 
             : User.Instance.DeckWolf.UnitsOnDeck;
         var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == SelectedCard.Id);
-        var isOwned = User.Instance.OwnedUnitList.Exists(info => info.UnitInfo.Id == SelectedCard.Id);
-        var interactable = (index == -1 || FromDeck) && isOwned;
-        if (interactable == false) return;
+        // var isOwned = User.Instance.OwnedUnitList.Exists(info => info.UnitInfo.Id == SelectedCard.Id);
+        // var interactable = (index == -1 || FromDeck) && isOwned;
+        var isOwned = SelectedCard.AssetType switch
+        {
+            Asset.Unit =>
+                User.Instance.OwnedUnitList.Exists(info => info.UnitInfo.Id == SelectedCard.Id),
+            Asset.Sheep =>
+                User.Instance.OwnedSheepList.Exists(info => info.SheepInfo.Id == SelectedCard.Id),
+            Asset.Enchant => 
+                User.Instance.OwnedEnchantList.Exists(info => info.EnchantInfo.Id == SelectedCard.Id),
+            Asset.Character =>
+                User.Instance.OwnedCharacterList.Exists(info => info.CharacterInfo.Id == SelectedCard.Id),
+            _ => false
+        };
+        if (isOwned == false) return;
         
         if (SelectedCard.AssetType == Asset.Unit)
         {
@@ -169,6 +206,7 @@ public class UI_CardClickPopup : UI_Popup
         else
         {
             var popup = Managers.UI.ShowPopupUI<UI_AssetChangeScrollPopup>();
+            Debug.Log("sss");
             popup.SelectedCard = SelectedCard;
         }
     }

@@ -2,8 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Google.Protobuf.Protocol;
-using Palmmedia.ReportGenerator.Core.Parser.Analysis;
-using UnityEngine;
 // ReSharper disable UnassignedField.Global
 // ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable CollectionNeverUpdated.Global
@@ -240,6 +238,40 @@ public class LoginUserAccountPacketRequired
 }
 
 public class LoginUserAccountPacketResponse
+{
+    public bool LoginOk { get; set; }
+    public string AccessToken { get; set; }
+    public string RefreshToken { get; set; }
+}
+
+public class GetAppleTokenPacketRequired
+{
+    public string IdToken { get; set; }
+}
+
+public class GetAppleTokenPacketResponse
+{
+    public string CustomToken { get; set; }
+}
+
+public class LoginApplePacketRequired
+{
+    public string IdToken { get; set; }
+}
+
+public class LoginApplePacketResponse
+{
+    public bool LoginOk { get; set; }
+    public string AccessToken { get; set; }
+    public string RefreshToken { get; set; }
+}
+
+public class LoginGooglePacketRequired
+{
+    public string IdToken { get; set; }
+}
+
+public class LoginGooglePacketResponse
 {
     public bool LoginOk { get; set; }
     public string AccessToken { get; set; }

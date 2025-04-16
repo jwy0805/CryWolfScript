@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Zenject;
 
 public class UI_FactionChangePopup : UI_Popup
 {
@@ -24,12 +25,19 @@ public class UI_FactionChangePopup : UI_Popup
 
     private enum Buttons
     {
+        ContinueButton,
         ExitButton,
     }
 
     private enum Texts
     {
         ContinueButtonText
+    }
+
+    [Inject]
+    public void Construct(TutorialViewModel tutorialViewModel)
+    {
+        _tutorialVm = tutorialViewModel;
     }
     
     protected override void Init()
@@ -55,7 +63,8 @@ public class UI_FactionChangePopup : UI_Popup
 
     protected override void InitButtonEvents()
     {
-        GetButton((int)Buttons.ExitButton).gameObject.BindEvent(OnExitButtonClicked);
+        GetButton((int)Buttons.ContinueButton).gameObject.BindEvent(OnContinueClicked);
+        GetButton((int)Buttons.ExitButton).gameObject.BindEvent(OnExitClicked);
     }
 
     protected override void InitUI()
@@ -72,18 +81,67 @@ public class UI_FactionChangePopup : UI_Popup
         
         _tutorialVm.InitTutorialChangeFaction(npcPos, cameraPos);
         
-        SetText();
         StartCoroutine(PointToFactionButton());
-    }
-
-    private void SetText()
-    {
-        const string key = "tutorial_faction_change_popup_text";
-        var textContent = Managers.Localization.GetLocalizedValue(_speechBubbleText, key);
-        _speechBubbleText.text = textContent;
+        StartCoroutine(SetText());
     }
     
     #region UI Effects
+    
+    private IEnumerator SmoothAlphaRoutine()
+    {
+        float highAlpha = 1f;           
+        float lowAlpha = 120f / 255f;  
+        float duration = 1f;         
+
+        while (true)
+        {
+            // 1) highAlpha -> lowAlpha
+            yield return StartCoroutine(LerpAlpha(highAlpha, lowAlpha, duration));
+
+            // 2) lowAlpha -> highAlpha
+            yield return StartCoroutine(LerpAlpha(lowAlpha, highAlpha, duration));
+        }
+        // ReSharper disable once IteratorNeverReturns
+    }
+
+    private IEnumerator LerpAlpha(float from, float to, float duration)
+    {
+        if (_continueButton.activeSelf == false)
+        {
+            yield break;
+        }
+        
+        float elapsed = 0f;
+        var targetImage = GetImage((int)Images.ContinueButtonLine);
+        var targetText = GetText((int)Texts.ContinueButtonText);
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float currentAlpha = Mathf.Lerp(from, to, t);
+            
+            SetImageAlpha(targetImage, currentAlpha);
+            SetTextAlpha(targetText, currentAlpha);
+
+            yield return null;
+        }
+    }
+    
+    private void SetImageAlpha(Graphic graphic, float alpha)
+    {
+        if (graphic == null) return;
+        var color = graphic.color;
+        color.a = alpha;
+        graphic.color = color;
+    }
+
+    private void SetTextAlpha(TextMeshProUGUI text, float alpha)
+    {
+        if (text == null) return;
+        var color = text.color;
+        color.a = alpha;
+        text.color = color;
+    }
     
     // The offset for moving the finger from its original position (in pixels on the UI).
     // For example, setting (30, -30) will move it diagonally towards the bottom-right.
@@ -126,7 +184,7 @@ public class UI_FactionChangePopup : UI_Popup
 
     private IEnumerator PointToFactionButton()
     {
-        var anchor = new Vector2(0.25f, 0.85f);
+        var anchor = new Vector2(0.23f, 0.88f);
         var offset = new Vector2(-60, 60);
         
         _handRect.anchorMin = anchor;
@@ -135,7 +193,20 @@ public class UI_FactionChangePopup : UI_Popup
         yield return StartCoroutine(HandPokeRoutine(offset, 0.5f, 0.1f, 0.2f));
     }
     
-    private void OnExitButtonClicked(PointerEventData data)
+    private IEnumerator SetText()
+    {
+        yield return new WaitForSeconds(2f);
+        const string key = "tutorial_faction_change_popup_text";
+        var textContent = Managers.Localization.GetLocalizedValue(_speechBubbleText, key);
+        _speechBubbleText.text = textContent;
+    }
+    
+    private void OnContinueClicked(PointerEventData data)
+    {
+        Managers.UI.CloseAllPopupUI();
+    }
+    
+    private void OnExitClicked(PointerEventData data)
     {
         Managers.UI.CloseAllPopupUI();
     }

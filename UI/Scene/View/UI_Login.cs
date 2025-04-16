@@ -1,18 +1,18 @@
 using System;
 using System.Collections;
+using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.EventSystems;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Zenject;
 
 public class UI_Login : UI_Scene
 {
     private LoginViewModel _viewModel;
-    private Dictionary<string, GameObject> _textDict = new();
+    
+    private readonly Dictionary<string, GameObject> _textDict = new();
     
     private enum Buttons
     {
@@ -49,6 +49,13 @@ public class UI_Login : UI_Scene
         InitButtonEvents();
     }
 
+    private void Update()
+    {
+#if UNITY_IOS && !UNITY_EDITOR
+        _viewModel.UpdateAppleAuthManager();
+#endif
+    }
+
     #region SetUiSize
 
     protected override void BindObjects()
@@ -69,6 +76,12 @@ public class UI_Login : UI_Scene
     }
 
     #endregion
+
+    private void InitEvents()
+    {
+        _viewModel.OnResetGoogleButton += ResetGoogleButton;
+        _viewModel.OnResetAppleButton += ResetAppleButton;
+    }
     
     private void OnSignUpClicked(PointerEventData data)
     {
@@ -82,38 +95,42 @@ public class UI_Login : UI_Scene
 
     private void OnGoogleClicked(PointerEventData data)
     {
-        
+        _viewModel.RequestGoogleLogin();
+        data.pointerPress.gameObject.GetComponent<Button>().interactable = false;
     }
     
     private void OnAppleClicked(PointerEventData data)
     {
-#if UNITY_IOS && !UNITY_EDITOR
-        // 버튼 클릭 시 ViewModel에 요청 전달 (추가 로직이 필요하다면)
-        viewModel.RequestAppleSignIn();
-        // 그리고 실제 네이티브 함수 호출
-        startAppleSignIn();
-#else
-        Debug.Log("Apple Sign In은 iOS 기기에서만 동작합니다.");
+#if UNITY_ANDROID
+        var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        const string titleKey = "notify_no_title";
+        const string messageKey = "notify_apple_login_not_supported_message";
+        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        return;
 #endif
-    }
-    
-#if UNITY_IOS && !UNITY_EDITOR
-    [DllImport("__Internal")]
-    private static extern void startAppleSignIn();
-#endif
-
-    public void OnAppleLoginSuccess(string userId)
-    {
-        _viewModel.HandleAppleSignInSuccess();
-    }
-    
-    public void OnAppleLoginFailed(string error)
-    {
-        _viewModel.HandleAppleSignInFailed();
+        
+        _viewModel.RequestAppleLogin();
+        data.pointerPress.gameObject.GetComponent<Button>().interactable = false;
     }
     
     private void OnGuestLoginClicked(PointerEventData data)
     {
         
+    }
+
+    private void ResetGoogleButton()
+    {
+        GetButton((int)Buttons.GoogleButton).interactable = true;
+    }
+
+    private void ResetAppleButton()
+    {
+        GetButton((int)Buttons.AppleButton).interactable = true;    
+    }
+    
+    private void OnDestroy()
+    {
+        _viewModel.OnResetGoogleButton -= ResetGoogleButton;
+        _viewModel.OnResetAppleButton -= ResetAppleButton;
     }
 }

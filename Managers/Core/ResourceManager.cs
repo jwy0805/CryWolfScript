@@ -158,7 +158,6 @@ public class ResourceManager
         bool activateText = false) where TEnum : struct, Enum
     {
         var cardFrame = Instantiate("UI/Deck/CardFrame", parent);
-        var unitInCard = Util.FindChild(cardFrame, "CardUnit", true);
         var card = cardFrame.GetOrAddComponent<Card>();
         
         card.Id = asset.Id;
@@ -172,6 +171,17 @@ public class ResourceManager
             _ => Asset.None
         };
         
+        if (action != null) cardFrame.BindEvent(action);
+        SetCardContents<TEnum>(cardFrame, asset, card.AssetType);
+        
+        var nameTextObject = Util.FindChild(cardFrame, "UnitNameText", true, true);
+        nameTextObject.SetActive(activateText);
+        
+        return cardFrame;
+    }
+
+    private void SetCardContents<TEnum>(GameObject cardFrame, IAsset asset, Asset assetType) where TEnum : struct, Enum
+    {
         var enumValue = (TEnum)Enum.ToObject(typeof(TEnum), asset.Id);
         var path = $"Sprites/Portrait/{enumValue.ToString()}";
         var background = Util.FindChild(cardFrame, "Bg", true).GetComponent<Image>();
@@ -179,35 +189,69 @@ public class ResourceManager
         var glow = Util.FindChild(cardFrame, "Glow", true).GetComponent<Image>();
         var role = Util.FindChild(cardFrame, "Role", true);
         var roleIcon = Util.FindChild(role, "RoleIcon", true).GetComponent<Image>();
+        var unitInCard = Util.FindChild(cardFrame, "CardUnit", true);
+        var startPanel = Util.FindChild(cardFrame, "StarPanel", true);
+        var nameTextObject = Util.FindChild(cardFrame, "UnitNameText", true, true);
         
         unitInCard.GetComponent<Image>().sprite = Load<Sprite>(path);
         BindUnitCardColor(asset.Class, background, gradient, glow);
-        BindUnitRoleIcon(card.Id, roleIcon);
-        
-        if (action != null) cardFrame.BindEvent(action);
-        if (card.AssetType != Asset.Unit)
+        BindUnitRoleIcon(asset.Id, roleIcon);
+
+        var key = string.Empty;
+        switch (assetType)
         {
-            role.SetActive(false);
-            return cardFrame;
+            case Asset.Unit:
+                if (Managers.Data.UnitInfoDict.TryGetValue(asset.Id, out var unitInfo))
+                {
+                    var unitName = ((UnitId)unitInfo.Id).ToString();
+                    key = string.Concat("unit_name_", Managers.Localization.GetConvertedString(unitName));
+                    for (var i = 0; i < 3; i++)
+                    {
+                        startPanel.transform.GetChild(i).gameObject.SetActive(i < unitInfo.Level);
+                    }
+                }
+                break;
+            
+            case Asset.Character:
+                role.SetActive(false);
+                startPanel.gameObject.SetActive(false);
+                if (Managers.Data.CharacterInfoDict.TryGetValue(asset.Id, out var characterInfo))
+                {
+                    var characterName = ((CharacterId)characterInfo.Id).ToString();
+                    key = string.Concat("character_name_", Managers.Localization.GetConvertedString(characterName));
+                }
+                break;
+            
+            case Asset.Sheep:
+                role.SetActive(false);
+                startPanel.gameObject.SetActive(false);
+                if (Managers.Data.SheepInfoDict.TryGetValue(asset.Id, out var sheepInfo))
+                {
+                    var sheepName = ((SheepId)sheepInfo.Id).ToString();
+                    key = string.Concat("sheep_name_", Managers.Localization.GetConvertedString(sheepName));
+                }
+                break;
+            
+            case Asset.Enchant:
+                var enchantRect = unitInCard.GetComponent<RectTransform>();
+                enchantRect.anchorMin = Vector2.zero;
+                enchantRect.anchorMax = Vector2.one;
+                enchantRect.sizeDelta = Vector2.zero;
+                role.SetActive(false);
+                startPanel.gameObject.SetActive(false);
+                if (Managers.Data.EnchantInfoDict.TryGetValue(asset.Id, out var enchantInfo))
+                {
+                    var enchantName = ((EnchantId)enchantInfo.Id).ToString();
+                    key = string.Concat("enchant_name_", Managers.Localization.GetConvertedString(enchantName));
+                }
+                break;
         }
-        if (Managers.Data.UnitInfoDict.TryGetValue(asset.Id, out var unitInfo) == false) return cardFrame;
-        var starPanel = cardFrame.transform.Find("StarPanel");
-        
-        var nameTextObject = Util.FindChild(cardFrame, "UnitNameText", true, true);
-        nameTextObject.SetActive(activateText);
-        if (activateText)
+
+        if (key != string.Empty)
         {
-            var key = $"UnitName{((UnitId)unitInfo.Id).ToString()}";
             var convertedKey = Managers.Localization.GetConvertedString(key);
             Managers.Localization.UpdateTextAndFont(nameTextObject, convertedKey);
         }
-            
-        for (var i = 0; i < 3; i++)
-        {
-            starPanel.GetChild(i).gameObject.SetActive(i < unitInfo.Level);
-        }
-        
-        return cardFrame;
     }
     
     public GameObject GetMaterialResources(IAsset asset, Transform parent, Action<PointerEventData> action = null)

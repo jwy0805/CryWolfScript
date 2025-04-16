@@ -67,7 +67,7 @@ public class PacketHandler
         if (stepPacket.Process == false)
         {
             // Show new window
-            tutorialVm.ShowTutorialPopup();
+            _ = tutorialVm.ShowTutorialPopup();
             // ui.SetTutorialUI();
         }
         else

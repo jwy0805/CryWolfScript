@@ -1106,7 +1106,6 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private async Task InitMainLobby()
     {
         SwitchLobbyUI(Util.Faction);
-        SetObjectSize(GetButton((int)Buttons.FactionButton).gameObject, 0.95f);
         GetImage((int)Images.FriendAlertIcon).gameObject.SetActive(false);
         GetImage((int)Images.MailAlertIcon).gameObject.SetActive(false);
 
@@ -1126,9 +1125,9 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         }
 
         // Test
-        await _userService.LoadTestUser(userId: 1);
+        // await _userService.LoadTestUser(userId: 1);
         // //MainLobby_Item Setting
-        //await _userService.LoadUserInfo();
+        await _userService.LoadUserInfo();
         await Task.WhenAll(
             InitCollection(),
             InitShop(),

@@ -123,18 +123,36 @@ public class DataManager
     private async Task<TLoader> LoadJsonAsync<TLoader, TKey, TValue>(string data) where TLoader : ILoader<TKey, TValue>
     {
         var filePath = Path.Combine(Application.streamingAssetsPath, $"{data}.json");
-        string jsonContent;
-
-        if (File.Exists(filePath))
+        string url = filePath;
+        
+#if UNITY_EDITOR
+        // Unity 에디터의 경우 경로 앞에 file:/// 를 붙여 URI 형태로 만들어준다.
+        if (!filePath.StartsWith("file://"))
         {
-            jsonContent = await File.ReadAllTextAsync(filePath);
+            url = "file:///" + filePath;
+        }
+#endif
+        
+        string jsonContent;
+        
+        UnityWebRequest request = UnityWebRequest.Get(url);
+        var operation = request.SendWebRequest();
+        
+        while (!operation.isDone)
+        {
+            await Task.Yield();
+        }
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            jsonContent = request.downloadHandler.text;
         }
         else
         {
             Debug.LogError($"Cannot find {data}.json");
             return default;
         }
-
+        
         try
         {
             return JsonConvert.DeserializeObject<TLoader>(jsonContent);
@@ -149,22 +167,39 @@ public class DataManager
     private async Task<Dictionary<TKey, TValue>> LoadJsonAsync<TKey, TValue>(string data)
     {
         var filePath = Path.Combine(Application.streamingAssetsPath, $"{data}.json");
-        string jsonContent;
-
-        if (File.Exists(filePath))
+        string url = filePath;
+        
+#if UNITY_EDITOR
+        // Unity 에디터의 경우 경로 앞에 file:/// 를 붙여 URI 형태로 만들어준다.
+        if (!filePath.StartsWith("file://"))
         {
-            jsonContent = await File.ReadAllTextAsync(filePath);
+            url = "file:///" + filePath;
+        }
+#endif
+        
+        string jsonContent;
+        
+        UnityWebRequest request = UnityWebRequest.Get(url);
+        var operation = request.SendWebRequest();
+        
+        while (!operation.isDone)
+        {
+            await Task.Yield();
+        }
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            jsonContent = request.downloadHandler.text;
         }
         else
         {
             Debug.LogError($"Cannot find {data}.json");
-            return default;
+            return null;
         }
-
+        
         try
         {
             return JsonConvert.DeserializeObject<Dictionary<TKey, TValue>>(jsonContent);
-
         }
         catch (Exception e)
         {

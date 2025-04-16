@@ -134,6 +134,7 @@ public class TutorialViewModel : IDisposable
         BattleSheepEventDict.TryAdd("PointToSkillButtonAndPortrait", PointToSkillButtonAndPortrait);
         BattleSheepEventDict.TryAdd("AdjustUiBlockerSize", AdjustUiBlockerSize);
         BattleSheepEventDict.TryAdd("ResumeGame", ResumeGame);
+        BattleSheepEventDict.TryAdd("ChangeFaceHappy", OnChangeFaceHappy);
     }
 
     public void InitTutorialChangeFaction(Vector3 npcPosition, Vector3 cameraPosition)

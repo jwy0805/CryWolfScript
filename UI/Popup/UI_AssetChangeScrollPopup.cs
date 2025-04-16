@@ -14,6 +14,7 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
     private DeckViewModel _deckVm;
     
     private bool _changing;
+    private GameObject _assetPanel;
     
     private bool Changing
     {
@@ -31,7 +32,6 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
     {
         PopupPanel,
         SelectTextPanel,
-        SelectedCardPanel,
         CollectionPanel,
     }
 
@@ -78,6 +78,8 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
         Bind<TextMeshProUGUI>(typeof(Texts));
+
+        _assetPanel = Util.FindChild(gameObject, "AssetPanel", true);
     }
 
     private void InitUI<TEnum>() where TEnum : struct, Enum
@@ -97,7 +99,7 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
 
     private void SetSelectedCardInPopup<TEnum>() where TEnum : struct, Enum
     {
-        var parent = GetImage((int)Images.SelectedCardPanel).transform;
+        var parent = _assetPanel.transform;
         foreach (Transform child in parent) Destroy(child.gameObject);
         
         var cardFrame = Managers.Resource.GetCardResources<TEnum>(SelectedCard, parent, data =>
@@ -105,10 +107,12 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
             SelectedCard = data.pointerPress.GetComponent<Card>();
             Changing = true;
         });
+        var cardRect = cardFrame.GetComponent<RectTransform>();
         
         cardFrame.transform.SetParent(parent);
-        cardFrame.GetComponent<RectTransform>().anchorMax = Vector2.one;
-        cardFrame.GetComponent<RectTransform>().anchorMin = Vector2.zero;
+        cardRect.anchorMax = Vector2.one;
+        cardRect.anchorMin = Vector2.zero;
+        cardRect.sizeDelta = Vector2.zero;
     }
     
     private void SetCardInPopup<TEnum>() where TEnum : struct, Enum
@@ -118,10 +122,13 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
 
         var assets = typeof(TEnum).ToString() switch
         {
-            "Google.Protobuf.Protocol.SheepId" => User.Instance.OwnedSheepList.Cast<IAsset>().ToList(),
-            "Google.Protobuf.Protocol.EnchantId" => User.Instance.OwnedEnchantList.Cast<IAsset>().ToList(),
-            "Google.Protobuf.Protocol.CharacterId" => User.Instance.OwnedCharacterList.Cast<IAsset>().ToList(),
-            _ => new List<IAsset>() 
+            "Google.Protobuf.Protocol.SheepId" =>
+                User.Instance.OwnedSheepList.Select(osi => osi.SheepInfo).Cast<IAsset>().ToList(),
+            "Google.Protobuf.Protocol.EnchantId" =>
+                User.Instance.OwnedEnchantList.Select(oei => oei.EnchantInfo).Cast<IAsset>().ToList(),
+            "Google.Protobuf.Protocol.CharacterId" =>
+                User.Instance.OwnedCharacterList.Select(oci => oci.CharacterInfo).Cast<IAsset>().ToList(),
+            _ => new List<IAsset>()
         };
 
         assets = assets.Where(asset => asset.Id != SelectedCard.Id).OrderBy(asset => asset.Class).ToList();
@@ -135,7 +142,7 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
                 // Change actual battle setting information
                 var oldCard = Changing 
                     ? SelectedCard 
-                    : GetImage((int)Images.SelectedCardPanel).GetComponentInChildren<Card>();
+                    : _assetPanel.GetComponentInChildren<Card>();
                 _deckVm.UpdateBattleSetting(oldCard, card);
                 SelectedCard = card;
                 Changing = false;
@@ -144,10 +151,12 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
                 SetSelectedCardInPopup<TEnum>();
                 SetCardInPopup<TEnum>();
             });
+            var cardRect = cardFrame.GetComponent<RectTransform>();
             
             cardFrame.transform.SetParent(parent);
-            cardFrame.GetComponent<RectTransform>().anchorMax = Vector2.one;
-            cardFrame.GetComponent<RectTransform>().anchorMin = Vector2.zero;
+            cardRect.anchorMax = Vector2.one;
+            cardRect.anchorMin = Vector2.zero;
+            // cardRect.sizeDelta = Vector2.zero;
         }
     }
     

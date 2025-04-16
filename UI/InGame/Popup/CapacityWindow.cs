@@ -135,7 +135,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         if ((_tutorialVm.Step == 16 && Util.Faction == Faction.Wolf) ||
             (_tutorialVm.Step == 21 && Util.Faction == Faction.Sheep))
         {
-            _tutorialVm.ShowTutorialPopup();
+            _ = _tutorialVm.ShowTutorialPopup();
         }
     }
 

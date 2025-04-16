@@ -25,7 +25,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
     private readonly Dictionary<string, GameObject> _textDict = new();
     
     public Card SelectedCard { get; set; }
-    public List<Card[]> Decks { get; set; }
+
     private bool Changing
     {
         get => _changing;
@@ -35,6 +35,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
             GetImage((int)Images.SelectTextPanel).gameObject.SetActive(_changing);
         }
     }
+    
     private UI_CardClickPopup CardPopup
     {
         get => _cardPopup;

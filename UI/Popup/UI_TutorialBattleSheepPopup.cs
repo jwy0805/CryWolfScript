@@ -12,6 +12,7 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
     private TutorialViewModel _tutorialVm;
 
     private GameObject _tutorialNpc;
+    private GameObject _flowerFace;
     private GameObject _dim;
     private GameObject _uiBlocker;
     private GameObject _continueButton;
@@ -103,6 +104,7 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         _tutorialVm.AdjustUiBlockerSize += AdjustUiBlockerSize;
         _tutorialVm.ClearScene += ClearScene;
         _tutorialVm.ResumeGame += ResumeGame;
+        _tutorialVm.OnChangeFaceHappy += ChangeFaceHappy;
     }
     
     protected override void InitButtonEvents()
@@ -116,12 +118,12 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         if (_tutorialNpc == null)
         {
             _tutorialNpc = Managers.Resource.Instantiate("Npc/NpcFlower");
+            _flowerFace = Util.FindChild(_tutorialNpc, "+ Head", true);
         }
 
         var npcInfo = _tutorialNpc.GetComponent<TutorialNpcInfo>();
         var npcPos = npcInfo.Position;
         var cameraPos = npcInfo.CameraPosition;
-        
         _tutorialVm.InitTutorialBattleSheep(npcPos, cameraPos);
         ClearScene();
         
@@ -537,6 +539,12 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         panelRect.offsetMin = new Vector2(panelRect.offsetMax.x, 0f);
     }
     
+    private void ChangeFaceHappy()
+    {
+        Util.DestroyAllChildren(_flowerFace.transform);
+        Managers.Resource.Instantiate("Npc/Face Happy", _flowerFace.transform);
+    }
+    
     private void ClearScene()
     {
         _hand.SetActive(false);
@@ -587,6 +595,7 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         _tutorialVm.AdjustUiBlockerSize -= AdjustUiBlockerSize;
         _tutorialVm.ClearScene -= ClearScene;
         _tutorialVm.ResumeGame -= ResumeGame;
+        _tutorialVm.OnChangeFaceHappy -= ChangeFaceHappy;
         
         _tutorialVm = null;
         _dim = null;
