@@ -104,10 +104,11 @@ public class NetworkManager
                 break;
             
             case Env.Dev:
-                host = "hamonstudio.net";
+                // host = "hamonstudio.net";
+                host = "crywolf-tcpbalancer-5dadfff82e2ee15a.elb.ap-northeast-2.amazonaws.com";
                 port = 7780;
                 ipHost = await Dns.GetHostEntryAsync(host);
-                ipAddress = ipHost.AddressList.FirstOrDefault();
+                ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
                 break;
             
             case Env.Stage:

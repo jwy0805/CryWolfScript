@@ -109,7 +109,7 @@ public class DataManager
         var objectDictTask = LoadJsonAsync<Contents.ObjectLoader, int, Contents.ObjectData>("ObjectData");
         var skillDictTask = LoadJsonAsync<Contents.SkillLoader, int, Contents.SkillData>("SkillData");
         var tutorialDictTask = LoadJsonAsync<Contents.TutorialLoader, TutorialType, Contents.TutorialData>("TutorialData");
-        var localizationDictTask = LoadJsonAsync<string, Dictionary<string, Contents.LocalizationEntry>>("LanguageData");
+        var localizationDictTask = LoadJsonAsync<Dictionary<string, Dictionary<string, Contents.LocalizationEntry>>>("LanguageData");
 
         await Task.WhenAll(unitDictTask, objectDictTask, skillDictTask, tutorialDictTask, localizationDictTask);
         
@@ -119,43 +119,24 @@ public class DataManager
         TutorialDict = tutorialDictTask.Result!.MakeDict();
         LocalizationDict = localizationDictTask.Result;
     }
-    
+
     private async Task<TLoader> LoadJsonAsync<TLoader, TKey, TValue>(string data) where TLoader : ILoader<TKey, TValue>
     {
-        var filePath = Path.Combine(Application.streamingAssetsPath, $"{data}.json");
-        string url = filePath;
-        
-#if UNITY_EDITOR
-        // Unity 에디터의 경우 경로 앞에 file:/// 를 붙여 URI 형태로 만들어준다.
-        if (!filePath.StartsWith("file://"))
-        {
-            url = "file:///" + filePath;
-        }
-#endif
-        
-        string jsonContent;
-        
-        UnityWebRequest request = UnityWebRequest.Get(url);
-        var operation = request.SendWebRequest();
-        
-        while (!operation.isDone)
-        {
-            await Task.Yield();
-        }
+        return await LoadJsonAsync<TLoader>(data);
+    }
 
-        if (request.result == UnityWebRequest.Result.Success)
+    private async Task<T> LoadJsonAsync<T>(string data)
+    {
+        var json = await LoadJsonStringAsync(data);
+        if (string.IsNullOrEmpty(json))
         {
-            jsonContent = request.downloadHandler.text;
-        }
-        else
-        {
-            Debug.LogError($"Cannot find {data}.json");
+            Debug.LogError($"Cannot load {data}.json");
             return default;
         }
-        
+
         try
         {
-            return JsonConvert.DeserializeObject<TLoader>(jsonContent);
+            return JsonConvert.DeserializeObject<T>(json);
         }
         catch (Exception e)
         {
@@ -163,48 +144,29 @@ public class DataManager
             throw;
         }
     }
-    
-    private async Task<Dictionary<TKey, TValue>> LoadJsonAsync<TKey, TValue>(string data)
+
+    private async Task<string> LoadJsonStringAsync(string data)
     {
         var filePath = Path.Combine(Application.streamingAssetsPath, $"{data}.json");
-        string url = filePath;
         
-#if UNITY_EDITOR
-        // Unity 에디터의 경우 경로 앞에 file:/// 를 붙여 URI 형태로 만들어준다.
-        if (!filePath.StartsWith("file://"))
+#if UNITY_ANDROID && !UNITY_EDITOR
+        var url = filePath.StartsWith("jar:") ? filePath : $"jar:file://{filePath}";
+        using var req = UnityWebRequest.Get(url);
+        await req.SendWebRequest();
+        if (req.result != UnityWebRequest.Result.Success)
         {
-            url = "file:///" + filePath;
-        }
-#endif
-        
-        string jsonContent;
-        
-        UnityWebRequest request = UnityWebRequest.Get(url);
-        var operation = request.SendWebRequest();
-        
-        while (!operation.isDone)
-        {
-            await Task.Yield();
-        }
-
-        if (request.result == UnityWebRequest.Result.Success)
-        {
-            jsonContent = request.downloadHandler.text;
-        }
-        else
-        {
-            Debug.LogError($"Cannot find {data}.json");
+            Debug.LogError($"Cannot load {data}.json: {req.error}");
             return null;
         }
+        return req.downloadHandler.text;
+#else
+        if (File.Exists(filePath))
+        {
+            return await File.ReadAllTextAsync(filePath);
+        }
         
-        try
-        {
-            return JsonConvert.DeserializeObject<Dictionary<TKey, TValue>>(jsonContent);
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"JSON deserialization error: {e.Message}");
-            throw;
-        }
+        Debug.LogError($"Cannot find {data}.json");
+        return null;
+#endif
     }
 }

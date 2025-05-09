@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-/* Last Modified : 25. 02. 14
+/* Last Modified : 25. 04. 22
  * Version : 1.02
  */
 public class GameProduct : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
@@ -27,12 +27,12 @@ public class GameProduct : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
         IsDragging = true;
         _scrollRect.OnBeginDrag(eventData);
     }
-
+    
     public void OnDrag(PointerEventData eventData)
     {
         _scrollRect.OnDrag(eventData);
     }
-
+    
     public void OnEndDrag(PointerEventData eventData)
     {
         _scrollRect.OnEndDrag(eventData);

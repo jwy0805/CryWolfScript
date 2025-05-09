@@ -5,6 +5,10 @@ using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using Zenject;
 
+/* Last Modified : 25. 04. 22
+ * Version : 1.02
+ */
+
 public class UserService : IUserService
 {
     private readonly ITokenService _tokenService;
@@ -13,6 +17,7 @@ public class UserService : IUserService
     public event Action<Faction> InitDeckButton;
     
     public UserInfo UserInfo { get; set; }
+    public UserTutorialInfo TutorialInfo { get; set; }
     public bool TutorialSheepEnded { get; set; }
     public bool TutorialWolfEnded { get; set; }
     
@@ -22,7 +27,7 @@ public class UserService : IUserService
         _tokenService = tokenService;
         _webService = webService;
     }
-
+    
     public void LoadOwnedUnit(List<OwnedUnitInfo> units)
     {
         User.Instance.OwnedUnitList.Clear();
@@ -189,9 +194,12 @@ public class UserService : IUserService
         if (loadUserInfoResponse.LoadUserInfoOk == false) return;
         
         UserInfo = loadUserInfoResponse.UserInfo;
+        TutorialInfo = loadUserInfoResponse.UserTutorialInfo;
+        
+        User.Instance.UserAccount = loadUserInfoResponse.UserInfo.UserAccount;
     }
 
-    public async Task LoadTestUser(int userId)
+    public async Task LoadTestUserInfo(int userId)
     {
         var loadTestUserPacket = new LoadTestUserPacketRequired{ UserId = userId };
         var task = _webService.SendWebRequestAsync<LoadTestUserPacketResponse>(
@@ -200,6 +208,7 @@ public class UserService : IUserService
         await task;
         
         UserInfo = task.Result.UserInfo;
+        TutorialInfo = task.Result.UserTutorialInfo;
         
         _tokenService.SaveAccessToken(task.Result.AccessToken);
         _tokenService.SaveRefreshToken(task.Result.RefreshToken);

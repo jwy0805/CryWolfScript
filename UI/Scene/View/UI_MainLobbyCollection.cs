@@ -561,21 +561,21 @@ public partial class UI_MainLobby
         if (_craftingVm.VerityCardByCondition1(unitInfo) == false)
         {
             var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            popup.SetWarning("이미 덱에 포함된 카드를 재료로 사용할 수 없습니다.");
+            Managers.Localization.UpdateWarningPopupText(popup, "warning_cards_cannot_be_used_as_materials");
             return false;
         }
             
         if (_craftingVm.VerifyCardByCondition2(unitInfo) == false)
         {
             var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            popup.SetWarning("게임 플레이에 필요한 최소한의 카드가 남아있어야 합니다.");
+            Managers.Localization.UpdateWarningPopupText(popup, "warning_keep_minimum_cards");
             return false;
         }
             
         if (_craftingVm.VerifyCardByCondition3(unitInfo) == false)
         {
             var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            popup.SetWarning("카드가 없습니다.");
+            Managers.Localization.UpdateWarningPopupText(popup, "no_cards_available");
             return false;
         }
 

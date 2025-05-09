@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Google.Protobuf.Protocol;
 using UnityEngine;
 using UnityEngine.Networking;
 using Zenject;
@@ -24,6 +25,7 @@ public class ShopViewModel
     public List<ProductInfo> SpinelPackages;
     public List<ProductInfo> GoldItems;
     public List<ProductInfo> SpinelItems;
+    public List<DailyProductInfo> DailyProducts;
     
     public ProductInfo SelectedProduct { get; set; }
     public List<CompositionInfo> ReservedProductsToBeClaimed { get; } = new()
@@ -82,8 +84,54 @@ public class ShopViewModel
         SpinelPackages = productResponse.SpinelPackages.OrderBy(pi => pi.Price).ToList();
         GoldItems = productResponse.GoldItems.OrderBy(pi => pi.Price).ToList();
         SpinelItems = productResponse.SpinelItems.OrderBy(pi => pi.Price).ToList();
+        DailyProducts = productResponse.DailyDeals.OrderBy(pi => pi.Slot).ToList();
     }
 
+    public string GetDailyProductFramePath(string itemName, DailyProductInfo dailyProductInfo)
+    {
+        string framePath;
+        var productInfo = dailyProductInfo.ProductInfo;
+        
+        if (productInfo.Price == 0)
+        {
+            // Free Product
+            if (dailyProductInfo.NeedAds)
+            {
+                framePath = "UI/Shop/DailyProducts/CardFrameSquire";
+            }
+            else
+            {
+                if (productInfo.Compositions.Exists(c => c.Type == ProductType.Spinel))
+                {
+                    framePath = itemName switch
+                    {
+                        "Spinel50" => "UI/Shop/DailyProducts/Spinel50",
+                        _ => "UI/Shop/DailyProducts/Spinel10"
+                    };
+                }
+                else
+                {
+                    framePath = itemName switch
+                    {
+                        "Gold1000" => "UI/Shop/DailyProducts/Gold1000",
+                        _ => "UI/Shop/DailyProducts/Gold100"
+                    };
+                }
+            }
+        }
+        else
+        {
+            framePath = dailyProductInfo.Class switch
+            {
+                UnitClass.NobleKnight => "UI/Shop/DailyProducts/CardFrameNobleKnight",
+                UnitClass.Baron => "UI/Shop/DailyProducts/CardFrameBaron",
+                _ => "UI/Shop/DailyProducts/CardFrameKnight",
+            };
+        }
+
+        return framePath;
+    }
+    
     public void BuyProduct()
     {
         if (SelectedProduct == null) return;
@@ -93,7 +141,7 @@ public class ShopViewModel
         }
         else
         {
-            _paymentService.BuyProduct(SelectedProduct.ProductCode);
+            _paymentService.BuyProductAsync(SelectedProduct.ProductCode);
         }
     }
 }

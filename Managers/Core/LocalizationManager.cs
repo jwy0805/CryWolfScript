@@ -178,6 +178,25 @@ public class LocalizationManager
             tmpro.fontSize = entry.FontSize;
         }
     }
+
+    public void UpdateWarningPopupText(UI_WarningPopup popup, string messageKey)
+    {
+        if (_localizationDict == null || _localizationDict.Count == 0)
+        {
+            _localizationDict = Managers.Data.LocalizationDict;
+        }
+
+        if (_localizationDict[messageKey].TryGetValue(_language2Letter, out var entry))
+        {
+            popup.Text = entry.Text;
+            popup.Font = GetFont(entry.Font);
+            popup.FontSize = entry.FontSize;
+        }
+        else
+        {
+            Debug.LogError($"Translation key not found: {messageKey}");
+        }
+    }
     
     public void UpdateNotifyPopupText(UI_NotifyPopup popup, string titleKey, string messageKey)
     {

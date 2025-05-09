@@ -48,7 +48,6 @@ public class SinglePlayViewModel : IDisposable
     public async Task ConnectGameSession()
     {
         var sessionTask = Managers.Network.ConnectGameSession();
-        
         await sessionTask;
     }
 

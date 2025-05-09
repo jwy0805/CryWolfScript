@@ -84,7 +84,7 @@ public class CraftingViewModel
          if (res.CraftCardOk == false)
          {
              var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-             popup.SetWarning("Server trouble has occurred. Please try again later.");
+             Managers.Localization.UpdateWarningPopupText(popup, "warning_server_error");
          }
          
          Managers.UI.ShowPopupUI<UI_CraftSuccessPopup>();
@@ -114,7 +114,7 @@ public class CraftingViewModel
         if (res.ReinforceResultOk == false)
         {
             var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            popup.SetWarning("Server trouble has occurred. Please try again later.");
+            Managers.Localization.UpdateWarningPopupText(popup, "warning_server_error");
         }
         
         BindReinforceResult?.Invoke((UnitId)unitInfo.Id + 1, res.IsSuccess);

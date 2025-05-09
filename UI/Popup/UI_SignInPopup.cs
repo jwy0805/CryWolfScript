@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -49,8 +50,8 @@ public class UI_SignInPopup : UI_Popup
         _webService = webService;
         _loginViewModel = loginViewModel;
         
-        _loginViewModel.OnDirectLoginFailed -= ClearPasswordText;
         _loginViewModel.OnDirectLoginFailed += ClearPasswordText;
+        _loginViewModel.OnDirectLoginFailed += ShowLoginErrorMessage;
     }
     
     protected override void Init()
@@ -106,9 +107,20 @@ public class UI_SignInPopup : UI_Popup
     {
         Managers.UI.ClosePopupUI();
     }
+
+    private void ShowLoginErrorMessage()
+    {
+        // Managers.UI.ShowPopupUI<>();
+    }
     
     private void ClearPasswordText()
     {
         GetTextInput((int)TextInputs.PasswordInput).text = "";
+    }
+
+    private void OnDestroy()
+    {
+        _loginViewModel.OnDirectLoginFailed -= ClearPasswordText;
+        _loginViewModel.OnDirectLoginFailed -= ShowLoginErrorMessage;
     }
 }

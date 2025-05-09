@@ -11,9 +11,9 @@ using Zenject;
 public class UI_Login : UI_Scene
 {
     private LoginViewModel _viewModel;
-    
+
     private readonly Dictionary<string, GameObject> _textDict = new();
-    
+
     private enum Buttons
     {
         SignUpButton,
@@ -32,7 +32,7 @@ public class UI_Login : UI_Scene
 
     private enum Images
     {
-        
+
     }
 
     [Inject] // Initialize ViewModel
@@ -40,13 +40,14 @@ public class UI_Login : UI_Scene
     {
         _viewModel = viewModel;
     }
-    
+
     protected override void Init()
     {
         base.Init();
-        
+
         BindObjects();
         InitButtonEvents();
+        InitEvents();
     }
 
     private void Update()
@@ -63,10 +64,10 @@ public class UI_Login : UI_Scene
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         Bind<Image>(typeof(Images));
-        
+
         Managers.Localization.UpdateTextAndFont(_textDict);
     }
-
+    
     protected override void InitButtonEvents()
     {
         GetButton((int)Buttons.SignUpButton).gameObject.BindEvent(OnSignUpClicked);
@@ -75,62 +76,54 @@ public class UI_Login : UI_Scene
         GetButton((int)Buttons.GuestLoginButton).gameObject.BindEvent(OnGuestLoginClicked);
     }
 
-    #endregion
-
     private void InitEvents()
     {
-        _viewModel.OnResetGoogleButton += ResetGoogleButton;
-        _viewModel.OnResetAppleButton += ResetAppleButton;
+        _viewModel.OnRestoreButton += RestoreButton;
     }
     
+    #endregion
+
     private void OnSignUpClicked(PointerEventData data)
     {
         _viewModel.SignIn();
     }
-    
-    private void OnLoginClicked(PointerEventData data)
-    {
-        
-    }
 
+    private void OnGuestLoginClicked(PointerEventData data)
+    {
+        _viewModel.TryGuestLogin();
+    }
+    
     private void OnGoogleClicked(PointerEventData data)
     {
+        if (_viewModel.ProcessingLogin) return;
+        _viewModel.ProcessingLogin = true;
         _viewModel.RequestGoogleLogin();
         data.pointerPress.gameObject.GetComponent<Button>().interactable = false;
     }
-    
+
     private void OnAppleClicked(PointerEventData data)
     {
 #if UNITY_ANDROID
         var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-        const string titleKey = "notify_no_title";
+        const string titleKey = "notify_sign_in_error_title";
         const string messageKey = "notify_apple_login_not_supported_message";
         Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
         return;
 #endif
-        
+        if (_viewModel.ProcessingLogin) return;
+        _viewModel.ProcessingLogin = true;
         _viewModel.RequestAppleLogin();
         data.pointerPress.gameObject.GetComponent<Button>().interactable = false;
     }
-    
-    private void OnGuestLoginClicked(PointerEventData data)
-    {
-        
-    }
 
-    private void ResetGoogleButton()
+    private void RestoreButton()
     {
-        GetButton((int)Buttons.GoogleButton).interactable = true;
-    }
-
-    private void ResetAppleButton()
-    {
-        GetButton((int)Buttons.AppleButton).interactable = true;    
+        GetButton((int)Buttons.GoogleButton).gameObject.SetActive(true);
+        GetButton((int)Buttons.AppleButton).gameObject.SetActive(true);
     }
     
     private void OnDestroy()
     {
-        _viewModel.OnResetGoogleButton -= ResetGoogleButton;
-        _viewModel.OnResetAppleButton -= ResetAppleButton;
+        _viewModel.OnRestoreButton -= RestoreButton;
     }
 }

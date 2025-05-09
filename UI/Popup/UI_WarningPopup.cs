@@ -5,10 +5,18 @@ using UnityEngine;
 
 public class UI_WarningPopup : UI_Popup
 {
-    public void SetWarning(string warningText)
+    public string Text { get; set; }
+    public TMP_FontAsset Font { get; set; }
+    public int FontSize { get; set; }
+    public int DelayTime { get; set; } = 2;
+
+    protected override void Init()
     {
-        TextMeshProUGUI text = Util.FindChild<TextMeshProUGUI>(gameObject, "WarningText", true);
-        text.text = warningText;
-        Managers.UI.ClosePopupUI(this, 2);
+        var text = Util.FindChild<TextMeshProUGUI>(gameObject, "WarningText", true);
+        text.text = Text;
+        text.font = Font;
+        text.fontSize = FontSize;
+        
+        Managers.UI.ClosePopupUI(this, DelayTime);
     }
 }

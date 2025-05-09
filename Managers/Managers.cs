@@ -16,12 +16,14 @@ public class Managers : MonoBehaviour
     private readonly ObjectManager _obj = new();
     private readonly NetworkManager _network = new();
     private readonly EventManager _event = new();
+    private readonly AdsManager _ads = new();
 
     public static GameManager Game => Instance._game;
     public static MapManager Map => Instance._map;
     public static ObjectManager Object => Instance._obj;
     public static NetworkManager Network => Instance._network;
     public static EventManager Event => Instance._event;
+    public static AdsManager Ads => Instance._ads;
 
     #endregion
     
@@ -49,6 +51,9 @@ public class Managers : MonoBehaviour
     
     private void Start()
     {
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = 60;
+        
         Init();
     }
 

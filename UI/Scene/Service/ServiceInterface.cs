@@ -20,11 +20,12 @@ public interface IUserService
     void SaveDeck(DeckInfo deckInfo);
     Task LoadUserInfo();
     void BindDeck();
-    Task LoadTestUser(int userId);
+    Task LoadTestUserInfo(int userId);
     event Action<Faction> InitDeckButton;
-    bool TutorialSheepEnded { get; set; }
-    bool TutorialWolfEnded { get; set; }
+    // bool TutorialSheepEnded { get; set; }
+    // bool TutorialWolfEnded { get; set; }
     UserInfo UserInfo { get; set; }
+    UserTutorialInfo TutorialInfo { get; set; }
 }
 
 public interface IWebService
@@ -59,7 +60,7 @@ public interface IPaymentService
 {
     void Init();
     void BuyCashProduct(string productId);
-    void BuyProduct(string productId);
+    void BuyProductAsync(string productId);
     event Action OnCashPaymentSuccess;
     event Action OnPaymentSuccess;
 }

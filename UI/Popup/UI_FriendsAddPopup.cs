@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -77,7 +75,15 @@ public class UI_FriendsAddPopup : UI_Popup
 
     protected override async void InitUI()
     {
-        await LoadPendingFriends();        
+        try
+        {
+            await LoadPendingFriends();        
+
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("Failed to load pending friends: " + e);
+        }
     }
 
     private async Task LoadPendingFriends()
@@ -167,48 +173,76 @@ public class UI_FriendsAddPopup : UI_Popup
     
     private async void OnAcceptFriendRequest(PointerEventData data)
     {
-        if (data.pointerPress.transform.parent.TryGetComponent(out Friend friend) == false) return;
+        try
+        {
+            if (data.pointerPress.transform.parent.TryGetComponent(out Friend friend) == false) return;
 
-        await _lobbyVm.AcceptFriend(friend.FriendName, true);
-        await LoadPendingFriends();
-        _lobbyVm.UpdateFriendList();
+            await _lobbyVm.AcceptFriend(friend.FriendName, true);
+            await LoadPendingFriends();
+            _lobbyVm.UpdateFriendList();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("Accept friend failed: " + e);
+        }
     }
 
     private async void OnDenyFriendRequest(PointerEventData data)
     {
-        if (data.pointerPress.transform.parent.TryGetComponent(out Friend friend) == false) return;
+        try
+        {
+            if (data.pointerPress.transform.parent.TryGetComponent(out Friend friend) == false) return;
 
-        await _lobbyVm.AcceptFriend(friend.FriendName, false);
-        await LoadPendingFriends();
+            await _lobbyVm.AcceptFriend(friend.FriendName, false);
+            await LoadPendingFriends();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"Deny friend failed: {e}");
+        }
     }
 
     private async void OnSearchClicked(PointerEventData data)
     {
-        var username = GetTextInput((int)TextInputs.UsernameInput).text;
-        if (username == string.Empty) return;
+        try
+        {
+            var username = GetTextInput((int)TextInputs.UsernameInput).text;
+            if (username == string.Empty) return;
         
-        var friendUserInfoList = await _lobbyVm.SearchUsername(username);
-        BindSearchResult(friendUserInfoList);
+            var friendUserInfoList = await _lobbyVm.SearchUsername(username);
+            BindSearchResult(friendUserInfoList);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"Search friend failed: {e}");
+        }
     }
     
     private async void OnFriendRequestClicked(PointerEventData data, FriendUserInfo friendInfo)
     {
-        var go = data.pointerPress.transform.parent.gameObject;
-        var response = await _lobbyVm.SendFriendRequest(friendInfo);
-        
-        if (response.FriendRequestOk == false) return;
-        
-        var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-        var newFriendInfo = new FriendUserInfo
+        try
         {
-            UserName = friendInfo.UserName,
-            Level = friendInfo.Level,
-            RankPoint = friendInfo.RankPoint,
-            FriendStatus = response.FriendStatus
-        };
+            var go = data.pointerPress.transform.parent.gameObject;
+            var response = await _lobbyVm.SendFriendRequest(friendInfo);
         
-        popup.GetComponentInChildren<TextMeshProUGUI>().text = "Friend request sent.";
-        BindFriendRequestButton(go, newFriendInfo);
+            if (response.FriendRequestOk == false) return;
+        
+            var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
+            var newFriendInfo = new FriendUserInfo
+            {
+                UserName = friendInfo.UserName,
+                Level = friendInfo.Level,
+                RankPoint = friendInfo.RankPoint,
+                FriendStatus = response.FriendStatus
+            };
+        
+            popup.GetComponentInChildren<TextMeshProUGUI>().text = "Friend request sent.";
+            BindFriendRequestButton(go, newFriendInfo);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"Send friend request failed: {e}");
+        }
     }
     
     private void OnAlreadyFriendClicked(PointerEventData data)
@@ -221,20 +255,27 @@ public class UI_FriendsAddPopup : UI_Popup
     
     private async void OnDeleteClicked(PointerEventData data, FriendUserInfo friendInfo, bool isBlock = false)
     {
-        var go = data.pointerPress.transform.parent.gameObject;
-        var response = await _lobbyVm.DeleteFriend(friendInfo, isBlock);
-        
-        if (response.Item1.FriendRequestOk == false) return;
-        
-        var newFriendInfo = new FriendUserInfo
+        try
         {
-            UserName = friendInfo.UserName,
-            Level = friendInfo.Level,
-            RankPoint = friendInfo.RankPoint,
-            FriendStatus = response.Item1.FriendStatus
-        };
+            var go = data.pointerPress.transform.parent.gameObject;
+            var response = await _lobbyVm.DeleteFriend(friendInfo, isBlock);
         
-        BindFriendRequestButton(go, newFriendInfo);
+            if (response.Item1.FriendRequestOk == false) return;
+        
+            var newFriendInfo = new FriendUserInfo
+            {
+                UserName = friendInfo.UserName,
+                Level = friendInfo.Level,
+                RankPoint = friendInfo.RankPoint,
+                FriendStatus = response.Item1.FriendStatus
+            };
+            
+            BindFriendRequestButton(go, newFriendInfo);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"Delete friend request failed: {e}");
+        }
     }
     
     private void OnBackClicked(PointerEventData data)

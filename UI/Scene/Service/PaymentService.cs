@@ -9,6 +9,10 @@ using UnityEngine.Networking;
 using UnityEngine.Purchasing.Extension;
 using Zenject;
 
+/* Last Modified : 25. 04. 22
+ * Version : 1.02
+ */
+
 public class PaymentService : IPaymentService, IDetailedStoreListener
 {
     private readonly IWebService _webService;
@@ -17,7 +21,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
 
     private readonly HashSet<ProductDefinition> _products = new()
     {
-        new ProductDefinition("com.hamon.crywolf.consumable.abundant_harvest", UnityEngine.Purchasing.ProductType.Consumable),
+        new ProductDefinition("com.hamon.crywolf.consumable.over_power", UnityEngine.Purchasing.ProductType.Consumable),
         new ProductDefinition("com.hamon.crywolf.consumable.beginning_of_the_legend1", UnityEngine.Purchasing.ProductType.Consumable),
         new ProductDefinition("com.hamon.crywolf.consumable.beginning_of_the_legend2", UnityEngine.Purchasing.ProductType.Consumable),
         new ProductDefinition("com.hamon.crywolf.consumable.beginners_spirit", UnityEngine.Purchasing.ProductType.Consumable),
@@ -73,20 +77,27 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         _storeController?.InitiatePurchase(productCode);
     }
 
-    public async void BuyProduct(string productCode)
+    public async void BuyProductAsync(string productCode)
     {
-        var packet = new VirtualPaymentPacketRequired
+        try
         {
-            AccessToken = _tokenService.GetAccessToken(),
-            ProductCode = productCode
-        };
+            var packet = new VirtualPaymentPacketRequired
+            {
+                AccessToken = _tokenService.GetAccessToken(),
+                ProductCode = productCode
+            };
         
-        await _webService.SendWebRequestAsync<VirtualPaymentPacketResponse>(
-            "Payment/Purchase", UnityWebRequest.kHttpVerbPOST, packet);
+            await _webService.SendWebRequestAsync<VirtualPaymentPacketResponse>(
+                "Payment/Purchase", UnityWebRequest.kHttpVerbPOST, packet);
         
-        var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-        // popup.Text = "Payment Success!";
-        OnPaymentSuccess?.Invoke();
+            var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+            // popup.Text = "Payment Success!";
+            OnPaymentSuccess?.Invoke();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"PaymentService BuyProductAsync Error: {e}");
+        }
     }
 
     public void OnInitialized(IStoreController controller, IExtensionProvider extensions)
@@ -116,26 +127,37 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
 
     private async void SendReceiptToServer(string receipt, Product purchaseProduct)
     {
-        var packet = new CashPaymentPacketRequired
+        try
         {
-            AccessToken = _tokenService.GetAccessToken(),
-            Receipt = receipt,
-            ProductCode = purchaseProduct.definition.id,
-        };
-        var response = await _webService
-            .SendWebRequestAsync<CashPaymentPacketResponse>("Payment/PurchaseSpinel", "POST", packet);
+            var packet = new CashPaymentPacketRequired
+            {
+                AccessToken = _tokenService.GetAccessToken(),
+                Receipt = receipt,
+                ProductCode = purchaseProduct.definition.id,
+            };
+            var response = await _webService
+                .SendWebRequestAsync<CashPaymentPacketResponse>("Payment/PurchaseSpinel", "POST", packet);
 
-        if (response.PaymentOk)
-        {
-            _storeController.ConfirmPendingPurchase(purchaseProduct);
-            var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-            // popup.Text = "Payment Success!";
-            OnCashPaymentSuccess?.Invoke();
+            if (response.PaymentOk)
+            {
+                _storeController.ConfirmPendingPurchase(purchaseProduct);
+                var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+                const string titleKey = "notify_payment_success_title";
+                const string messageKey = "notify_payment_success_message";
+                Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+                OnCashPaymentSuccess?.Invoke();
+            }
+            else
+            { 
+                var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+                const string titleKey = "notify_payment_failed_title";
+                const string messageKey = "notify_payment_failed_message";
+                Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+            }
         }
-        else
-        { 
-            var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            popup.SetWarning("Failed to purchase item.");
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
         }
     }
 

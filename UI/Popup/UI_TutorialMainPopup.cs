@@ -11,6 +11,10 @@ using UnityEngine.UI;
 using UnityEngine.Video;
 using Zenject;
 
+/* Last Modified : 25. 04. 22
+ * Version : 1.02
+ */
+
 public class UI_TutorialMainPopup : UI_Popup
 {
     private TutorialViewModel _tutorialVm;
@@ -106,7 +110,7 @@ public class UI_TutorialMainPopup : UI_Popup
     protected override void InitButtonEvents()
     {
         GetButton((int)Buttons.ContinueButton).gameObject.BindEvent(OnContinueClicked);
-        GetButton((int)Buttons.ExitButton).gameObject.BindEvent(OnExitButtonClicked);
+        GetButton((int)Buttons.ExitButton).gameObject.BindEvent(OnExitClicked);
         GetButton((int)Buttons.WolfButton).gameObject.BindEvent(OnWolfClicked);
         GetButton((int)Buttons.SheepButton).gameObject.BindEvent(OnSheepClicked);
         GetButton((int)Buttons.PlayButton).gameObject.BindEvent(OnPlayClicked);
@@ -343,7 +347,7 @@ public class UI_TutorialMainPopup : UI_Popup
         _ = Managers.Network.ConnectGameSession();
     }
     
-    private void OnExitButtonClicked(PointerEventData data)
+    private void OnExitClicked(PointerEventData data)
     {
         var popup = Managers.UI.ShowPopupUI<UI_NotifySelectPopup>();
         
@@ -353,6 +357,7 @@ public class UI_TutorialMainPopup : UI_Popup
         popup.SetYesCallback(() =>
         {
             Managers.UI.CloseAllPopupUI();
+            // TODO: Change Tutorial State on DB
         });
     }
 

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.AspNetCore.SignalR.Protocol;
+using Microsoft.Extensions.DependencyInjection;
 using UnityEngine;
 using Zenject;
 using Zenject.SpaceFighter;
@@ -20,14 +22,25 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
     public Action<AcceptInvitationPacketResponse> OnInvitationSuccess { get; set; }
     public Action<FriendRequestPacketResponse> OnFriendRequestNotificationReceived { get; set; }
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void PreserveProtocol()
+    {
+        // This is to ensure that the JsonHubProtocol is preserved in the build.
+        _ = typeof(JsonHubProtocol);
+    }
+    
     public async Task Connect(string username)
     {
         if (_connection is { State: HubConnectionState.Connected }) return;
         
         var url = Managers.Network.BaseUrl + "/signalRHub";
         Debug.Log(url);
+
+        _connection = new HubConnectionBuilder()
+            .WithUrl(url)
+            .AddNewtonsoftJsonProtocol()
+            .Build();
         
-        _connection = new HubConnectionBuilder().WithUrl(url).Build();
         Register();
 
         try
@@ -37,7 +50,7 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
         }
         catch (Exception e)
         {
-            Debug.Log($"Error: {e.Message}");
+            Debug.Log($"Signal R Hub Connection Error: {e.Message}");
         }
     }
 
@@ -167,7 +180,7 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
     private void OnToastNotification()
     {
         var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-        popup.SetWarning("Invitation Sent!");
+        Managers.Localization.UpdateWarningPopupText(popup, "warning_invitation_sent");
     }
     
     private void OnGameRoomJoined(AcceptInvitationPacketResponse response)
@@ -178,7 +191,7 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
     private void OnRejectInvitation(AcceptInvitationPacketResponse response)
     {
         var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-        popup.SetWarning("Invitation Rejected!");
+        Managers.Localization.UpdateWarningPopupText(popup, "warning_invitation_rejected");
     }
     
     private void OnFriendRequestNotification(FriendRequestPacketResponse response)

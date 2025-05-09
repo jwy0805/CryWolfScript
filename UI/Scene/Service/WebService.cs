@@ -42,7 +42,7 @@ public class WebService : IWebService
         
         if (uwr.result is UnityWebRequest.Result.ConnectionError or UnityWebRequest.Result.ProtocolError)
         {
-            Debug.LogError($"{uwr.error} : {uwr.downloadHandler.text}");
+            Debug.LogError($"{uwr.error} : {uwr.downloadHandler.text}, {url}");
         }
         else
         {

@@ -23,11 +23,11 @@ using Assets.SimpleSignIn.Google.Scripts;
 #pragma warning disable CS0618 // 형식 또는 멤버는 사용되지 않습니다.
 
 
-/* Last Modified : 25. 03. 26
- * Version : 1.013
+/* Last Modified : 25. 05. 08
+ * Version : 1.021
  */
 
-public class LoginViewModel : IDisposable
+public class LoginViewModel : IInitializable, IDisposable
 {
     // External service interfaces (Dependency Injection)
     private readonly IUserService _userService;
@@ -40,12 +40,12 @@ public class LoginViewModel : IDisposable
     private IAppleAuthManager _appleAuthManager;
     
     // Apple login properties
-    public string AppleToken { get; set; }
-    public string AppleError { get; set; }
+    private string _appleToken;
 
     public event Action OnDirectLoginFailed;
-    public event Action OnResetGoogleButton;
-    public event Action OnResetAppleButton;
+    public event Action OnRestoreButton;
+    
+    public bool ProcessingLogin { get; set; }
     
     public string UserAccount
     {
@@ -64,16 +64,38 @@ public class LoginViewModel : IDisposable
         _webService = webService;
         _tokenService = tokenService;
         
-        InitAuth();
+        Initialize();
         
-        #if UNITY_IOS && !UNITY_EDITOR
-        InitAppleAuth();    
-        #endif
+        Debug.Log("LoginViewModel Constructor");
     }
 
     #region Initialization
     
-    private void InitAuth()
+    public async void Initialize()          // ← async void 유지
+    {
+        try
+        {
+            Debug.Log("LoginViewModel Initialize");
+            
+            // 1) Google Auth (동기)
+            InitGoogleAuth();
+
+#if UNITY_IOS && !UNITY_EDITOR
+            // 2) UGS Core (비동기)  ─────────────────────────────
+            await InitUgs().ConfigureAwait(false);
+
+            // 3) Apple Auth (동기) ─────────────────────────────
+            InitAppleAuth();                
+#endif
+        }
+        catch (Exception ex)
+        {
+            // 모든 예외를 한 곳에서 처리해 로그 유실 방지
+            Debug.LogException(ex);
+        }
+    }
+    
+    private void InitGoogleAuth()
     {
         _googleAuth = new GoogleAuth();
         _googleAuth.TryResume(OnGoogleSignIn, OnGetGoogleTokenResponse);
@@ -89,31 +111,81 @@ public class LoginViewModel : IDisposable
         Debug.Log("Apple Auth Initialized");
     }
     
+    private async Task InitUgs()
+    {
+        try
+        {
+            await UnityServices.InitializeAsync();
+            Debug.Log("Unity Gaming Services Initialized");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Unity Gaming Service Initializing Failed: {e}");
+        }
+    }    
+    
     #endregion
     
     #region Direct Login
     
     // This method is called when the login button is clicked, not using SOCIAL LOGIN such as google, facebook, apple
-    public void TryDirectLogin()
+    public async void TryDirectLogin()
     {
-        var packet = new LoginUserAccountPacketRequired { UserAccount = UserAccount, Password = Password };
-        _ = _webService.SendWebRequest<LoginUserAccountPacketResponse>(
-            "UserAccount/Login", UnityWebRequest.kHttpVerbPOST, packet, response =>
+        try
+        {
+            var packet = new LoginUserAccountPacketRequired { UserAccount = UserAccount, Password = Password };
+            var task = _webService.SendWebRequestAsync<LoginUserAccountPacketResponse>(
+                "UserAccount/Login", UnityWebRequest.kHttpVerbPOST, packet);
+            
+            await task;
+            
+            var response = task.Result;
+            if (response == null)
             {
-                if (response.LoginOk)
-                {
-                    // Login Success
-                    HandleLoginSuccess(response.AccessToken, response.RefreshToken);
-                }
-                else
-                {
-                    // Login FailedGoogleService-Info
-                    OnDirectLoginFailed?.Invoke();
-                    // TODO: Show error notice popup
-                }
-            });
+                Debug.LogError("Direct login response is null");
+                OnDirectLoginFailed?.Invoke();
+                return;
+            }
+            
+            HandleLoginSuccess(response.AccessToken, response.RefreshToken);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Direct login error: {e}");
+        }
     }
     
+    #endregion
+
+    #region Guest Login
+
+    public async void TryGuestLogin()
+    {
+        try
+        {
+            var guestId = SystemInfo.deviceUniqueIdentifier;
+            var packet = new LoginGuestPacketRequired { GuestId = guestId };
+            var task = _webService.SendWebRequestAsync<LoginGuestPacketResponse>(
+                "UserAccount/LoginGuest", UnityWebRequest.kHttpVerbPOST, packet);
+            
+            await task;
+            
+            var response = task.Result;
+            if (response.LoginOk)
+            {
+                HandleLoginSuccess(response.AccessToken, response.RefreshToken);
+            }
+            else
+            {
+                Debug.LogError("Guest login failed");
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Guest login error: {e}");
+        }
+    }
+
     #endregion
 
     #region Social Login: Apple
@@ -149,21 +221,23 @@ public class LoginViewModel : IDisposable
             var idToken = Encoding.UTF8.GetString(token, 0, tokenLength);
             
             Debug.Log($"Sign-in with Apple successfully done. IDToken: {idToken}");
-            AppleToken = idToken;
+            _appleToken = idToken;
+            ProcessingLogin = false;
 
-            _ = HandleAppleSignInSuccessAsync(AppleToken);
+            _ = HandleAppleSignInSuccessAsync(_appleToken);
         }
         else
         {
             Debug.LogError("Sign-in with Apple error. Credential is null or not IAppleIDCredential.");
-            AppleError = "Retrieving Apple ID Token failed.";
         }
+        
+        OnRestoreButton?.Invoke();
     }
     
     private void OnAppleSignInError(IAppleError error)
     {
         Debug.Log($"Sign-in with Apple error. Message: {error}");
-        AppleError = "Retrieving Apple Id Token failed.";
+        OnRestoreButton?.Invoke();
     }
     
     private async Task HandleAppleSignInSuccessAsync(string idToken)
@@ -171,7 +245,6 @@ public class LoginViewModel : IDisposable
         try
         {
             await AuthenticationService.Instance.SignInWithAppleAsync(idToken);
-            Debug.Log("SignIn is successful.");
             
             // Handle login success
             var appleLoginPacket = new LoginApplePacketRequired { IdToken = idToken };
@@ -193,8 +266,6 @@ public class LoginViewModel : IDisposable
         {
             Debug.LogError("Apple SignIn RequestFailedException: " + e);
         }
-        
-        OnResetAppleButton?.Invoke();
     }
 
     private async Task UnlinkAppleAsync()
@@ -238,6 +309,8 @@ public class LoginViewModel : IDisposable
             return;
         }
         
+        ProcessingLogin = false;
+        
         var jwt = new JWT(tokenResponse.IdToken);
         _googleIdToken = tokenResponse.IdToken;
         Debug.Log($"JSON Web Token (JWT) Payload: {jwt.Payload}");
@@ -246,6 +319,8 @@ public class LoginViewModel : IDisposable
 
     private void OnValidateGoogleSignature(bool success, string error)
     {
+        OnRestoreButton?.Invoke();
+
         if (success == false)
         {
             Debug.LogError($"Google token response failed: {error}");
@@ -253,8 +328,6 @@ public class LoginViewModel : IDisposable
         }
         
         _ = HandleGoogleSignInSuccessAsync(_googleIdToken);
-        
-        OnResetGoogleButton?.Invoke();
     }
     
     private async Task HandleGoogleSignInSuccessAsync(string idToken)
@@ -298,17 +371,7 @@ public class LoginViewModel : IDisposable
     
     public void ForgotPassword()
     {
-        
-    }
-
-    public void HandleAppleSignInSuccess()
-    {
-        // 서버 연동, 계정 처리 로직
-    }
-    
-    public void HandleAppleSignInFailed()
-    {
-        
+        // TODO: Send password reset email
     }
     
     public void Dispose()

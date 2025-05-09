@@ -6,6 +6,10 @@ using UnityEngine;
 using UnityEngine.Networking;
 using Zenject;
 
+/* Last Modified : 25. 04. 22
+ * Version : 1.02
+ */
+
 public class TutorialViewModel : IDisposable
 {
     private readonly IUserService _userService;
@@ -175,8 +179,10 @@ public class TutorialViewModel : IDisposable
         
         var apiTask = _webService.SendWebRequestAsync<ChangeActPacketResponse>(
             "Match/ChangeActByTutorial", UnityWebRequest.kHttpVerbPUT, changePacket);
+        Debug.Log("Tutorial ViewModel StartTutorial");
 
         await apiTask;
+        Debug.Log($"Tutorial ViewModel StartTutorial-2 {apiTask.Result.ChangeOk}");
         
         if (apiTask.Result.ChangeOk)
         {
@@ -265,7 +271,7 @@ public class TutorialViewModel : IDisposable
         ClearDictionary();
     }
 
-    public void ShowTutorialContinueNotifyPopupSheep()
+    private void ShowTutorialContinueNotifyPopupSheep()
     {
         const string titleKey = "notify_select_tutorial_continue_title";
         const string messageKey = "notify_select_tutorial_wolf_continue_message";
@@ -275,7 +281,7 @@ public class TutorialViewModel : IDisposable
             RejectFollowWolfTutorial);
     }
     
-    public void ShowTutorialContinueNotifyPopupWolf()
+    private void ShowTutorialContinueNotifyPopupWolf()
     {
         const string titleKey = "notify_select_tutorial_continue_title";
         const string messageKey = "notify_select_tutorial_sheep_continue_message";
@@ -334,11 +340,13 @@ public class TutorialViewModel : IDisposable
     {
         if (faction == Faction.Wolf)
         {
-            _userService.TutorialWolfEnded = true;
+            _userService.TutorialInfo.WolfTutorialDone = true;
+            UpdateTutorialInfo(TutorialType.BattleWolf);
         }
         else
         {
-            _userService.TutorialSheepEnded = true;
+            _userService.TutorialInfo.SheepTutorialDone = true;
+            UpdateTutorialInfo(TutorialType.BattleSheep);
         }
         
         var popup = Managers.UI.ShowPopupUI<UI_RewardPopup>();
@@ -356,21 +364,29 @@ public class TutorialViewModel : IDisposable
         Managers.Network.Disconnect();
     }
 
-    public void CompleteBattleTutorial()
+    public void CompleteTutorialWolf()
+    {
+        ShowTutorialContinueNotifyPopupWolf();   
+    }
+    
+    public void CompleteTutorialSheep()
+    {
+        ShowTutorialContinueNotifyPopupSheep();
+    }
+    
+    private void UpdateTutorialInfo(TutorialType tutorialType)
     {
         var packet = new UpdateTutorialRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            TutorialTypes = new[] { TutorialType.BattleSheep, TutorialType.BattleWolf },
+            TutorialTypes = new[] { tutorialType },
             Done = true
         };
-
+        
         _ = _webService.SendWebRequestAsync<UpdateTutorialResponse>(
             "UserAccount/UpdateTutorial", UnityWebRequest.kHttpVerbPUT, packet);
-
-        Managers.UI.ShowPopupUI<UI_FactionChangePopup>();
     }
-    
+
     public void SetTutorialReward(UnitId rewardUnitId)
     {
         RewardUnitId = rewardUnitId;

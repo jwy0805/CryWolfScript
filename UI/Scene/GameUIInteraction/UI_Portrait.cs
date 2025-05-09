@@ -83,7 +83,11 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
             var ray = Camera.main.ScreenPointToRay(Input.mousePosition); 
             _hitPoint = Vector3.zero;
             if (Physics.Raycast(ray, out _, Mathf.Infinity, LayerMask.GetMask("UI"))) return;
-            if (Physics.Raycast(ray, out _, Mathf.Infinity, LayerMask.GetMask("Base"))) return;
+            if (Physics.Raycast(ray, out _, Mathf.Infinity, LayerMask.GetMask("Base")))
+            {
+                Debug.Log("hit cex");
+                return;
+            }
             if (Physics.Raycast(ray, out var hit, Mathf.Infinity, LayerMask.GetMask("Ground")))
             {
                 _hitPoint = hit.point;

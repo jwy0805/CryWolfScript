@@ -11,8 +11,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Zenject;
 
-/* Last Modified : 24. 10. 27
- * Version : 1.017
+/* Last Modified : 25. 04. 22
+ * Version : 1.02
  */
 
 // This class includes the binding, initialization and core logics for the main lobby UI.
@@ -52,7 +52,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private Transform _specialPackagePanel;
     private Transform _beginnerPackagePanel;
     private Transform _reservedSalePanel;
-    private Transform _dailyDealPanel;
+    private Transform _dailyProductPanel;
     private Transform _goldStorePanel;
     private Transform _spinelStorePanel;
     private Transform _spinelPackagePanel;
@@ -321,6 +321,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         SpecialPackagePanel,
         ReservedSalePanel,
         DailyDealPanel,
+        DailyDealProductPanel,
         SpinelStorePanel,
         GoldStorePanel,
         GoldPackagePanel,
@@ -357,65 +358,52 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         _lobbyVm.Initialize(Util.FindChild(gameObject, "HorizontalContents", true)
             .transform.childCount);
 
-        _lobbyVm.OnFriendRequestNotificationReceived -= OnFriendAlert;
         _lobbyVm.OnFriendRequestNotificationReceived += OnFriendAlert;
-        _lobbyVm.OnFriendRequestNotificationOff -= OffFriendAlert;
         _lobbyVm.OnFriendRequestNotificationOff += OffFriendAlert;
-        _lobbyVm.OnMailAlert -= OnMailAlert;
         _lobbyVm.OnMailAlert += OnMailAlert;
-        _lobbyVm.OffMailAlert -= OffMailAlert;
         _lobbyVm.OffMailAlert += OffMailAlert;
-        _lobbyVm.OnPageChanged -= UpdateScrollbar;
         _lobbyVm.OnPageChanged += UpdateScrollbar;
-        _lobbyVm.ChangeButtonFocus -= ChangeButtonFocus;
         _lobbyVm.ChangeButtonFocus += ChangeButtonFocus;
 
-        _paymentService.OnPaymentSuccess -= OnMailAlert;
         _paymentService.OnPaymentSuccess += OnMailAlert;
-        _paymentService.OnCashPaymentSuccess -= OnMailAlert;
         _paymentService.OnCashPaymentSuccess += OnMailAlert;
         
-        _deckVm.OnDeckInitialized -= SetDeckUI;
         _deckVm.OnDeckInitialized += SetDeckUI;
-        _deckVm.OnDeckSwitched -= SetDeckButtonUI;
         _deckVm.OnDeckSwitched += SetDeckButtonUI;
-        _deckVm.OnDeckSwitched -= ResetDeckUI;
         _deckVm.OnDeckSwitched += ResetDeckUI;
         
-        _collectionVm.OnCardInitialized -= SetCollectionUI;
         _collectionVm.OnCardInitialized += SetCollectionUI;
-        _collectionVm.OnCardSwitched -= SwitchCollection;
         _collectionVm.OnCardSwitched += SwitchCollection;
 
-        _craftingVm.SetCardOnCraftingPanel -= SetCardOnCraftingPanel;
         _craftingVm.SetCardOnCraftingPanel += SetCardOnCraftingPanel;
-        _craftingVm.SetMaterialsOnCraftPanel -= InitMaterialsOnCraftPanel;
         _craftingVm.SetMaterialsOnCraftPanel += InitMaterialsOnCraftPanel;
-        _craftingVm.InitCraftingPanel -= InitCraftingPanel;
         _craftingVm.InitCraftingPanel += InitCraftingPanel;
-        _craftingVm.SetCollectionUI -= SetCollectionUI;
         _craftingVm.SetCollectionUI += SetCollectionUI;
         
-        _tutorialVm.OnInitTutorialCamera1 -= InitTutorialMainCamera1;
         _tutorialVm.OnInitTutorialCamera1 += InitTutorialMainCamera1;
-        _tutorialVm.OnInitTutorialCamera2 -= InitTutorialMainCamera2;
         _tutorialVm.OnInitTutorialCamera2 += InitTutorialMainCamera2;
         
-        _userService.InitDeckButton -= SetDeckButtonUI;
         _userService.InitDeckButton += SetDeckButtonUI;
     }
 
     protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
 
-        BindObjects();
-        InitButtonEvents();
+            BindObjects();
+            InitButtonEvents();
 
-        _lobbyVm.SetCurrentPage(2);
-
-        await InitMainLobby();
-        await _lobbyVm.JoinLobby();
+            _lobbyVm.SetCurrentPage(2);
+            
+            await InitMainLobby();
+            await _lobbyVm.JoinLobby();
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
     }
 
     private void Update()
@@ -834,7 +822,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         if (_selectedCard == null || _selectedCardForCrafting == null)
         {
             var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            popup.SetWarning("카드를 선택해주세요.");
+            Managers.Localization.UpdateWarningPopupText(popup, "warning_select_card");
             return;
         }
         
@@ -861,7 +849,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         if (_selectedCard == null || _selectedCardForCrafting == null)
         {
             var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            popup.SetWarning("카드를 선택해주세요.");
+            Managers.Localization.UpdateWarningPopupText(popup, "warning_select_card");
             return;
         }
         
@@ -905,7 +893,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
     private void OnRecyclingClicked(PointerEventData data)
     {
         var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-        popup.SetWarning("준비중인 기능입니다.");
+        Managers.Localization.UpdateWarningPopupText(popup, "warning_coming_soon");
     }
 
     private void OnProductClicked(PointerEventData data)
@@ -934,12 +922,17 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         if (product == null) return;
         _shopVm.SelectedProduct = product.ProductInfo;
     }
+
+    private void OnAdsProductClicked(PointerEventData data)
+    {
+        
+    }
     
     private void OnReservedSalesClicked(PointerEventData data)
     {
         var go = data.pointerPress.gameObject;
         if (go.TryGetComponent(out ProductPackage package) == false) return;
-        
+        if (package.IsDragging) return;
         var popup = Managers.UI.ShowPopupUI<UI_ProductReservedInfoPopup>();
         var info = Managers.Data.MaterialInfoDict[package.ProductInfo.Compositions[0].CompositionId];
         var parent = Util.FindChild(popup.gameObject, "Frame", true).transform;
@@ -1124,9 +1117,9 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
             iconRect.anchorMax = new Vector2(iconRect.anchorMax.x, 0.66f);
         }
 
-        // Test
-        // await _userService.LoadTestUser(userId: 1);
-        // //MainLobby_Item Setting
+        // // Test
+        // await _userService.LoadTestUserInfo(userId: 1);
+        // MainLobby_Item Setting
         await _userService.LoadUserInfo();
         await Task.WhenAll(
             InitCollection(),
@@ -1136,7 +1129,17 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
             _lobbyVm.ConnectSignalR(_userService.UserInfo.UserName));
         
         BindUserInfo();
-        ProcessTutorial();
+        
+#if UNITY_IOS && !UNITY_EDITOR
+        await Managers.Ads.RequestAttAsync();
+#endif
+        Managers.Ads.FetchIdfa();
+        Managers.Ads.InitLevelPlay();
+        
+        if (_userService.TutorialInfo.SheepTutorialDone == false || _userService.TutorialInfo.WolfTutorialDone == false)
+        {
+            ProcessTutorial();
+        }
     }
 
     private void BindUserInfo()
@@ -1157,29 +1160,25 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
 
     private void ProcessTutorial()
     {
-        if (_userService.TutorialWolfEnded ^ _userService.TutorialSheepEnded)
+        var tutorialInfo = _userService.TutorialInfo;
+        
+        // Case 1: Both tutorials are completed
+        if (tutorialInfo.WolfTutorialDone && tutorialInfo.SheepTutorialDone)
         {
-            if (_userService.TutorialWolfEnded)
-            {
-                _tutorialVm.ShowTutorialContinueNotifyPopupWolf();   
-            }
-
-            if (_userService.TutorialSheepEnded)
-            {
-                _tutorialVm.ShowTutorialContinueNotifyPopupSheep();
-            }
-
             return;
         }
-        
-        if (_userService.TutorialWolfEnded && _userService.TutorialSheepEnded)
+
+        // Case 2: One of the tutorials is completed, Succeed in the other tutorial
+        if (tutorialInfo.WolfTutorialDone)
         {
-            _userService.UserInfo.BattleTutorialDone = true;
-            _tutorialVm.CompleteBattleTutorial();
-            return;
+            _tutorialVm.CompleteTutorialWolf();
         }
-        
-        if (_userService.UserInfo.BattleTutorialDone == false)
+        else if (tutorialInfo.SheepTutorialDone)
+        {
+            _tutorialVm.CompleteTutorialSheep();
+        }
+        // Case 3: Both tutorials are not completed -> First time to play
+        else
         {
             Managers.UI.ShowPopupUI<UI_TutorialMainPopup>();
         }
@@ -1301,35 +1300,42 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        Debug.Log("end drag");
+        
     }
 
     #endregion
 
     private async void OnDestroy()
     {
-        _lobbyVm.OnFriendRequestNotificationReceived -= OnFriendAlert;
-        _lobbyVm.OnFriendRequestNotificationOff -= OffFriendAlert;
-        _lobbyVm.OnMailAlert -= OnMailAlert;
-        _lobbyVm.OffMailAlert -= OffMailAlert;
-        _lobbyVm.OnPageChanged -= UpdateScrollbar;
-        _lobbyVm.ChangeButtonFocus -= ChangeButtonFocus;
-        _paymentService.OnPaymentSuccess -= OnMailAlert;
-        _paymentService.OnCashPaymentSuccess -= OnMailAlert;
-        _deckVm.OnDeckInitialized -= SetDeckUI;
-        _deckVm.OnDeckSwitched -= SetDeckButtonUI;
-        _deckVm.OnDeckSwitched -= ResetDeckUI;
-        _collectionVm.OnCardInitialized -= SetCollectionUI;
-        _collectionVm.OnCardSwitched -= SwitchCollection;
-        _craftingVm.SetCardOnCraftingPanel -= SetCardOnCraftingPanel;
-        _craftingVm.SetMaterialsOnCraftPanel -= InitMaterialsOnCraftPanel;
-        _craftingVm.InitCraftingPanel -= InitCraftingPanel;
-        _craftingVm.SetCollectionUI -= SetCollectionUI;
-        _tutorialVm.OnInitTutorialCamera1 -= InitTutorialMainCamera1;
-        _tutorialVm.OnInitTutorialCamera2 -= InitTutorialMainCamera2;
-        _userService.InitDeckButton -= SetDeckButtonUI;
+        try
+        {
+            _lobbyVm.OnFriendRequestNotificationReceived -= OnFriendAlert;
+            _lobbyVm.OnFriendRequestNotificationOff -= OffFriendAlert;
+            _lobbyVm.OnMailAlert -= OnMailAlert;
+            _lobbyVm.OffMailAlert -= OffMailAlert;
+            _lobbyVm.OnPageChanged -= UpdateScrollbar;
+            _lobbyVm.ChangeButtonFocus -= ChangeButtonFocus;
+            _paymentService.OnPaymentSuccess -= OnMailAlert;
+            _paymentService.OnCashPaymentSuccess -= OnMailAlert;
+            _deckVm.OnDeckInitialized -= SetDeckUI;
+            _deckVm.OnDeckSwitched -= SetDeckButtonUI;
+            _deckVm.OnDeckSwitched -= ResetDeckUI;
+            _collectionVm.OnCardInitialized -= SetCollectionUI;
+            _collectionVm.OnCardSwitched -= SwitchCollection;
+            _craftingVm.SetCardOnCraftingPanel -= SetCardOnCraftingPanel;
+            _craftingVm.SetMaterialsOnCraftPanel -= InitMaterialsOnCraftPanel;
+            _craftingVm.InitCraftingPanel -= InitCraftingPanel;
+            _craftingVm.SetCollectionUI -= SetCollectionUI;
+            _tutorialVm.OnInitTutorialCamera1 -= InitTutorialMainCamera1;
+            _tutorialVm.OnInitTutorialCamera2 -= InitTutorialMainCamera2;
+            _userService.InitDeckButton -= SetDeckButtonUI;
         
-        await _lobbyVm.LeaveLobby();
-        _lobbyVm.Dispose();
+            await _lobbyVm.LeaveLobby();
+            _lobbyVm.Dispose();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Main Lobby Destroy Error: {e}");
+        }
     }
 }

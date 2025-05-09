@@ -8,6 +8,7 @@ using Google.Protobuf.Protocol;
 
 public class UserInfo
 {
+    public string UserAccount { get; set; }
     public string UserName { get; set; }
     public int Level { get; set; }
     public int Exp { get; set; }
@@ -18,7 +19,12 @@ public class UserInfo
     public int WinRate { get; set; }
     public int Gold { get; set; }
     public int Spinel { get; set; }
-    public bool BattleTutorialDone { get; set; }
+}
+
+public class UserTutorialInfo
+{
+    public bool WolfTutorialDone { get; set; }
+    public bool SheepTutorialDone { get; set; }
     public bool CollectionTutorialDone { get; set; }
     public bool ReinforceTutorialDone { get; set; }
 }
@@ -69,11 +75,12 @@ public class CompositionInfo
 
 public class DailyProductInfo
 {
-    public int Id { get; set; }
-    public int Price { get; set; }
-    public CurrencyType CurrencyType { get; set; }
-    public ProductCategory Category { get; set; }
-    public bool AlreadyBought { get; set; }
+    public ProductInfo ProductInfo { get; set; }
+    public UnitClass Class { get; set; }
+    public int Slot { get; set; }
+    public bool Bought { get; set; }
+    public bool AdsWatched { get; set; }
+    public bool NeedAds { get; set; }
 }
 
 public class UnitInfo : IAsset
@@ -278,6 +285,18 @@ public class LoginGooglePacketResponse
     public string RefreshToken { get; set; }
 }
 
+public class LoginGuestPacketRequired
+{
+    public string GuestId { get; set; }
+}
+
+public class LoginGuestPacketResponse
+{
+    public bool LoginOk { get; set; }
+    public string AccessToken { get; set; }
+    public string RefreshToken { get; set; }
+}
+
 public class ChangeActPacketRequired
 {
     public string AccessToken { get; set; }
@@ -363,6 +382,7 @@ public class LoadUserInfoPacketResponse
 {
     public bool LoadUserInfoOk { get; set; }
     public UserInfo UserInfo { get; set; }
+    public UserTutorialInfo UserTutorialInfo { get; set; }
 }
 
 public class LoadTestUserPacketRequired
@@ -374,6 +394,7 @@ public class LoadTestUserPacketResponse
 {
     public bool LoadTestUserOk { get; set; }
     public UserInfo UserInfo { get; set; }
+    public UserTutorialInfo UserTutorialInfo { get; set; }
     public string AccessToken { get; set; }
     public string RefreshToken { get; set; }
 }
