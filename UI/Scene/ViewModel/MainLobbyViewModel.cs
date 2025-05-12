@@ -31,6 +31,7 @@ public class MainLobbyViewModel : IDisposable
     public event Action<int> OnPageChanged;
     public event Action<int> ChangeButtonFocus;
     
+
     public float[] ScrollPageValues { get; private set; }
     public bool IsSwipeMode { get; set; } = false;
     public float SwipeTime => 0.2f;

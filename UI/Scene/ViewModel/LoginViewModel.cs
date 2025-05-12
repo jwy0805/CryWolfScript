@@ -54,8 +54,6 @@ public class LoginViewModel : IInitializable, IDisposable
     }
     public string Password { get; set; }
     public bool RememberMe { get; set; }
-    public bool ReadPolicy { get; set; }
-    public bool ReadTerms { get; set; }
     
     [Inject]
     public LoginViewModel(IUserService userService, IWebService webService, ITokenService tokenService)

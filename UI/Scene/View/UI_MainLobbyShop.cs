@@ -163,8 +163,15 @@ public partial class UI_MainLobby
             {
                 priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
             }
-            
-            // item.BindEvent(OnProductClicked);
+
+            if (dailyProductInfo.Slot < 3)
+            {
+                item.BindEvent(OnProductClicked);
+            }
+            else
+            {
+                item.BindEvent(data => OnAdsProductClicked(data, dailyProductInfo));
+            }
         }
     }
 

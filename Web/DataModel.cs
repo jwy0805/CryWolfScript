@@ -1,3 +1,5 @@
+using NUnit.Framework.Constraints;
+
 public enum MaterialId
 {
     None = 0,
@@ -298,6 +300,21 @@ public enum CashCurrencyType
     THB, // Thai Baht
 }
 
+public enum Countries
+{
+    None,
+    KR, // South Korea
+    US, // United States
+    JP, // Japan
+    CN, // China
+    EU, // European Union
+    BR, // Brazil
+    ID, // Indonesia
+    VN, // Vietnam
+    TH, // Thailand
+    TW, // Taiwan
+}
+
 public enum TransactionStatus
 {
     None,
@@ -308,4 +325,12 @@ public enum TransactionStatus
     Pending,
     Expired,
     PartiallyRefunded,
+}
+
+public enum ConsentStatus
+{
+    None,
+    AllFinished,
+    PolicyFinished,
+    RegulationFinished,
 }

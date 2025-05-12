@@ -20,8 +20,6 @@ public class UI_SignUpPopup : UI_Popup
     {
         ExitButton,
         VerifyButton,
-        GoingPolicyButton,
-        GoingTermsButton,
     }
     
     private enum TextInputs
@@ -39,16 +37,7 @@ public class UI_SignUpPopup : UI_Popup
         SignUpPasswordText,
         SignUpPasswordConfirmText,
         SignUpPasswordRuleText,
-        SignUpPrivacyPolicyText,
-        SignUpTermOfServiceText,
-        SignUpPolicyInfoText,
         SignUpEmailVerificationText,
-    }
-
-    private enum Toggles
-    {
-        PolicyToggle,
-        TermsToggle,
     }
     
     [Inject]
@@ -72,7 +61,6 @@ public class UI_SignUpPopup : UI_Popup
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         Bind<TMP_InputField>(typeof(TextInputs));
-        Bind<Toggle>(typeof(Toggles));
         
         Managers.Localization.UpdateTextAndFont(_textDict);
         Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.EmailInput));
@@ -87,14 +75,6 @@ public class UI_SignUpPopup : UI_Popup
         
         GetTextInput((int)TextInputs.PasswordInput).onEndEdit.AddListener(OnPasswordInputEnd);
         GetTextInput((int)TextInputs.PasswordConfirmInput).onEndEdit.AddListener(OnPasswordConfirmInputEnd);
-        
-        var policyToggle = GetToggle((int)Toggles.PolicyToggle);
-        policyToggle.onValueChanged.AddListener(value => _loginViewModel.ReadPolicy = value);
-        policyToggle.isOn = false;
-        
-        var termsToggle = GetToggle((int)Toggles.TermsToggle);
-        termsToggle.onValueChanged.AddListener(value => _loginViewModel.ReadTerms = value);
-        termsToggle.isOn = false;
     }
 
     protected override void InitUI()
@@ -182,22 +162,14 @@ public class UI_SignUpPopup : UI_Popup
     
     private async void OnEmailVerificationClicked(PointerEventData data)
     {
-        if (_loginViewModel.ReadPolicy == false || _loginViewModel.ReadTerms == false)
-        {
-            var text = _textDict["SignUpWarningText"].gameObject;
-            text.SetActive(true);
-            Managers.Localization.UpdateTextAndFont(text.gameObject, "sign_up_warning_text_must_agree");
-            return;
-        }
-        
-        var account = GetTextInput((int)TextInputs.EmailInput).text;
-        var password = GetTextInput((int)TextInputs.PasswordInput).text;
-        var passwordConfirm = GetTextInput((int)TextInputs.PasswordConfirmInput).text;
-
-        if (password != passwordConfirm) return;
-
         try
         {
+            var account = GetTextInput((int)TextInputs.EmailInput).text;
+            var password = GetTextInput((int)TextInputs.PasswordInput).text;
+            var passwordConfirm = GetTextInput((int)TextInputs.PasswordConfirmInput).text;
+
+            if (password != passwordConfirm) return;
+            
             var validateAccountPacket = new ValidateNewAccountPacketRequired { UserAccount = account, Password = password };
             var timeoutTask = Task.Delay(5000);
             var task = _webService.SendWebRequestAsync<ValidateNewAccountPacketResponse>(

@@ -65,7 +65,7 @@ public class MyPlayerController : PlayerController
                 break;
             
             case Define.MouseEvent.PointerDown:
-                if (raycastHit == false) { return; }
+                if (raycastHit == false || _gameVm.OnPortraitDrag) { return; }
                 var go = hit.collider.gameObject;
                 HandleSingleOrDoubleClick(go);
                 break;

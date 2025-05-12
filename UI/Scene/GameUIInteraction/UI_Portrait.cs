@@ -80,38 +80,33 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         
         if (Camera.main != null)
         {
+            var layerNames = new[] { "Ground", "Unit", "Fence", "Statue" };
             var ray = Camera.main.ScreenPointToRay(Input.mousePosition); 
             _hitPoint = Vector3.zero;
-            if (Physics.Raycast(ray, out _, Mathf.Infinity, LayerMask.GetMask("UI"))) return;
-            if (Physics.Raycast(ray, out _, Mathf.Infinity, LayerMask.GetMask("Base")))
-            {
-                Debug.Log("hit cex");
-                return;
-            }
-            if (Physics.Raycast(ray, out var hit, Mathf.Infinity, LayerMask.GetMask("Ground")))
+            if (Physics.Raycast(ray, out var hit, Mathf.Infinity, LayerMask.GetMask(layerNames)))
             {
                 _hitPoint = hit.point;
-            }        
-        }
-        
-        // Move range ring toward portrait's transform
-        if (_attackRangeRing != null)
-        {
-            _attackRangeRing.transform.position = _hitPoint + new Vector3(0, 0.05f, 0);
-        }
+                
+                // Move range ring toward portrait's transform
+                if (_attackRangeRing != null)
+                {
+                    _attackRangeRing.transform.position = _hitPoint + new Vector3(0, 0.05f, 0);
+                }
 
-        if (_skillRangeRing != null)
-        {
-            _skillRangeRing.transform.position = _hitPoint + new Vector3(0, 0.05f, 0);
+                if (_skillRangeRing != null)
+                {
+                    _skillRangeRing.transform.position = _hitPoint + new Vector3(0, 0.05f, 0);
+                }
+        
+                // Send packet about the position of the unit
+                if (Time.time < _lastSendTime + _sendTick) return;
+                _lastSendTime = Time.time;
+        
+                var unitId = _gameVm.CurrentSelectedPortrait.UnitId;
+                var destVector = new DestVector {X = _hitPoint.x, Y = _hitPoint.y, Z = _hitPoint.z};
+                Managers.Network.Send(new C_UnitSpawnPos { UnitId = (int)unitId, DestVector = destVector });
+            }
         }
-        
-        // Send packet about the position of the unit
-        if (Time.time < _lastSendTime + _sendTick) return;
-        _lastSendTime = Time.time;
-        
-        var unitId = _gameVm.CurrentSelectedPortrait.UnitId;
-        var destVector = new DestVector {X = _hitPoint.x, Y = _hitPoint.y, Z = _hitPoint.z};
-        Managers.Network.Send(new C_UnitSpawnPos { UnitId = (int)unitId, DestVector = destVector });
     }
 
     public void OnEndDrag(PointerEventData eventData)

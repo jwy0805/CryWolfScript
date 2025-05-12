@@ -922,8 +922,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         if (product == null) return;
         _shopVm.SelectedProduct = product.ProductInfo;
     }
-
-    private void OnAdsProductClicked(PointerEventData data)
+    
+    private void OnAdsProductClicked(PointerEventData data, DailyProductInfo dailyProductInfo)
     {
         
     }
@@ -1129,14 +1129,21 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
             _lobbyVm.ConnectSignalR(_userService.UserInfo.UserName));
         
         BindUserInfo();
+
+        var policyFinished = Managers.Policy.CheckPolicyConsent();
+        var attFinished = Managers.Policy.CheckAttConsent();
+        var sheepTutorialDone = _userService.TutorialInfo.SheepTutorialDone;
+        var wolfTutorialDone = _userService.TutorialInfo.WolfTutorialDone;
         
-#if UNITY_IOS && !UNITY_EDITOR
-        await Managers.Ads.RequestAttAsync();
-#endif
+        if (policyFinished == false || attFinished == false)
+        {
+            await Managers.Policy.RequestConsents(policyFinished, attFinished);
+        }
+        
         Managers.Ads.FetchIdfa();
         Managers.Ads.InitLevelPlay();
         
-        if (_userService.TutorialInfo.SheepTutorialDone == false || _userService.TutorialInfo.WolfTutorialDone == false)
+        if (sheepTutorialDone == false || wolfTutorialDone == false)
         {
             ProcessTutorial();
         }

@@ -21,35 +21,61 @@ public class AdsManager
 #endif
 
     private string _idfa = string.Empty;
-    private bool _levelPlayInitialized = false;
+    private bool _levelPlayInitialized;
+    private bool _rewardVideoReady;
+    private bool _loading;
+
+    public event Action OnRewarded;
+    public event Action OnAdFailed;
     
 #if UNITY_IOS
     public Task RequestAttAsync()
     {
-        if (ATTrackingStatusBinding.GetAuthorizationTrackingStatus() !=
-            ATTrackingStatusBinding.AuthorizationTrackingStatus.NOT_DETERMINED)
+        // Return if ATT status is already determined
+        var current = ATTrackingStatusBinding.GetAuthorizationTrackingStatus();
+        if (current != ATTrackingStatusBinding.AuthorizationTrackingStatus.NOT_DETERMINED)
+        {
+            if (Managers.Policy.GetAttConsent() == null)
+            {
+                Managers.Policy.SetAttConsent(current == ATTrackingStatusBinding.AuthorizationTrackingStatus.AUTHORIZED);
+            }
+            else
+            {
+                Managers.Policy.SetAttConsent(current == ATTrackingStatusBinding.AuthorizationTrackingStatus.AUTHORIZED);
+            }
+            
             return Task.CompletedTask;
+        }
 
         var tcs = new TaskCompletionSource<bool>();
         CoroutineRunner.instance.StartCoroutine(WaitForAtt());
-
         return tcs.Task;
 
         IEnumerator WaitForAtt()
         {
             ATTrackingStatusBinding.RequestAuthorizationTracking();
-            while (ATTrackingStatusBinding.GetAuthorizationTrackingStatus() ==
-                   ATTrackingStatusBinding.AuthorizationTrackingStatus.NOT_DETERMINED)
+            // Wait until the user has made a choice
+            while (ATTrackingStatusBinding.GetAuthorizationTrackingStatus()
+                   == ATTrackingStatusBinding.AuthorizationTrackingStatus.NOT_DETERMINED)
+            {
                 yield return null;
+            }
+
+            // Save status to PlayerPrefs
+            var status = ATTrackingStatusBinding.GetAuthorizationTrackingStatus();
+            Managers.Policy.SetAttConsent(status == ATTrackingStatusBinding.AuthorizationTrackingStatus.AUTHORIZED);
+
             tcs.TrySetResult(true);
         }
     }
 
     public void FetchIdfa()
     {
-        _idfa = Device.advertisingIdentifier;
+        var adIdentifier = Device.advertisingIdentifier;
+        _idfa = string.IsNullOrEmpty(adIdentifier) ? User.Instance.UserAccount : adIdentifier;
         Debug.Log($"[Ads] IDFA = {_idfa}");
     }
+    
 #elif UNITY_ANDROID && !UNITY_EDITOR
     public Task RequestAttAsync() => Task.CompletedTask;
     public void FetchIdfa() 
@@ -64,9 +90,30 @@ public class AdsManager
         Debug.Log($"[Ads] IDFA = {_idfa}");
     }
 #endif
+
+    public void ApplyRegulationFlags()
+    {
+        // // GDPR
+        // IronSource.Agent.setConsent();
+        // // CCPA
+        // IronSource.Agent.setMetaData("do_not_sell", consent.CcpaOptout ? "true" : "false");
+        // // LGPD
+        // IronSource.Agent.setMetaData("lgpdConsent", consent.GdprConsent ? "true" : "false");
+        
+        // COPPA
+        var coppaConsent = Managers.Policy.GetCoppaConsent();
+        if (coppaConsent != null)
+        {
+            var coppa = coppaConsent.Value;
+            IronSource.Agent.setMetaData("is_child_directed", coppa ? "true": "false");
+        }
+    }
     
     public void InitLevelPlay()
     {
+        if (_levelPlayInitialized) return;
+        
+        ApplyRegulationFlags();
         var userIdfa = string.IsNullOrEmpty(_idfa) ? User.Instance.UserAccount : _idfa;
         var adFormats = new[] { LevelPlayAdFormat.REWARDED };
         string appKey =
@@ -77,11 +124,18 @@ public class AdsManager
 #endif
         
         IronSource.Agent.setConsent(true);
-        IronSourceEvents.onSdkInitializationCompletedEvent -= OnLevelPlayReady;
-        IronSourceEvents.onSdkInitializationCompletedEvent += OnLevelPlayReady;
         IronSource.Agent.setMetaData("is_test_suite", "enable");
+        SetUpEvents();
         
         LevelPlay.Init(appKey, userIdfa, adFormats);
+    }
+
+    private void SetUpEvents()
+    {
+        IronSourceEvents.onSdkInitializationCompletedEvent -= OnLevelPlayReady;
+        IronSourceEvents.onSdkInitializationCompletedEvent += OnLevelPlayReady;
+        IronSourceRewardedVideoEvents.onAdReadyEvent -= OnAdReadyEvent;
+        IronSourceRewardedVideoEvents.onAdReadyEvent += OnAdReadyEvent;
     }
     
     private void OnLevelPlayReady()
@@ -90,11 +144,10 @@ public class AdsManager
         Debug.Log($"SDK Initialization Completed.");
         IronSource.Agent.launchTestSuite();
     }
-
-    public bool TryShowRewarded()
+    
+    private void OnAdReadyEvent(IronSourceAdInfo info)
     {
-        if (_levelPlayInitialized == false) return false;
-
-        return true;
+        _rewardVideoReady = true;
+        _loading = false;
     }
 }

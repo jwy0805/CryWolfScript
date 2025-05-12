@@ -100,7 +100,7 @@ public class NetworkManager
                 host = Dns.GetHostName();
                 port = 7777;
                 ipHost = await Dns.GetHostEntryAsync(host);
-                ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.ToString().Contains("192."));
+                ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.ToString().Contains("172."));
                 break;
             
             case Env.Dev:

@@ -17,6 +17,7 @@ public class Managers : MonoBehaviour
     private readonly NetworkManager _network = new();
     private readonly EventManager _event = new();
     private readonly AdsManager _ads = new();
+    private readonly PolicyConsentManager _policy = new();
 
     public static GameManager Game => Instance._game;
     public static MapManager Map => Instance._map;
@@ -24,6 +25,7 @@ public class Managers : MonoBehaviour
     public static NetworkManager Network => Instance._network;
     public static EventManager Event => Instance._event;
     public static AdsManager Ads => Instance._ads;
+    public static PolicyConsentManager Policy => Instance._policy;
 
     #endregion
     
