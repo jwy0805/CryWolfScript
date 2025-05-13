@@ -259,6 +259,13 @@ public enum MailType
     Reward
 }
 
+public enum SubscriptionType
+{
+    None = 0, 
+    SeasonPass = 1,
+    AdsRemover = 2,
+}
+
 public enum CurrencyType
 {
     None,

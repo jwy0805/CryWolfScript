@@ -216,7 +216,7 @@ public class MainLobbyViewModel : IDisposable
         
         return new Tuple<FriendRequestPacketResponse, string>(task.Result, friendInfo.UserName);
     }
-
+    
     private void FriendRequestNotificationReceived(FriendRequestPacketResponse response)
     {
         OnFriendRequestNotificationReceived?.Invoke();

@@ -2,11 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using com.unity3d.mediation;
 using UnityEngine;
 using UnityEngine.iOS;
 using System.Runtime.InteropServices;
+using Unity.Services.LevelPlay;
 using Unity.VisualScripting;
+using LevelPlayConfiguration = Unity.Services.LevelPlay.LevelPlayConfiguration;
 
 #if UNITY_IOS
 using Unity.Advertisement.IosSupport;
@@ -22,11 +23,12 @@ public class AdsManager
 
     private string _idfa = string.Empty;
     private bool _levelPlayInitialized;
-    private bool _rewardVideoReady;
-    private bool _loading;
 
-    public event Action OnRewarded;
+    public event Func<DailyProductInfo, Task> OnRewardedCheckDailyProduct;
+    public event Func<Task> OnRewardedRefreshDailyProducts;
     public event Action OnAdFailed;
+
+    public DailyProductInfo RevealedDailyProduct { get; set; }
     
 #if UNITY_IOS
     public Task RequestAttAsync()
@@ -91,7 +93,7 @@ public class AdsManager
     }
 #endif
 
-    public void ApplyRegulationFlags()
+    private void ApplyRegulationFlags()
     {
         // // GDPR
         // IronSource.Agent.setConsent();
@@ -115,7 +117,7 @@ public class AdsManager
         
         ApplyRegulationFlags();
         var userIdfa = string.IsNullOrEmpty(_idfa) ? User.Instance.UserAccount : _idfa;
-        var adFormats = new[] { LevelPlayAdFormat.REWARDED };
+        var adFormats = new[] { com.unity3d.mediation.LevelPlayAdFormat.REWARDED };
         string appKey =
 #if UNITY_ANDROID
             AndroidAppKey;
@@ -123,8 +125,11 @@ public class AdsManager
             IOSAppKey;
 #endif
         
+        // AdsTest
         IronSource.Agent.setConsent(true);
         IronSource.Agent.setMetaData("is_test_suite", "enable");
+        // AdsTest
+        
         SetUpEvents();
         
         LevelPlay.Init(appKey, userIdfa, adFormats);
@@ -132,22 +137,142 @@ public class AdsManager
 
     private void SetUpEvents()
     {
-        IronSourceEvents.onSdkInitializationCompletedEvent -= OnLevelPlayReady;
-        IronSourceEvents.onSdkInitializationCompletedEvent += OnLevelPlayReady;
-        IronSourceRewardedVideoEvents.onAdReadyEvent -= OnAdReadyEvent;
-        IronSourceRewardedVideoEvents.onAdReadyEvent += OnAdReadyEvent;
+        IronSourceEvents.onSdkInitializationCompletedEvent -= OnLevelPlaySdkReady;
+        IronSourceEvents.onSdkInitializationCompletedEvent += OnLevelPlaySdkReady;
+        
+        LevelPlay.OnInitSuccess -= OnLevelPlayInitialized;
+        LevelPlay.OnInitSuccess += OnLevelPlayInitialized;
+        
+        IronSourceRewardedVideoEvents.onAdReadyEvent -= OnRewardVideoReady;
+        IronSourceRewardedVideoEvents.onAdReadyEvent += OnRewardVideoReady;
+        IronSourceRewardedVideoEvents.onAdOpenedEvent -= RewardedVideoOnAdOpenedEvent;
+        IronSourceRewardedVideoEvents.onAdOpenedEvent += RewardedVideoOnAdOpenedEvent;
+        IronSourceRewardedVideoEvents.onAdClosedEvent -= RewardedVideoOnAdClosedEvent;
+        IronSourceRewardedVideoEvents.onAdClosedEvent += RewardedVideoOnAdClosedEvent;
+        IronSourceRewardedVideoEvents.onAdAvailableEvent -= RewardedVideoOnAdAvailable;
+        IronSourceRewardedVideoEvents.onAdAvailableEvent += RewardedVideoOnAdAvailable;
+        IronSourceRewardedVideoEvents.onAdUnavailableEvent -= RewardedVideoOnAdUnavailable;
+        IronSourceRewardedVideoEvents.onAdUnavailableEvent += RewardedVideoOnAdUnavailable;
+        IronSourceRewardedVideoEvents.onAdShowFailedEvent -= RewardedVideoOnAdShowFailedEvent;
+        IronSourceRewardedVideoEvents.onAdShowFailedEvent += RewardedVideoOnAdShowFailedEvent;
+        IronSourceRewardedVideoEvents.onAdRewardedEvent -= RewardedVideoOnAdRewardedEvent;
+        IronSourceRewardedVideoEvents.onAdRewardedEvent += RewardedVideoOnAdRewardedEvent;
+        IronSourceRewardedVideoEvents.onAdClickedEvent -= RewardedVideoOnAdClickedEvent;
+        IronSourceRewardedVideoEvents.onAdClickedEvent += RewardedVideoOnAdClickedEvent;
+    }
+
+    public void ShowRewardVideo(string placementName)
+    {
+        Debug.Log("[Ads] ShowRewardVideo");
+
+        var placement = IronSource.Agent.getPlacementInfo(placementName);
+        if (placement != null)
+        {
+            if (IronSource.Agent.isRewardedVideoAvailable())
+            {
+                Debug.Log($"[Ads] Placement: {placementName}");
+                IronSource.Agent.showRewardedVideo(placementName);
+            }
+            else
+            {
+                Debug.Log("[Ads] Reward video ad is not available.");
+            }
+        }
     }
     
-    private void OnLevelPlayReady()
+    private void OnLevelPlaySdkReady()
     {
-        _levelPlayInitialized = true;
-        Debug.Log($"SDK Initialization Completed.");
+        Debug.Log("SDK Initialization Completed.");
+        // AdsTest
         IronSource.Agent.launchTestSuite();
+        // AdsTest
+    }
+
+    private void OnLevelPlayInitialized(LevelPlayConfiguration configuration)
+    {
+        Debug.Log("LevelPlay Initialization Completed.");
+        _levelPlayInitialized = true;
     }
     
-    private void OnAdReadyEvent(IronSourceAdInfo info)
+    private void OnRewardVideoReady(IronSourceAdInfo info)
     {
-        _rewardVideoReady = true;
-        _loading = false;
+        
+    }
+    
+    
+    /// <summary>
+    /// The Rewarded Video ad view has opened. Your activity will loose focus.
+    /// </summary>
+    private void RewardedVideoOnAdOpenedEvent(IronSourceAdInfo info)
+    {
+        
+    }
+    
+    /// <summary>
+    /// The Rewarded Video ad view is about to be closed. Your activity will regain its focus.
+    /// </summary>
+    private void RewardedVideoOnAdClosedEvent(IronSourceAdInfo info)
+    {
+        
+    }
+    
+    /// <summary>
+    /// Indicates that there’s an available ad.
+    /// The adInfo object includes information about the ad that was loaded successfully.
+    /// This replaces the RewardedVideoAvailabilityChangedEvent(true) event
+    /// </summary>
+    private void RewardedVideoOnAdAvailable(IronSourceAdInfo info)
+    {
+        
+    }
+    
+    /// <summary>
+    /// Indicates that no ads are available to be displayed.
+    /// This replaces the RewardedVideoAvailabilityChangedEvent(false) event
+    /// </summary>
+    private void RewardedVideoOnAdUnavailable()
+    {
+        
+    }
+    
+    /// <summary>
+    /// The rewarded video ad was failed to show.
+    /// </summary>
+    private void RewardedVideoOnAdShowFailedEvent(IronSourceError error, IronSourceAdInfo info)
+    {
+        Debug.Log($"[Ads] Reward video ad show failed: {error}");
+        OnAdFailed?.Invoke();
+    }
+    
+    /// <summary>
+    /// The user completed to watch the video, and should be rewarded.
+    /// The placement parameter will include the reward data.
+    /// When using server-to-server callbacks, you may ignore this event and wait for the ironSource server callback.
+    /// </summary>
+    private void RewardedVideoOnAdRewardedEvent(IronSourcePlacement placement, IronSourceAdInfo info)
+    {
+        Debug.Log($"[Ads] Reward video ad rewarded: {placement}");
+
+        switch (placement.ToString())
+        {
+            case "Check_Daily_Product":
+                OnRewardedCheckDailyProduct?.Invoke(RevealedDailyProduct);
+                break;
+            case "Refresh_Daily_Products":
+                OnRewardedRefreshDailyProducts?.Invoke();
+                break;
+            default:
+                break;
+        }
+    }
+    
+    /// <summary>
+    /// Invoked when the video ad was clicked.
+    /// This callback is not supported by all networks, and we recommend using it only if
+    /// it’s supported by all networks you included in your build.
+    /// </summary>
+    private void RewardedVideoOnAdClickedEvent(IronSourcePlacement placement, IronSourceAdInfo info)
+    {
+        Debug.Log($"[Ads] Reward video ad clicked: {placement}");
     }
 }

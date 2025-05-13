@@ -16,7 +16,7 @@ using Zenject;
  */
 
 // This class includes the binding, initialization and core logics for the main lobby UI.
-public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler, IBeginDragHandler, IEndDragHandler
+public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
 {
     [SerializeField] private Scrollbar scrollbar;
     
@@ -193,6 +193,9 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         ReinforceButton,
         
         RecyclingButton,
+        
+        DailyProductsRefreshButton,
+        AdsRemover
     }
 
     private enum Texts
@@ -251,7 +254,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         GoldPackageLabelText,
         SpinelPackageLabelText,
         
-        
+        DailyProductsRefreshButtonText,
+        DailyProductsRefreshButtonTimeText,
     }
 
     private enum Images
@@ -384,6 +388,9 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         _tutorialVm.OnInitTutorialCamera2 += InitTutorialMainCamera2;
         
         _userService.InitDeckButton += SetDeckButtonUI;
+        
+        Managers.Ads.OnRewardedCheckDailyProduct += RevealDailyProduct;
+        Managers.Ads.OnRewardedRefreshDailyProducts += RefreshDailyProducts;
     }
 
     protected override async void Init()
@@ -923,9 +930,38 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         _shopVm.SelectedProduct = product.ProductInfo;
     }
     
-    private void OnAdsProductClicked(PointerEventData data, DailyProductInfo dailyProductInfo)
+    private void OnAdsRemoverClicked(PointerEventData data)
     {
+        if (User.Instance.SubscribeAdsRemover) return;
+        OnProductClicked(data);
+    }
+    
+    private async Task OnAdsProductClicked(PointerEventData data, DailyProductInfo dailyProductInfo)
+    {
+        var product = data.pointerPress.gameObject.GetComponent<GameProduct>();
+        if (product == null || product.IsDragging) return;
         
+        if (User.Instance.SubscribeAdsRemover)
+        {
+            await _shopVm.RevealDailyProduct(dailyProductInfo);
+        }
+        else
+        {
+            Managers.Ads.RevealedDailyProduct = dailyProductInfo;
+            Managers.Ads.ShowRewardVideo("Check_Daily_Product");
+        }
+    }
+
+    private async Task OnRefreshDailyProductsClicked(PointerEventData data)
+    {
+        if (User.Instance.SubscribeAdsRemover)
+        {
+            await _shopVm.RefreshDailyProducts();
+        }
+        else
+        {
+            Managers.Ads.ShowRewardVideo("Refresh_Daily_Products");
+        }
     }
     
     private void OnReservedSalesClicked(PointerEventData data)
@@ -1140,8 +1176,10 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
             await Managers.Policy.RequestConsents(policyFinished, attFinished);
         }
         
+#if !UNITY_EDITOR
         Managers.Ads.FetchIdfa();
         Managers.Ads.InitLevelPlay();
+#endif
         
         if (sheepTutorialDone == false || wolfTutorialDone == false)
         {
@@ -1295,23 +1333,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
         if (CardPopup != null) Managers.UI.ClosePopupUI(CardPopup);
     }
 
-    public void OnDrag(PointerEventData eventData)
-    {
-        
-    }
-
-    public void OnBeginDrag(PointerEventData eventData)
-    {
-        
-    }
-
-    public void OnEndDrag(PointerEventData eventData)
-    {
-        
-    }
-
     #endregion
-
+    
     private async void OnDestroy()
     {
         try
@@ -1336,6 +1359,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler, IDragHandler
             _tutorialVm.OnInitTutorialCamera1 -= InitTutorialMainCamera1;
             _tutorialVm.OnInitTutorialCamera2 -= InitTutorialMainCamera2;
             _userService.InitDeckButton -= SetDeckButtonUI;
+            Managers.Ads.OnRewardedCheckDailyProduct -= RevealDailyProduct;
+            Managers.Ads.OnRewardedRefreshDailyProducts -= RefreshDailyProducts;
         
             await _lobbyVm.LeaveLobby();
             _lobbyVm.Dispose();

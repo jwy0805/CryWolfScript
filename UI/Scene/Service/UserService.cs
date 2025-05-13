@@ -197,6 +197,8 @@ public class UserService : IUserService
         TutorialInfo = loadUserInfoResponse.UserTutorialInfo;
         
         User.Instance.UserAccount = loadUserInfoResponse.UserInfo.UserAccount;
+        User.Instance.SubscribeAdsRemover = loadUserInfoResponse.UserInfo.Subscriptions
+            .FirstOrDefault(si => si.SubscriptionType == SubscriptionType.AdsRemover) != null;
     }
 
     public async Task LoadTestUserInfo(int userId)

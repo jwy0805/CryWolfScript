@@ -65,6 +65,7 @@ public class LocalizationManager
 
     public string GetConvertedString(string str)
     {
+        // ex) "ContinueButtonText" -> "continue_button_text"
         return Regex.Replace(str, "([a-z])([A-Z])", "$1_$2").ToLower();
     }
     
@@ -72,7 +73,6 @@ public class LocalizationManager
     {
         foreach (var go in textDict.Values)
         {
-            // ex) "ContinueButtonText" -> "continue_button_text"
             UpdateTextAndFont(go, GetConvertedString(go.name));
         }
     }

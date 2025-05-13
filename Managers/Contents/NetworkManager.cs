@@ -19,7 +19,7 @@ public class NetworkManager
     private const string LocalPort = "7270";
     private const string Address = "hamonstudio.net";
     
-    public Env Environment => Env.Local;
+    public Env Environment => Env.Dev;
     public bool IsFriendlyMatchHost { get; set; }
 
     public int SessionId

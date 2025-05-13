@@ -19,6 +19,7 @@ public class UserInfo
     public int WinRate { get; set; }
     public int Gold { get; set; }
     public int Spinel { get; set; }
+    public List<SubscriptionInfo> Subscriptions { get; set; }
 }
 
 public class UserTutorialInfo
@@ -49,6 +50,13 @@ public class MailInfo
     public bool Claimed { get; set; }
     public string Message { get; set; }
     public string Sender { get; set; }
+}
+
+public class SubscriptionInfo
+{
+    public SubscriptionType SubscriptionType { get; set; }
+    public DateTime ExpiresAt { get; set; }
+    public DateTime StartAt { get; set; }
 }
 
 public class ProductInfo
@@ -636,7 +644,9 @@ public class InitProductPacketResponse
     public List<ProductInfo> GoldItems { get; set; }
     public List<ProductInfo> SpinelItems { get; set; }
     public List<ProductInfo> ReservedSales { get; set; }
-    public List<DailyProductInfo> DailyDeals { get; set; }
+    public List<DailyProductInfo> DailyProducts { get; set; }
+    public ProductInfo AdsRemover { get; set; }
+    public DateTime RefreshTime { get; set; }
 }
 
 public class FriendListPacketRequired
@@ -785,4 +795,27 @@ public class LoadStageInfoPacketResponse
     public List<UserStageInfo> UserStageInfos { get; set; }
     public List<StageEnemyInfo> StageEnemyInfos { get; set; }
     public List<StageRewardInfo> StageRewardInfos { get; set; }
+}
+
+public class RevealDailyProductPacketRequired
+{
+    public string AccessToken { get; set; }
+    public int Slot { get; set; }
+}
+
+public class RevealDailyProductPacketResponse
+{
+    public bool RevealDailyProductOk { get; set; }
+}
+
+public class RefreshDailyProductPacketRequired
+{
+    public string AccessToken { get; set; }
+}
+
+public class RefreshDailyProductPacketResponse
+{
+    public bool RefreshDailyProductOk { get; set; }
+    public List<DailyProductInfo> DailyProducts { get; set; }
+    public DateTime RefreshTime { get; set; }
 }

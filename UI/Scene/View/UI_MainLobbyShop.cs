@@ -34,6 +34,7 @@ public partial class UI_MainLobby
         
         InitReservedPackages();
         InitDailyProducts();
+        InitDailyPanelObjects();
         InitPackages(_shopVm.GoldPackages, _goldStorePanel);
         InitPackages(_shopVm.SpinelPackages, _spinelStorePanel);
         InitGoldItems();
@@ -175,6 +176,31 @@ public partial class UI_MainLobby
         }
     }
 
+    // Ads remover 같이 구독형 상품인 경우는 기존 상품과 다른 방식으로 처리
+    private void InitDailyPanelObjects()
+    {
+        var refreshButton = GetButton((int)Buttons.DailyProductsRefreshButton).gameObject;
+        var buttonTextName = "DailyProductsRefreshButtonText";
+        var buttonTimeTextName = "DailyProductsRefreshButtonTimeText"; 
+        var buttonText = Util.FindChild(refreshButton, buttonTextName, true);
+        var buttonTimeText = Util.FindChild(refreshButton, buttonTimeTextName, true);
+        var timer = refreshButton.GetOrAddComponent<TimerSeconds>();
+
+        Managers.Localization.GetLocalizedValue(buttonText.GetComponent<TextMeshProUGUI>(), buttonTextName);
+        Managers.Localization.GetLocalizedValue(buttonTimeText.GetComponent<TextMeshProUGUI>(), buttonTimeTextName);
+
+        refreshButton.BindEvent(OnRefreshDailyProductsClicked);
+        timer.TimerText = buttonTimeText.GetComponent<TextMeshProUGUI>();
+        timer.LastRefreshTime = _shopVm.LastDailyProductRefreshTime;
+        
+        var adsRemover = GetButton((int)Buttons.AdsRemover).gameObject;
+        var product = adsRemover.GetOrAddComponent<ProductSimple>();
+        adsRemover.GetOrAddComponent<AdsRemover>();
+        product.ProductInfo = _shopVm.AdsRemover;
+        
+        adsRemover.BindEvent(OnAdsRemoverClicked);
+    }
+
     private GameObject InitiateProduct(string prefabPath, ProductInfo productInfo, Transform parent)
     {
         var panel = Managers.Resource.Instantiate($"UI/Shop/{prefabPath}", parent);
@@ -232,5 +258,68 @@ public partial class UI_MainLobby
         }
         
         return frame;
+    }
+    
+    private async Task RevealDailyProduct(DailyProductInfo dailyProduct)
+    {
+        var result = await _shopVm.RevealDailyProduct(dailyProduct);
+
+        if (result == false)
+        {
+            var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        }
+        else
+        {
+            var revealedProduct = _dailyProductPanel.GetChild(dailyProduct.Slot);
+            var adsIcon = Util.FindChild(revealedProduct.gameObject, "Ads", true);
+            if (adsIcon != null)
+            {
+                adsIcon.SetActive(false);
+            }
+            
+            var productInfo = dailyProduct.ProductInfo;
+            var itemName = ((ProductId)productInfo.Id).ToString();
+            
+            if (productInfo.Compositions.Count == 1 && productInfo.Compositions.First().Type == ProductType.Unit)
+            {
+                var unitId = productInfo.Compositions.First().CompositionId;
+                var unit = Managers.Data.UnitInfoDict[unitId];
+                var iconObject = Managers.Resource.GetCardResources<UnitId>(unit, revealedProduct);
+                var iconRect = iconObject.GetComponent<RectTransform>();
+                iconRect.anchorMin = new Vector2(0.5f, 0.6f);
+                iconRect.anchorMax = new Vector2(0.5f, 0.6f);
+                iconRect.sizeDelta = new Vector2(135, 216);
+                iconObject.transform.SetSiblingIndex(3);
+            }
+            else
+            {
+                var iconPath = $"UI/Shop/NormalizedProducts/{itemName}";
+                var iconObject = Managers.Resource.Instantiate(iconPath, revealedProduct);
+                var iconRect = iconObject.GetComponent<RectTransform>();
+                iconRect.anchorMin = new Vector2(0.5f, 0.6f);
+                iconRect.anchorMax = new Vector2(0.5f, 0.6f);
+                iconObject.transform.SetSiblingIndex(3);
+            }
+        }
+    }
+
+    private async Task RefreshDailyProducts()
+    {
+        var result = await _shopVm.RefreshDailyProducts();
+
+        if (result == false)
+        {
+            var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        }
+        else
+        {
+            var existingProducts = _dailyProductPanel.GetComponentsInChildren<GameProduct>();
+            foreach (var product in existingProducts)
+            {
+                Managers.Resource.Destroy(product.gameObject);
+            }
+            
+            InitDailyProducts();
+        }
     }
 }

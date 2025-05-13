@@ -13,7 +13,7 @@ public class UI_PolicyPopup : UI_Popup
 {
     private IWebService _webService;
     private ITokenService _tokenService;
-    private MainLobbyViewModel _mainlobbyVm;
+    private MainLobbyViewModel _mainLobbyVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
     private Action _yesCallback; // Only yes callback is used because applying no will quit the app.
@@ -50,7 +50,7 @@ public class UI_PolicyPopup : UI_Popup
     {
         _webService = webService;
         _tokenService = tokenService;
-        _mainlobbyVm = mainLobbyVm;
+        _mainLobbyVm = mainLobbyVm;
     }
     
     protected override void Init()
@@ -80,14 +80,21 @@ public class UI_PolicyPopup : UI_Popup
         var policyToggle = GetToggle((int)Toggles.PolicyToggle);
         policyToggle.onValueChanged.AddListener(value => Managers.Policy.ReadPolicy = value);
         policyToggle.isOn = true;
+        Managers.Policy.ReadPolicy = true;
         
         var termsToggle = GetToggle((int)Toggles.TermsToggle);
         termsToggle.onValueChanged.AddListener(value => Managers.Policy.ReadTerms = value);
         termsToggle.isOn = true;
+        Managers.Policy.ReadTerms = true;
         
         var ageToggle = GetToggle((int)Toggles.AgeToggle);
         ageToggle.onValueChanged.AddListener(value => Managers.Policy.AgeUnder13 = value);
         ageToggle.isOn = false;
+    }
+
+    protected override void InitUI()
+    {
+        _textDict["PolicyWarningText"].gameObject.SetActive(false);
     }
     
     private void OnGoingPolicyClicked(PointerEventData data)
@@ -113,9 +120,9 @@ public class UI_PolicyPopup : UI_Popup
         {
             if (Managers.Policy.ReadPolicy == false || Managers.Policy.ReadTerms == false)
             {
-                var text = _textDict["PolicyWarningText"].gameObject;
-                text.SetActive(true);
-                Managers.Localization.UpdateTextAndFont(text.gameObject, "policy_warning_text_must_agree");
+                var textObject = _textDict["PolicyWarningText"].gameObject;
+                textObject.SetActive(true);
+                Managers.Localization.UpdateTextAndFont(textObject, "policy_warning_text_must_agree");
                 return;
             }
 

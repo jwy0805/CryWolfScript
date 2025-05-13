@@ -26,6 +26,7 @@ public class User
     public List<OwnedMaterialInfo> OwnedMaterialList { get; set; } = new();
     public Deck DeckSheep { get; set; } = new();
     public Deck DeckWolf { get; set; } = new();
+    public bool SubscribeAdsRemover { get; set; }
 }
 
 public class Deck

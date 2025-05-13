@@ -63,8 +63,6 @@ public class LoginViewModel : IInitializable, IDisposable
         _tokenService = tokenService;
         
         Initialize();
-        
-        Debug.Log("LoginViewModel Constructor");
     }
 
     #region Initialization

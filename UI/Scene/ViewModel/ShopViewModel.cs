@@ -17,6 +17,9 @@ public class ShopViewModel
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
     private readonly IPaymentService _paymentService;
+    
+    public event Action OnRevealDailyProduct;
+    public event Action OnRefreshDailyProducts;
 
     public List<ProductInfo> SpecialPackages;
     public List<ProductInfo> BeginnerPackages;
@@ -27,7 +30,10 @@ public class ShopViewModel
     public List<ProductInfo> SpinelItems;
     public List<DailyProductInfo> DailyProducts;
     
+    public ProductInfo AdsRemover { get; set; }
     public ProductInfo SelectedProduct { get; set; }
+    public DateTime LastDailyProductRefreshTime { get; set; }
+    
     public List<CompositionInfo> ReservedProductsToBeClaimed { get; } = new()
     {
         new CompositionInfo { CompositionId = 60, Type = ProductType.None },
@@ -84,7 +90,8 @@ public class ShopViewModel
         SpinelPackages = productResponse.SpinelPackages.OrderBy(pi => pi.Price).ToList();
         GoldItems = productResponse.GoldItems.OrderBy(pi => pi.Price).ToList();
         SpinelItems = productResponse.SpinelItems.OrderBy(pi => pi.Price).ToList();
-        DailyProducts = productResponse.DailyDeals.OrderBy(pi => pi.Slot).ToList();
+        DailyProducts = productResponse.DailyProducts.OrderBy(pi => pi.Slot).ToList();
+        AdsRemover = productResponse.AdsRemover;
     }
 
     public string GetDailyProductFramePath(string itemName, DailyProductInfo dailyProductInfo)
@@ -143,5 +150,40 @@ public class ShopViewModel
         {
             _paymentService.BuyProductAsync(SelectedProduct.ProductCode);
         }
+    }
+    
+    public async Task<bool> RevealDailyProduct(DailyProductInfo dailyProduct)
+    {
+        var packet = new RevealDailyProductPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            Slot = dailyProduct.Slot,
+        };
+        
+        var task = _webService.SendWebRequestAsync<RevealDailyProductPacketResponse>(
+            "Payment/RevealDailyProduct", UnityWebRequest.kHttpVerbPUT, packet);
+        await task;
+
+        return task.Result.RevealDailyProductOk;
+    }
+    
+    public async Task<bool> RefreshDailyProducts()
+    {
+        var packet = new RefreshDailyProductPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+        };
+        
+        var task = _webService.SendWebRequestAsync<RefreshDailyProductPacketResponse>(
+            "Payment/RefreshDailyProduct", UnityWebRequest.kHttpVerbPUT, packet);
+        await task;
+        
+        if (task.Result.RefreshDailyProductOk)
+        {
+            DailyProducts = task.Result.DailyProducts.OrderBy(pi => pi.Slot).ToList();
+            LastDailyProductRefreshTime = DateTime.UtcNow;
+        }
+
+        return task.Result.RefreshDailyProductOk;
     }
 }
