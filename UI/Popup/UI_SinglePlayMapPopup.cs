@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -193,11 +194,12 @@ public class UI_SinglePlayMapPopup : UI_Popup
         BindStageInfoPanel(stage);
     }
     
-    private void OnFightClicked(PointerEventData data)
+    private async Task OnFightClicked(PointerEventData data)
     {
         if (_selectedStage == null) return;
         if (_selectedStage.UserStageInfo == null || _selectedStage.UserStageInfo.IsAvailable == false) return;
-        _ = _singlePlayVm.ConnectGameSession();
+        _singlePlayVm.LoadStageInServer = false;
+        await _singlePlayVm.ConnectGameSession();
     }
     
     private void CloseInfoPanel(PointerEventData data)

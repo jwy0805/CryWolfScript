@@ -19,7 +19,7 @@ public class NetworkManager
     private const string LocalPort = "7270";
     private const string Address = "hamonstudio.net";
     
-    public Env Environment => Env.Dev;
+    public Env Environment => Env.Local;
     public bool IsFriendlyMatchHost { get; set; }
 
     public int SessionId
@@ -45,7 +45,8 @@ public class NetworkManager
             
                 if (GameObject.FindWithTag("UI").TryGetComponent(out UI_SinglePlay uiSinglePlay))
                 {
-                    uiSinglePlay.StartSinglePlay(_sessionId);
+                    var loadStageInServer = uiSinglePlay.GetStageProperty();
+                    uiSinglePlay.StartSinglePlay(_sessionId, loadStageInServer);
                     return;
                 }
             }
@@ -100,7 +101,7 @@ public class NetworkManager
                 host = Dns.GetHostName();
                 port = 7777;
                 ipHost = await Dns.GetHostEntryAsync(host);
-                ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.ToString().Contains("172."));
+                ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.ToString().Contains("192."));
                 break;
             
             case Env.Dev:

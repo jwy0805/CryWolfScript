@@ -4,10 +4,12 @@ using UnityEngine;
 
 public class SoundManager 
 {
-	AudioSource[] _audioSources = new AudioSource[(int)Define.Sound.MaxCount];
-    Dictionary<string, AudioClip> _audioClips = new Dictionary<string, AudioClip>();
+	private AudioSource[] _audioSources = new AudioSource[(int)Define.Sound.MaxCount];
+    private Dictionary<string, AudioClip> _audioClips = new();
     private Define.Scene _sceneType;
-
+    private float _musicVolume;
+    private float _sfxVolume;
+    
     // MP3 Player   -> AudioSource
     // MP3 음원     -> AudioClip
     // 관객(귀)     -> AudioListener
@@ -111,14 +113,16 @@ public class SoundManager
 
 		return audioClip;
     }
-
+	
 	private void PlayBgm(Define.Scene scene)
 	{
+		_musicVolume = PlayerPrefs.GetFloat("MusicVolume");
+		
 		switch(scene)
 		{
 			case Define.Scene.Game:
-				// string nameBgm = "MuffinMan";
-				// Play(nameBgm, Define.Sound.Bgm);
+				string nameBgm = "MuffinMan";
+				Play(nameBgm, Define.Sound.Bgm, _musicVolume);
 				break;
 		}
 	}

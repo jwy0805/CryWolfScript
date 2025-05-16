@@ -12,6 +12,7 @@ public class SinglePlayViewModel : IDisposable
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
     
+    public bool LoadStageInServer { get; set; } // true: start game from 'UI_SinglePlay', false: from 'UI_SinglePlayMapPopup'
     public int SelectedStageId { get; set; }
     public int StageLevel { get; set; }
     public List<UserStageInfo> UserStageInfos { get; set; }
@@ -51,14 +52,15 @@ public class SinglePlayViewModel : IDisposable
         await sessionTask;
     }
 
-    public async Task StartSinglePlay(int sessionId)
+    public async Task StartSinglePlay(int sessionId, bool loadStageInServer)
     {
         var changePacket = new ChangeActPacketSingleRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
             SessionId = sessionId,
             StageId = SelectedStageId,
-            Faction = Util.Faction
+            Faction = Util.Faction,
+            LoadStageInServer = loadStageInServer
         };
         var apiTask = _webService.SendWebRequestAsync<ChangeActPacketSingleResponse>(
             "SinglePlay/StartGame", UnityWebRequest.kHttpVerbPUT, changePacket);

@@ -80,34 +80,41 @@ public class UI_FriendsListPopup : UI_Popup
 
     protected override async void InitUI()
     {
-        GetImage((int)Images.AlertImage).gameObject.SetActive(false);
-        GetImage((int)Images.NoFriendBackground).gameObject.SetActive(false);
-        GetButton((int)Buttons.ExitButton).interactable = false;
-        
-        var friendListTask = _lobbyVm.GetFriendList();
-        var initAlertsTask = _lobbyVm.InitFriendAlert();
+        try
+        {
+            GetImage((int)Images.AlertImage).gameObject.SetActive(false);
+            GetImage((int)Images.NoFriendBackground).gameObject.SetActive(false);
+            GetButton((int)Buttons.ExitButton).interactable = false;
 
-        await Task.WhenAll(friendListTask, initAlertsTask);
-        
-        var parent = Util.FindChild(gameObject, "Content", true).transform;
-        var friendList = friendListTask.Result;
-        
-        Util.DestroyAllChildren(parent);
-        if (friendList.Count == 0)
-        {
-            GetImage((int)Images.NoFriendBackground).gameObject.SetActive(true);
-        }
-        else
-        {
-            foreach (var friendInfo in friendList)
+            var friendListTask = _lobbyVm.GetFriendList();
+            var initAlertsTask = _lobbyVm.InitFriendAlert();
+
+            await Task.WhenAll(friendListTask, initAlertsTask);
+
+            var parent = Util.FindChild(gameObject, "Content", true).transform;
+            var friendList = friendListTask.Result;
+
+            Util.DestroyAllChildren(parent);
+            if (friendList.Count == 0)
             {
-                friendInfo.FriendStatus = FriendStatus.Accepted;
-                var friendFrame = Managers.Resource.GetFriendFrame(friendInfo, parent, OnSelectFriend);
-                BindFriendRequestButton(friendFrame, friendInfo);
+                GetImage((int)Images.NoFriendBackground).gameObject.SetActive(true);
             }
+            else
+            {
+                foreach (var friendInfo in friendList)
+                {
+                    friendInfo.FriendStatus = FriendStatus.Accepted;
+                    var friendFrame = Managers.Resource.GetFriendFrame(friendInfo, parent, OnSelectFriend);
+                    BindFriendRequestButton(friendFrame, friendInfo);
+                }
+            }
+            
+            GetButton((int)Buttons.ExitButton).interactable = true;
         }
-        
-        GetButton((int)Buttons.ExitButton).interactable = true;
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
     }
     
     private void BindFriendRequestButton(GameObject friendFrame, FriendUserInfo friendInfo)

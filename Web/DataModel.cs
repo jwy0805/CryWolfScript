@@ -231,8 +231,9 @@ public enum TutorialType
     Main = 0,
     BattleWolf = 1,
     BattleSheep = 2,
-    Collection = 3,
-    Crafting = 4
+    ChangeFaction = 3,
+    Collection = 4,
+    Crafting = 5
 }
 
 public enum ProductCategory

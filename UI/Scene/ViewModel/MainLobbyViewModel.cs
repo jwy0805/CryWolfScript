@@ -29,7 +29,8 @@ public class MainLobbyViewModel : IDisposable
     public event Action OffMailAlert;
     public event Action OnUpdateFriendList;
     public event Action<int> OnPageChanged;
-    public event Action<int> ChangeButtonFocus;
+    public event Action<int> OnChangeButtonFocus;
+    public event Action<string> OnChangeLanguage;
     
 
     public float[] ScrollPageValues { get; private set; }
@@ -42,7 +43,7 @@ public class MainLobbyViewModel : IDisposable
         private set
         {
             _currentPage = value;
-            ChangeButtonFocus?.Invoke(value);
+            OnChangeButtonFocus?.Invoke(value);
         }
     }
 
@@ -261,6 +262,11 @@ public class MainLobbyViewModel : IDisposable
     public async Task LeaveLobby()
     {
         await _signalRClient.LeaveLobby();
+    }
+    
+    public void ChangeLanguage(string language2Letter)
+    {
+        OnChangeLanguage?.Invoke(language2Letter);
     }
     
     #region MainLobbyScrollView

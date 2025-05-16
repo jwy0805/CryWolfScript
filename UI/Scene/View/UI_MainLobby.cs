@@ -155,8 +155,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         SettingsButton,
         FriendsButton,
         MailButton,
-        MissionButton,
-        GiftButton,
+        // MissionButton,
+        // GiftButton,
         
         PlayButton,
         ModeSelectButtonLeft,
@@ -284,6 +284,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         CollectionScrollView,
         Deck,
         
+        ShopPanel,
         UnitHoldingCardPanel,
         UnitNotHoldingCardPanel,
         AssetHoldingCardPanel,
@@ -367,7 +368,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         _lobbyVm.OnMailAlert += OnMailAlert;
         _lobbyVm.OffMailAlert += OffMailAlert;
         _lobbyVm.OnPageChanged += UpdateScrollbar;
-        _lobbyVm.ChangeButtonFocus += ChangeButtonFocus;
+        _lobbyVm.OnChangeButtonFocus += ChangeButtonFocus;
+        _lobbyVm.OnChangeLanguage += ChangeLanguage;
 
         _paymentService.OnPaymentSuccess += OnMailAlert;
         _paymentService.OnCashPaymentSuccess += OnMailAlert;
@@ -452,6 +454,22 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         _lobbyVm.IsSwipeMode = false;
     }
 
+    private void ChangeLanguage(string language2Letter)
+    {
+        Managers.Localization.UpdateChangedTextAndFont(_textDict, language2Letter);
+        var shopPanel = GetImage((int)Images.ShopPanel);
+        
+        foreach (var product in shopPanel.GetComponentsInChildren<ProductSimple>())
+        {
+            product.SetProductText();
+        }
+        
+        foreach (var product in shopPanel.GetComponentsInChildren<ProductPackage>())
+        {
+            product.SetProductText();
+        }
+    }
+    
     private void ChangeButtonFocus(int pageIndex)
     {
         var list = new List<string> { "ShopButton", "ItemButton", "GameButton", "EventButton", "ClanButton" };
@@ -675,7 +693,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     
     private void OnSettingsClicked(PointerEventData data)
     {
-        
+        Managers.UI.ShowPopupUI<UI_SettingsPopup>();
     }
     
     private void OnFriendsClicked(PointerEventData data)
@@ -991,7 +1009,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         Bind<Image>(typeof(Images));
         
         Managers.Localization.UpdateTextAndFont(_textDict);
-        Managers.Localization.UpdateTextFont(_textDict["UsernameText"]);
+        Managers.Localization.UpdateFont(_textDict["UsernameText"]);
 
         _expSlider = GetImage((int)Images.ExpSliderBackground).transform.parent.GetComponent<Slider>();
         _craftingScrollRect = GetImage((int)Images.CollectionScrollView).GetComponent<ScrollRect>();
@@ -1101,6 +1119,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         }
         
         GetButton((int)Buttons.ProfilePanelButton).gameObject.BindEvent(OnProfileClicked);
+        GetButton((int)Buttons.SettingsButton).gameObject.BindEvent(OnSettingsClicked);
         GetButton((int)Buttons.FriendsButton).gameObject.BindEvent(OnFriendsClicked);
         GetButton((int)Buttons.MailButton).gameObject.BindEvent(OnMailClicked);
         GetButton((int)Buttons.FactionButton).gameObject.BindEvent(OnFactionButtonClicked);
@@ -1165,23 +1184,24 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             _lobbyVm.ConnectSignalR(_userService.UserInfo.UserName));
         
         BindUserInfo();
-
+        
+#if !UNITY_EDITOR
         var policyFinished = Managers.Policy.CheckPolicyConsent();
         var attFinished = Managers.Policy.CheckAttConsent();
-        var sheepTutorialDone = _userService.TutorialInfo.SheepTutorialDone;
-        var wolfTutorialDone = _userService.TutorialInfo.WolfTutorialDone;
-        
         if (policyFinished == false || attFinished == false)
         {
             await Managers.Policy.RequestConsents(policyFinished, attFinished);
         }
-        
-#if !UNITY_EDITOR
+
         Managers.Ads.FetchIdfa();
         Managers.Ads.InitLevelPlay();
 #endif
         
-        if (sheepTutorialDone == false || wolfTutorialDone == false)
+        var sheepTutorialDone = _userService.TutorialInfo.SheepTutorialDone;
+        var wolfTutorialDone = _userService.TutorialInfo.WolfTutorialDone;
+        var changeFactionTutorialDone = _userService.TutorialInfo.ChangeFactionTutorialDone;
+        
+        if (sheepTutorialDone == false || wolfTutorialDone == false || changeFactionTutorialDone == false)
         {
             ProcessTutorial();
         }
@@ -1210,6 +1230,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         // Case 1: Both tutorials are completed
         if (tutorialInfo.WolfTutorialDone && tutorialInfo.SheepTutorialDone)
         {
+            if (tutorialInfo.ChangeFactionTutorialDone) return;
+            Managers.UI.ShowPopupUI<UI_ChangeFactionPopup>();
             return;
         }
 
@@ -1344,7 +1366,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             _lobbyVm.OnMailAlert -= OnMailAlert;
             _lobbyVm.OffMailAlert -= OffMailAlert;
             _lobbyVm.OnPageChanged -= UpdateScrollbar;
-            _lobbyVm.ChangeButtonFocus -= ChangeButtonFocus;
+            _lobbyVm.OnChangeButtonFocus -= ChangeButtonFocus;
+            _lobbyVm.OnChangeLanguage -= ChangeLanguage;
             _paymentService.OnPaymentSuccess -= OnMailAlert;
             _paymentService.OnCashPaymentSuccess -= OnMailAlert;
             _deckVm.OnDeckInitialized -= SetDeckUI;

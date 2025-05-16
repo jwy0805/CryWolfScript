@@ -364,6 +364,11 @@ public class TutorialViewModel : IDisposable
         Managers.Network.Disconnect();
     }
 
+    public void ChangeFactionTutorialEndHandler()
+    {
+        UpdateTutorialInfo(TutorialType.ChangeFaction);
+    }
+    
     public void CompleteTutorialWolf()
     {
         ShowTutorialContinueNotifyPopupWolf();   

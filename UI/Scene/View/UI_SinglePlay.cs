@@ -106,9 +106,14 @@ public class UI_SinglePlay : UI_Scene
         }
     }
 
-    public void StartSinglePlay(int sessionId)
+    public bool GetStageProperty()
     {
-        _ = _singlePlayVm.StartSinglePlay(sessionId);
+        return _singlePlayVm.LoadStageInServer;
+    }
+    
+    public void StartSinglePlay(int sessionId, bool loadStageInServer)
+    {
+        _ = _singlePlayVm.StartSinglePlay(sessionId, loadStageInServer);
     }
     
     private void OnBackClicked(PointerEventData data)
@@ -122,8 +127,9 @@ public class UI_SinglePlay : UI_Scene
         popup.Faction = Util.Faction;
     }
     
-    private void OnStartClicked(PointerEventData data)
+    private async Task OnStartClicked(PointerEventData data)
     {
-        // Managers.Scene.LoadScene(Define.Scene.Game);
+        _singlePlayVm.LoadStageInServer = true;
+        await _singlePlayVm.ConnectGameSession();
     }
 }

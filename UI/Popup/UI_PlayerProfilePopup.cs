@@ -57,7 +57,7 @@ public class UI_PlayerProfilePopup : UI_Popup
         Bind<Button>(typeof(Buttons));
 
         Managers.Localization.UpdateTextAndFont(_textDict);
-        Managers.Localization.UpdateTextFont(_textDict["UsernameText"]);
+        Managers.Localization.UpdateFont(_textDict["UsernameText"]);
         
         var background = GetImage((int)Images.SliderBackground);
         _expSlider = background.transform.parent.GetComponent<Slider>();

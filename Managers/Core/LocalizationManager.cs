@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Google.Protobuf.Protocol;
 using TMPro;
@@ -46,16 +47,49 @@ public class LocalizationManager
         { "en", "Sen SDF" },
     };
     
+    public string Language2Letter => _language2Letter;
+    
     public void Init()
     {
-        _languageMap.TryGetValue(GetLanguage(), out _language2Letter);
+        _language2Letter = GetLanguage();
     }
     
     private string GetLanguage()
     {
-        return PlayerPrefs.HasKey("Language") 
-            ? PlayerPrefs.GetString("Language") 
-            : Application.systemLanguage.ToString();
+        const string key = "Language";
+        string language;
+        if (PlayerPrefs.HasKey(key))
+        {
+            language = PlayerPrefs.GetString(key);
+        }
+        else
+        {
+            _languageMap.TryGetValue(Application.systemLanguage.ToString(), out language);
+        }
+        
+        return language;
+    }
+    
+    public void SetLanguage(string language)
+    {
+        if (_languageMap.TryGetValue(language, out var languageCode))
+        {
+            PlayerPrefs.SetString("Language", language);
+            _language2Letter = languageCode;
+        }
+        else
+        {
+            if (_languageMap.Values.Contains(language))
+            {
+                PlayerPrefs.SetString("Language", language);
+                _language2Letter = language;
+            }
+            else
+            {
+                PlayerPrefs.SetString("Language", "English");
+                _language2Letter = "en";
+            }
+        }
     }
     
     private TMP_FontAsset GetFont(string fontName)
@@ -79,7 +113,7 @@ public class LocalizationManager
 
     public void UpdateTextAndFont(GameObject go, string key, string additionalText = "")
     {
-        if (_localizationDict == null || _localizationDict.Count == 0)
+        if (_localizationDict.Any() == false)
         {
             _localizationDict = Managers.Data.LocalizationDict;
         }
@@ -87,7 +121,7 @@ public class LocalizationManager
         // entryDictionary = "continue_button_text": { "en": { ... }, "ko": { ... } }
         if (_localizationDict.TryGetValue(key, out var entryDictionary) == false) return;
         // entry = "en": { "text": "Continue", "font": Sen SDF", "fontSize": 20 }
-        if (entryDictionary.TryGetValue(_language2Letter, out var entry) == false) return;
+        if (entryDictionary.TryGetValue(Language2Letter, out var entry) == false) return;
         
         if (go.TryGetComponent(out TextMeshProUGUI tmpro))
         {
@@ -104,15 +138,50 @@ public class LocalizationManager
         }
     }
 
+    public void UpdateChangedTextAndFont(Dictionary<string, GameObject> textDict, string language2Letter)
+    {
+        foreach (var go in textDict.Values)
+        {
+            UpdateChangedTextAndFont(go, GetConvertedString(go.name), language2Letter);
+        }
+    }
+    
+    public void UpdateChangedTextAndFont(GameObject go, string key, string language2Letter)
+    {
+        if (_localizationDict.Any() == false)
+        {
+            _localizationDict = Managers.Data.LocalizationDict;
+        }
+        
+        // entryDictionary = "continue_button_text": { "en": { ... }, "ko": { ... } }
+        if (_localizationDict.TryGetValue(key, out var entryDictionary) == false) return;
+        // entry = "en": { "text": "Continue", "font": Sen SDF", "fontSize": 20 }
+        if (entryDictionary.TryGetValue(language2Letter, out var entry) == false) return;
+        
+        if (go.TryGetComponent(out TextMeshProUGUI tmpro))
+        {
+            tmpro.text = entry.Text;
+            tmpro.font = GetFont(entry.Font);
+            if (entry.FontSize != 0)
+            {
+                tmpro.fontSize = entry.FontSize;
+            }
+        }
+        else
+        {
+            Debug.LogError($"Failed to get TextMeshProUGUI component: {go.name}");
+        }
+    }
+
     public string GetLocalizedValue(TextMeshProUGUI tmpro, string key)
     {
-        if (_localizationDict == null || _localizationDict.Count == 0)
+        if (_localizationDict.Any() == false)
         {
             _localizationDict = Managers.Data.LocalizationDict;
         }
         
         if (_localizationDict.TryGetValue(key, out var entryDictionary) == false) return string.Empty;
-        if (entryDictionary.TryGetValue(_language2Letter, out var entry) == false) return string.Empty;
+        if (entryDictionary.TryGetValue(Language2Letter, out var entry) == false) return string.Empty;
         tmpro.font = GetFont(entry.Font);
         if (entry.FontSize != 0)
         {
@@ -124,7 +193,7 @@ public class LocalizationManager
 
     public void GetLocalizedSkillText(TextMeshProUGUI tmpro, Contents.SkillData skill, int unitId)
     {
-        if (_localizationDict == null || _localizationDict.Count == 0)
+        if (_localizationDict.Any() == false)
         {
             _localizationDict = Managers.Data.LocalizationDict;
         }
@@ -136,8 +205,8 @@ public class LocalizationManager
         
         if (_localizationDict.TryGetValue(skillKey, out var entryDictionary) == false) return;
         if (_localizationDict.TryGetValue(unitKey, out var unitEntryDictionary) == false) return;
-        if (entryDictionary.TryGetValue(_language2Letter, out var entry) == false) return;
-        if (unitEntryDictionary.TryGetValue(_language2Letter, out var unitEntry) == false) return;
+        if (entryDictionary.TryGetValue(Language2Letter, out var entry) == false) return;
+        if (unitEntryDictionary.TryGetValue(Language2Letter, out var unitEntry) == false) return;
 
         var formattedUnitName = unitEntry.Text;
         var placeholders = GetPlaceholders(entry.Text);
@@ -181,12 +250,12 @@ public class LocalizationManager
 
     public void UpdateWarningPopupText(UI_WarningPopup popup, string messageKey)
     {
-        if (_localizationDict == null || _localizationDict.Count == 0)
+        if (_localizationDict.Any() == false)
         {
             _localizationDict = Managers.Data.LocalizationDict;
         }
 
-        if (_localizationDict[messageKey].TryGetValue(_language2Letter, out var entry))
+        if (_localizationDict[messageKey].TryGetValue(Language2Letter, out var entry))
         {
             popup.Text = entry.Text;
             popup.Font = GetFont(entry.Font);
@@ -200,14 +269,14 @@ public class LocalizationManager
     
     public void UpdateNotifyPopupText(UI_NotifyPopup popup, string titleKey, string messageKey)
     {
-        if (_localizationDict == null || _localizationDict.Count == 0)
+        if (_localizationDict.Any() == false)
         {
             _localizationDict = Managers.Data.LocalizationDict;
         }
         
-        if (_localizationDict[titleKey].TryGetValue(_language2Letter, out var titleEntry) &&
-            _localizationDict[messageKey].TryGetValue(_language2Letter, out var messageEntry) &&
-            _localizationDict["confirm_button_text"].TryGetValue(_language2Letter, out var buttonEntry))
+        if (_localizationDict[titleKey].TryGetValue(Language2Letter, out var titleEntry) &&
+            _localizationDict[messageKey].TryGetValue(Language2Letter, out var messageEntry) &&
+            _localizationDict["confirm_button_text"].TryGetValue(Language2Letter, out var buttonEntry))
         {
             popup.TitleText = titleEntry.Text;
             popup.TitleFont = GetFont(titleEntry.Font);
@@ -227,13 +296,13 @@ public class LocalizationManager
 
     public void UpdateNotifySelectPopupText(UI_NotifySelectPopup popup, string titleKey, string messageKey)
     {
-        if (_localizationDict == null || _localizationDict.Count == 0)
+        if (_localizationDict.Any() == false)
         {
             _localizationDict = Managers.Data.LocalizationDict;
         }
         
-        if (_localizationDict[titleKey].TryGetValue(_language2Letter, out var titleEntry) &&
-            _localizationDict[messageKey].TryGetValue(_language2Letter, out var messageEntry))
+        if (_localizationDict[titleKey].TryGetValue(Language2Letter, out var titleEntry) &&
+            _localizationDict[messageKey].TryGetValue(Language2Letter, out var messageEntry))
         {
             popup.TitleText = titleEntry.Text;
             popup.TitleFont = GetFont(titleEntry.Font);
@@ -252,17 +321,17 @@ public class LocalizationManager
     {
         if (fontName == null)
         {
-            _basicFontMap.TryGetValue(_language2Letter, out fontName);
+            _basicFontMap.TryGetValue(Language2Letter, out fontName);
         }
         
         inputField.fontAsset = GetFont(fontName);
     }
     
-    public void UpdateTextFont(GameObject go, string fontName = null)
+    public void UpdateFont(GameObject go, string fontName = null)
     {
         if (fontName == null)
         {
-            _basicFontMap.TryGetValue(_language2Letter, out fontName);
+            _basicFontMap.TryGetValue(Language2Letter, out fontName);
         }
         
         if (go.TryGetComponent(out TextMeshProUGUI text))

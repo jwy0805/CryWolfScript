@@ -21,23 +21,23 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
 
     private readonly HashSet<ProductDefinition> _products = new()
     {
-        new ProductDefinition("com.hamon.crywolf.consumable.over_power", UnityEngine.Purchasing.ProductType.Consumable),
-        new ProductDefinition("com.hamon.crywolf.consumable.beginning_of_the_legend1", UnityEngine.Purchasing.ProductType.Consumable),
-        new ProductDefinition("com.hamon.crywolf.consumable.beginning_of_the_legend2", UnityEngine.Purchasing.ProductType.Consumable),
-        new ProductDefinition("com.hamon.crywolf.consumable.beginners_spirit", UnityEngine.Purchasing.ProductType.Consumable),
-        new ProductDefinition("com.hamon.crywolf.consumable.beginners_luck", UnityEngine.Purchasing.ProductType.Consumable),
-        new ProductDefinition("com.hamon.crywolf.consumable.beginners_resolve", UnityEngine.Purchasing.ProductType.Consumable),
-        new ProductDefinition("com.hamon.crywolf.consumable.beginners_ambition", UnityEngine.Purchasing.ProductType.Consumable),
-        new ProductDefinition("com.hamon.crywolf.consumable.rainbow_egg_package", UnityEngine.Purchasing.ProductType.Consumable),
+        // new ProductDefinition("com.hamon.crywolf.consumable.over_power", UnityEngine.Purchasing.ProductType.Consumable),
+        // new ProductDefinition("com.hamon.crywolf.consumable.beginning_of_the_legend1", UnityEngine.Purchasing.ProductType.Consumable),
+        // new ProductDefinition("com.hamon.crywolf.consumable.beginning_of_the_legend2", UnityEngine.Purchasing.ProductType.Consumable),
+        // new ProductDefinition("com.hamon.crywolf.consumable.beginners_spirit", UnityEngine.Purchasing.ProductType.Consumable),
+        // new ProductDefinition("com.hamon.crywolf.consumable.beginners_luck", UnityEngine.Purchasing.ProductType.Consumable),
+        // new ProductDefinition("com.hamon.crywolf.consumable.beginners_resolve", UnityEngine.Purchasing.ProductType.Consumable),
+        // new ProductDefinition("com.hamon.crywolf.consumable.beginners_ambition", UnityEngine.Purchasing.ProductType.Consumable),
+        // new ProductDefinition("com.hamon.crywolf.consumable.rainbow_egg_package", UnityEngine.Purchasing.ProductType.Consumable),
         new ProductDefinition("com.hamon.crywolf.consumable.spinel_pile", UnityEngine.Purchasing.ProductType.Consumable),
         new ProductDefinition("com.hamon.crywolf.consumable.spinel_fistful", UnityEngine.Purchasing.ProductType.Consumable),
         new ProductDefinition("com.hamon.crywolf.consumable.spinel_pouch", UnityEngine.Purchasing.ProductType.Consumable),
         new ProductDefinition("com.hamon.crywolf.consumable.spinel_basket", UnityEngine.Purchasing.ProductType.Consumable),
         new ProductDefinition("com.hamon.crywolf.consumable.spinel_chest", UnityEngine.Purchasing.ProductType.Consumable),
         new ProductDefinition("com.hamon.crywolf.consumable.spinel_vault", UnityEngine.Purchasing.ProductType.Consumable),
-        new ProductDefinition("com.hamon.crywolf.consumable.wooden_chest", UnityEngine.Purchasing.ProductType.Consumable),
-        new ProductDefinition("com.hamon.crywolf.consumable.golden_chest", UnityEngine.Purchasing.ProductType.Consumable),
-        new ProductDefinition("com.hamon.crywolf.consumable.jeweled_chest", UnityEngine.Purchasing.ProductType.Consumable),
+        // new ProductDefinition("com.hamon.crywolf.consumable.wooden_chest", UnityEngine.Purchasing.ProductType.Consumable),
+        // new ProductDefinition("com.hamon.crywolf.consumable.golden_chest", UnityEngine.Purchasing.ProductType.Consumable),
+        // new ProductDefinition("com.hamon.crywolf.consumable.jeweled_chest", UnityEngine.Purchasing.ProductType.Consumable),
     };
     
     public event Action OnCashPaymentSuccess;

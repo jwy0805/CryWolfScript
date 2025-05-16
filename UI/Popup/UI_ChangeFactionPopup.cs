@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Zenject;
 
-public class UI_FactionChangePopup : UI_Popup
+public class UI_ChangeFactionPopup : UI_Popup
 {
     private TutorialViewModel _tutorialVm;
 
@@ -82,7 +82,10 @@ public class UI_FactionChangePopup : UI_Popup
         _tutorialVm.InitTutorialChangeFaction(npcPos, cameraPos);
         
         StartCoroutine(PointToFactionButton());
-        StartCoroutine(SetText());
+        
+        const string key = "tutorial_change_faction_popup_text";
+        var textContent = Managers.Localization.GetLocalizedValue(_speechBubbleText, key);
+        _speechBubbleText.text = textContent;
     }
     
     #region UI Effects
@@ -193,16 +196,9 @@ public class UI_FactionChangePopup : UI_Popup
         yield return StartCoroutine(HandPokeRoutine(offset, 0.5f, 0.1f, 0.2f));
     }
     
-    private IEnumerator SetText()
-    {
-        yield return new WaitForSeconds(2f);
-        const string key = "tutorial_faction_change_popup_text";
-        var textContent = Managers.Localization.GetLocalizedValue(_speechBubbleText, key);
-        _speechBubbleText.text = textContent;
-    }
-    
     private void OnContinueClicked(PointerEventData data)
     {
+        _tutorialVm.ChangeFactionTutorialEndHandler();
         Managers.UI.CloseAllPopupUI();
     }
     

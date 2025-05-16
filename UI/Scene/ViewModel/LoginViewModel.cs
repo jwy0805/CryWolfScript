@@ -71,8 +71,6 @@ public class LoginViewModel : IInitializable, IDisposable
     {
         try
         {
-            Debug.Log("LoginViewModel Initialize");
-            
             // 1) Google Auth (동기)
             InitGoogleAuth();
 
@@ -95,8 +93,6 @@ public class LoginViewModel : IInitializable, IDisposable
     {
         _googleAuth = new GoogleAuth();
         _googleAuth.TryResume(OnGoogleSignIn, OnGetGoogleTokenResponse);
-        
-        Debug.Log("Google Auth Initialized");
     }
 
     private void InitAppleAuth()
@@ -169,7 +165,7 @@ public class LoginViewModel : IInitializable, IDisposable
             var response = task.Result;
             if (response.LoginOk)
             {
-                HandleLoginSuccess(response.AccessToken, response.RefreshToken);
+                HandleSignInSuccess(response.AccessToken, response.RefreshToken);
             }
             else
             {
@@ -251,7 +247,7 @@ public class LoginViewModel : IInitializable, IDisposable
             var response = task.Result;
             if (response != null)
             {
-                HandleLoginSuccess(response.AccessToken, response.RefreshToken);
+                HandleSignInSuccess(response.AccessToken, response.RefreshToken);
             }
         }
         catch (AuthenticationException e)
@@ -336,7 +332,7 @@ public class LoginViewModel : IInitializable, IDisposable
         var response = task.Result;
         if (response != null)
         {
-            HandleLoginSuccess(response.AccessToken, response.RefreshToken);
+            HandleSignInSuccess(response.AccessToken, response.RefreshToken);
         }
     }
     
@@ -355,6 +351,22 @@ public class LoginViewModel : IInitializable, IDisposable
     public void SignUp()
     {
         Managers.UI.ShowPopupUI<UI_SignUpPopup>();
+    }
+
+    private void HandleSignInSuccess(string accessToken, string refreshToken)
+    {
+        SetInitialSettings();
+        HandleLoginSuccess(accessToken, refreshToken);
+    }
+    
+    private void SetInitialSettings()
+    {
+        PlayerPrefs.SetFloat("MusicVolume", 0.5f);
+        PlayerPrefs.SetFloat("SfxVolume", 0.5f);
+        Managers.Localization.SetLanguage(Application.systemLanguage.ToString());
+        PlayerPrefs.SetInt("Notification", 1);
+        
+        PlayerPrefs.Save();
     }
     
     private void HandleLoginSuccess(string accessToken, string refreshToken)

@@ -180,14 +180,18 @@ public partial class UI_MainLobby
     private void InitDailyPanelObjects()
     {
         var refreshButton = GetButton((int)Buttons.DailyProductsRefreshButton).gameObject;
-        var buttonTextName = "DailyProductsRefreshButtonText";
-        var buttonTimeTextName = "DailyProductsRefreshButtonTimeText"; 
-        var buttonText = Util.FindChild(refreshButton, buttonTextName, true);
-        var buttonTimeText = Util.FindChild(refreshButton, buttonTimeTextName, true);
         var timer = refreshButton.GetOrAddComponent<TimerSeconds>();
 
-        Managers.Localization.GetLocalizedValue(buttonText.GetComponent<TextMeshProUGUI>(), buttonTextName);
-        Managers.Localization.GetLocalizedValue(buttonTimeText.GetComponent<TextMeshProUGUI>(), buttonTimeTextName);
+        var buttonTextName = "DailyProductsRefreshButtonText";
+        var buttonTimeTextName = "DailyProductsRefreshButtonTimeText"; 
+        var buttonTimeText = Util.FindChild(refreshButton, buttonTimeTextName, true);
+        var buttonTextDict = new Dictionary<string, GameObject>
+        {
+            { buttonTextName, Util.FindChild(refreshButton, buttonTextName, true) },
+            { buttonTimeTextName, buttonTimeText }
+        };
+        
+        Managers.Localization.UpdateTextAndFont(buttonTextDict);
 
         refreshButton.BindEvent(OnRefreshDailyProductsClicked);
         timer.TimerText = buttonTimeText.GetComponent<TextMeshProUGUI>();
@@ -313,12 +317,16 @@ public partial class UI_MainLobby
         }
         else
         {
+            var refreshButton = GetButton((int)Buttons.DailyProductsRefreshButton).gameObject;
+            var timer = refreshButton.GetComponent<TimerSeconds>();
             var existingProducts = _dailyProductPanel.GetComponentsInChildren<GameProduct>();
             foreach (var product in existingProducts)
             {
                 Managers.Resource.Destroy(product.gameObject);
             }
             
+            Util.FindChild(refreshButton, "DailyProductsRefreshButtonTimeText", true).SetActive(true);
+            timer.LastRefreshTime = _shopVm.LastDailyProductRefreshTime;
             InitDailyProducts();
         }
     }

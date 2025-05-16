@@ -6,10 +6,10 @@ using UnityEngine;
 public class PolicyConsentManager
 {
     private TaskCompletionSource<bool> _tcs;
-    private const string PolicyKey = "PolicyConsentKey";
-    private const string CoppaKey = "CoppaConsentKey";
-    private const string CcpaKey = "CcpaConsentKey";
-    private const string AttKey = "AttConsentKey";
+    private const string PolicyKey = "PolicyConsent";
+    private const string CoppaKey = "CoppaConsent";
+    private const string CcpaKey = "CcpaConsent";
+    private const string AttKey = "AttConsent";
     
     public bool ReadPolicy { get; set; }
     public bool ReadTerms { get; set; }

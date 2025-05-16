@@ -7,6 +7,11 @@ public class ProductSimple : GameProduct
 {
     private void Start()
     {
+        SetProductText();
+    }
+
+    public void SetProductText()
+    {
         var titleText = Util.FindChild<TextMeshProUGUI>(gameObject, "TextName", true);
         titleText.text = Managers.Localization.GetLocalizedValue(titleText, ProductInfo.ProductCode);
     }

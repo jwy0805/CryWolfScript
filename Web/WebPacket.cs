@@ -26,6 +26,7 @@ public class UserTutorialInfo
 {
     public bool WolfTutorialDone { get; set; }
     public bool SheepTutorialDone { get; set; }
+    public bool ChangeFactionTutorialDone { get; set; }
     public bool CollectionTutorialDone { get; set; }
     public bool ReinforceTutorialDone { get; set; }
 }
@@ -335,6 +336,7 @@ public class ChangeActPacketSingleRequired
     public int SessionId { get; set; }
     public int StageId { get; set; }
     public Faction Faction { get; set; }
+    public bool LoadStageInServer { get; set; }
 }
 
 public class ChangeActPacketSingleResponse

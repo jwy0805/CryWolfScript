@@ -17,9 +17,6 @@ public class ShopViewModel
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
     private readonly IPaymentService _paymentService;
-    
-    public event Action OnRevealDailyProduct;
-    public event Action OnRefreshDailyProducts;
 
     public List<ProductInfo> SpecialPackages;
     public List<ProductInfo> BeginnerPackages;
