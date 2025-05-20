@@ -20,6 +20,7 @@ public class UI_ProductInfoSimplePopup : UI_Popup
     private Image _icon;
     private ProductInfo _productInfo;
     
+    public bool IsDailyProduct { get; set; }
     public GameObject FrameObject { get; set; }
 
     private enum Buttons
@@ -107,7 +108,14 @@ public class UI_ProductInfoSimplePopup : UI_Popup
     
     private void OnBuyButtonClicked(PointerEventData data)
     {
-        _shopVm.BuyProduct();
+        if (IsDailyProduct)
+        {
+            _shopVm.BuyDailyProduct();
+        }
+        else
+        {
+            _shopVm.BuyProduct();
+        }
     }
     
     private void ClosePopup(PointerEventData data)

@@ -284,9 +284,10 @@ public class PacketHandler
         if (go == null) return;
         // Floating text instantiate
         var floatingTextObject = Managers.Resource.Instantiate("WorldObjects/DmgText");
-        floatingTextObject.transform.position = go.transform.position + Vector3.up;
-        // floatingTextObject.GetComponentInChildren<TextAnimatorPlayer>().ShowText($"{damagePacket.Damage}");
         var text = floatingTextObject.GetComponentInChildren<TextMeshPro>();
+        var typeWriter = floatingTextObject.GetComponentInChildren<TypewriterByCharacter>();
+        floatingTextObject.transform.position = go.transform.position + Vector3.up;
+        typeWriter.ShowText($"{damagePacket.Damage}");
         switch (damagePacket.DamageType)
         {
             case Damage.Normal:
@@ -514,6 +515,10 @@ public class PacketHandler
         var popupPacket = (S_SendWarningInGame)packet;
         var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
         Managers.Localization.UpdateWarningPopupText(popup, popupPacket.MessageKey);
+        
+        var sceneContext = UnityEngine.Object.FindAnyObjectByType<SceneContext>();
+        var gameViewModel = sceneContext.Container.TryResolve<GameViewModel>();
+        gameViewModel?.WarningHandler(popupPacket.MessageKey);
     }
 
     public static void S_ShowRankResultPopupHandler(PacketSession session, IMessage packet)

@@ -43,15 +43,137 @@ public class MyPlayerController : PlayerController
         Managers.Input.MouseAction += OnMouseEvent;
         _cameraObject = GameObject.FindWithTag("CameraFocus");
 
-        // // Test - Unit Spawn
-        // C_Spawn spawnPacket1 = new()
-        // {
-        //     Type = GameObjectType.Monster,
-        //     Num = (int)UnitId.Wolf,
-        //     PosInfo = new PositionInfo { State = State.Idle, PosX = -1.5f, PosY = 6, PosZ = 14, Dir = 180 },
-        //     Way = SpawnWay.North
-        // };
-        // Managers.Network.Send(spawnPacket1);
+        // Test - Unit Spawn
+         // TestUnitSpawn();
+    }
+
+    private void TestUnitSpawn()
+    {
+        C_Spawn spawnPacket1 = new()
+        {
+            Type = GameObjectType.MonsterStatue,
+            Num = (int)UnitId.Werewolf,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = -3.5f, PosY = 6, PosZ = 12, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(spawnPacket1);
+        
+        C_Spawn spawnPacket2 = new()
+        {
+            Type = GameObjectType.MonsterStatue,
+            Num = (int)UnitId.Horror,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 0f, PosY = 6, PosZ = 12, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(spawnPacket2); 
+        
+        C_Spawn spawnPacket3 = new()
+        {
+            Type = GameObjectType.MonsterStatue,
+            Num = (int)UnitId.Werewolf,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 4f, PosY = 6, PosZ = 12, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(spawnPacket3); 
+        
+        C_Spawn spawnPacket4 = new()
+        {
+            Type = GameObjectType.MonsterStatue,
+            Num = (int)UnitId.MosquitoStinger,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 3f, PosY = 6, PosZ = 14, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(spawnPacket4); 
+        
+        C_Spawn spawnPacket5 = new()
+        {
+            Type = GameObjectType.MonsterStatue,
+            Num = (int)UnitId.SnakeNaga,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = -2.5f, PosY = 6, PosZ = 14, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(spawnPacket5); 
+        
+        C_Spawn spawnPacket6 = new()
+        {
+            Type = GameObjectType.MonsterStatue,
+            Num = (int)UnitId.SkeletonGiant,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 0.5f, PosY = 6, PosZ = 16, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(spawnPacket6);
+        
+        C_Spawn spawnPacket7 = new()
+        {
+            Type = GameObjectType.MonsterStatue,
+            Num = (int)UnitId.SnakeNaga,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = -1, PosY = 6, PosZ = 16, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(spawnPacket7);
+        
+        C_Spawn spawnPacket8 = new()
+        {
+            Type = GameObjectType.Tower,
+            Num = (int)UnitId.Hermit,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = -3f, PosY = 6, PosZ = -6f, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(spawnPacket8);
+        
+        C_Spawn spawnPacket9 = new()
+        {
+            Type = GameObjectType.Tower,
+            Num = (int)UnitId.Hermit,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 3f, PosY = 6, PosZ = -6f, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(spawnPacket9);
+        
+        C_Spawn spawnPacket10 = new()
+        {
+            Type = GameObjectType.Tower,
+            Num = (int)UnitId.TrainingDummy,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = -6f, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(spawnPacket10);
+        
+        C_Spawn spawnPacket11 = new()
+        {
+            Type = GameObjectType.Tower,
+            Num = (int)UnitId.FlowerPot,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = -10f, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(spawnPacket11);
+        
+        C_Spawn spawnPacket12 = new()
+        {
+            Type = GameObjectType.Tower,
+            Num = (int)UnitId.Blossom,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = -2, PosY = 6, PosZ = -10f, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(spawnPacket12);
+        
+        C_Spawn spawnPacket13 = new()
+        {
+            Type = GameObjectType.Tower,
+            Num = (int)UnitId.Blossom,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = -4, PosY = 6, PosZ = -10f, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(spawnPacket13);
+        
+        C_Spawn spawnPacket14 = new()
+        {
+            Type = GameObjectType.Tower,
+            Num = (int)UnitId.FlowerPot,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 2.5f, PosY = 6, PosZ = -10f, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(spawnPacket14);
     }
     
     private void OnMouseEvent(Define.MouseEvent evt)

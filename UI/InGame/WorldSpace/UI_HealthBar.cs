@@ -31,9 +31,13 @@ public class UI_HealthBar : MonoBehaviour
         switch (type)
         {
             case GameObjectType.Fence:
-            case GameObjectType.Portal:
                 var sizeX = gameObject.GetComponent<BoxCollider>().size.x;
                 _sliderRect.localScale = new Vector3(0.005f * sizeX, 0.01f, 0.01f);
+                break;
+            case GameObjectType.Portal:
+                var boxCollider = gameObject.GetComponent<BoxCollider>();
+                _sliderRect.localScale = new Vector3(0.02f * boxCollider.size.x, 0.01f, 0.01f);
+                _sliderRect.transform.position += Vector3.up * boxCollider.size.y * 0.6f;
                 break;
             default:
                 var unitCollider = gameObject.GetComponent<CapsuleCollider>();

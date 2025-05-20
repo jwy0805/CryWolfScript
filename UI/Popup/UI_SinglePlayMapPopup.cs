@@ -198,7 +198,6 @@ public class UI_SinglePlayMapPopup : UI_Popup
     {
         if (_selectedStage == null) return;
         if (_selectedStage.UserStageInfo == null || _selectedStage.UserStageInfo.IsAvailable == false) return;
-        _singlePlayVm.LoadStageInServer = false;
         await _singlePlayVm.ConnectGameSession();
     }
     
@@ -210,6 +209,7 @@ public class UI_SinglePlayMapPopup : UI_Popup
     
     private void ClosePopup(PointerEventData data)
     {
+        _singlePlayVm.SelectedStageId = 0;
         Managers.UI.ClosePopupUI();
     }
 }

@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using UnityEngine;
+using UnityEngine.Networking;
 using Zenject;
 
 public class MatchMakingViewModel
@@ -70,20 +72,20 @@ public class MatchMakingViewModel
             "Match/CancelMatchMaking", "PUT", cancelPacket, _ => { });
     }
     
-    public void CancelMatchMaking()
+    public async Task CancelMatchMaking()
     {
         var cancelPacket = new CancelMatchPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
         };
         
-        _webService.SendWebRequest<CancelMatchPacketResponse>(
-            "Match/CancelMatchMaking", "PUT", cancelPacket, response =>
-            {
-                if (response.CancelOk == false) return;
-                
-                Managers.Network.Disconnect();
-                Managers.Scene.LoadScene(Define.Scene.MainLobby);
-            });
+        var task = await _webService.SendWebRequestAsync<CancelMatchPacketResponse>(
+            "Match/CancelMatchMaking", UnityWebRequest.kHttpVerbPUT, cancelPacket);
+
+        if (task.CancelOk)
+        {
+            Managers.Network.Disconnect();
+            Managers.Scene.LoadScene(Define.Scene.MainLobby);
+        }
     }
 }

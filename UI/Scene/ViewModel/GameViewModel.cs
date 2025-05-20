@@ -350,10 +350,13 @@ public class GameViewModel : IDisposable
         Managers.UI.CloseAllPopupUI();
         Managers.UI.ShowPopupUiInGame<SkillWindow>();
     }
-    
-    public void OnResourceClicked()
+
+    public void WarningHandler(string warningMessageKey)
     {
-        
+        if (UnitControlWindow != null && warningMessageKey == "warning_in_game_needs_to_evolve")
+        {
+            OnUnitSkillClicked();
+        }
     }
 
     public void Dispose()

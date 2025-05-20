@@ -1,6 +1,4 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -21,7 +19,6 @@ public class UI_MatchMaking : UI_Scene
     private enum Buttons
     {
         CancelButton,
-        TestButton,
     }
     
     private enum Images
@@ -39,7 +36,6 @@ public class UI_MatchMaking : UI_Scene
     {
         InfoText,
         CountDownText,
-        
         UserNameText,
         RankPointText,
         EnemyUserNameText,
@@ -145,16 +141,15 @@ public class UI_MatchMaking : UI_Scene
     }
     
     // Button Events
-    private void OnCancelClicked(PointerEventData data)
+    private async void OnCancelClicked(PointerEventData data)
     {
         _cancelClicked = true;
-        _matchMakingVm.CancelMatchMaking();
+        await _matchMakingVm.CancelMatchMaking();
     }
     
     private void OnTestButtonClicked(PointerEventData data)
     {
         _matchMakingVm.TestMatchMaking();
-        GetButton((int)Buttons.TestButton).interactable = false;
     }
     
     // UI Setting
@@ -168,7 +163,9 @@ public class UI_MatchMaking : UI_Scene
     protected override void InitButtonEvents()
     {
         GetButton((int)Buttons.CancelButton).gameObject.BindEvent(OnCancelClicked);
-        GetButton((int)Buttons.TestButton).gameObject.BindEvent(OnTestButtonClicked);
+        #if UNITY_EDITOR
+        Util.FindChild(gameObject, "TestButton", true).BindEvent(OnTestButtonClicked);
+        #endif
     }
     
     protected override void InitUI()

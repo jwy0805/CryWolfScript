@@ -336,7 +336,6 @@ public class ChangeActPacketSingleRequired
     public int SessionId { get; set; }
     public int StageId { get; set; }
     public Faction Faction { get; set; }
-    public bool LoadStageInServer { get; set; }
 }
 
 public class ChangeActPacketSingleResponse
@@ -772,6 +771,18 @@ public class VirtualPaymentPacketRequired
 public class VirtualPaymentPacketResponse
 {
     public bool PaymentOk { get; set; }
+}
+
+public class DailyPaymentPacketRequired
+{
+    public string AccessToken { get; set; }
+    public string ProductCode { get; set; }
+}
+
+public class DailyPaymentPacketResponse
+{
+    public bool PaymentOk { get; set; }
+    public int Slot { get; set; }
 }
 
 public class CashPaymentPacketRequired

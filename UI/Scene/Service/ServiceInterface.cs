@@ -60,7 +60,9 @@ public interface IPaymentService
 {
     void Init();
     void BuyCashProduct(string productId);
-    void BuyProductAsync(string productId);
+    Task BuyProductAsync(string productId);
+    Task BuyDailyProductAsync(string productId);
     event Action OnCashPaymentSuccess;
     event Action OnPaymentSuccess;
+    event Action<int> OnDailyPaymentSuccess;
 }

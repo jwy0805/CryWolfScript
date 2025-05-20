@@ -11,10 +11,10 @@ public class SinglePlayViewModel : IDisposable
 {
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
-    
-    public bool LoadStageInServer { get; set; } // true: start game from 'UI_SinglePlay', false: from 'UI_SinglePlayMapPopup'
+
     public int SelectedStageId { get; set; }
     public int StageLevel { get; set; }
+    public int StageId { get; set; }
     public List<UserStageInfo> UserStageInfos { get; set; }
     public List<StageEnemyInfo> StageEnemyInfos { get; set; }
     public List<StageRewardInfo> StageRewardInfos { get; set; }
@@ -37,13 +37,19 @@ public class SinglePlayViewModel : IDisposable
 
         await stageTask;
 
+        var response = stageTask.Result;
+        
         StageLevel = Util.Faction == Faction.Sheep 
-            ? stageTask.Result.UserStageInfos.Where(usi => usi.StageId < 5000).Max(usi => usi.StageLevel) 
-            : stageTask.Result.UserStageInfos.Where(usi => usi.StageId >= 5000).Max(usi => usi.StageLevel);
+            ? response.UserStageInfos.Where(usi => usi.StageId < 5000).Max(usi => usi.StageLevel) 
+            : response.UserStageInfos.Where(usi => usi.StageId >= 5000).Max(usi => usi.StageLevel);
+        
+        StageId = (Util.Faction == Faction.Sheep
+            ? response.UserStageInfos.Where(usi => usi.StageId < 5000).Max(usi => usi.StageId)
+            : response.UserStageInfos.Where(usi => usi.StageId >= 5000).Max(usi => usi.StageId));
 
-        UserStageInfos = stageTask.Result.UserStageInfos;
-        StageEnemyInfos = stageTask.Result.StageEnemyInfos;
-        StageRewardInfos = stageTask.Result.StageRewardInfos;
+        UserStageInfos = response.UserStageInfos;
+        StageEnemyInfos = response.StageEnemyInfos;
+        StageRewardInfos = response.StageRewardInfos;
     }
 
     public async Task ConnectGameSession()
@@ -52,15 +58,14 @@ public class SinglePlayViewModel : IDisposable
         await sessionTask;
     }
 
-    public async Task StartSinglePlay(int sessionId, bool loadStageInServer)
+    public async Task StartSinglePlay(int sessionId)
     {
         var changePacket = new ChangeActPacketSingleRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
             SessionId = sessionId,
-            StageId = SelectedStageId,
+            StageId = SelectedStageId == 0 ? StageId : SelectedStageId,
             Faction = Util.Faction,
-            LoadStageInServer = loadStageInServer
         };
         var apiTask = _webService.SendWebRequestAsync<ChangeActPacketSingleResponse>(
             "SinglePlay/StartGame", UnityWebRequest.kHttpVerbPUT, changePacket);

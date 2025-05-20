@@ -24,7 +24,7 @@ public class AdsManager
     private string _idfa = string.Empty;
     private bool _levelPlayInitialized;
 
-    public event Func<DailyProductInfo, Task> OnRewardedCheckDailyProduct;
+    public event Func<DailyProductInfo, Task> OnRewardedRevealDailyProduct;
     public event Func<Task> OnRewardedRefreshDailyProducts;
     public event Action OnAdFailed;
 
@@ -256,7 +256,7 @@ public class AdsManager
         switch (placement.ToString())
         {
             case "Check_Daily_Product":
-                OnRewardedCheckDailyProduct?.Invoke(RevealedDailyProduct);
+                OnRewardedRevealDailyProduct?.Invoke(RevealedDailyProduct);
                 break;
             case "Refresh_Daily_Products":
                 OnRewardedRefreshDailyProducts?.Invoke();

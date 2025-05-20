@@ -167,7 +167,7 @@ public partial class UI_MainLobby
 
             if (dailyProductInfo.Slot < 3)
             {
-                item.BindEvent(OnProductClicked);
+                item.BindEvent(OnDailyProductClicked);
             }
             else
             {
@@ -329,5 +329,13 @@ public partial class UI_MainLobby
             timer.LastRefreshTime = _shopVm.LastDailyProductRefreshTime;
             InitDailyProducts();
         }
+    }
+
+    private void SoldOutDailyProduct(int slot)
+    {
+        const string soldOutFramePath = "UI/Shop/SoldOut";
+        Managers.Resource.Destroy(_dailyProductPanel.GetChild(slot).gameObject);
+        var soldOutPanel = Managers.Resource.Instantiate(soldOutFramePath, _dailyProductPanel);
+        soldOutPanel.transform.SetSiblingIndex(slot);
     }
 }

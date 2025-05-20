@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -56,12 +57,19 @@ public class UI_SinglePlay : UI_Scene
     
     protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
 
-        await _singlePlayVm.Initialize();
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            await _singlePlayVm.Initialize();
+            BindObjects();
+            InitButtonEvents();
+            InitUI();
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
     }
     
     protected override void BindObjects()
@@ -84,9 +92,8 @@ public class UI_SinglePlay : UI_Scene
     {
         SetUserInfo();
         
-        var highestStage = _singlePlayVm.UserStageInfos.Max(usi => usi.StageId) % 10;
         var singlePlayStageText = _textDict["SinglePlayStageText"].GetComponent<TextMeshProUGUI>(); 
-        singlePlayStageText.text = $"{_singlePlayVm.StageLevel} - {highestStage}";
+        singlePlayStageText.text = $"{_singlePlayVm.StageLevel} - {_singlePlayVm.StageId % 1000}";
     }
 
     private void SetUserInfo()
@@ -105,15 +112,10 @@ public class UI_SinglePlay : UI_Scene
             Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform);
         }
     }
-
-    public bool GetStageProperty()
-    {
-        return _singlePlayVm.LoadStageInServer;
-    }
     
-    public void StartSinglePlay(int sessionId, bool loadStageInServer)
+    public void StartSinglePlay(int sessionId)
     {
-        _ = _singlePlayVm.StartSinglePlay(sessionId, loadStageInServer);
+        _ = _singlePlayVm.StartSinglePlay(sessionId);
     }
     
     private void OnBackClicked(PointerEventData data)
@@ -129,7 +131,6 @@ public class UI_SinglePlay : UI_Scene
     
     private async Task OnStartClicked(PointerEventData data)
     {
-        _singlePlayVm.LoadStageInServer = true;
         await _singlePlayVm.ConnectGameSession();
     }
 }

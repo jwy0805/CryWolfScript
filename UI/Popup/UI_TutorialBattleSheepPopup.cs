@@ -122,6 +122,7 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         }
 
         var npcInfo = _tutorialNpc.GetComponent<TutorialNpcInfo>();
+        
         var npcPos = npcInfo.Position;
         var cameraPos = npcInfo.CameraPosition;
         _tutorialVm.InitTutorialBattleSheep(npcPos, cameraPos);
@@ -413,7 +414,7 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
 
     private IEnumerator PointToUpgradeButton()
     {
-        var anchor = new Vector2(0.2f, 0.2f);
+        var anchor = new Vector2(0.28f, 0.12f);
         yield return StartCoroutine(HandMoveAndPokeRoutine(anchor));
     }
     
@@ -541,7 +542,8 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
     
     private void ChangeFaceHappy()
     {
-        Util.DestroyAllChildren(_flowerFace.transform);
+        _tutorialNpc = GameObject.FindGameObjectWithTag("Npc");
+        _flowerFace = Util.FindChild(_tutorialNpc, "+ Head", true);
         Managers.Resource.Instantiate("Npc/Face Happy", _flowerFace.transform);
     }
     

@@ -373,6 +373,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
 
         _paymentService.OnPaymentSuccess += OnMailAlert;
         _paymentService.OnCashPaymentSuccess += OnMailAlert;
+        _paymentService.OnDailyPaymentSuccess += SoldOutDailyProduct;
         
         _deckVm.OnDeckInitialized += SetDeckUI;
         _deckVm.OnDeckSwitched += SetDeckButtonUI;
@@ -391,7 +392,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         
         _userService.InitDeckButton += SetDeckButtonUI;
         
-        Managers.Ads.OnRewardedCheckDailyProduct += RevealDailyProduct;
+        Managers.Ads.OnRewardedRevealDailyProduct += RevealDailyProduct;
         Managers.Ads.OnRewardedRefreshDailyProducts += RefreshDailyProducts;
     }
 
@@ -726,8 +727,16 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         _currentModeIndex = (_currentModeIndex + direction + _modes.Count) % _modes.Count;
         _gameMode = (GameModeEnums)_currentModeIndex;
         StartCoroutine(nameof(MoveModeIcons));
-    }    
+    }
 
+    private void OnModeButtonClicked(PointerEventData data)
+    {
+        Enum.TryParse<GameModeEnums>(data.pointerPress.gameObject.name.Replace("Panel", ""), out var mode);
+        _currentModeIndex = (int)mode;
+        _gameMode = mode;
+        StartCoroutine(nameof(MoveModeIcons));
+    }
+    
     private void OnBottomButtonClicked(PointerEventData data)
     {
         switch (data.pointerPress.name)
@@ -947,6 +956,19 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         if (product == null) return;
         _shopVm.SelectedProduct = product.ProductInfo;
     }
+
+    private void OnDailyProductClicked(PointerEventData data)
+    {
+        var go = data.pointerPress.gameObject;
+        if (go.TryGetComponent(out ProductSimple productSimple))
+        {
+            if (productSimple.IsDragging) return;
+            var simplePopup = Managers.UI.ShowPopupUI<UI_ProductInfoSimplePopup>();
+            simplePopup.IsDailyProduct = true;
+            simplePopup.FrameObject = Instantiate(go);
+            simplePopup.FrameObject.GetComponent<ProductSimple>().ProductInfo = productSimple.ProductInfo;
+        }
+    }
     
     private void OnAdsRemoverClicked(PointerEventData data)
     {
@@ -1103,6 +1125,11 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
 
     protected override void InitButtonEvents()
     {
+        foreach (var gameModePanel in _modes)
+        {
+            gameModePanel.BindEvent(OnModeButtonClicked);
+        }
+        
         foreach (var pair in _bottomButtonDict)
         {
             pair.Value.BindEvent(OnBottomButtonClicked);
@@ -1370,6 +1397,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             _lobbyVm.OnChangeLanguage -= ChangeLanguage;
             _paymentService.OnPaymentSuccess -= OnMailAlert;
             _paymentService.OnCashPaymentSuccess -= OnMailAlert;
+            _paymentService.OnDailyPaymentSuccess -= SoldOutDailyProduct;
             _deckVm.OnDeckInitialized -= SetDeckUI;
             _deckVm.OnDeckSwitched -= SetDeckButtonUI;
             _deckVm.OnDeckSwitched -= ResetDeckUI;
@@ -1382,7 +1410,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             _tutorialVm.OnInitTutorialCamera1 -= InitTutorialMainCamera1;
             _tutorialVm.OnInitTutorialCamera2 -= InitTutorialMainCamera2;
             _userService.InitDeckButton -= SetDeckButtonUI;
-            Managers.Ads.OnRewardedCheckDailyProduct -= RevealDailyProduct;
+            Managers.Ads.OnRewardedRevealDailyProduct -= RevealDailyProduct;
             Managers.Ads.OnRewardedRefreshDailyProducts -= RefreshDailyProducts;
         
             await _lobbyVm.LeaveLobby();

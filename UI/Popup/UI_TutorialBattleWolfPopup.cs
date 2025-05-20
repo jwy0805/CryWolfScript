@@ -410,7 +410,7 @@ public class UI_TutorialBattleWolfPopup : UI_Popup
 
     private IEnumerator PointToUpgradeButton()
     {
-        var anchor = new Vector2(0.2f, 0.2f);
+        var anchor = new Vector2(0.28f, 0.12f);
         yield return StartCoroutine(HandMoveAndPokeRoutine(anchor));
     }
     

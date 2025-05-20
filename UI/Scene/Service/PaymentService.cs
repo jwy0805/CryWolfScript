@@ -42,6 +42,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
     
     public event Action OnCashPaymentSuccess;
     public event Action OnPaymentSuccess;
+    public event Action<int> OnDailyPaymentSuccess;
     
     [Inject]
     public PaymentService(IWebService webService, ITokenService tokenService)
@@ -77,26 +78,43 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         _storeController?.InitiatePurchase(productCode);
     }
 
-    public async void BuyProductAsync(string productCode)
+    public async Task BuyProductAsync(string productCode)
     {
-        try
+        var packet = new VirtualPaymentPacketRequired
         {
-            var packet = new VirtualPaymentPacketRequired
-            {
-                AccessToken = _tokenService.GetAccessToken(),
-                ProductCode = productCode
-            };
+            AccessToken = _tokenService.GetAccessToken(),
+            ProductCode = productCode
+        };
         
-            await _webService.SendWebRequestAsync<VirtualPaymentPacketResponse>(
-                "Payment/Purchase", UnityWebRequest.kHttpVerbPOST, packet);
+        await _webService.SendWebRequestAsync<VirtualPaymentPacketResponse>(
+            "Payment/Purchase", UnityWebRequest.kHttpVerbPUT, packet);
         
-            var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-            // popup.Text = "Payment Success!";
-            OnPaymentSuccess?.Invoke();
-        }
-        catch (Exception e)
+        var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        var titleKey = "notify_payment_success_title";
+        var messageKey = "notify_payment_success_message";
+        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        OnPaymentSuccess?.Invoke();
+    }
+
+    public async Task BuyDailyProductAsync(string productCode)
+    {
+        var packet = new DailyPaymentPacketRequired
         {
-            Debug.LogError($"PaymentService BuyProductAsync Error: {e}");
+            AccessToken = _tokenService.GetAccessToken(),
+            ProductCode = productCode
+        };
+
+        var task = await _webService.SendWebRequestAsync<DailyPaymentPacketResponse>(
+            "Payment/PurchaseDaily", UnityWebRequest.kHttpVerbPUT, packet);
+
+        var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        var titleKey = "notify_payment_success_title";
+        var messageKey = "notify_payment_success_message";
+        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+
+        if (task.PaymentOk)
+        {
+            OnDailyPaymentSuccess?.Invoke(task.Slot);
         }
     }
 
@@ -136,7 +154,8 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
                 ProductCode = purchaseProduct.definition.id,
             };
             var response = await _webService
-                .SendWebRequestAsync<CashPaymentPacketResponse>("Payment/PurchaseSpinel", "POST", packet);
+                .SendWebRequestAsync<CashPaymentPacketResponse>(
+                    "Payment/PurchaseSpinel", UnityWebRequest.kHttpVerbPUT, packet);
 
             if (response.PaymentOk)
             {

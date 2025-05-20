@@ -28,7 +28,7 @@ public class UI_ResultDefeatPopup : UI_Popup
     {
         DefeatText,
         ContinueText,
-        ResultRankPointText,
+        ResultDefeatRankPointText,
         
         RankValueText,
         RankText,

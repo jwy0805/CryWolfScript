@@ -148,6 +148,12 @@ public class ShopViewModel
             _paymentService.BuyProductAsync(SelectedProduct.ProductCode);
         }
     }
+
+    public void BuyDailyProduct()
+    {
+        if (SelectedProduct == null) return;
+        _paymentService.BuyDailyProductAsync(SelectedProduct.ProductCode);
+    }
     
     public async Task<bool> RevealDailyProduct(DailyProductInfo dailyProduct)
     {
