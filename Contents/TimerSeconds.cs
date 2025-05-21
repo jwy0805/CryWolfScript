@@ -17,6 +17,12 @@ public class TimerSeconds : MonoBehaviour
         {
             _lastRefreshTime = value;
             _refreshTime = _lastRefreshTime.AddHours(6);
+            
+            if (TimerText != null)
+            {
+                TimerText.gameObject.SetActive(true);
+                TimerText.text = "06:00:00";
+            }
         }
     }
     

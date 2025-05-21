@@ -1,11 +1,18 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
+using Unity.VectorGraphics;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Networking;
 using UnityEngine.UI;
+using Zenject;
 
 public class UI_SettingsPopup : UI_Popup
 {
+    private IWebService _webService;
+    private ITokenService _tokenService;
+    
     private readonly Dictionary<string, GameObject> _textDict = new();
     
     private Slider _musicSlider;
@@ -46,6 +53,13 @@ public class UI_SettingsPopup : UI_Popup
         SettingsDeleteAccountText,
     }
 
+    [Inject]
+    public void Construct(IWebService webService, ITokenService tokenService)
+    {
+        _webService = webService;
+        _tokenService = tokenService;
+    }
+    
     protected override void Init()
     {
         base.Init();
@@ -159,22 +173,80 @@ public class UI_SettingsPopup : UI_Popup
 
     private void OnAddReferrerClicked(PointerEventData data)
     {
-        
+        var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        const string titleKey = "notify_empty_title";
+        const string messageKey = "notify_preparing_message";
+        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
     }
     
     private void OnLinkSocialClicked(PointerEventData data)
     {
-        
+        var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        const string titleKey = "notify_empty_title";
+        const string messageKey = "notify_preparing_message";
+        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
     }
     
-    private void OnLogoutClicked(PointerEventData data)
+    private async Task OnLogoutClicked(PointerEventData data)
     {
+        var packet = new LogoutPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+        };
         
+        var task = await _webService.SendWebRequestAsync<LogoutPacketResponse>(
+            "UserAccount/Logout", UnityWebRequest.kHttpVerbDELETE, packet);
+
+        if (task.LogoutOk)
+        {
+            _tokenService.ClearTokens();
+            User.Instance.Clear();
+            
+            Managers.UI.ClosePopupUI();
+            Managers.Scene.LoadScene(Define.Scene.Login);
+            Managers.Clear();
+        }
     }
     
     private void OnDeleteAccountClicked(PointerEventData data)
     {
+        var popup = Managers.UI.ShowPopupUI<UI_NotifySelectPopup>();
+        const string titleKey = "notify_delete_account_title";
+        const string messageKey = "notify_delete_account_message";
+        Managers.Localization.UpdateNotifySelectPopupText(popup, titleKey, messageKey);
         
+        popup.SetYesCallback(async () =>
+        {
+            var packet = new DeleteUserAccountPacketRequired
+            {
+                AccessToken = _tokenService.GetAccessToken(),
+            };
+            
+            var task = _webService.SendWebRequestAsync<DeleteUserAccountPacketResponse>(
+                "UserAccount/Delete", UnityWebRequest.kHttpVerbDELETE, packet);
+            
+            await task;
+            
+            if (task.Result.DeleteOk)
+            {
+                _tokenService.ClearTokens();
+                User.Instance.Clear();
+                Managers.Clear();
+                Managers.Scene.LoadScene(Define.Scene.Login);
+            }
+            else
+            {
+                var notifyPopup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+                const string title = "notify_network_error_title";
+                const string message = "notify_network_error_message";
+                Managers.Localization.UpdateNotifyPopupText(notifyPopup, title, message);
+            }
+        });
+        
+        popup.SetNoCallBack(() =>
+        {
+            Managers.UI.ClosePopupUI();
+        });
     }
     
     public void ChangeLanguage(string language2Letter)

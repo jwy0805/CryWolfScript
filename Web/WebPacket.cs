@@ -235,18 +235,6 @@ public class ValidateNewAccountPacketResponse
     public int ErrorCode { get; set; }
 }
 
-public class CreateUserAccountPacketRequired
-{
-    public string UserAccount { get; set; }
-    public string Password { get; set; }
-}
-
-public class CreateUserAccountPacketResponse
-{
-    public bool CreateOk { get; set; }
-    public string Message { get; set; }
-}
-
 public class LoginUserAccountPacketRequired
 {
     public string UserAccount { get; set; }
@@ -258,16 +246,6 @@ public class LoginUserAccountPacketResponse
     public bool LoginOk { get; set; }
     public string AccessToken { get; set; }
     public string RefreshToken { get; set; }
-}
-
-public class GetAppleTokenPacketRequired
-{
-    public string IdToken { get; set; }
-}
-
-public class GetAppleTokenPacketResponse
-{
-    public string CustomToken { get; set; }
 }
 
 public class LoginApplePacketRequired
@@ -304,6 +282,26 @@ public class LoginGuestPacketResponse
     public bool LoginOk { get; set; }
     public string AccessToken { get; set; }
     public string RefreshToken { get; set; }
+}
+
+public class LogoutPacketRequired
+{
+    public string AccessToken { get; set; }
+}
+
+public class LogoutPacketResponse
+{
+    public bool LogoutOk { get; set; }
+}
+
+public class DeleteUserAccountPacketRequired
+{
+    public string AccessToken { get; set; }
+}
+
+public class DeleteUserAccountPacketResponse
+{
+    public bool DeleteOk { get; set; }
 }
 
 public class PolicyAgreedPacketRequired

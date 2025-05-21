@@ -27,6 +27,25 @@ public class User
     public Deck DeckSheep { get; set; } = new();
     public Deck DeckWolf { get; set; } = new();
     public bool SubscribeAdsRemover { get; set; }
+    public bool IsGuest { get; set; } = false;
+    public void Clear()
+    {
+        UserAccount = "";
+        OwnedUnitList.Clear();
+        NotOwnedUnitList.Clear();
+        OwnedSheepList.Clear();
+        NotOwnedSheepList.Clear();
+        OwnedEnchantList.Clear();
+        NotOwnedEnchantList.Clear();
+        OwnedCharacterList.Clear();
+        NotOwnedCharacterList.Clear();
+        BattleSetting = new BattleSettingInfo();
+        AllDeckSheep.Clear();
+        AllDeckWolf.Clear();
+        OwnedMaterialList.Clear();
+        DeckSheep = new Deck();
+        DeckWolf = new Deck();
+    }
 }
 
 public class Deck

@@ -7,6 +7,7 @@ using UnityEngine.Purchasing;
 using Unity.Services.Core;
 using UnityEngine.Networking;
 using UnityEngine.Purchasing.Extension;
+using UnityEngine.Rendering;
 using Zenject;
 
 /* Last Modified : 25. 04. 22
@@ -18,6 +19,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
     private IStoreController _storeController;
+    private IExtensionProvider _extensionProvider;
 
     private readonly HashSet<ProductDefinition> _products = new()
     {
@@ -122,6 +124,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
     {
         Debug.Log("IAP Initialized");
         _storeController = controller;
+        _extensionProvider = extensions;
     }
 
     public void OnInitializeFailed(InitializationFailureReason error)
@@ -136,57 +139,97 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
 
     public PurchaseProcessingResult ProcessPurchase(PurchaseEventArgs purchaseEvent)
     {
-        var product = purchaseEvent.purchasedProduct;
-        var receipt = product.receipt;
-        SendReceiptToServer(receipt, product);
-    
+        _ = VerifyAndConfirmAsync(purchaseEvent.purchasedProduct);
         return PurchaseProcessingResult.Pending;
     }
 
-    private async void SendReceiptToServer(string receipt, Product purchaseProduct)
+    private async Task VerifyAndConfirmAsync(Product product)
     {
         try
         {
-            var packet = new CashPaymentPacketRequired
+            var ok = await SendReceiptToServer(product.receipt, product);
+            _storeController.ConfirmPendingPurchase(product);
+            if (ok)
             {
-                AccessToken = _tokenService.GetAccessToken(),
-                Receipt = receipt,
-                ProductCode = purchaseProduct.definition.id,
-            };
-            var response = await _webService
-                .SendWebRequestAsync<CashPaymentPacketResponse>(
-                    "Payment/PurchaseSpinel", UnityWebRequest.kHttpVerbPUT, packet);
-
-            if (response.PaymentOk)
-            {
-                _storeController.ConfirmPendingPurchase(purchaseProduct);
-                var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-                const string titleKey = "notify_payment_success_title";
-                const string messageKey = "notify_payment_success_message";
-                Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+                ShowPurchaseSuccessPopup();
                 OnCashPaymentSuccess?.Invoke();
             }
             else
-            { 
-                var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-                const string titleKey = "notify_payment_failed_title";
-                const string messageKey = "notify_payment_failed_message";
-                Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+            {
+                ShowPurchaseFailedPopup();
             }
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Debug.LogError(e);
+            _storeController.ConfirmPendingPurchase(product);
+            ShowPurchaseFailedPopup();
         }
     }
+    
+    private async Task<bool> SendReceiptToServer(string receipt, Product purchaseProduct)
+    {
+        var packet = new CashPaymentPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            Receipt = receipt,
+            ProductCode = purchaseProduct.definition.id,
+        };
+        var response = await _webService.SendWebRequestAsync<CashPaymentPacketResponse>(
+            "Payment/PurchaseSpinel", UnityWebRequest.kHttpVerbPUT, packet);
+        
+        return response is { PaymentOk: true };
+    }
 
+    public void RestorePurchases()
+    { 
+#if UNITY_IOS
+        if (_storeController == null)
+        {
+            Debug.LogError("StoreController is null");
+            return;
+        }
+
+        var apple = _extensionProvider.GetExtension<IAppleExtensions>();
+        apple.RestoreTransactions(result =>
+        {
+            if (result)
+            {
+                Debug.Log("Restore transactions completed successfully");
+            }
+            else
+            {
+                Debug.LogError("Restore transactions failed");
+            }
+        });
+#endif
+    }
+    
+    private void ShowPurchaseSuccessPopup()
+    {
+        var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        const string titleKey = "notify_payment_success_title";
+        const string messageKey = "notify_payment_success_message";
+        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+    }
+    
+    private void ShowPurchaseFailedPopup()
+    {
+        var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        const string titleKey = "notify_payment_failed_title";
+        const string messageKey = "notify_payment_failed_message";
+        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+    }
+    
     public void OnPurchaseFailed(Product product, PurchaseFailureReason failureReason)
     {
         Debug.LogError($"Purchase failed: {product.definition.id}, Reason: {failureReason}");
+        ShowPurchaseFailedPopup();
     }
     
     public void OnPurchaseFailed(Product product, PurchaseFailureDescription failureDescription)
     {
         Debug.LogError($"Purchase failed: {product.definition.id}, Reason: {failureDescription.reason}, Message: {failureDescription.message}");
+        ShowPurchaseFailedPopup();
     }
 }

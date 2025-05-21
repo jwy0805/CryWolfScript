@@ -3,13 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.iOS;
 using System.Runtime.InteropServices;
 using Unity.Services.LevelPlay;
 using Unity.VisualScripting;
 using LevelPlayConfiguration = Unity.Services.LevelPlay.LevelPlayConfiguration;
 
 #if UNITY_IOS
+using UnityEngine.iOS;
 using Unity.Advertisement.IosSupport;
 #endif
 

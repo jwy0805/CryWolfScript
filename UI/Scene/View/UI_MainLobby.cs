@@ -195,7 +195,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         RecyclingButton,
         
         DailyProductsRefreshButton,
-        AdsRemover
+        AdsRemover,
+        RestorePurchaseButton,
     }
 
     private enum Texts
@@ -254,7 +255,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         GoldPackageLabelText,
         SpinelPackageLabelText,
         
-        DailyProductsRefreshButtonText,
+        RestorePurchaseText,
+        RefreshText,
         DailyProductsRefreshButtonTimeText,
     }
 
@@ -1019,6 +1021,11 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         _shopVm.SelectedProduct = package.ProductInfo;
     }
     
+    private void OnRestorePurchaseClicked(PointerEventData data)
+    {
+        _paymentService.RestorePurchases();
+    }
+    
     #endregion
     
     // UI Size Adjustments
@@ -1176,6 +1183,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         GetButton((int)Buttons.ReinforceButton).gameObject.BindEvent(OnReinforceClicked);
         
         GetButton((int)Buttons.RecyclingButton).gameObject.BindEvent(OnRecyclingClicked);
+        GetButton((int)Buttons.RestorePurchaseButton).gameObject.BindEvent(OnRestorePurchaseClicked);
     }
     
     private async Task InitMainLobby()
@@ -1231,6 +1239,14 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         if (sheepTutorialDone == false || wolfTutorialDone == false || changeFactionTutorialDone == false)
         {
             ProcessTutorial();
+        }
+
+        if (User.Instance.IsGuest)
+        {
+            var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+            const string titleKey = "warning_text";
+            const string messageKey = "notify_warning_guest_account_message";
+            Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
         }
     }
 

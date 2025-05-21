@@ -165,6 +165,7 @@ public class LoginViewModel : IInitializable, IDisposable
             var response = task.Result;
             if (response.LoginOk)
             {
+                User.Instance.IsGuest = true;
                 HandleSignInSuccess(response.AccessToken, response.RefreshToken);
             }
             else
@@ -241,7 +242,7 @@ public class LoginViewModel : IInitializable, IDisposable
             // Handle login success
             var appleLoginPacket = new LoginApplePacketRequired { IdToken = idToken };
             var task = _webService.SendWebRequestAsync<LoginApplePacketResponse>(
-                "UserAccount/LoginApple", "PUT", appleLoginPacket);
+                "UserAccount/LoginApple", UnityWebRequest.kHttpVerbPOST, appleLoginPacket);
             await task;
             
             var response = task.Result;
@@ -326,7 +327,7 @@ public class LoginViewModel : IInitializable, IDisposable
     {
         var googleLoginPacket = new LoginGooglePacketRequired { IdToken = idToken };
         var task = _webService.SendWebRequestAsync<LoginGooglePacketResponse>(
-            "UserAccount/LoginGoogle", "PUT", googleLoginPacket);
+            "UserAccount/LoginGoogle", UnityWebRequest.kHttpVerbPOST, googleLoginPacket);
         await task;
             
         var response = task.Result;

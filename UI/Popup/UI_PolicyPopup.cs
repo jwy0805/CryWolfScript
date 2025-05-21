@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 using Zenject;
 using Debug = System.Diagnostics.Debug;
@@ -135,7 +136,7 @@ public class UI_PolicyPopup : UI_Popup
             };
 
             var task = await _webService.SendWebRequestAsync<PolicyAgreedPacketResponse>(
-                "UserAccount/PolicyAgreed", "PUT", packet);
+                "UserAccount/PolicyAgreed", UnityWebRequest.kHttpVerbPOST, packet);
 
             if (task.PolicyAgreedOk)
             {

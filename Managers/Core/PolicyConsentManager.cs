@@ -54,10 +54,12 @@ public class PolicyConsentManager
             await ShowPolicyPopupAsync();
         }
 
+#if UNITY_IOS
         if (attFinished == false)
         {
             await Managers.Ads.RequestAttAsync();
         }
+#endif
     }
 
     private Task<bool> ShowPolicyPopupAsync()

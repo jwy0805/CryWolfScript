@@ -40,6 +40,7 @@ public interface ITokenService
     void SaveRefreshToken(string refreshToken);
     string GetAccessToken();
     string GetRefreshToken();
+    void ClearTokens();
 }
 
 public interface ISignalRClient
@@ -62,6 +63,7 @@ public interface IPaymentService
     void BuyCashProduct(string productId);
     Task BuyProductAsync(string productId);
     Task BuyDailyProductAsync(string productId);
+    void RestorePurchases();
     event Action OnCashPaymentSuccess;
     event Action OnPaymentSuccess;
     event Action<int> OnDailyPaymentSuccess;
