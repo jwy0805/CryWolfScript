@@ -45,56 +45,109 @@ public class LocalizationManager
     {
         { "ko", "esamanru Medium SDF" },
         { "en", "Sen SDF" },
+        { "ja", "mplus-1p-medium SDF"}
+    };
+
+    private readonly Dictionary<string, string> _blackLinedFontMap = new()
+    {
+        { "ko", "esamanru_outline Medium SDF" },
+        { "en", "Sen_Line_s_Black SDF" },
+        { "ja", "mplus-1p-medium-outline SDF" }
+    };
+
+    private readonly Dictionary<string, string> _blueLinedFontMap = new()
+    {
+        { "ko", "esamanru_outline_blue Medium SDF" },
+        { "en", "Sen_Line_s_Blue SDF" },
+        { "ja", "mplus-1p-medium-outline-blue SDF" }
     };
     
-    public string Language2Letter => _language2Letter;
-    
-    public void Init()
+    private readonly Dictionary<string, string> _redLinedFontMap = new()
     {
-        _language2Letter = GetLanguage();
-    }
-    
-    private string GetLanguage()
+        { "ko", "esamanru_outline_red Medium SDF" },
+        { "en", "Sen_Line_s_Red SDF" },
+        { "ja", "mplus-1p-medium-outline-red SDF" }
+    };
+
+    public string Language2Letter
     {
-        const string key = "Language";
-        string language;
-        if (PlayerPrefs.HasKey(key))
+        get
         {
-            language = PlayerPrefs.GetString(key);
-        }
-        else
-        {
-            _languageMap.TryGetValue(Application.systemLanguage.ToString(), out language);
-        }
-        
-        return language;
-    }
-    
-    public void SetLanguage(string language)
-    {
-        if (_languageMap.TryGetValue(language, out var languageCode))
-        {
-            PlayerPrefs.SetString("Language", language);
-            _language2Letter = languageCode;
-        }
-        else
-        {
-            if (_languageMap.Values.Contains(language))
+            if (_language2Letter == null)
             {
-                PlayerPrefs.SetString("Language", language);
-                _language2Letter = language;
+                if (PlayerPrefs.HasKey("Language"))
+                {
+                    var language = Application.systemLanguage.ToString();
+                    var language2Letter = _languageMap.GetValueOrDefault(language, "en");
+                    SetLanguage(language2Letter);
+                    return _language2Letter;
+                }
+                else
+                {
+                    return PlayerPrefs.GetString("Language");
+                }
+            }
+            
+            return _language2Letter;
+        }
+        set
+        {
+            if (value.Length != 2)
+            {
+                _language2Letter = value switch
+                {
+                    "Korean" => "ko",
+                    "English" => "en",
+                    "Japanese" => "ja",
+                    "Vietnamese" => "vi",
+                    _ => "en"
+                };
+            }
+            else
+            {
+                _language2Letter = value;
+            }
+        }
+    }
+    
+    public void SetLanguage(string language2Letter)
+    {
+        if (_languageMap.TryGetValue(language2Letter, out var languageCode))
+        {
+            PlayerPrefs.SetString("Language", language2Letter);
+            Language2Letter = languageCode;
+        }
+        else
+        {
+            if (_languageMap.Values.Contains(language2Letter))
+            {
+                PlayerPrefs.SetString("Language", language2Letter);
+                Language2Letter = language2Letter;
             }
             else
             {
                 PlayerPrefs.SetString("Language", "English");
-                _language2Letter = "en";
+                Language2Letter = "en";
             }
         }
     }
     
     private TMP_FontAsset GetFont(string fontName)
     {
-        return Resources.Load<TMP_FontAsset>($"Fonts/{fontName}");
+        return Managers.Resource.Load<TMP_FontAsset>($"Fonts/{fontName}");
+    }
+
+    private TMP_FontAsset GetFontFromDictionary(FontType fontType)
+    {
+        var fontName = fontType switch
+        {
+            FontType.BlackLined => _blackLinedFontMap.GetValueOrDefault(Language2Letter, "esamanru_outline Medium SDF"),
+            FontType.BlueLined => _blueLinedFontMap.GetValueOrDefault(Language2Letter, "esamanru_outline_blue Medium SDF"),
+            FontType.RedLined => _redLinedFontMap.GetValueOrDefault(Language2Letter, "esamanru_outline_red Medium SDF"),
+            _ => _basicFontMap.GetValueOrDefault(Language2Letter, "esamanru Medium SDF")
+        };
+
+        return GetFont(fontName);
     }
 
     public string GetConvertedString(string str)
@@ -173,16 +226,19 @@ public class LocalizationManager
         }
     }
 
-    public string GetLocalizedValue(TextMeshProUGUI tmpro, string key)
+    public string BindLocalizedText(TextMeshProUGUI tmpro, string key, FontType fontType = FontType.None)
     {
         if (_localizationDict.Any() == false)
         {
             _localizationDict = Managers.Data.LocalizationDict;
         }
-        
+
+        key = GetConvertedString(key);
         if (_localizationDict.TryGetValue(key, out var entryDictionary) == false) return string.Empty;
         if (entryDictionary.TryGetValue(Language2Letter, out var entry) == false) return string.Empty;
-        tmpro.font = GetFont(entry.Font);
+        tmpro.font = fontType == FontType.None ? GetFont(entry.Font) : GetFontFromDictionary(fontType);
+        tmpro.text = entry.Text;
+        
         if (entry.FontSize != 0)
         {
             tmpro.fontSize = entry.FontSize;
@@ -248,6 +304,9 @@ public class LocalizationManager
         }
     }
 
+    /// <summary>
+    /// In Game Warning Popup
+    /// </summary>
     public void UpdateWarningPopupText(UI_WarningPopup popup, string messageKey)
     {
         if (_localizationDict.Any() == false)
@@ -290,6 +349,7 @@ public class LocalizationManager
         }
         else
         {
+            popup.MessageText = messageKey;
             Debug.LogError($"Translation key not found: {titleKey} or {messageKey}");
         }
     }
@@ -313,7 +373,7 @@ public class LocalizationManager
         }
         else
         {
-            Debug.LogError($"Translation key not found: {titleKey} or {messageKey}");
+            Debug.LogWarning($"Translation key not found: {titleKey} or {messageKey}");
         }
     }
 
@@ -327,17 +387,11 @@ public class LocalizationManager
         inputField.fontAsset = GetFont(fontName);
     }
     
-    public void UpdateFont(GameObject go, string fontName = null)
+    public TMP_FontAsset UpdateFont(TextMeshProUGUI text, FontType fontType = FontType.None, string fontName = null)
     {
-        if (fontName == null)
-        {
-            _basicFontMap.TryGetValue(Language2Letter, out fontName);
-        }
-        
-        if (go.TryGetComponent(out TextMeshProUGUI text))
-        {
-            text.font = GetFont(fontName);
-        }
+        var font = fontName == null ? GetFontFromDictionary(fontType) : GetFont(fontName);
+        text.font = font;
+        return font;
     }
 
     /// <summary>
@@ -372,7 +426,7 @@ public class LocalizationManager
     /// <param name="text">포맷팅할 원본 텍스트 (플레이스홀더 포함)</param>
     /// <param name="placeholders">플레이스홀더와 그 대체 값이 담긴 딕셔너리</param>
     /// <returns>플레이스홀더가 대체된 포맷팅된 텍스트</returns>
-    private string FormatSkillText(string text, Dictionary<string, object> placeholders)
+    public string FormatSkillText(string text, Dictionary<string, object> placeholders)
     {
         if (string.IsNullOrEmpty(text) || placeholders == null || placeholders.Count == 0) return text;
 
@@ -384,5 +438,33 @@ public class LocalizationManager
         }
 
         return text;
+    }
+
+    public void FormatLocalizedText(
+        TextMeshProUGUI tmpro,
+        string key,
+        List<string> placeholderKeys,
+        List<string> replacers,
+        FontType fontType = FontType.None)
+    {
+        if (_localizationDict.Any() == false)
+        {
+            _localizationDict = Managers.Data.LocalizationDict;
+        }
+        
+        if (_localizationDict.TryGetValue(key, out var entryDictionary) == false) return;
+        if (entryDictionary.TryGetValue(Language2Letter, out var entry) == false) return;
+
+        var template = entry.Text;
+        var formattedText = template;
+        
+        for (int i = 0; i < replacers.Count; i++)
+        {
+            string placeholder = "{" + placeholderKeys[i] + "}";
+            formattedText = formattedText.Replace(placeholder, replacers[i]);
+        }
+
+        tmpro.text = formattedText;
+        tmpro.font = fontType == FontType.None ? GetFont(entry.Font) : GetFontFromDictionary(fontType);
     }
 }

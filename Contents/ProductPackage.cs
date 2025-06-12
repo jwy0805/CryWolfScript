@@ -14,6 +14,6 @@ public class ProductPackage : GameProduct
     {
         var titleText = Util.FindChild<TextMeshProUGUI>(gameObject, "TextName", true);
         if (ProductInfo == null) return;
-        titleText.text = Managers.Localization.GetLocalizedValue(titleText, ProductInfo.ProductCode);
+        titleText.text = Managers.Localization.BindLocalizedText(titleText, ProductInfo.ProductCode);
     }
 }

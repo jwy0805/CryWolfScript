@@ -79,6 +79,7 @@ public class Contents
     
         public Dictionary<int, UnitData> MakeDict()
         {
+            Debug.Log($"Admin Log: Making UnitDict {Units.Count}, {Units.First().Id}");
             return Units.ToDictionary(unit => unit.Id);
         }
     }

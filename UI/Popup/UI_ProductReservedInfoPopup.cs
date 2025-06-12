@@ -109,7 +109,7 @@ public class UI_ProductReservedInfoPopup : UI_Popup
             
             // Set description text
             var text = Util.FindChild(productFrame, "TextDescription", true).GetComponent<TextMeshProUGUI>();
-            text.text = Managers.Localization.GetLocalizedValue(text, key);
+            text.text = Managers.Localization.BindLocalizedText(text, key);
         }
     }
 
@@ -118,13 +118,13 @@ public class UI_ProductReservedInfoPopup : UI_Popup
         var composition = _productInfo.Compositions.FirstOrDefault(c => c.Id == _productInfo.Id);
         var str = _productInfo.Category == ProductCategory.GoldPackage ? "" : "X";
         var productText = GetText((int)Texts.TextName);
-        productText.text = Managers.Localization.GetLocalizedValue(productText, _productInfo.ProductCode);
+        productText.text = Managers.Localization.BindLocalizedText(productText, _productInfo.ProductCode);
         GetText((int)Texts.TextNum).text = str + composition?.Count;
         GetText((int)Texts.TextPrice).text = _productInfo.Price.ToString();
         
         var infoText = GetText((int)Texts.TextInfo);
         var key = $"product_info_{_productInfo.ProductCode}";
-        infoText.text = Managers.Localization.GetLocalizedValue(infoText, key);
+        infoText.text = Managers.Localization.BindLocalizedText(infoText, key);
     }
     
     private void OnBuyButtonClicked(PointerEventData data)

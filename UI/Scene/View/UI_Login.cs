@@ -2,8 +2,10 @@ using System;
 using System.Collections;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Zenject;
@@ -41,13 +43,21 @@ public class UI_Login : UI_Scene
         _viewModel = viewModel;
     }
 
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
 
-        BindObjects();
-        InitButtonEvents();
-        InitEvents();
+            BindObjects();
+            await InitAddressables();
+            InitButtonEvents();
+            InitEvents();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     private void Update()
@@ -83,6 +93,23 @@ public class UI_Login : UI_Scene
     
     #endregion
 
+    private async Task InitAddressables()
+    {
+        await Addressables.InitializeAsync().Task;
+
+        const string packLabel = "Fast Follow Resources";
+        Managers.Resource.ToDownloadSize = await Addressables.GetDownloadSizeAsync(packLabel).Task;
+        Debug.Log($"[PAD] Resources to download: {Managers.Resource.ToDownloadSize} Bytes");
+        if (Managers.Resource.ToDownloadSize > 0)
+        {
+            var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+            const string titleKey = "notify_additional_download_title";
+            const string messageKey = "notify_additional_download_message";
+            Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+            popup.SetYesCallback(() => Managers.Scene.LoadScene(Define.Scene.Loading));
+        }
+    }
+    
     private void OnSignUpClicked(PointerEventData data)
     {
         _viewModel.SignIn();

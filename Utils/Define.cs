@@ -19,6 +19,7 @@ public class Define
         MatchMaking,
         FriendlyMatch,
         SinglePlay,
+        Loading,
     }
     
     public enum Sound

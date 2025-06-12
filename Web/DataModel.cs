@@ -342,3 +342,11 @@ public enum ConsentStatus
     PolicyFinished,
     RegulationFinished,
 }
+
+public enum FontType
+{
+    None,
+    BlackLined,
+    BlueLined,
+    RedLined,
+}

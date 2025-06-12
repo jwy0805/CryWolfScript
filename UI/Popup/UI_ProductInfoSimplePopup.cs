@@ -22,6 +22,7 @@ public class UI_ProductInfoSimplePopup : UI_Popup
     
     public bool IsDailyProduct { get; set; }
     public GameObject FrameObject { get; set; }
+    public Vector2 FrameSize { get; set; }
 
     private enum Buttons
     {
@@ -83,27 +84,28 @@ public class UI_ProductInfoSimplePopup : UI_Popup
             : "Sprites/ShopIcons/icon_gold";
         var composition = _productInfo.Compositions.FirstOrDefault(c => c.Id == _productInfo.Id);
         var str = _productInfo.Category == ProductCategory.GoldPackage ? "" : "X";
+        var frameRect = FrameObject.GetComponent<RectTransform>();
         
         _icon.sprite = Managers.Resource.Load<Sprite>(iconPath);
         FrameObject.transform.SetParent(_frame.transform);
-        FrameObject.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+        frameRect.anchoredPosition = Vector2.zero;
+        frameRect.sizeDelta = FrameSize;
+        FrameObject.transform.localScale *= 0.85f;
         
         var productText = GetText((int)Texts.TextName);
-        productText.text = Managers.Localization.GetLocalizedValue(productText, _productInfo.ProductCode);
+        productText.text = Managers.Localization.BindLocalizedText(productText, _productInfo.ProductCode);
         GetText((int)Texts.TextNum).text = str + composition?.Count;
         GetText((int)Texts.TextPrice).text = _productInfo.Price.ToString();
-        // SetInfoText();
+
+        if (IsDailyProduct)
+        {
+            GetText((int)Texts.TextNum).gameObject.SetActive(false);
+        }
     }
     
     private void GetProductInfo()
     {
         _productInfo = _shopVm.SelectedProduct;
-    }
-    
-    private void SetInfoText()
-    {
-        var infoText = GetText((int)Texts.TextInfo);
-        Managers.Localization.GetLocalizedValue(infoText, $"product_info_{_productInfo.ProductCode}");
     }
     
     private void OnBuyButtonClicked(PointerEventData data)

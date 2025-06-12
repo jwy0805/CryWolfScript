@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -6,6 +7,7 @@ using UnityEngine.UI;
 
 public class UI_NotifySelectPopup : UI_Popup
 {
+    private Func<Task> _yesAsyncCallback;
     private Action _yesCallback; 
     private Action _noCallback;
     
@@ -66,14 +68,14 @@ public class UI_NotifySelectPopup : UI_Popup
         message.text = MessageText;
         
         var yesText = GetText((int)Texts.YesText);
-        yesText.text = Managers.Localization.GetLocalizedValue(yesText, "yes_text");
+        yesText.text = Managers.Localization.BindLocalizedText(yesText, "yes_text");
         if (ButtonFontSize != 0)
         {
             GetText((int)Texts.YesText).fontSize = ButtonFontSize;
         }
 
         var noText = GetText((int)Texts.NoText);
-        noText.text = Managers.Localization.GetLocalizedValue(noText, "no_text");
+        noText.text = Managers.Localization.BindLocalizedText(noText, "no_text");
         if (ButtonFontSize != 0)
         {
             GetText((int)Texts.NoText).fontSize = ButtonFontSize;
@@ -85,9 +87,15 @@ public class UI_NotifySelectPopup : UI_Popup
         _yesCallback = callback;
     }
 
+    public void SetYesCallback(Func<Task> callback)
+    {
+        _yesAsyncCallback = callback;
+    }
+
     private void OnYesClicked(PointerEventData data)
     {
         _yesCallback?.Invoke();
+        _yesAsyncCallback?.Invoke();
     }
     
     public void SetNoCallBack(Action callback)
@@ -110,5 +118,12 @@ public class UI_NotifySelectPopup : UI_Popup
     private void OnExitClicked(PointerEventData data)
     {
         Managers.UI.ClosePopupUI();
+    }
+    
+    private void OnDestroy()
+    {
+        _yesCallback = null;
+        _yesAsyncCallback = null;
+        _noCallback = null;
     }
 }

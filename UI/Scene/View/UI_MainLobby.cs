@@ -257,7 +257,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         
         RestorePurchaseText,
         RefreshText,
-        DailyProductsRefreshButtonTimeText,
+        DailyProductsRefreshButtonTimeText
     }
 
     private enum Images
@@ -370,6 +370,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         _lobbyVm.OnMailAlert += OnMailAlert;
         _lobbyVm.OffMailAlert += OffMailAlert;
         _lobbyVm.OnPageChanged += UpdateScrollbar;
+        _lobbyVm.OnUpdateUsername += UpdateUsername;
         _lobbyVm.OnChangeButtonFocus += ChangeButtonFocus;
         _lobbyVm.OnChangeLanguage += ChangeLanguage;
 
@@ -434,6 +435,11 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     private void UpdateScrollbar(int pageIndex)
     {
         scrollbar.value = _lobbyVm.GetScrollPageValue(pageIndex);
+    }
+
+    private void UpdateUsername()
+    {
+        GetText((int)Texts.UsernameText).text = User.Instance.UserName;
     }
     
     private IEnumerator OnSwipeOneStep(int index)
@@ -941,6 +947,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             if (productSimple.IsDragging) return;
             var simplePopup = Managers.UI.ShowPopupUI<UI_ProductInfoSimplePopup>();
             simplePopup.FrameObject = Instantiate(go);
+            simplePopup.FrameSize = go.GetComponent<RectTransform>().sizeDelta;
             product = productSimple;
             simplePopup.FrameObject.GetComponent<ProductSimple>().ProductInfo = product.ProductInfo;
         }
@@ -968,7 +975,9 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             var simplePopup = Managers.UI.ShowPopupUI<UI_ProductInfoSimplePopup>();
             simplePopup.IsDailyProduct = true;
             simplePopup.FrameObject = Instantiate(go);
+            simplePopup.FrameSize = go.GetComponent<RectTransform>().sizeDelta;
             simplePopup.FrameObject.GetComponent<ProductSimple>().ProductInfo = productSimple.ProductInfo;
+            _shopVm.SelectedProduct = productSimple.ProductInfo;
         }
     }
     
@@ -1038,7 +1047,14 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         Bind<Image>(typeof(Images));
         
         Managers.Localization.UpdateTextAndFont(_textDict);
-        Managers.Localization.UpdateFont(_textDict["UsernameText"]);
+        Managers.Localization.UpdateFont(GetText((int)Texts.UsernameText));
+
+        var deckButtonText = GetButton((int)Buttons.DeckTabButton).GetComponent<TextMeshProUGUI>();
+        var collectionButtonText = GetButton((int)Buttons.CollectionTabButton).GetComponent<TextMeshProUGUI>();
+        var craftingButtonText = GetButton((int)Buttons.CraftingTabButton).GetComponent<TextMeshProUGUI>();
+        Managers.Localization.BindLocalizedText(deckButtonText, "deck_text");
+        Managers.Localization.BindLocalizedText(collectionButtonText, "collection_text");
+        Managers.Localization.BindLocalizedText(craftingButtonText, "crafting_text");
 
         _expSlider = GetImage((int)Images.ExpSliderBackground).transform.parent.GetComponent<Slider>();
         _craftingScrollRect = GetImage((int)Images.CollectionScrollView).GetComponent<ScrollRect>();
@@ -1232,6 +1248,25 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         Managers.Ads.InitLevelPlay();
 #endif
         
+        if (User.Instance.IsGuest)
+        {
+            var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+            const string titleKey = "warning_text";
+            const string messageKey = "notify_warning_guest_account_message";
+            Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+            
+            var tcs = new TaskCompletionSource<bool>();
+            popup.SetYesCallback(() =>
+            {
+                tcs.TrySetResult(true);
+                Managers.UI.ClosePopupUI(popup);
+            });
+            
+            await tcs.Task;
+        }
+
+        await Task.Yield();
+        
         var sheepTutorialDone = _userService.TutorialInfo.SheepTutorialDone;
         var wolfTutorialDone = _userService.TutorialInfo.WolfTutorialDone;
         var changeFactionTutorialDone = _userService.TutorialInfo.ChangeFactionTutorialDone;
@@ -1239,14 +1274,6 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         if (sheepTutorialDone == false || wolfTutorialDone == false || changeFactionTutorialDone == false)
         {
             ProcessTutorial();
-        }
-
-        if (User.Instance.IsGuest)
-        {
-            var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-            const string titleKey = "warning_text";
-            const string messageKey = "notify_warning_guest_account_message";
-            Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
         }
     }
 
@@ -1269,6 +1296,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     private void ProcessTutorial()
     {
         var tutorialInfo = _userService.TutorialInfo;
+        
+        Debug.Log($"{tutorialInfo.WolfTutorialDone} {tutorialInfo.SheepTutorialDone}");
         
         // Case 1: Both tutorials are completed
         if (tutorialInfo.WolfTutorialDone && tutorialInfo.SheepTutorialDone)
@@ -1309,12 +1338,12 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         switch (faction)
         {
             case Faction.Sheep:
-                gamePanelImage.sprite = Resources.Load<Sprite>("Sprites/Backgrounds/MainLobbySheep");
-                factionButtonIcon.sprite = Resources.Load<Sprite>("Sprites/SheepButton");
+                gamePanelImage.sprite = Managers.Resource.Load<Sprite>("Sprites/Backgrounds/MainLobbySheep");
+                factionButtonIcon.sprite = Managers.Resource.Load<Sprite>("Sprites/SheepButton");
                 break;
             case Faction.Wolf:
-                gamePanelImage.sprite = Resources.Load<Sprite>("Sprites/Backgrounds/MainLobbyWolf");
-                factionButtonIcon.sprite = Resources.Load<Sprite>("Sprites/WolfButton");
+                gamePanelImage.sprite = Managers.Resource.Load<Sprite>("Sprites/Backgrounds/MainLobbyWolf");
+                factionButtonIcon.sprite = Managers.Resource.Load<Sprite>("Sprites/WolfButton");
                 break;
         }
     }
@@ -1349,9 +1378,10 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     
     private void SetArrangeButtonColor(string buttonName)
     {
-        foreach (var pair in _arrangeButtonDict)
+        foreach (var go in _arrangeButtonDict.Values)
         {
-            pair.Value.GetComponentInChildren<Image>().color = pair.Key == buttonName ? Color.green : Color.white;
+            var buttonImage = go.GetComponent<Image>();
+            buttonImage.color = go.name == buttonName ? Color.cyan : Color.white;
         }
     }
 
@@ -1409,6 +1439,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             _lobbyVm.OnMailAlert -= OnMailAlert;
             _lobbyVm.OffMailAlert -= OffMailAlert;
             _lobbyVm.OnPageChanged -= UpdateScrollbar;
+            _lobbyVm.OnUpdateUsername -= UpdateUsername;
             _lobbyVm.OnChangeButtonFocus -= ChangeButtonFocus;
             _lobbyVm.OnChangeLanguage -= ChangeLanguage;
             _paymentService.OnPaymentSuccess -= OnMailAlert;

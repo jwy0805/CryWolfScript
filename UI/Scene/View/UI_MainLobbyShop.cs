@@ -180,27 +180,17 @@ public partial class UI_MainLobby
     private void InitDailyPanelObjects()
     {
         var refreshButton = GetButton((int)Buttons.DailyProductsRefreshButton).gameObject;
-        var timer = refreshButton.GetOrAddComponent<TimerSeconds>();
-
-        var buttonTextName = "DailyProductsRefreshButtonText";
-        var buttonTimeTextName = "DailyProductsRefreshButtonTimeText"; 
-        var buttonTimeText = Util.FindChild(refreshButton, buttonTimeTextName, true);
-        var buttonTextDict = new Dictionary<string, GameObject>
-        {
-            { buttonTextName, Util.FindChild(refreshButton, buttonTextName, true) },
-            { buttonTimeTextName, buttonTimeText }
-        };
-        
-        Managers.Localization.UpdateTextAndFont(buttonTextDict);
-
         refreshButton.BindEvent(OnRefreshDailyProductsClicked);
-        timer.TimerText = buttonTimeText.GetComponent<TextMeshProUGUI>();
+        
+        var timer = refreshButton.GetOrAddComponent<TimerSeconds>();
+        timer.TimerText = GetText((int)Texts.DailyProductsRefreshButtonTimeText);
         timer.LastRefreshTime = _shopVm.LastDailyProductRefreshTime;
         
         var adsRemover = GetButton((int)Buttons.AdsRemover).gameObject;
         var product = adsRemover.GetOrAddComponent<ProductSimple>();
         adsRemover.GetOrAddComponent<AdsRemover>();
         product.ProductInfo = _shopVm.AdsRemover;
+        product.Init();
         
         adsRemover.BindEvent(OnAdsRemoverClicked);
     }
@@ -209,8 +199,8 @@ public partial class UI_MainLobby
     {
         var panel = Managers.Resource.Instantiate($"UI/Shop/{prefabPath}", parent);
         var product = panel.GetOrAddComponent<GameProduct>();
-        product.Init();
         product.ProductInfo = productInfo;
+        product.Init();
         
         return panel;
     }
@@ -220,9 +210,9 @@ public partial class UI_MainLobby
         var framePath = _shopVm.GetDailyProductFramePath(itemName, dailyProductInfo);
         var frame = Managers.Resource.Instantiate(framePath, parent);
         var productInfo = dailyProductInfo.ProductInfo;
-        var product = frame.GetOrAddComponent<GameProduct>();
-        product.Init();
+        var product = frame.GetOrAddComponent<ProductSimple>();
         product.ProductInfo = productInfo;
+        product.Init();
         
         // Bind Product Image
         string iconPath;

@@ -84,7 +84,7 @@ public class UI_ChangeFactionPopup : UI_Popup
         StartCoroutine(PointToFactionButton());
         
         const string key = "tutorial_change_faction_popup_text";
-        var textContent = Managers.Localization.GetLocalizedValue(_speechBubbleText, key);
+        var textContent = Managers.Localization.BindLocalizedText(_speechBubbleText, key);
         _speechBubbleText.text = textContent;
     }
     

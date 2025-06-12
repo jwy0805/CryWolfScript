@@ -9,16 +9,15 @@ using UnityEngine.UI;
  */
 public class GameProduct : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
+    private GameObject _shopPanel;
     private ScrollRect _scrollRect;
     
     public ProductInfo ProductInfo { get; set; }
     public bool IsDragging { get; set; }
-
+    
     public void Init()
     {
-        var panel = GameObject.Find("ShopPanel");
-        _scrollRect = panel.GetComponentInChildren<ScrollRect>();
-        
+        _scrollRect =  GameObject.Find("ProductScrollView").GetComponent<ScrollRect>();
         if (_scrollRect == null) Debug.Log("ScrollRect is null");
     }
     
@@ -35,7 +34,7 @@ public class GameProduct : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
     
     public void OnEndDrag(PointerEventData eventData)
     {
-        _scrollRect.OnEndDrag(eventData);
         IsDragging = false;
+        _scrollRect.OnEndDrag(eventData);
     }
 }

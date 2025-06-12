@@ -84,7 +84,7 @@ public class BasicProjectileController : ProjectileController
         Vector3 pos = point + point.normalized * hitOffset;
  
         //Spawn hit effect on collision
-        hit = Resources.Load<GameObject>($"Prefabs/Effects/Hits/{gameObject.name}Hit");
+        hit = Managers.Resource.Load<GameObject>($"Prefabs/Effects/Hits/{gameObject.name}Hit");
         if (hit != null)
         {
             var hitInstance = Instantiate(hit, pos, rot);

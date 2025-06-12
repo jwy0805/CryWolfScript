@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class Managers : MonoBehaviour
 {
@@ -55,7 +57,6 @@ public class Managers : MonoBehaviour
     {
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = 60;
-        
         Init();
     }
 
@@ -65,7 +66,7 @@ public class Managers : MonoBehaviour
         _sound.OnUpdate();
         _network.Update();
     }
-
+    
     private static void Init()
     {
         if (s_instance == null)
@@ -79,7 +80,6 @@ public class Managers : MonoBehaviour
 
             DontDestroyOnLoad(go);
             s_instance = go.GetComponent<Managers>();
-            s_instance._localization.Init();
             s_instance._pool.Init();
             s_instance._sound.Init();
         }
@@ -93,5 +93,10 @@ public class Managers : MonoBehaviour
         Pool.Clear();
         Object.Clear();
         UI.Clear();
+    }
+
+    public void OnDestroy()
+    {
+        Ads.TearDownEvents();
     }
 }

@@ -70,11 +70,13 @@ public class SoundManager
         if (audioClip == null)
             return;
 
+        var source = _audioSources[(int)type];
+        source.volume = _musicVolume;
+        
 		if (type == Define.Sound.Bgm)
 		{
 			AudioSource audioSource = _audioSources[(int)Define.Sound.Bgm];
-			if (audioSource.isPlaying)
-				audioSource.Stop();
+			if (audioSource.isPlaying) audioSource.Stop();
 
 			audioSource.pitch = pitch;
 			audioSource.clip = audioClip;
@@ -122,7 +124,7 @@ public class SoundManager
 		{
 			case Define.Scene.Game:
 				string nameBgm = "MuffinMan";
-				Play(nameBgm, Define.Sound.Bgm, _musicVolume);
+				Play(nameBgm, Define.Sound.Bgm);
 				break;
 		}
 	}

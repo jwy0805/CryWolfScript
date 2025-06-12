@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net.Mime;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -10,6 +12,9 @@ using Image = UnityEngine.UI.Image;
 
 public class UI_NotifyPopup : UI_Popup
 {
+    private Func<Task> _yesAsyncCallback;
+    private Action _yesCallback; 
+    
     public string TitleText { get; set; }
     public TMP_FontAsset TitleFont { get; set; }
     public int TitleFontSize { get; set; }
@@ -79,13 +84,31 @@ public class UI_NotifyPopup : UI_Popup
         }
     }
     
+    public void SetYesCallback(Action callback)
+    {
+        _yesCallback = callback;
+    }
+
+    public void SetYesCallback(Func<Task> callback)
+    {
+        _yesAsyncCallback = callback;
+    }
+    
     private void OnNotifyClicked(PointerEventData data)
     {
+        _yesCallback?.Invoke();
+        _yesAsyncCallback?.Invoke();
         Managers.UI.ClosePopupUI();
     }
     
     private void OnExitClicked(PointerEventData data)
     {
         Managers.UI.ClosePopupUI();
+    }
+
+    private void OnDestroy()
+    {
+        _yesCallback = null;
+        _yesAsyncCallback = null;
     }
 }

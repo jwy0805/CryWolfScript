@@ -13,6 +13,7 @@ public class MatchMakingViewModel
     private readonly ITokenService _tokenService;
     
     public event Action OnMatchMakingStarted; 
+    public event Action<int, int> OnRefreshQueueCounts; 
     
     public int SessionId { get; set; }
     
@@ -51,8 +52,25 @@ public class MatchMakingViewModel
         Managers.Scene.LoadScene(Define.Scene.Game);
     }
 
+    public async Task GetQueueCounts()
+    {
+        var packet = new GetQueueCountsPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+        };
+        
+        var task = await _webService.SendWebRequestAsync<GetQueueCountsPacketResponse>(
+            "Match/GetQueueCounts", UnityWebRequest.kHttpVerbPOST, packet);
+
+        if (task.GetQueueCountsOk)
+        {
+            OnRefreshQueueCounts?.Invoke(task.QueueCountsSheep, task.QueueCountsSheep);
+        }
+    }
+    
     public void TestMatchMaking()
     {
+        Debug.Log("Start Test");
         var packet = new ChangeActTestPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),

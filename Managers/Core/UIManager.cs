@@ -80,14 +80,21 @@ public class UIManager
 
     public async void ShowSceneUI<T>(string name = null) where T : UI_Scene
     {
-        if (string.IsNullOrEmpty(name))
+        try
         {
-            name = typeof(T).Name;
-        }
+            if (string.IsNullOrEmpty(name))
+            {
+                name = typeof(T).Name;
+            }
         
-        await Managers.Data.InitAsync();
-        var sceneUI = Managers.Resource.InstantiateFromContainer($"UI/Scene/{name}", Root.transform);
-        sceneUI.GetComponent<UI_Scene>().Clear();
+            await Managers.Data.InitAsync();
+            var sceneUI = Managers.Resource.InstantiateFromContainer($"UI/Scene/{name}", Root.transform);
+            sceneUI.GetComponent<UI_Scene>().Clear();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Admin Log: Managers.Data.InitAsync failed with" + e);
+        }
     }
     
     private Type GetType<T>()
@@ -115,9 +122,7 @@ public class UIManager
         PopupList.Add(popup);
         
         gameObject.transform.SetParent(Root.transform);
-
-        var sceneContainer = Object.FindAnyObjectByType<SceneContext>().Container;
-        sceneContainer.Inject(popup);
+        Util.Inject(popup);
 
         return popup;
     }
@@ -134,13 +139,31 @@ public class UIManager
         PopupList.Add(popup);
         
         gameObject.transform.SetParent(Root.transform);
-
-        var sceneContext = Object.FindAnyObjectByType<SceneContext>().Container;
-        sceneContext.Inject(popup);
+        Util.Inject(popup);
 
         return popup;
     }
 
+    public void ShowErrorPopup(string errorMessage, Action callback = null)
+    {
+        var popup = ShowPopupUI<UI_NotifyPopup>();
+        popup.MessageText = errorMessage;
+        if (callback != null)
+        {
+            popup.SetYesCallback(callback);
+        }
+    }
+    
+    public void ShowNotifyPopup(string titleKey, string messageKey, Action callback = null)
+    {
+        var popup = ShowPopupUI<UI_NotifyPopup>();
+        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        if (callback != null)
+        {
+            popup.SetYesCallback(callback);
+        }
+    }
+    
     public void ShowNotifySelectPopup(string titleKey, string messageKey, Action yesCallback, Action noCallback)
     {
         var popup = ShowPopupUI<UI_NotifySelectPopup>();

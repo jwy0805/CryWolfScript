@@ -79,14 +79,15 @@ public class UI_ProductInfoPopup : UI_Popup
 
     protected override void InitUI()
     {
+        var frameRect = FrameObject.GetComponent<RectTransform>();
         var iconPath = _productInfo.CurrencyType == CurrencyType.Spinel 
             ? "Sprites/ShopIcons/icon_spinel"
             : "Sprites/ShopIcons/icon_gold";
         
         _icon.sprite = Managers.Resource.Load<Sprite>(iconPath);
         FrameObject.transform.SetParent(_frame.transform);
-        FrameObject.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
-        FrameObject.GetComponent<RectTransform>().sizeDelta = FrameSize;
+        frameRect.anchoredPosition = Vector2.zero;
+        frameRect.sizeDelta = FrameSize;
         FrameObject.transform.localScale *= 0.85f;
         
         var icon = Util.FindChild(FrameObject, "Icon", true);
@@ -98,7 +99,7 @@ public class UI_ProductInfoPopup : UI_Popup
         }
         
         var productText = GetText((int)Texts.TextName);
-        productText.text = Managers.Localization.GetLocalizedValue(productText, _productInfo.ProductCode);
+        productText.text = Managers.Localization.BindLocalizedText(productText, _productInfo.ProductCode);
         GetText((int)Texts.TextPrice).text = _productInfo.Price.ToString();
         GetText((int)Texts.TextNum).gameObject.SetActive(false);
         SetContents();
@@ -193,7 +194,7 @@ public class UI_ProductInfoPopup : UI_Popup
     private void SetInfoText()
     {
         var infoText = GetText((int)Texts.TextInfo);
-        Managers.Localization.GetLocalizedValue(infoText, $"product_info_{_productInfo.ProductCode}");
+        Managers.Localization.BindLocalizedText(infoText, $"product_info_{_productInfo.ProductCode}");
     }
     
     private void OnBuyButtonClicked(PointerEventData data)

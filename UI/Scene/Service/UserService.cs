@@ -197,6 +197,7 @@ public class UserService : IUserService
         TutorialInfo = loadUserInfoResponse.UserTutorialInfo;
         
         User.Instance.UserAccount = loadUserInfoResponse.UserInfo.UserAccount;
+        User.Instance.NameInitialized = loadUserInfoResponse.UserInfo.NameInitialized;
         User.Instance.SubscribeAdsRemover = loadUserInfoResponse.UserInfo.Subscriptions
             .FirstOrDefault(si => si.SubscriptionType == SubscriptionType.AdsRemover) != null;
     }

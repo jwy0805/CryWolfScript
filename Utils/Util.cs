@@ -10,6 +10,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Zenject;
 using Object = UnityEngine.Object;
 
 /* Last Modified : 24. 09. 09
@@ -75,6 +76,18 @@ public class Util
 
         return foundObjects;
     }
+
+    public static void Inject(object obj)
+    {
+        var sceneContainer = Object.FindAnyObjectByType<SceneContext>().Container;
+        sceneContainer.Inject(obj);
+    }
+
+    public static void InjectGameObject(GameObject go)
+    {
+        var sceneContainer = Object.FindAnyObjectByType<SceneContext>().Container;
+        sceneContainer.InjectGameObject(go);
+    }
     
     public static Vector3 NearestCell(Vector3 worldPosition)
     {
@@ -105,6 +118,12 @@ public class Util
         str = Regex.Replace(str, "(?<!^)([A-Z])", " $1");
         str = Regex.Replace(str, "(\\d+)", " $1");
         return str;
+    }
+
+    public static string ExtractName(string path)
+    {
+        int idx = path.LastIndexOf('/');
+        return idx >= 0 ? path[(idx + 1)..] : path;
     }
     
     public static void DestroyAllChildren(Transform parent)

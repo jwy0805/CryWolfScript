@@ -100,7 +100,8 @@ public class SkillWindow : UI_Popup, ISkillWindow
         }
         
         // Set Current Unit Name
-        GetText((int)Texts.CurrentName).text = unitId.ToString();
+        var currentNameText = GetText((int)Texts.CurrentName);
+        currentNameText.text = Managers.Localization.BindLocalizedText(currentNameText, unitId.ToString());
     }
     
     // Update skill button when a skill is upgraded

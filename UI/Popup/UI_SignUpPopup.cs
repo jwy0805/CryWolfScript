@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 using Zenject;
 
@@ -173,7 +174,7 @@ public class UI_SignUpPopup : UI_Popup
             var validateAccountPacket = new ValidateNewAccountPacketRequired { UserAccount = account, Password = password };
             var timeoutTask = Task.Delay(5000);
             var task = _webService.SendWebRequestAsync<ValidateNewAccountPacketResponse>(
-                "UserAccount/ValidateNewAccount", "POST", validateAccountPacket);
+                "UserAccount/ValidateNewAccount", UnityWebRequest.kHttpVerbPOST, validateAccountPacket);
             
             GetButton((int)Buttons.VerifyButton).interactable = false;
 

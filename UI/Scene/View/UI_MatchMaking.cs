@@ -1,4 +1,7 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -15,6 +18,8 @@ public class UI_MatchMaking : UI_Scene
     private RectTransform _loadingMark;
     private bool _loadingMarkActive;
     private bool _cancelClicked;
+    private readonly float _waitingNumberRefreshTime = 10f;
+    private float _waitingNumberTimer;
     
     private enum Buttons
     {
@@ -34,8 +39,8 @@ public class UI_MatchMaking : UI_Scene
     
     private enum Texts
     {
-        InfoText,
-        CountDownText,
+        MatchMakingQueueInfoText,
+        MatchMakingCountDownText,
         UserNameText,
         RankPointText,
         EnemyUserNameText,
@@ -55,8 +60,8 @@ public class UI_MatchMaking : UI_Scene
 
     private void Awake()
     {
-        _matchMakingVm.OnMatchMakingStarted -= SetUserInfo;
         _matchMakingVm.OnMatchMakingStarted += SetUserInfo;
+        _matchMakingVm.OnRefreshQueueCounts += SetQueueInfo;
     }
 
     protected override void Init()
@@ -74,7 +79,13 @@ public class UI_MatchMaking : UI_Scene
     protected void Update()
     {
         if (_loadingMarkActive) _loadingMark.Rotate(0, 0, 180 * Time.deltaTime);
-        if (_cancelClicked) GetButton((int)Buttons.CancelButton).interactable = false;
+        
+        _waitingNumberTimer += Time.deltaTime;
+        if (_waitingNumberTimer >= _waitingNumberRefreshTime)
+        {
+            _waitingNumberTimer = 0f;
+            _ = _matchMakingVm.GetQueueCounts();
+        }
     }
     
     public void StartMatchMaking(int sessionId)
@@ -91,6 +102,7 @@ public class UI_MatchMaking : UI_Scene
         var userNameText = GetText((int)Texts.UserNameText);
         var rankPointText = GetText((int)Texts.RankPointText);
         
+        Managers.Localization.UpdateFont(userNameText);
         userNameText.text = _userService.UserInfo.UserName;
         rankPointText.text = _userService.UserInfo.RankPoint.ToString();
         
@@ -113,6 +125,7 @@ public class UI_MatchMaking : UI_Scene
         var enemyUserNameText = GetText((int)Texts.EnemyUserNameText);
         var enemyRankPointText = GetText((int)Texts.EnemyRankPointText);
         
+        Managers.Localization.UpdateFont(enemyUserNameText);
         enemyUserNameText.text = matchPacket.EnemyUserName;
         enemyRankPointText.text = matchPacket.EnemyRankPoint.ToString();
         
@@ -126,14 +139,38 @@ public class UI_MatchMaking : UI_Scene
         StartCoroutine(CountDown());
     }
 
+    private void SetQueueInfo(int queueCountsWolf, int queueCountsSheep)
+    {
+        var text = GetText((int)Texts.MatchMakingQueueInfoText);
+        var key = "match_making_queue_info_text";
+        var placeholders = new List<string> {"value1", "value2"};
+        
+        if (Util.Faction == Faction.Sheep)
+        {
+            queueCountsSheep -= 1;
+            if (queueCountsSheep < 0) queueCountsSheep = 0;
+        }
+        else
+        {
+            queueCountsWolf -= 1;
+            if (queueCountsWolf < 0) queueCountsWolf = 0;
+        }
+        
+        var replaceValues = new List<string> { queueCountsWolf.ToString(), queueCountsSheep.ToString() };
+        Managers.Localization.FormatLocalizedText(text, key, placeholders, replaceValues);
+    }
+    
     private IEnumerator CountDown(int seconds = 6)
     {
-        var text = GetText((int)Texts.CountDownText);
+        var text = GetText((int)Texts.MatchMakingCountDownText);
         text.gameObject.SetActive(true);
         
         for (var i = seconds - 1; i >= 0; i--)
         {
-            text.text = $"{i} seconds left to start the game";
+            var key = "match_making_count_down_text";
+            var placeHolderKeys = new List<string> {"value"};
+            var replaceValues = new List<string> {i.ToString()};
+            Managers.Localization.FormatLocalizedText(text, key, placeHolderKeys, replaceValues);
             yield return new WaitForSeconds(1);
         }
         
@@ -141,10 +178,23 @@ public class UI_MatchMaking : UI_Scene
     }
     
     // Button Events
-    private async void OnCancelClicked(PointerEventData data)
+    private async Task OnCancelClicked(PointerEventData data)
     {
+        if (_cancelClicked) return;
         _cancelClicked = true;
-        await _matchMakingVm.CancelMatchMaking();
+
+        GetButton((int)Buttons.CancelButton).interactable = false;
+
+        try
+        {
+            await _matchMakingVm.CancelMatchMaking();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+            _cancelClicked = false;
+            GetButton((int)Buttons.CancelButton).interactable = true;
+        }
     }
     
     private void OnTestButtonClicked(PointerEventData data)
@@ -170,7 +220,9 @@ public class UI_MatchMaking : UI_Scene
     
     protected override void InitUI()
     {
-        GetText((int)Texts.CountDownText).gameObject.SetActive(false);
+        _ = _matchMakingVm.GetQueueCounts();
+            
+        GetText((int)Texts.MatchMakingCountDownText).gameObject.SetActive(false);
         GetImage((int)Images.BackgroundPanel).color = Util.ThemeColor;
         GetImage((int)Images.EnemyInfoPanel).gameObject.SetActive(false);
         GetImage((int)Images.VSImage).gameObject.SetActive(false);
@@ -183,5 +235,6 @@ public class UI_MatchMaking : UI_Scene
     private void OnDestroy()
     {
         _matchMakingVm.OnMatchMakingStarted -= SetUserInfo;
+        _matchMakingVm.OnRefreshQueueCounts -= SetQueueInfo;
     }
 }

@@ -44,7 +44,7 @@ public class MyPlayerController : PlayerController
         _cameraObject = GameObject.FindWithTag("CameraFocus");
 
         // Test - Unit Spawn
-         // TestUnitSpawn();
+        // TestUnitSpawn();
     }
 
     private void TestUnitSpawn()
@@ -70,7 +70,7 @@ public class MyPlayerController : PlayerController
         C_Spawn spawnPacket3 = new()
         {
             Type = GameObjectType.MonsterStatue,
-            Num = (int)UnitId.Werewolf,
+            Num = (int)UnitId.Cactus,
             PosInfo = new PositionInfo { State = State.Idle, PosX = 4f, PosY = 6, PosZ = 12, Dir = 180 },
             Way = SpawnWay.North
         };
@@ -79,7 +79,7 @@ public class MyPlayerController : PlayerController
         C_Spawn spawnPacket4 = new()
         {
             Type = GameObjectType.MonsterStatue,
-            Num = (int)UnitId.MosquitoStinger,
+            Num = (int)UnitId.MoleRat,
             PosInfo = new PositionInfo { State = State.Idle, PosX = 3f, PosY = 6, PosZ = 14, Dir = 180 },
             Way = SpawnWay.North
         };
@@ -106,7 +106,7 @@ public class MyPlayerController : PlayerController
         C_Spawn spawnPacket7 = new()
         {
             Type = GameObjectType.MonsterStatue,
-            Num = (int)UnitId.SnakeNaga,
+            Num = (int)UnitId.Snake,
             PosInfo = new PositionInfo { State = State.Idle, PosX = -1, PosY = 6, PosZ = 16, Dir = 180 },
             Way = SpawnWay.North
         };
@@ -169,7 +169,7 @@ public class MyPlayerController : PlayerController
         C_Spawn spawnPacket14 = new()
         {
             Type = GameObjectType.Tower,
-            Num = (int)UnitId.FlowerPot,
+            Num = (int)UnitId.SoulMage,
             PosInfo = new PositionInfo { State = State.Idle, PosX = 2.5f, PosY = 6, PosZ = -10f, Dir = 180 },
             Way = SpawnWay.North
         };

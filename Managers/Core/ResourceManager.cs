@@ -2,32 +2,174 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using DG.Tweening.Plugins.Core.PathCore;
 using Google.Protobuf.Protocol;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.EventSystems;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 using Zenject;
 using Object = UnityEngine.Object;
 
 public class ResourceManager
 {
+    private const string MovedRoot = "Assets/Resources_moved/";
+    
+    public long ToDownloadSize { get; set; }
+
+    private bool ExistsInAddressables(string key)
+    {
+        return Addressables.ResourceLocators.Any(loc => loc.Keys.Contains(key));
+    }
+    
+    /// <summary>
+    /// Synchronously Loading.
+    /// If the Addressables bundles are already exist on the cache, returns directly.
+    /// If the bundles are not exist, it will load by Resources.Load.
+    /// * If there are Fast-Follow bundles needed to be additional downloaded, it must be downloaded by LoadAsync.
+    /// </summary>
     public T Load<T>(string path) where T : Object
     {
+        // Check pool first
         if (typeof(T) == typeof(GameObject))
         {
-            string name = path;
-            int index = name.LastIndexOf('/');
-            if (index >= 0)
-                name = name.Substring(index + 1);
-
-            GameObject go = Managers.Pool.GetOriginal(name);
-            if (go != null)
-                return go as T;
+            string name = Util.ExtractName(path);
+            GameObject pooledObject = Managers.Pool.GetOriginal(name);
+            if (pooledObject != null)
+                return pooledObject as T;
         }
-        return Resources.Load<T>(path);
+        
+        // Check Addressables
+        if (ExistsInAddressables(path))
+        {
+            AsyncOperationHandle<T> handle = Addressables.LoadAssetAsync<T>(path);
+            if (handle.IsDone) 
+                return handle.Result;
+            
+            // If the handle is not done, it means the asset is not loaded yet.
+            Addressables.Release(handle);
+        }
+        
+        // Resources
+        T resource = Resources.Load<T>(path);
+        if (resource != null) return resource;
+        
+#if UNITY_EDITOR
+        // Editor -> Resources_Moved
+        string editorPath = FindInMovedFolder<T>(path);
+        if (editorPath != null)
+            return AssetDatabase.LoadAssetAtPath<T>(editorPath);
+#endif
+        return null;
     }
 
+    /// <summary>
+    /// Asynchronously Loading according to Addressables -> Pool -> Resources.
+    /// If Fast-Follow / ODR bundles are needed, pending here.
+    /// </summary>
+    public async Task<T> LoadAsync<T>(string path) where T : Object
+    {
+        // Check pool first
+        if (typeof(T) == typeof(GameObject))
+        {
+            string name = Util.ExtractName(path);
+            GameObject pooledObject = Managers.Pool.GetOriginal(name);
+            if (pooledObject != null) 
+                return pooledObject as T;
+        }
+        
+        // Addressables
+        if (ExistsInAddressables(path))
+        {
+            AsyncOperationHandle<T> handle = Addressables.LoadAssetAsync<T>(path);
+            await handle.Task;
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                return handle.Result;
+            }
+
+            Debug.LogError($"Failed to load asset from Addressables: {path}");
+            Addressables.Release(handle);
+        }
+        
+        // Resources
+        T resource = Resources.Load<T>(path);
+        if (resource != null) return resource;
+        
+#if UNITY_EDITOR
+        // Editor -> Resources_Moved
+        string editorPath = FindInMovedFolder<T>(path);
+        if (editorPath != null)
+            return AssetDatabase.LoadAssetAtPath<T>(editorPath);
+#endif
+        return null;
+    }
+    
+#if UNITY_EDITOR
+    /* ───── Editor 전용: .prefab / .png / .asset 등 확장자 자동 추적 ───── */
+    private static string FindInMovedFolder<T>(string key) where T : Object
+    {
+        // "Prefabs/UI/Menu/StartButton" → dir="Prefabs/UI/Menu", name="StartButton"
+        string cleaned = key.TrimStart('/');
+        string wantedDir = System.IO.Path.GetDirectoryName(cleaned)?.Replace('\\', '/');      
+        string wantedName = System.IO.Path.GetFileNameWithoutExtension(cleaned);            
+        
+        // Searching directory
+        string absoluteDir = string.IsNullOrEmpty(wantedDir) ? MovedRoot.TrimEnd('/') : $"{MovedRoot}{wantedDir}";
+        if (Directory.Exists(absoluteDir))
+        {
+            string match = Directory
+                .GetFiles(absoluteDir, $"{wantedName}.*", SearchOption.TopDirectoryOnly)
+                .FirstOrDefault();
+            if (string.IsNullOrEmpty(match) == false) return match.Replace('\\', '/');
+        }
+
+        // Searching all guids
+        string[] guids = AssetDatabase.FindAssets(wantedName, new[] { MovedRoot });
+        foreach (var guid in guids)
+        {
+            string assetPath = AssetDatabase.GUIDToAssetPath(guid);
+            string relativeDir = System.IO.Path.GetDirectoryName(assetPath)?
+                .Replace(MovedRoot, string.Empty)
+                .Replace('\\', '/');
+            
+            if (System.IO.Path.GetFileNameWithoutExtension(assetPath).Equals(wantedName, StringComparison.OrdinalIgnoreCase) &&
+                (relativeDir ?? string.Empty).Equals(wantedDir ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+            {
+                return assetPath;
+            }
+        }
+
+        return null;
+    }
+#endif
+
+    public async Task<GameObject> InstantiateAsync(string path, Transform parent = null)
+    {
+        GameObject original = await LoadAsync<GameObject>($"Prefabs/{path}");
+        
+        if (original == null)
+        {
+            Debug.Log($"Failed to load Prefab : {path}");
+            return null;
+        }
+
+        if (original.TryGetComponent(out Poolable poolable))
+        {
+            return Managers.Pool.Pop(original, parent).gameObject;
+        }
+        
+        GameObject go = Object.Instantiate(original, parent);
+        go.name = original.name;
+        return go;
+    }
+    
     public GameObject Instantiate(string path, Transform parent = null)
     {
         GameObject original = Load<GameObject>($"Prefabs/{path}");
@@ -45,16 +187,6 @@ public class ResourceManager
         go.name = original.name;
         return go;
     }   
-    
-    public GameObject Instantiate(GameObject original, Transform parent = null)
-    {
-        if (original.GetComponent<Poolable>() != null)
-            return Managers.Pool.Pop(original, parent).gameObject;
-
-        GameObject go = Object.Instantiate(original, parent);
-        go.name = original.name;
-        return go;
-    }
     
     public GameObject Instantiate(string path, Vector3 position)
     {
@@ -93,9 +225,7 @@ public class ResourceManager
         var sceneContext = Object.FindAnyObjectByType<SceneContext>().Container;
         installer.CreateFactory(path, sceneContext);
         
-        var instance = sceneContext.InstantiatePrefab(original, parent);
-        
-        return instance;
+        return sceneContext.InstantiatePrefab(original, parent);
     }
 
     public void Destroy(GameObject go, float time)
@@ -419,7 +549,7 @@ public class ResourceManager
         return frame;
     }
 
-    public GameObject GetProductMailFrame(MailInfo mailInfo, Transform parent, Action<PointerEventData> action = null)
+    public GameObject GetProductMailFrame(MailInfo mailInfo, Transform parent)
     {
         var frame = Instantiate("UI/Deck/MailInfoProduct", parent);
         var claimButton = Util.FindChild(frame, "ClaimButton", true);
@@ -427,38 +557,11 @@ public class ResourceManager
         var infoText = Util.FindChild(frame, "InfoText", true).GetComponent<TextMeshProUGUI>();
         var expiresText = Util.FindChild(frame, "ExpiresText", true).GetComponent<TextMeshProUGUI>();  
         
-        frame.GetComponent<Mail>().MailId = mailInfo.MailId;
+        frame.GetOrAddComponent<MailInfoProduct>().MailInfo = mailInfo;
         countText.gameObject.SetActive(false);
         infoText.text = mailInfo.Message;
         expiresText.text = mailInfo.ExpiresAt.ToString(CultureInfo.CurrentCulture);
-        claimButton.BindEvent(action);
 
-        return frame;
-    }
-
-    public GameObject GetInviteMailFrame(MailInfo mailInfo, Transform parent)
-    {
-        var frame = Instantiate("UI/Deck/MailInfoInvitation", parent);
-        var infoText = Util.FindChild(frame, "InfoText", true).GetComponent<TextMeshProUGUI>();
-        var expireText = Util.FindChild(frame, "ExpiresText", true).GetComponent<TextMeshProUGUI>();
-        
-        frame.GetComponent<Mail>().MailId = mailInfo.MailId;
-        infoText.text = mailInfo.Message;
-        expireText.text = mailInfo.ExpiresAt.ToString(CultureInfo.CurrentCulture);
-        
-        return frame;
-    }
-    
-    public GameObject GetNotifyMailFrame(MailInfo mailInfo, Transform parent, Action<PointerEventData> action = null)
-    {
-        var frame = Instantiate("UI/Deck/MailInfoNotification", parent);
-        var claimButton = Util.FindChild(frame, "ClaimButton", true);
-        var infoText = Util.FindChild(frame, "InfoText", true).GetComponent<TextMeshProUGUI>();
-        
-        frame.GetComponent<Mail>().MailId = mailInfo.MailId;
-        infoText.text = mailInfo.Message;
-        claimButton.BindEvent(action);
-        
         return frame;
     }
 }

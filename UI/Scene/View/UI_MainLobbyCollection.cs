@@ -200,7 +200,7 @@ public partial class UI_MainLobby
         _craftingPanel.sizeDelta = new Vector2(_craftingPanel.sizeDelta.x, 0);
         var obj = GetImage((int)Images.CollectionScrollView);
         obj.gameObject.SetActive(false);
-        GetButton((int)Buttons.ArrangeAllButton).GetComponentInChildren<Image>().color = Color.green;
+        GetButton((int)Buttons.ArrangeAllButton).GetComponentInChildren<Image>().color = Color.cyan;
     }
 
     private void SetCardPopupUI(Card card)
@@ -397,7 +397,7 @@ public partial class UI_MainLobby
             var nameTextObject = Util.FindChild(craftingFrame, "MaterialNameText", true);
             var nameText = nameTextObject.GetComponent<TextMeshProUGUI>();
             var key = $"material_id_{material.MaterialInfo.Id}";
-            var materialName = Managers.Localization.GetLocalizedValue(nameText, key);
+            var materialName = Managers.Localization.BindLocalizedText(nameText, key);
             if (materialName.Length > 11)
             {
                 materialName = materialName.Substring(0, 9) + "..";

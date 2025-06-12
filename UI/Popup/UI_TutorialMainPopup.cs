@@ -7,6 +7,7 @@ using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 using UnityEngine.Video;
 using Zenject;
@@ -17,6 +18,8 @@ using Zenject;
 
 public class UI_TutorialMainPopup : UI_Popup
 {
+    private IWebService _webService;
+    private ITokenService _tokenService;
     private TutorialViewModel _tutorialVm;
     
     private TutorialNpcInfo _tutorialNpcInfo1;
@@ -58,8 +61,10 @@ public class UI_TutorialMainPopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(TutorialViewModel tutorialViewModel)
+    public void Construct(IWebService webService, ITokenService tokenService, TutorialViewModel tutorialViewModel)
     {
+        _webService = webService;
+        _tokenService = tokenService;
         _tutorialVm = tutorialViewModel;
     }
     
@@ -92,8 +97,8 @@ public class UI_TutorialMainPopup : UI_Popup
         _videoPlayer = Util.FindChild(_selectPanel, "VideoPlayer", true).GetComponent<VideoPlayer>();
         _masking = Util.FindChild(_selectPanel, "TutorialMainVideoMasking", true);
         
-        _videoClips.Add("Wolf", Resources.Load<VideoClip>("VideoClips/TutorialWolf"));
-        _videoClips.Add("Sheep", Resources.Load<VideoClip>("VideoClips/TutorialSheep"));
+        _videoClips.Add("Wolf", Managers.Resource.Load<VideoClip>("VideoClips/TutorialWolf"));
+        _videoClips.Add("Sheep", Managers.Resource.Load<VideoClip>("VideoClips/TutorialSheep"));
     }
 
     private void BindActions()
@@ -119,7 +124,7 @@ public class UI_TutorialMainPopup : UI_Popup
     protected override void InitUI()
     {
         var factionText = Util.FindChild(_selectPanel, "FactionText", true).GetComponent<TextMeshProUGUI>();
-        factionText.text = Managers.Localization.GetLocalizedValue(factionText, "tutorial_main_faction_text");
+        factionText.text = Managers.Localization.BindLocalizedText(factionText, "tutorial_main_faction_text");
         
         _speaker1Panel.SetActive(false);
         _speaker2Panel.SetActive(false);
@@ -213,7 +218,7 @@ public class UI_TutorialMainPopup : UI_Popup
             _tutorialVm.MainEventDict[eventString]?.Invoke();
         }
         
-        var textContent = Managers.Localization.GetLocalizedValue(_speechBubbleText, step.DialogKey);
+        var textContent = Managers.Localization.BindLocalizedText(_speechBubbleText, step.DialogKey);
         _speechBubbleText.text = textContent;
     }
 
@@ -261,8 +266,8 @@ public class UI_TutorialMainPopup : UI_Popup
         
         var playButtonText = Util.FindChild(_selectPanel, "PlayButtonText", true).GetComponent<TextMeshProUGUI>();
         var titleText = Util.FindChild(_selectPanel, "TutorialMainSelectText", true).GetComponent<TextMeshProUGUI>();
-        playButtonText.text = Managers.Localization.GetLocalizedValue(playButtonText, "play_button_text");
-        titleText.text = Managers.Localization.GetLocalizedValue(titleText, "tutorial_main_select_text");
+        playButtonText.text = Managers.Localization.BindLocalizedText(playButtonText, "play_button_text");
+        titleText.text = Managers.Localization.BindLocalizedText(titleText, "tutorial_main_select_text");
     }
 
     private void ChangeFaceNormal()
@@ -306,8 +311,8 @@ public class UI_TutorialMainPopup : UI_Popup
 
         Util.Faction = Faction.Wolf;
         _tutorialVm.TutorialFaction = Faction.Wolf;
-        _factionText.text = Managers.Localization.GetLocalizedValue(_factionText, "wolf_text");
-        _factionInfoText.text = Managers.Localization.GetLocalizedValue(_factionInfoText, "faction_info_text_wolf");
+        _factionText.text = Managers.Localization.BindLocalizedText(_factionText, "wolf_text");
+        _factionInfoText.text = Managers.Localization.BindLocalizedText(_factionInfoText, "faction_info_text_wolf");
         _buttonSelectEffect.SetActive(true);
         _buttonSelectEffect.transform.position = GetButton((int)Buttons.WolfButton).transform.position;
         _buttonSelectEffect.GetComponent<ParticleImage>().Play();
@@ -325,8 +330,8 @@ public class UI_TutorialMainPopup : UI_Popup
         
         Util.Faction = Faction.Sheep;
         _tutorialVm.TutorialFaction = Faction.Sheep;
-        _factionText.text = Managers.Localization.GetLocalizedValue(_factionText, "sheep_text");
-        _factionInfoText.text = Managers.Localization.GetLocalizedValue(_factionInfoText, "faction_info_text_sheep");
+        _factionText.text = Managers.Localization.BindLocalizedText(_factionText, "sheep_text");
+        _factionInfoText.text = Managers.Localization.BindLocalizedText(_factionInfoText, "faction_info_text_sheep");
         _buttonSelectEffect.SetActive(true);
         _buttonSelectEffect.transform.position = GetButton((int)Buttons.SheepButton).transform.position;
         _buttonSelectEffect.GetComponent<ParticleImage>().Play();
@@ -354,10 +359,19 @@ public class UI_TutorialMainPopup : UI_Popup
         Managers.Localization.UpdateNotifySelectPopupText(popup,
             "notify_select_tutorial_exit_title", 
             "notify_select_tutorial_exit_message");
-        popup.SetYesCallback(() =>
+        popup.SetYesCallback(async () =>
         {
+            var packet = new UpdateTutorialRequired
+            {
+                AccessToken = _tokenService.GetAccessToken(),
+                TutorialTypes = new[] { TutorialType.BattleSheep, TutorialType.BattleWolf, TutorialType.ChangeFaction },
+                Done = true
+            };
+            
+            await _webService.SendWebRequestAsync<UpdateTutorialRequired>(
+                "UserAccount/UpdateTutorial", UnityWebRequest.kHttpVerbPUT, packet);
+            
             Managers.UI.CloseAllPopupUI();
-            // TODO: Change Tutorial State on DB
         });
     }
 

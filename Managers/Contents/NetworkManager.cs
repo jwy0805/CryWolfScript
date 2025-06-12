@@ -18,7 +18,12 @@ public class NetworkManager
     private int _sessionId;
     private const string LocalPort = "7270";
     private const string Address = "hamonstudio.net";
-    
+
+    private float _timer = 0f;
+    private const float CheckInterval = 3f;
+    private bool _noInternetPopupShowing = false;
+    public Action OnInternetRestored;
+
     public Env Environment => Env.Dev;
     public bool IsFriendlyMatchHost { get; set; }
 
@@ -84,8 +89,35 @@ public class NetworkManager
             Action<PacketSession, IMessage> handler = PacketManager.Instance.GetPacketHandler(packet.Id);
             handler?.Invoke(_session, packet.Message);
         }
+        
+        _timer += Time.deltaTime;
+        if (_timer >= CheckInterval)
+        {
+            _timer = 0f;
+            CheckInternetConnection();
+        }
     }
 
+    private void CheckInternetConnection()
+    {
+        if (Application.internetReachability == NetworkReachability.NotReachable)
+        {
+            if (_noInternetPopupShowing == false)
+            {
+                _noInternetPopupShowing = true;
+                Managers.UI.ShowPopupUI<UI_NetworkErrorPopup>();
+            }
+        }
+        else
+        {
+            if (_noInternetPopupShowing)
+            {
+                _noInternetPopupShowing = false;
+                Managers.UI.ClosePopupUI<UI_NetworkErrorPopup>();
+            }
+        }
+    }
+    
     public async Task ConnectGameSession(bool test = false)
     {
         // DNS (Domain Name System)

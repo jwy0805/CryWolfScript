@@ -43,7 +43,7 @@ public class UI_UnitInfoPopup : UI_Popup
             _showDetails = value;
             var detailButtonText = GetText((int)Texts.UnitInfoDetailButtonText).GetComponent<TextMeshProUGUI>();
             var key = _showDetails ? "unit_info_detail_button_text_summary" : "unit_info_detail_button_text_detail";
-            detailButtonText.text = Managers.Localization.GetLocalizedValue(detailButtonText, key);
+            detailButtonText.text = Managers.Localization.BindLocalizedText(detailButtonText, key);
             ToggleStatDetailPanel();
         }
     }
@@ -229,6 +229,19 @@ public class UI_UnitInfoPopup : UI_Popup
             Region = unitData.Region
         };
     }
+
+    private void GetAssetInfo(int id)
+    {
+        Managers.Data.SheepInfoDict.TryGetValue(id, out var sheepInfo);
+        if (sheepInfo == null)
+        {
+            Managers.Data.EnchantInfoDict.TryGetValue(id, out var enchantInfo);
+            if (enchantInfo == null)
+            {
+                Managers.Data.CharacterInfoDict.TryGetValue(id, out var characterInfo);
+            }
+        }
+    }
     
     private void SetLevelButton(UnitInfo unitInfo)
     {
@@ -283,16 +296,16 @@ public class UI_UnitInfoPopup : UI_Popup
         
         var typePath = $"Sprites/Icons/icon_type_{type}";
         var attackTypePath = $"Sprites/Icons/icon_attack_{attackType}";
-        var tmp = GetText((int)Texts.UnitInfoNameText);
+        var unitNameText = GetText((int)Texts.UnitInfoNameText);
         var key = string.Concat("unit_name_", Managers.Localization.GetConvertedString(_unitData.Name));
-        tmp.text = Managers.Localization.GetLocalizedValue(tmp, key);
+        Managers.Localization.BindLocalizedText(unitNameText, key, FontType.BlackLined);
         
-        GetImage((int)Images.UnitClassImage).sprite = Resources.Load<Sprite>(classPath);
-        GetImage((int)Images.UnitRegionImage).sprite = Resources.Load<Sprite>(regionPath);
-        GetImage((int)Images.UnitRoleImage).sprite = Resources.Load<Sprite>(rolePath);
-        GetImage((int)Images.UnitLocationImage).sprite = Resources.Load<Sprite>(locationPath);
-        GetImage((int)Images.UnitTypeImage).sprite = Resources.Load<Sprite>(typePath);
-        GetImage((int)Images.UnitAttackTypeImage).sprite = Resources.Load<Sprite>(attackTypePath);
+        GetImage((int)Images.UnitClassImage).sprite = Managers.Resource.Load<Sprite>(classPath);
+        GetImage((int)Images.UnitRegionImage).sprite = Managers.Resource.Load<Sprite>(regionPath);
+        GetImage((int)Images.UnitRoleImage).sprite = Managers.Resource.Load<Sprite>(rolePath);
+        GetImage((int)Images.UnitLocationImage).sprite = Managers.Resource.Load<Sprite>(locationPath);
+        GetImage((int)Images.UnitTypeImage).sprite = Managers.Resource.Load<Sprite>(typePath);
+        GetImage((int)Images.UnitAttackTypeImage).sprite = Managers.Resource.Load<Sprite>(attackTypePath);
         
         GetText((int)Texts.UnitClassText).text = _unitInfo.Class.ToString();
         GetText((int)Texts.UnitRegionText).text = _unitInfo.Region.ToString();
@@ -310,7 +323,6 @@ public class UI_UnitInfoPopup : UI_Popup
         }
         
         var parent = GetImage((int)Images.SkillPanel);
-        
         var skillPanelPath = $"UI/InGame/SkillPanel/{((UnitId)asset.Id).ToString()}SkillPanel";
         _currentSkillPanel = Managers.Resource.Instantiate(skillPanelPath);
         _currentSkillPanel.transform.SetParent(parent.transform);

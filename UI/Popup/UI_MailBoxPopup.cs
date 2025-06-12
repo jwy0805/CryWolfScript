@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,6 @@ public class UI_MailBoxPopup : UI_Popup
     private IUserService _userService;
     private IWebService _webService;
     private ITokenService _tokenService;
-    private ISignalRClient _signalRClient;
     private MainLobbyViewModel _lobbyVm;
     private ShopViewModel _shopVm;
     
@@ -44,14 +44,12 @@ public class UI_MailBoxPopup : UI_Popup
         IUserService userService,
         IWebService webService, 
         ITokenService tokenService, 
-        ISignalRClient signalRClient,
         MainLobbyViewModel lobbyViewModel, 
         ShopViewModel shopViewModel)
     {
         _userService = userService;
         _webService = webService;
         _tokenService = tokenService;
-        _signalRClient = signalRClient;
         _lobbyVm = lobbyViewModel;
         _shopVm = shopViewModel;
     }
@@ -81,26 +79,30 @@ public class UI_MailBoxPopup : UI_Popup
 
     protected override async void InitUI()
     {
-        GetImage((int)Images.NoMailBackground).gameObject.SetActive(false);
-
-        var mailTask = _lobbyVm.GetMailList();
-
-        await mailTask;
-
-        var mailList = mailTask.Result.OrderBy(mail => mail.Type).ToList();
-        var parent = Util.FindChild(gameObject, "Content", true).transform;
-        Util.DestroyAllChildren(parent);
-
-        if (mailList.Count == 0)
+        try
         {
-            GetImage((int)Images.NoMailBackground).gameObject.SetActive(true);
-        }
-        else
-        {
-            foreach (var mail in mailList)
+            GetImage((int)Images.NoMailBackground).gameObject.SetActive(false);
+
+            var mailTask = await _lobbyVm.GetMailList();
+            var mailList = mailTask.OrderBy(mail => mail.Type).ToList();
+            var parent = Util.FindChild(gameObject, "Content", true).transform;
+            Util.DestroyAllChildren(parent);
+
+            if (mailList.Count == 0)
             {
-                SetMailFrameUI(mail, parent);
+                GetImage((int)Images.NoMailBackground).gameObject.SetActive(true);
             }
+            else
+            {
+                foreach (var mail in mailList)
+                {
+                    SetMailFrameUI(mail, parent);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Managers.UI.ShowErrorPopup(e.ToString(), Managers.UI.CloseAllPopupUI);
         }
     }
 
@@ -123,21 +125,25 @@ public class UI_MailBoxPopup : UI_Popup
         switch (mailInfo.Type)
         {
             case MailType.Notice:
-                mailFrame = Managers.Resource.GetNotifyMailFrame(mailInfo, frameParent, OnNotifyClaim);
+                mailFrame = Managers.Resource.Instantiate("UI/Deck/MailInfoNotification", frameParent);
+                var mailInfoNotification = mailFrame.GetOrAddComponent<MailInfoNotification>();
+                mailInfoNotification.MailInfo = mailInfo;
                 break;
             case MailType.Invite:
-                mailFrame = Managers.Resource.GetInviteMailFrame(mailInfo, frameParent);
-                var acceptButton = Util.FindChild(mailFrame, "AcceptButton", true);
-                var rejectButton = Util.FindChild(mailFrame, "DenyButton", true);
-                acceptButton.BindEvent(OnInvitationAccept);
-                rejectButton.BindEvent(OnInvitationReject);
+                mailFrame = Managers.Resource.Instantiate("UI/Deck/MailInfoInvitation", frameParent);
+                var mailInfoInvitation = mailFrame.GetOrAddComponent<MailInfoInvitation>();
+                mailInfoInvitation.MailInfo = mailInfo;
                 break;
             case MailType.Product:
-                mailFrame = Managers.Resource.GetProductMailFrame(mailInfo, frameParent, OnProductClaim);
+                mailFrame = Managers.Resource.GetProductMailFrame(mailInfo, frameParent);
+                var mailInfoProduct = mailFrame.GetOrAddComponent<MailInfoProduct>();
+                mailInfoProduct.MailInfo = mailInfo;
                 SetMailIcon(mailFrame, mailInfo);
                 break;
             default: return;
         }
+        
+        Util.InjectGameObject(mailFrame);
     }
 
     private void SetMailIcon(GameObject mailFrame, MailInfo mailInfo)
@@ -153,10 +159,6 @@ public class UI_MailBoxPopup : UI_Popup
                 iconPath = $"UI/Shop/{(ProductId)mailInfo.ProductId}";
                 icon = Managers.Resource.Instantiate(iconPath, iconParent);
                 iconRect = icon.GetComponent<RectTransform>();
-                var parentRect = iconParent.GetComponent<RectTransform>();
-                var parentWidth = parentRect.rect.width;
-                var scaleParam = parentWidth / iconRect.rect.width;
-                iconRect.localScale = new Vector3(scaleParam, scaleParam, 1);
                 break;
             
             case ProductCategory.ReservedSale:
@@ -181,39 +183,24 @@ public class UI_MailBoxPopup : UI_Popup
         
         iconRect.anchorMin = Vector2.zero;
         iconRect.anchorMax = Vector2.one;
-    }
-
-    private async void OnNotifyClaim(PointerEventData data)
-    {
-        await ClaimMail(data.pointerPress);
-    }
-
-    private async void OnInvitationAccept(PointerEventData data)
-    {
-        var packet = new AcceptInvitationPacketRequired
-        {
-            AccessToken = _tokenService.GetAccessToken(),
-            Accept = true,
-            InviteeName = _userService.UserInfo.UserName,
-        };
-        await Task.WhenAll(ClaimMail(data.pointerPress), _signalRClient.SendAcceptInvitation(packet));
-    }
-    
-    private async void OnInvitationReject(PointerEventData data)
-    {
-        var packet = new AcceptInvitationPacketRequired
-        {
-            AccessToken = _tokenService.GetAccessToken(),
-            Accept = false,
-            InviteeName = _userService.UserInfo.UserName,
-        };
-        await Task.WhenAll(ClaimMail(data.pointerPress), _signalRClient.SendAcceptInvitation(packet));
+        
+        var parentRect = iconParent.GetComponent<RectTransform>();
+        var parentWidth = parentRect.rect.width;
+        var scaleParam = parentWidth / iconRect.rect.width;
+        iconRect.localScale = new Vector3(scaleParam, scaleParam, 1);
     }
     
     private async void OnProductClaim(PointerEventData data)
     {
-        await ClaimMail(data.pointerPress);
-        // Showing Item Popup
+        try
+        {
+            await ClaimMail(data.pointerPress);
+            // Showing Item Popup
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
     }
     
     private void ClosePopup(PointerEventData data)
@@ -224,12 +211,13 @@ public class UI_MailBoxPopup : UI_Popup
     private async Task ClaimMail(GameObject mailObject)
     {
         mailObject.TryGetComponent(out Button claimButton);
+        if (claimButton.interactable == false) return;
         claimButton.interactable = false;
         
         var packet = new ClaimMailPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            MailId = mailObject.GetComponent<Mail>().MailId
+            // MailId = mailObject.GetComponent<Mail>().MailId,
         };
         
         await _webService.SendWebRequestAsync<ClaimMailPacketResponse>("Mail/ClaimMail", "PUT", packet);

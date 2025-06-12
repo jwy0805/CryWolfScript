@@ -137,27 +137,17 @@ public class AdsManager
 
     private void SetUpEvents()
     {
-        IronSourceEvents.onSdkInitializationCompletedEvent -= OnLevelPlaySdkReady;
         IronSourceEvents.onSdkInitializationCompletedEvent += OnLevelPlaySdkReady;
         
-        LevelPlay.OnInitSuccess -= OnLevelPlayInitialized;
         LevelPlay.OnInitSuccess += OnLevelPlayInitialized;
         
-        IronSourceRewardedVideoEvents.onAdReadyEvent -= OnRewardVideoReady;
         IronSourceRewardedVideoEvents.onAdReadyEvent += OnRewardVideoReady;
-        IronSourceRewardedVideoEvents.onAdOpenedEvent -= RewardedVideoOnAdOpenedEvent;
         IronSourceRewardedVideoEvents.onAdOpenedEvent += RewardedVideoOnAdOpenedEvent;
-        IronSourceRewardedVideoEvents.onAdClosedEvent -= RewardedVideoOnAdClosedEvent;
         IronSourceRewardedVideoEvents.onAdClosedEvent += RewardedVideoOnAdClosedEvent;
-        IronSourceRewardedVideoEvents.onAdAvailableEvent -= RewardedVideoOnAdAvailable;
         IronSourceRewardedVideoEvents.onAdAvailableEvent += RewardedVideoOnAdAvailable;
-        IronSourceRewardedVideoEvents.onAdUnavailableEvent -= RewardedVideoOnAdUnavailable;
         IronSourceRewardedVideoEvents.onAdUnavailableEvent += RewardedVideoOnAdUnavailable;
-        IronSourceRewardedVideoEvents.onAdShowFailedEvent -= RewardedVideoOnAdShowFailedEvent;
         IronSourceRewardedVideoEvents.onAdShowFailedEvent += RewardedVideoOnAdShowFailedEvent;
-        IronSourceRewardedVideoEvents.onAdRewardedEvent -= RewardedVideoOnAdRewardedEvent;
         IronSourceRewardedVideoEvents.onAdRewardedEvent += RewardedVideoOnAdRewardedEvent;
-        IronSourceRewardedVideoEvents.onAdClickedEvent -= RewardedVideoOnAdClickedEvent;
         IronSourceRewardedVideoEvents.onAdClickedEvent += RewardedVideoOnAdClickedEvent;
     }
 
@@ -274,5 +264,21 @@ public class AdsManager
     private void RewardedVideoOnAdClickedEvent(IronSourcePlacement placement, IronSourceAdInfo info)
     {
         Debug.Log($"[Ads] Reward video ad clicked: {placement}");
+    }
+
+    public void TearDownEvents()
+    {
+        IronSourceEvents.onSdkInitializationCompletedEvent -= OnLevelPlaySdkReady;
+
+        LevelPlay.OnInitSuccess -= OnLevelPlayInitialized;
+
+        IronSourceRewardedVideoEvents.onAdReadyEvent -= OnRewardVideoReady;
+        IronSourceRewardedVideoEvents.onAdOpenedEvent -= RewardedVideoOnAdOpenedEvent;
+        IronSourceRewardedVideoEvents.onAdClosedEvent -= RewardedVideoOnAdClosedEvent;
+        IronSourceRewardedVideoEvents.onAdAvailableEvent -= RewardedVideoOnAdAvailable;
+        IronSourceRewardedVideoEvents.onAdUnavailableEvent -= RewardedVideoOnAdUnavailable;
+        IronSourceRewardedVideoEvents.onAdShowFailedEvent -= RewardedVideoOnAdShowFailedEvent;
+        IronSourceRewardedVideoEvents.onAdRewardedEvent -= RewardedVideoOnAdRewardedEvent;
+        IronSourceRewardedVideoEvents.onAdClickedEvent -= RewardedVideoOnAdClickedEvent;
     }
 }

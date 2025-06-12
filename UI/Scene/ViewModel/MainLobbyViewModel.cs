@@ -28,6 +28,7 @@ public class MainLobbyViewModel : IDisposable
     public event Action OnMailAlert;
     public event Action OffMailAlert;
     public event Action OnUpdateFriendList;
+    public event Action OnUpdateUsername;
     public event Action<int> OnPageChanged;
     public event Action<int> OnChangeButtonFocus;
     public event Action<string> OnChangeLanguage;
@@ -79,6 +80,30 @@ public class MainLobbyViewModel : IDisposable
         }
     }
 
+    public async Task ClaimMail(MailInfo mailInfo)
+    {
+        var packet = new ClaimMailPacketRequired()
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            MailId = mailInfo.MailId
+        };
+        
+        await _webService.SendWebRequestAsync<ClaimMailPacketResponse>("Mail/ClaimMail", "PUT", packet);
+        await InitMailAlert();
+    }
+    
+    public async Task AcceptInvitation(MailInfo mailInfo, bool accept)
+    {
+        var packet = new AcceptInvitationPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            Accept = accept,
+            InviteeName = User.Instance.UserName
+        };
+        
+        await Task.WhenAll(ClaimMail(mailInfo), _signalRClient.SendAcceptInvitation(packet));
+    }
+    
     public async Task InitMailAlert()
     {
         var mailTask = await GetMailList();
@@ -234,6 +259,12 @@ public class MainLobbyViewModel : IDisposable
         OnUpdateFriendList?.Invoke();
     }
 
+    public void UpdateUsername(string username)
+    {
+        User.Instance.UserName = username;
+        OnUpdateUsername?.Invoke();
+    }
+    
     private int GetFriendOrderPriority(UserAct act)
     {
         switch (act)

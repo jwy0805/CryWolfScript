@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using Unity.VisualScripting;
@@ -105,13 +106,25 @@ public class DataManager
             return;
         }
         
+        Debug.Log("Admin Log: Loading contents...");
+        
         var unitDictTask = LoadJsonAsync<Contents.UnitLoader, int, Contents.UnitData>("UnitData");
         var objectDictTask = LoadJsonAsync<Contents.ObjectLoader, int, Contents.ObjectData>("ObjectData");
         var skillDictTask = LoadJsonAsync<Contents.SkillLoader, int, Contents.SkillData>("SkillData");
         var tutorialDictTask = LoadJsonAsync<Contents.TutorialLoader, TutorialType, Contents.TutorialData>("TutorialData");
         var localizationDictTask = LoadJsonAsync<Dictionary<string, Dictionary<string, Contents.LocalizationEntry>>>("LanguageData");
-
+        
         await Task.WhenAll(unitDictTask, objectDictTask, skillDictTask, tutorialDictTask, localizationDictTask);
+        
+        var loader = unitDictTask.Result!; // Contents.UnitLoader
+        // 중복 Id 찾아서 로그 남기기
+        var dupes = loader.Units
+            .GroupBy(u => u.Id)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+        if (dupes.Any())
+            Debug.LogError($"UnitData.json에 중복된 Id 발견! [{string.Join(", ", dupes)}]");
         
         UnitDict = unitDictTask.Result!.MakeDict();
         ObjectDict = objectDictTask.Result!.MakeDict();

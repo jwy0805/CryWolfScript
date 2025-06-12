@@ -290,13 +290,13 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         {
             case "Flower":
             {
-                var textContent = Managers.Localization.GetLocalizedValue(_speechBubbleText, step.DialogKey);
+                var textContent = Managers.Localization.BindLocalizedText(_speechBubbleText, step.DialogKey);
                 _speechBubbleText.text = textContent;
                 break;
             }
             case "Echo":
             {
-                var textContent = Managers.Localization.GetLocalizedValue(_infoBubbleText, step.DialogKey);
+                var textContent = Managers.Localization.BindLocalizedText(_infoBubbleText, step.DialogKey);
                 _infoBubbleText.text = textContent;
                 break;
             }

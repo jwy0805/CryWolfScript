@@ -33,7 +33,7 @@ public class ObjectManager
                 {
                     var isSheep = Util.Faction == Faction.Sheep;
                     var controller = go.AddComponent<MyPlayerController>();
-                    Object.FindAnyObjectByType<SceneContext>().Container.Inject(controller);
+                    Util.Inject(controller);
                     
                     go.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
                     go.name = info.Name;

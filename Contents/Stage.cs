@@ -26,7 +26,7 @@ public class Stage : MonoBehaviour
 
     private void Start()
     {
-        FindAnyObjectByType<SceneContext>().Container.Inject(this);
+        Util.Inject(this);
         Init();
     }
 

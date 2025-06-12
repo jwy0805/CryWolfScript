@@ -174,7 +174,7 @@ public class UI_SettingsPopup : UI_Popup
     private void OnAddReferrerClicked(PointerEventData data)
     {
         var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-        const string titleKey = "notify_empty_title";
+        const string titleKey = "empty_text";
         const string messageKey = "notify_preparing_message";
         Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
     }
@@ -182,7 +182,7 @@ public class UI_SettingsPopup : UI_Popup
     private void OnLinkSocialClicked(PointerEventData data)
     {
         var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-        const string titleKey = "notify_empty_title";
+        const string titleKey = "empty_text";
         const string messageKey = "notify_preparing_message";
         Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
     }
@@ -223,7 +223,7 @@ public class UI_SettingsPopup : UI_Popup
             };
             
             var task = _webService.SendWebRequestAsync<DeleteUserAccountPacketResponse>(
-                "UserAccount/Delete", UnityWebRequest.kHttpVerbDELETE, packet);
+                "UserAccount/DeleteAccount", UnityWebRequest.kHttpVerbDELETE, packet);
             
             await task;
             

@@ -20,7 +20,7 @@ public class TimerSeconds : MonoBehaviour
             
             if (TimerText != null)
             {
-                TimerText.gameObject.SetActive(true);
+                TimerText.transform.parent.gameObject.SetActive(true);
                 TimerText.text = "06:00:00";
             }
         }
@@ -29,12 +29,14 @@ public class TimerSeconds : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (TimerText == null) return;
+        
         _currentTime = DateTime.UtcNow;
         var timeLeft = _refreshTime - _currentTime;
 
         if (timeLeft.TotalSeconds <= 0)
         {
-            TimerText.gameObject.SetActive(false);
+            TimerText.transform.parent.gameObject.SetActive(false);
             return;
         }
 

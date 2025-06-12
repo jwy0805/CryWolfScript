@@ -165,14 +165,14 @@ public class UI_ReinforcePopup : UI_Popup
             var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
             var successText = textButton.GetComponentInChildren<TextMeshProUGUI>();
             cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
-            successText.text = Managers.Localization.GetLocalizedValue(successText, "reinforce_complete_text_fail");
+            successText.text = Managers.Localization.BindLocalizedText(successText, "reinforce_complete_text_fail");
         }
         else
         {
             var successEffectPath = (int)newUnitInfo.Class >= 5 ? "UIEffects/SuccessHigh" : "UIEffects/SuccessLow";
             var successText = textButton.GetComponentInChildren<TextMeshProUGUI>();
             Managers.Resource.Instantiate(successEffectPath, _cardPanelRect);
-            successText.text = Managers.Localization.GetLocalizedValue(successText, "reinforce_complete_text_success");
+            successText.text = Managers.Localization.BindLocalizedText(successText, "reinforce_complete_text_success");
             cardFrameRect.SetAsLastSibling();
         }
         

@@ -364,7 +364,6 @@ public class LoginViewModel : IInitializable, IDisposable
     {
         PlayerPrefs.SetFloat("MusicVolume", 0.5f);
         PlayerPrefs.SetFloat("SfxVolume", 0.5f);
-        Managers.Localization.SetLanguage(Application.systemLanguage.ToString());
         PlayerPrefs.SetInt("Notification", 1);
         
         PlayerPrefs.Save();
