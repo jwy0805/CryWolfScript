@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -52,7 +53,7 @@ public class UI_RewardPopup : UI_Popup
         GetButton((int)Buttons.PanelButton).gameObject.BindEvent(OnPanelClicked);
     }
 
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         foreach (var reward in Rewards)
         {
@@ -62,7 +63,7 @@ public class UI_RewardPopup : UI_Popup
                 {
                     Managers.Data.MaterialInfoDict.TryGetValue(reward.ItemId, out var materialInfo);
                     if (materialInfo == null) continue;
-                    var itemObject = Managers.Resource.GetMaterialResources(materialInfo, _rewardPanel);
+                    var itemObject = await Managers.Resource.GetMaterialResources(materialInfo, _rewardPanel);
                     break;
                 }
                 case Google.Protobuf.Protocol.ProductType.Unit:
@@ -70,12 +71,12 @@ public class UI_RewardPopup : UI_Popup
                     // Unit
                     Managers.Data.UnitInfoDict.TryGetValue(reward.ItemId, out var unitInfo);
                     if (unitInfo == null) continue;
-                    var itemObject = Managers.Resource.GetCardResources<UnitId>(unitInfo, _rewardPanel);
+                    var itemObject = await Managers.Resource.GetCardResources<UnitId>(unitInfo, _rewardPanel);
                     break;
                 }
                 default:
                 {
-                    var itemObject = Managers.Resource.Instantiate("UI/Deck/ItemFrameGold", _rewardPanel);
+                    var itemObject = await Managers.Resource.Instantiate("UI/Deck/ItemFrameGold", _rewardPanel);
                     var countText = Util.FindChild(itemObject, "CountText", true, true);
                     countText.GetComponent<TextMeshProUGUI>().text = reward.Count.ToString();
                     break;

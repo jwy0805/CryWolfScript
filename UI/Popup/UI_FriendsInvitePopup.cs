@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,24 +56,31 @@ public class UI_FriendsInvitePopup : UI_Popup
         _lobbyVm = lobbyViewModel;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            await BindObjectsAsync();
+            InitButtonEvents();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
-    protected override void BindObjects()
+    protected override async Task BindObjectsAsync()
     {
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         Bind<TMP_InputField>(typeof(TextInputs));
         Bind<Image>(typeof(Images));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
-        Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.UsernameInput));
+        await Managers.Localization.UpdateTextAndFont(_textDict);
+        await Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.UsernameInput));
     }
 
     protected override void InitButtonEvents()
@@ -81,7 +89,7 @@ public class UI_FriendsInvitePopup : UI_Popup
         GetButton((int)Buttons.BackButton).gameObject.BindEvent(ClosePopup);
     }
 
-    protected override async void InitUI()
+    protected override async Task InitUIAsync()
     {
         await LoadFriends();
     }
@@ -89,10 +97,10 @@ public class UI_FriendsInvitePopup : UI_Popup
     private async Task LoadFriends()
     {
         var friendList = await _lobbyVm.GetFriendList();
-        BindFriendsListPanel(friendList);
+        await BindFriendsListPanel(friendList);
     }
 
-    private void BindFriendsListPanel(List<FriendUserInfo> friendList)
+    private async Task BindFriendsListPanel(List<FriendUserInfo> friendList)
     {
         var parent = GetImage((int)Images.FriendsListPanel).transform;
         Util.DestroyAllChildren(parent);
@@ -105,7 +113,7 @@ public class UI_FriendsInvitePopup : UI_Popup
                 RankPoint = friend.RankPoint
             };
             
-            var friendFrame = Managers.Resource.GetFriendInviteFrame(friendUserInfo, parent);
+            var friendFrame = await Managers.Resource.GetFriendInviteFrame(friendUserInfo, parent);
             BindFriendInviteButton(friendFrame, friendUserInfo);
         }
     }

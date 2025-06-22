@@ -64,7 +64,7 @@ public class UI_SinglePlay : UI_Scene
             await _singlePlayVm.Initialize();
             BindObjects();
             InitButtonEvents();
-            InitUI();
+            await InitUIAsync();
         }
         catch (Exception e)
         {
@@ -78,7 +78,7 @@ public class UI_SinglePlay : UI_Scene
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }
     
     protected override void InitButtonEvents()
@@ -88,15 +88,15 @@ public class UI_SinglePlay : UI_Scene
         GetButton((int)Buttons.StartButton).gameObject.BindEvent(OnStartClicked);
     }
     
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
-        SetUserInfo();
+        await SetUserInfo();
         
         var singlePlayStageText = _textDict["SinglePlayStageText"].GetComponent<TextMeshProUGUI>(); 
         singlePlayStageText.text = $"{_singlePlayVm.StageLevel} - {_singlePlayVm.StageId % 1000}";
     }
 
-    private void SetUserInfo()
+    private async Task SetUserInfo()
     {
         var faction = Util.Faction;
         var deck = _deckVm.GetDeck(faction);
@@ -109,7 +109,7 @@ public class UI_SinglePlay : UI_Scene
         
         foreach (var unit in deck.UnitsOnDeck)
         {
-            Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform);
+            await Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform);
         }
     }
     
@@ -123,9 +123,9 @@ public class UI_SinglePlay : UI_Scene
         Managers.Scene.LoadScene(Define.Scene.MainLobby);
     }
     
-    private void OnInfoClicked(PointerEventData data)
+    private async Task OnInfoClicked(PointerEventData data)
     {
-        var popup = Managers.UI.ShowPopupUI<UI_SinglePlayMapPopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_SinglePlayMapPopup>();
         popup.Faction = Util.Faction;
     }
     

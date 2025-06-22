@@ -344,14 +344,14 @@ public class LoginViewModel : IInitializable, IDisposable
     
     #endregion
 
-    public void SignIn()
+    public async Task SignIn()
     {
-        Managers.UI.ShowPopupUI<UI_SignInPopup>();
+        await Managers.UI.ShowPopupUI<UI_SignInPopup>();
     }
     
-    public void SignUp()
+    public async Task SignUp()
     {
-        Managers.UI.ShowPopupUI<UI_SignUpPopup>();
+        await Managers.UI.ShowPopupUI<UI_SignUpPopup>();
     }
 
     private void HandleSignInSuccess(string accessToken, string refreshToken)

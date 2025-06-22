@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -13,10 +14,12 @@ public abstract class UI_Base : MonoBehaviour
 
     protected abstract void Init();
     protected virtual void BindObjects() { }
+    protected virtual Task BindObjectsAsync() { return Task.CompletedTask; }
     protected virtual void InitButtonEvents() { }
     protected virtual void InitBackgroundSize(RectTransform rectTransform) { }
     protected virtual void InitUI() { }
-    
+    protected virtual Task InitUIAsync() { return Task.CompletedTask; }
+
     private void Start()
     {
         Init();
@@ -153,20 +156,6 @@ public abstract class UI_Base : MonoBehaviour
         rt.sizeDelta = new Vector2(side * sizeParam, side * sizeParam);
     }
     
-    protected void SetObjectSize(GameObject go, float sizeParam, bool inScrollView)
-    {
-        Transform parent = go.transform.parent;
-        RectTransform rt = go.GetComponent<RectTransform>();
-        RectTransform rtParent = parent.GetComponent<RectTransform>();
-        Vector2 size = rtParent.sizeDelta;
-        
-        float width = size.x;
-        float height = size.y;
-        float side = width < height ? width : height;
-        
-        rt.sizeDelta = new Vector2(side * sizeParam, side * sizeParam);
-    }
-    
     // Rectangular
     protected void SetObjectSize(GameObject go, float xParam, float yParam)
     {
@@ -180,28 +169,5 @@ public abstract class UI_Base : MonoBehaviour
         float side = width < height ? width : height;
 
         rt.sizeDelta = new Vector2(side * xParam, side * yParam);
-    }
-    
-    protected void SetLineSize(GameObject go, float yParam = 1.0f)
-    {
-        Transform parent = go.transform.parent;
-        RectTransform rt = go.GetComponent<RectTransform>();
-        RectTransform rtParent = parent.GetComponent<RectTransform>();
-        Rect rect = rtParent.rect;
-        
-        float width = rect.width;
-        float height = rect.height; 
-        float side = width < height ? width : height;
-
-        rt.sizeDelta = new Vector2(10, side * yParam);
-    }
-
-    protected void SetSkillPanel(string skillPanel, Transform parent)
-    {
-        GameObject go = Managers.Resource.Instantiate($"UI/Skill/{skillPanel}");
-        go.transform.SetParent(parent);
-        RectTransform rectTransform = go.GetComponent<RectTransform>();
-        rectTransform.offsetMax = new Vector2(0.0f, 0.0f);
-        rectTransform.offsetMin = new Vector2(0.0f, 0.0f);
     }
 }

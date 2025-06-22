@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -57,37 +58,51 @@ public class UI_PlayerProfilePopup : UI_Popup
     }
 
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        InitEvents();
-        InitUI();
+            BindObjects();
+            InitButtonEvents();
+            InitEvents(); 
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
-    protected override void BindObjects()
+    protected override async void BindObjects()
     {
-        BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
-        Bind<Image>(typeof(Images));
-        Bind<Button>(typeof(Buttons));
+        try
+        {
+            BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
+            Bind<Image>(typeof(Images));
+            Bind<Button>(typeof(Buttons));
 
-        Managers.Localization.UpdateTextAndFont(_textDict);
-        Managers.Localization.UpdateFont(GetText((int)Texts.UsernameText));
+            await Managers.Localization.UpdateTextAndFont(_textDict);
+            await Managers.Localization.UpdateFont(GetText((int)Texts.UsernameText));
         
-        var exp = PlayerUserInfo.Exp;
-        var expMax = PlayerUserInfo.ExpToLevelUp;
-        GetText((int)Texts.ExpText).text = $"{exp.ToString()} / {expMax.ToString()}";
+            var exp = PlayerUserInfo.Exp;
+            var expMax = PlayerUserInfo.ExpToLevelUp;
+            GetText((int)Texts.ExpText).text = $"{exp.ToString()} / {expMax.ToString()}";
         
-        GetText((int)Texts.UsernameText).text = PlayerUserInfo.UserName;
-        GetText((int)Texts.LevelText).text = PlayerUserInfo.Level.ToString();
-        GetText((int)Texts.RankPointText).text = PlayerUserInfo.RankPoint.ToString();
+            GetText((int)Texts.UsernameText).text = PlayerUserInfo.UserName;
+            GetText((int)Texts.LevelText).text = PlayerUserInfo.Level.ToString();
+            GetText((int)Texts.RankPointText).text = PlayerUserInfo.RankPoint.ToString();
 
-        // GetText((int)Texts.HighestRankText).text = PlayerUserInfo.HighestRankPoint.ToString();
-        GetText((int)Texts.RankingText).text = "100";
-        GetText((int)Texts.VictoriesText).text = PlayerUserInfo.Victories.ToString();
-        GetText((int)Texts.WinRateText).text = PlayerUserInfo.WinRate.ToString();
+            // GetText((int)Texts.HighestRankText).text = PlayerUserInfo.HighestRankPoint.ToString();
+            GetText((int)Texts.RankingText).text = "100";
+            GetText((int)Texts.VictoriesText).text = PlayerUserInfo.Victories.ToString();
+            GetText((int)Texts.WinRateText).text = PlayerUserInfo.WinRate.ToString();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     protected override void InitButtonEvents()
@@ -100,7 +115,7 @@ public class UI_PlayerProfilePopup : UI_Popup
         _lobbyVm.OnUpdateUsername += UpdateUsername;
     }
     
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         var background = GetImage((int)Images.SliderBackground);
         _expSlider = background.transform.parent.GetComponent<Slider>();
@@ -111,7 +126,7 @@ public class UI_PlayerProfilePopup : UI_Popup
         
         var flag = GetImage((int)Images.Flag);
         var flagPath = $"Sprites/Icons/IconFlag/Small/icon_flag_{Managers.Localization.Language2Letter}";
-        flag.sprite = Managers.Resource.Load<Sprite>(flagPath);
+        flag.sprite = await Managers.Resource.LoadAsync<Sprite>(flagPath);
         
         var pencilButton = GetButton((int)Buttons.PencilButton).gameObject;
         if (User.Instance.NameInitialized)
@@ -129,9 +144,9 @@ public class UI_PlayerProfilePopup : UI_Popup
         GetText((int)Texts.UsernameText).text = User.Instance.UserName;
     }
     
-    private void OnPencilClicked(PointerEventData data)
+    private async Task OnPencilClicked(PointerEventData data)
     {
-        var popup = Managers.UI.ShowPopupUI<UI_InputPopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_InputPopup>();
         const string titleKey = "input_update_username_title";
         const string ruleKey = "input_update_username_rule_text";
 
@@ -145,7 +160,7 @@ public class UI_PlayerProfilePopup : UI_Popup
             if (string.IsNullOrEmpty(text))
             {
                 warningText.gameObject.SetActive(true);
-                Managers.Localization.BindLocalizedText(warningText, "warning_empty_username");
+                await Managers.Localization.BindLocalizedText(warningText, "warning_empty_username");
             }
             else
             {
@@ -165,14 +180,16 @@ public class UI_PlayerProfilePopup : UI_Popup
                 else
                 {
                     warningText.gameObject.SetActive(true);
-                    
+                    string warningTextKey;
                     switch (response.ErrorCode)
                     {
                         case 1:
-                            Managers.Localization.BindLocalizedText(warningText, "warning_username_already_exists");
+                            warningTextKey = "warning_username_already_exists";
+                            await Managers.Localization.BindLocalizedText(warningText, warningTextKey);
                             break;
                         case 2:
-                            Managers.Localization.BindLocalizedText(warningText, "warning_invalid_username");
+                            warningTextKey = "warning_username_not_exists";
+                            await Managers.Localization.BindLocalizedText(warningText, warningTextKey);
                             break;
                     }
                 }

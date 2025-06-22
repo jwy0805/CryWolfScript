@@ -52,6 +52,14 @@ public class Managers : MonoBehaviour
     public static UIManager UI => Instance._ui;
 
     #endregion
+
+    // private void Awake()
+    // {
+    //     if (Instance != null)
+    //     {
+    //         Destroy(gameObject);
+    //     }
+    // }
     
     private void Start()
     {

@@ -31,11 +31,18 @@ public class MailInfoInvitation : UI_Base
         _lobbyVm = lobbyVm;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+        try
+        {
+            BindObjects();
+            InitButtonEvents();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     protected override void BindObjects()
@@ -50,30 +57,30 @@ public class MailInfoInvitation : UI_Base
         GetButton((int)Buttons.DenyButton).onClick.AddListener(() => _ =  OnDenyClicked());
     }
 
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
-         InitInvitationText();
-         InitExpiresText();
+         await InitInvitationText();
+         await InitExpiresText();
     }
 
-    private void InitInvitationText()
+    private async Task InitInvitationText()
     {
         var text = GetText((int)Texts.MailInvitationText);
         var key = "mail_invitation_text";
         var placeholderKeys = new List<string> { "value" };
         var replacers = new List<string> { MailInfo.Sender };
-        Managers.Localization.UpdateFont(text);
-        Managers.Localization.FormatLocalizedText(text, key, placeholderKeys, replacers);
+        await Managers.Localization.UpdateFont(text);
+        await Managers.Localization.FormatLocalizedText(text, key, placeholderKeys, replacers);
     }
 
-    private void InitExpiresText()
+    private async Task InitExpiresText()
     {
         var text = GetText((int)Texts.ExpiresText);
         var key = "mail_expires_text";
         var placeholderKeys = new List<string> { "value" };
         var expiresAt = (MailInfo.ExpiresAt.Date - DateTime.Today).Minutes;
         var replacers = new List<string> { Mathf.Max(expiresAt, 0).ToString() };
-        Managers.Localization.FormatLocalizedText(text, key, placeholderKeys, replacers);
+        await Managers.Localization.FormatLocalizedText(text, key, placeholderKeys, replacers);
     }
 
     private async Task OnAcceptClicked()

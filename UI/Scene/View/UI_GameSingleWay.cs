@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -61,7 +62,7 @@ public class UI_GameSingleWay : UI_Game
     {
         _gameVm.SetPortraitFromFieldUnitEvent += SetPortraitFromFieldUnit;
         _gameVm.OnPortraitClickedEvent += ShowPortraitSelectEffect;
-        _gameVm.TurnOnSelectRingCoroutineEvent += SelectRingCoroutine;
+        _gameVm.TurnOnSelectRingCoroutineEvent += SelectRingAsync;
         _gameVm.TurnOffOneSelectRingEvent += TurnOffOneSelectRing;
         _gameVm.TurnOffSelectRingEvent += TurnOffSelectRing;
         _gameVm.SelectedObjectIds.CollectionChanged += OnSlotIdChanged;
@@ -86,16 +87,23 @@ public class UI_GameSingleWay : UI_Game
         InitUI();
     }
     
-    protected override void BindObjects()
+    protected override async void BindObjects()
     {
-        _dictPortrait.Clear();
-        _selectedObjects.Clear();
+        try
+        {
+            _dictPortrait.Clear();
+            _selectedObjects.Clear();
         
-        BindData<Image>(typeof(Images), _dictPortrait);
-        Bind<Button>(typeof(Buttons));
-        Bind<TextMeshProUGUI>(typeof(Texts));
+            BindData<Image>(typeof(Images), _dictPortrait);
+            Bind<Button>(typeof(Buttons));
+            Bind<TextMeshProUGUI>(typeof(Texts));
         
-        _log = SetLog();
+            _log = await SetLog();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
     protected override void InitButtonEvents()
@@ -111,18 +119,18 @@ public class UI_GameSingleWay : UI_Game
 
         if (_isTutorial)
         {
-            SetTutorialUI();
+            _ = SetTutorialUI();
         }
     }
     
     // Set the selected units in the main lobby to the log bar
-    private GameObject SetLog()
+    private async Task<GameObject> SetLog()
     {   
         var deck = Util.Faction == Faction.Sheep ? User.Instance.DeckSheep : User.Instance.DeckWolf;
         for (var i = 0; i < deck.UnitsOnDeck.Length ; i++)
         {
             var parent = _dictPortrait[$"UnitPanel{i}"].transform;
-            var prefab = Managers.Resource.InstantiateFromContainer(
+            var prefab = await Managers.Resource.InstantiateAsyncFromContainer(
                 "UI/InGame/SkillPanel/Portrait", parent);
             var costText = Util.FindChild(parent.gameObject, "UnitCostText", true);
             var level = deck.UnitsOnDeck[i].Level;
@@ -133,7 +141,7 @@ public class UI_GameSingleWay : UI_Game
             costText.GetComponent<TextMeshProUGUI>().text =
                 Managers.Data.UnitDict[initPortraitId].Stat.RequiredResources.ToString();
             prefab.GetComponent<Image>().sprite = 
-                Managers.Resource.Load<Sprite>($"Sprites/Portrait/{portrait.UnitId}");
+                await Managers.Resource.LoadAsync<Sprite>($"Sprites/Portrait/{portrait.UnitId}");
             prefab.BindEvent(OnPortraitClicked);
         }
         
@@ -189,20 +197,29 @@ public class UI_GameSingleWay : UI_Game
         _gameVm.UpdateUpgradeCostResponse(cost);
     }
     
-    public void UpgradePortrait(string newUnitName)
+    public async Task UpgradePortrait(string newUnitName)
     {
         // Update the portrait image - unit name that is upgraded
         var portrait = _gameVm.CurrentSelectedPortrait;
         if (portrait is not MonoBehaviour mono) return;
         var go = mono.gameObject;
-        go.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>($"Sprites/Portrait/{newUnitName}");
+        var portraitKey = $"Sprites/Portrait/{newUnitName}";
+        go.GetComponent<Image>().sprite = await Managers.Resource.LoadAsync<Sprite>(portraitKey);
         
         // Update Skill panel to match the new unit
         _gameVm.UpdateSkillPanel(portrait);
         
         // Update the cost of the unit
         var costText = Util.FindChild(go.transform.parent.gameObject, "UnitCostText", true);
-        costText.GetComponent<TextMeshProUGUI>().text = Managers.Data.UnitDict[(int)portrait.UnitId].Stat.RequiredResources.ToString();
+        Managers.Data.UnitDict.TryGetValue((int)portrait.UnitId, out var unit);
+        
+        if (unit == null)
+        {
+            Debug.LogWarning($"Unit with ID {(int)portrait.UnitId} not found in UnitDict.");
+            return;
+        }
+        
+        costText.GetComponent<TextMeshProUGUI>().text = unit.Stat.RequiredResources.ToString();
         
         // Tutorial
         if ((_tutorialVm.Step == 9 && Util.Faction == Faction.Wolf) ||
@@ -213,7 +230,7 @@ public class UI_GameSingleWay : UI_Game
         }
     }
 
-    private void TurnOnSelectRing(int id)
+    private async Task TurnOnSelectRing(int id)
     {   
         var go = Managers.Object.FindById(id);
         if (go == null) return; 
@@ -222,7 +239,7 @@ public class UI_GameSingleWay : UI_Game
             return;
         }
         
-        var selectRing = Managers.Resource.Instantiate("WorldObjects/SelectRing", go.transform);
+        var selectRing = await Managers.Resource.Instantiate("WorldObjects/SelectRing", go.transform);
         if (go.TryGetComponent(out Collider anyCollider) == false) return;
         var size = anyCollider.bounds.size.x;
         selectRing.transform.localPosition = new Vector3(0, 0.01f, 0);
@@ -230,15 +247,9 @@ public class UI_GameSingleWay : UI_Game
         _gameVm.SelectedObjectIds.Add(id);
     }
     
-    private void SelectRingCoroutine(int id)
+    private async Task SelectRingAsync(int id)
     {
-        StartCoroutine(TurnOnSelectRingCoroutine(id));
-    }
-    
-    private IEnumerator TurnOnSelectRingCoroutine(int id)
-    {
-        yield return null;
-        TurnOnSelectRing(id);
+        await TurnOnSelectRing(id);
     }
 
     private void TurnOffOneSelectRing(int id)
@@ -267,13 +278,13 @@ public class UI_GameSingleWay : UI_Game
         switch (args.Action)
         {
             case NotifyCollectionChangedAction.Add:
-                _gameVm.CapacityWindow.InitSlot(args.NewStartingIndex);
+                _gameVm.CapacityWindow.InitSlotAsync(args.NewStartingIndex);
                 break;
             case NotifyCollectionChangedAction.Remove:
                 for (var i = 0; i < _gameVm.SelectedObjectIds.Count; i++)
                 {
                     _gameVm.CapacityWindow.DeleteAllSlots();
-                    _gameVm.CapacityWindow.InitSlot(i);
+                    _gameVm.CapacityWindow.InitSlotAsync(i);
                 }
                 break;
             case NotifyCollectionChangedAction.Reset: 
@@ -286,27 +297,27 @@ public class UI_GameSingleWay : UI_Game
     
     #region Button Events
 
-    private void OnPortraitClicked(PointerEventData data)
+    private async Task OnPortraitClicked(PointerEventData data)
     {
         if (data.pointerPress.TryGetComponent(out UI_Portrait portrait) == false) { return; }
-        _gameVm.OnPortraitClicked(portrait);
+        await _gameVm.OnPortraitClicked(portrait);
     }
     
-    private void OnResourceClicked(PointerEventData data)
+    private async Task OnResourceClicked(PointerEventData data)
     {
         Managers.UI.CloseAllPopupUI();
-        Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
+        await Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
     }
     
-    private void OnCapacityClicked(PointerEventData data)
+    private async Task OnCapacityClicked(PointerEventData data)
     {
         Managers.UI.CloseAllPopupUI();
-        Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
+        await Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
     }
 
-    private void OnMenuClicked(PointerEventData data)
+    private async Task OnMenuClicked(PointerEventData data)
     {
-        Managers.UI.ShowPopupUI<UI_GameMenuPopup>();
+        await Managers.UI.ShowPopupUI<UI_GameMenuPopup>();
     }
     
     #endregion
@@ -317,15 +328,15 @@ public class UI_GameSingleWay : UI_Game
         _tutorialVm.StepTutorial();
     }
     
-    private void SetTutorialUI()
+    private async Task SetTutorialUI()
     {
         if (Faction == Faction.Sheep)
         {
-            Managers.UI.ShowPopupUI<UI_TutorialBattleSheepPopup>();
+            await Managers.UI.ShowPopupUI<UI_TutorialBattleSheepPopup>();
         }
         else
         {
-            Managers.UI.ShowPopupUI<UI_TutorialBattleWolfPopup>();
+            await Managers.UI.ShowPopupUI<UI_TutorialBattleWolfPopup>();
         }
         
         _tutorialVm.ClearDictionary();
@@ -398,7 +409,7 @@ public class UI_GameSingleWay : UI_Game
     private void OnDestroy()
     {
         _gameVm.OnPortraitClickedEvent -= ShowPortraitSelectEffect;
-        _gameVm.TurnOnSelectRingCoroutineEvent -= SelectRingCoroutine;
+        _gameVm.TurnOnSelectRingCoroutineEvent -= SelectRingAsync;
         _gameVm.TurnOffOneSelectRingEvent -= TurnOffOneSelectRing;
         _gameVm.TurnOffSelectRingEvent -= TurnOffSelectRing;
         _gameVm.SelectedObjectIds.CollectionChanged -= OnSlotIdChanged;

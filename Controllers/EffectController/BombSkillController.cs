@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using UnityEngine;
 
@@ -19,7 +20,7 @@ public class BombSkillController : ProjectileController
         Vector3 dir = DestPos - transform.position;
         if (dir.sqrMagnitude < 0.01f)
         {
-            HitEffect();
+            _ = HitEffect();
         }
         else
         {
@@ -29,7 +30,7 @@ public class BombSkillController : ProjectileController
         }
     }
     
-    private void HitEffect()
+    private async Task HitEffect()
     {
         #region Effect
          
@@ -41,7 +42,7 @@ public class BombSkillController : ProjectileController
                 Vector3 pos = point + point.normalized * hitOffset;
          
                 //Spawn hit effect on collision
-                hit = Managers.Resource.Load<GameObject>($"Prefabs/Effects/Hits/{gameObject.name}Hit");
+                hit = await Managers.Resource.LoadAsync<GameObject>($"Prefabs/Effects/Hits/{gameObject.name}Hit", "prefab");
                 if (hit != null)
                 {
                     var hitInstance = Instantiate(hit, pos, rot);

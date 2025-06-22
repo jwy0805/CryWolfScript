@@ -6,7 +6,7 @@ using UnityEngine;
 public class PoolManager
 {
     #region Pool
-    class Pool
+    private class Pool
     {
         private readonly Stack<Poolable> _poolStack = new();
 
@@ -26,7 +26,7 @@ public class PoolManager
 
         Poolable Create()
         {
-            GameObject go = Object.Instantiate<GameObject>(Original);
+            var go = Object.Instantiate(Original);
             go.name = Original.name;
             return go.GetOrAddComponent<Poolable>();
         }
@@ -64,7 +64,7 @@ public class PoolManager
     }
     #endregion
 
-    private Dictionary<string, Pool> _pool = new();
+    private readonly Dictionary<string, Pool> _pool = new();
     private Transform _root;
     
     public void Init()
@@ -75,7 +75,7 @@ public class PoolManager
         }
     }
 
-    public void CreatePool(GameObject original, int count = 7)
+    private void CreatePool(GameObject original, int count = 7)
     {
         Pool pool = new Pool();
         pool.Init(original, count);
@@ -87,13 +87,13 @@ public class PoolManager
     public void Push(Poolable poolable)
     {
         string name = poolable.gameObject.name;
-        if (_pool.ContainsKey(name) == false)
+        if (_pool.TryGetValue(name, out var pool) == false)
         {
             Object.Destroy(poolable.gameObject);
             return;
         }
         
-        _pool[name].Push(poolable);
+        pool.Push(poolable);
     }
 
     public Poolable Pop(GameObject original, Transform parent = null)

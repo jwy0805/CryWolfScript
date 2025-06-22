@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Cinemachine;
 using Google.Protobuf.Protocol;
 using TMPro;
@@ -332,9 +333,9 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         _gameVm.OnUnitRepairAllClicked();
     }
 
-    private void OnSkillClicked(PointerEventData data)
+    private async Task OnSkillClicked(PointerEventData data)
     {
-        _gameVm.OnUnitSkillClicked();
+        await _gameVm.OnUnitSkillClicked();
     }
 
     private void OnDestroy()

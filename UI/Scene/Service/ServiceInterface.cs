@@ -66,5 +66,5 @@ public interface IPaymentService
     void RestorePurchases();
     event Action OnCashPaymentSuccess;
     event Action OnPaymentSuccess;
-    event Action<int> OnDailyPaymentSuccess;
+    event Func<int, Task> OnDailyPaymentSuccess;
 }

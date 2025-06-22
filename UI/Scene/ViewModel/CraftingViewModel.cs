@@ -41,7 +41,7 @@ public class CraftingViewModel
     // Crafting Panel <- crafting panel itself in the scene
     // Craft Panel <- craft panel when a crafting button is clicked
     public event Action<Card> SetCardOnCraftingPanel;
-    public event Action<List<OwnedMaterialInfo>, List<OwnedMaterialInfo>> SetMaterialsOnCraftPanel;
+    public event Func<List<OwnedMaterialInfo>, List<OwnedMaterialInfo>, Task> SetMaterialsOnCraftPanel;
     public event Action InitCraftingPanel;
     public event Action<Faction> SetCollectionUI;
     public event Action<UnitId, bool> BindReinforceResult;
@@ -83,11 +83,11 @@ public class CraftingViewModel
          
          if (res.CraftCardOk == false)
          {
-             var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-             Managers.Localization.UpdateWarningPopupText(popup, "warning_server_error");
+             var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+             await Managers.Localization.UpdateWarningPopupText(popup, "warning_server_error");
          }
          
-         Managers.UI.ShowPopupUI<UI_CraftSuccessPopup>();
+         await Managers.UI.ShowPopupUI<UI_CraftSuccessPopup>();
          
          // Update the user's owned list on the client side
          UpdateOwnedMaterials(TotalCraftingMaterials);
@@ -113,8 +113,8 @@ public class CraftingViewModel
         
         if (res.ReinforceResultOk == false)
         {
-            var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            Managers.Localization.UpdateWarningPopupText(popup, "warning_server_error");
+            var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+            await Managers.Localization.UpdateWarningPopupText(popup, "warning_server_error");
         }
         
         BindReinforceResult?.Invoke((UnitId)unitInfo.Id + 1, res.IsSuccess);

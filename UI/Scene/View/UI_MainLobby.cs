@@ -78,7 +78,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         {
             if (_selectMode is SelectModeEnums.Reinforce or SelectModeEnums.Recycle)
             {
-                SetCollectionUIDetails(Util.Faction);
+                _ = SetCollectionUIDetails(Util.Faction);
             }
             _selectMode = value;
         }
@@ -93,11 +93,11 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             
             if (SelectMode == SelectModeEnums.Reinforce)
             {
-                ResetCollectionUIForReinforce();
+                _ = ResetCollectionUIForReinforce();
             }
             else
             {
-                SetCollectionUIDetails(Util.Faction);
+                _ = SetCollectionUIDetails(Util.Faction);
             }
         }
     }
@@ -405,11 +405,9 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         {
             base.Init();
 
-            BindObjects();
+            await BindObjectsAsync();
             InitButtonEvents();
-
             _lobbyVm.SetCurrentPage(2);
-            
             await InitMainLobby();
             await _lobbyVm.JoinLobby();
         }
@@ -463,19 +461,26 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         _lobbyVm.IsSwipeMode = false;
     }
 
-    private void ChangeLanguage(string language2Letter)
+    private async void ChangeLanguage(string language2Letter)
     {
-        Managers.Localization.UpdateChangedTextAndFont(_textDict, language2Letter);
-        var shopPanel = GetImage((int)Images.ShopPanel);
-        
-        foreach (var product in shopPanel.GetComponentsInChildren<ProductSimple>())
+        try
         {
-            product.SetProductText();
+            await Managers.Localization.UpdateChangedTextAndFont(_textDict, language2Letter);
+            var shopPanel = GetImage((int)Images.ShopPanel);
+        
+            foreach (var product in shopPanel.GetComponentsInChildren<ProductSimple>())
+            {
+                await product.SetProductText();
+            }
+        
+            foreach (var product in shopPanel.GetComponentsInChildren<ProductPackage>())
+            {
+                await product.SetProductText();
+            }
         }
-        
-        foreach (var product in shopPanel.GetComponentsInChildren<ProductPackage>())
+        catch (Exception e)
         {
-            product.SetProductText();
+            Debug.LogWarning(e);
         }
     }
     
@@ -683,7 +688,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     // Button Click Events
     #region ButtonEvent
 
-    private void OnFactionButtonClicked(PointerEventData data)
+    private async Task OnFactionButtonClicked(PointerEventData data)
     {
         Util.Faction = Util.Faction == Faction.Sheep ? Faction.Wolf : Faction.Sheep;
         
@@ -691,28 +696,28 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         _collectionVm.SwitchCards(Util.Faction);
         Util.DestroyAllChildren(GetImage((int)Images.CraftingCardPanel).transform);
         
-        SwitchLobbyUI(Util.Faction);
+        await SwitchLobbyUI(Util.Faction);
     }
 
-    private void OnProfileClicked(PointerEventData data)
+    private async Task OnProfileClicked(PointerEventData data)
     {
-        var popup = Managers.UI.ShowPopupUI<UI_PlayerProfilePopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_PlayerProfilePopup>();
         popup.PlayerUserInfo = _userService.UserInfo;
     }
     
-    private void OnSettingsClicked(PointerEventData data)
+    private async Task OnSettingsClicked(PointerEventData data)
     {
-        Managers.UI.ShowPopupUI<UI_SettingsPopup>();
+        await Managers.UI.ShowPopupUI<UI_SettingsPopup>();
     }
     
-    private void OnFriendsClicked(PointerEventData data)
+    private async Task OnFriendsClicked(PointerEventData data)
     {
-        Managers.UI.ShowPopupUI<UI_FriendsListPopup>();
+        await Managers.UI.ShowPopupUI<UI_FriendsListPopup>();
     }
     
-    private void OnMailClicked(PointerEventData data)
+    private async Task OnMailClicked(PointerEventData data)
     {
-        Managers.UI.ShowPopupUI<UI_MailBoxPopup>();
+        await Managers.UI.ShowPopupUI<UI_MailBoxPopup>();
     }
     
     private void OnMissionClicked(PointerEventData data)
@@ -817,35 +822,43 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         SetArrangeButtonColor("ArrangeCountButton");
     }
     
-    private void OnCardClicked(PointerEventData data)
+    private async void OnCardClicked(PointerEventData data)
     {
-        if (data.pointerPress.TryGetComponent(out Card card) == false) return;
-        if (card.IsDragging) return;
+        try
+        {
+            if (data.pointerPress.TryGetComponent(out Card card) == false) return;
+            if (card.IsDragging) return;
         
-        if (SelectMode is SelectModeEnums.Reinforce)
-        {
-            var unitInfo = Managers.Data.UnitInfoDict[card.Id];
-            if (VerifyCard(unitInfo) == false) return;
+            if (SelectMode is SelectModeEnums.Reinforce)
+            {
+                var unitInfo = Managers.Data.UnitInfoDict[card.Id];
+                var verifyResult = await VerifyCard(unitInfo);
+                if (verifyResult == false) return;
             
-            _craftingVm.AddNewUnitMaterial(unitInfo);
+                _craftingVm.AddNewUnitMaterial(unitInfo);
             
-            var parent = GetImage((int)Images.MaterialPanel).transform;
-            var cardFrame = 
-                Managers.Resource.GetCardResources<UnitId>(unitInfo, parent, OnReinforceMaterialClicked);
+                var parent = GetImage((int)Images.MaterialPanel).transform;
+                var cardFrame = 
+                    await Managers.Resource.GetCardResources<UnitId>(unitInfo, parent, OnReinforceMaterialClicked);
             
-            Util.FindChild(cardFrame, "Role").SetActive(false);
-            UpdateReinforcePanel();
-            ResetCollectionUIForReinforce();
-            return;
-        }
+                Util.FindChild(cardFrame, "Role").SetActive(false);
+                UpdateReinforcePanel();
+                await ResetCollectionUIForReinforce();
+                return;
+            }
 
-        if (SelectMode is SelectModeEnums.Recycle)
-        {
-            // Add Card into recycle scroll view.
-            return;
-        }
+            if (SelectMode is SelectModeEnums.Recycle)
+            {
+                // Add Card into recycle scroll view.
+                return;
+            }
 
-        SetCardPopupUI(card);
+            await SetCardPopupUI(card);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
     private void OnCraftingTabClicked(PointerEventData data)
@@ -853,7 +866,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         GoToCraftingTab();
     }
     
-    private void OnCraftingClicked(PointerEventData data)
+    private async Task OnCraftingClicked(PointerEventData data)
     {
         var activeUis = new[]
         {
@@ -863,21 +876,21 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         
         if (_selectedCard == null || _selectedCardForCrafting == null)
         {
-            var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            Managers.Localization.UpdateWarningPopupText(popup, "warning_select_card");
+            var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+            await Managers.Localization.UpdateWarningPopupText(popup, "warning_select_card");
             return;
         }
         
         InitCraftPanel();
     }
     
-    private void OnReinforcingClicked(PointerEventData data)
+    private async Task OnReinforcingClicked(PointerEventData data)
     {
         if (_selectedCard == null || _selectedCardForCrafting == null) return;
         var activeUis = new[] { "CraftingBackButtonFakePanel", "CraftingReinforcePanel", "MaterialScrollView" };
         SetActivePanels(_craftingUiDict, activeUis);
-        InitReinforcePanel();
-        ResetCollectionUIForReinforce();
+        await InitReinforcePanel();
+        await ResetCollectionUIForReinforce();
         SelectMode = SelectModeEnums.Reinforce;
     }
 
@@ -886,12 +899,12 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         InitCraftingPanel();
     }
     
-    private void OnCraftClicked(PointerEventData data)
+    private async Task OnCraftClicked(PointerEventData data)
     {
         if (_selectedCard == null || _selectedCardForCrafting == null)
         {
-            var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            Managers.Localization.UpdateWarningPopupText(popup, "warning_select_card");
+            var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+            await Managers.Localization.UpdateWarningPopupText(popup, "warning_select_card");
             return;
         }
         
@@ -913,39 +926,45 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         UpdateCraftingMaterials(User.Instance.OwnedMaterialList);
     }
 
-    private void OnReinforceMaterialClicked(PointerEventData data)
+    private async void OnReinforceMaterialClicked(PointerEventData data)
     {
-        var unitInfo = Managers.Data.UnitInfoDict[data.pointerPress.GetComponent<Card>().Id];
-        _craftingVm.RemoveNewUnitMaterial(unitInfo);
-        ResetCollectionUIForReinforce();
-        UpdateReinforcePanel();
-        Destroy(data.pointerPress.gameObject);
+        try
+        {
+            var unitInfo = Managers.Data.UnitInfoDict[data.pointerPress.GetComponent<Card>().Id];
+            _craftingVm.RemoveNewUnitMaterial(unitInfo);
+            await ResetCollectionUIForReinforce();
+            UpdateReinforcePanel();
+            Destroy(data.pointerPress.gameObject);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
-    private async void OnReinforceClicked(PointerEventData data)
+    private async Task OnReinforceClicked(PointerEventData data)
     {
         var unitInfo = Managers.Data.UnitInfoDict[_selectedCardForCrafting.Id];
-        Managers.UI.ShowPopupUI<UI_ReinforcePopup>();
-        
+        await Managers.UI.ShowPopupUI<UI_ReinforcePopup>();
         await _craftingVm.GetReinforceResult(unitInfo);
         
         _craftingVm.InitSetting();
     }   
     
-    private void OnRecyclingClicked(PointerEventData data)
+    private async Task OnRecyclingClicked(PointerEventData data)
     {
-        var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-        Managers.Localization.UpdateWarningPopupText(popup, "warning_coming_soon");
+        var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+        await Managers.Localization.UpdateWarningPopupText(popup, "warning_coming_soon");
     }
 
-    private void OnProductClicked(PointerEventData data)
+    private async Task OnProductClicked(PointerEventData data)
     {
         GameProduct product = null;
         var go = data.pointerPress.gameObject;
         if (go.TryGetComponent(out ProductSimple productSimple))
         {
             if (productSimple.IsDragging) return;
-            var simplePopup = Managers.UI.ShowPopupUI<UI_ProductInfoSimplePopup>();
+            var simplePopup = await Managers.UI.ShowPopupUI<UI_ProductInfoSimplePopup>();
             simplePopup.FrameObject = Instantiate(go);
             simplePopup.FrameSize = go.GetComponent<RectTransform>().sizeDelta;
             product = productSimple;
@@ -955,7 +974,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         if (go.TryGetComponent(out ProductPackage productPackage))
         {
             if (productPackage.IsDragging) return;
-            var packagePopup = Managers.UI.ShowPopupUI<UI_ProductInfoPopup>();
+            var packagePopup = await Managers.UI.ShowPopupUI<UI_ProductInfoPopup>();
             packagePopup.FrameObject = Instantiate(go);
             packagePopup.FrameSize = go.GetComponent<RectTransform>().sizeDelta;
             product = productPackage;
@@ -966,13 +985,13 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         _shopVm.SelectedProduct = product.ProductInfo;
     }
 
-    private void OnDailyProductClicked(PointerEventData data)
+    private async Task OnDailyProductClicked(PointerEventData data)
     {
         var go = data.pointerPress.gameObject;
         if (go.TryGetComponent(out ProductSimple productSimple))
         {
             if (productSimple.IsDragging) return;
-            var simplePopup = Managers.UI.ShowPopupUI<UI_ProductInfoSimplePopup>();
+            var simplePopup = await Managers.UI.ShowPopupUI<UI_ProductInfoSimplePopup>();
             simplePopup.IsDailyProduct = true;
             simplePopup.FrameObject = Instantiate(go);
             simplePopup.FrameSize = go.GetComponent<RectTransform>().sizeDelta;
@@ -981,10 +1000,10 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         }
     }
     
-    private void OnAdsRemoverClicked(PointerEventData data)
+    private async Task OnAdsRemoverClicked(PointerEventData data)
     {
         if (User.Instance.SubscribeAdsRemover) return;
-        OnProductClicked(data);
+        await OnProductClicked(data);
     }
     
     private async Task OnAdsProductClicked(PointerEventData data, DailyProductInfo dailyProductInfo)
@@ -1015,17 +1034,17 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         }
     }
     
-    private void OnReservedSalesClicked(PointerEventData data)
+    private async Task OnReservedSalesClicked(PointerEventData data)
     {
         var go = data.pointerPress.gameObject;
         if (go.TryGetComponent(out ProductPackage package) == false) return;
         if (package.IsDragging) return;
-        var popup = Managers.UI.ShowPopupUI<UI_ProductReservedInfoPopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_ProductReservedInfoPopup>();
         var info = Managers.Data.MaterialInfoDict[package.ProductInfo.Compositions[0].CompositionId];
         var parent = Util.FindChild(popup.gameObject, "Frame", true).transform;
         var size = popup.GetComponent<RectTransform>().sizeDelta.x * 0.42f;
         
-        popup.FrameObject = Managers.Resource.GetMaterialResources(info, parent);
+        popup.FrameObject = await Managers.Resource.GetMaterialResources(info, parent);
         popup.FrameSize = new Vector2(size, size);
         _shopVm.SelectedProduct = package.ProductInfo;
     }
@@ -1040,22 +1059,22 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     // UI Size Adjustments
     #region UiAdjustment
     
-    protected override void BindObjects()
+    protected override async Task BindObjectsAsync()
     {
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         Bind<Image>(typeof(Images));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
-        Managers.Localization.UpdateFont(GetText((int)Texts.UsernameText));
-
+        await Managers.Localization.UpdateTextAndFont(_textDict);
+        await Managers.Localization.UpdateFont(GetText((int)Texts.UsernameText));
+        Debug.Log("Localization updated");;
         var deckButtonText = GetButton((int)Buttons.DeckTabButton).GetComponent<TextMeshProUGUI>();
         var collectionButtonText = GetButton((int)Buttons.CollectionTabButton).GetComponent<TextMeshProUGUI>();
         var craftingButtonText = GetButton((int)Buttons.CraftingTabButton).GetComponent<TextMeshProUGUI>();
-        Managers.Localization.BindLocalizedText(deckButtonText, "deck_text");
-        Managers.Localization.BindLocalizedText(collectionButtonText, "collection_text");
-        Managers.Localization.BindLocalizedText(craftingButtonText, "crafting_text");
-
+        await Managers.Localization.BindLocalizedText(deckButtonText, "deck_text");
+        await Managers.Localization.BindLocalizedText(collectionButtonText, "collection_text");
+        await Managers.Localization.BindLocalizedText(craftingButtonText, "crafting_text");
+        Debug.Log("Localization updated2");
         _expSlider = GetImage((int)Images.ExpSliderBackground).transform.parent.GetComponent<Slider>();
         _craftingScrollRect = GetImage((int)Images.CollectionScrollView).GetComponent<ScrollRect>();
         
@@ -1204,7 +1223,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     
     private async Task InitMainLobby()
     {
-        SwitchLobbyUI(Util.Faction);
+        await SwitchLobbyUI(Util.Faction);
         GetImage((int)Images.FriendAlertIcon).gameObject.SetActive(false);
         GetImage((int)Images.MailAlertIcon).gameObject.SetActive(false);
 
@@ -1223,17 +1242,22 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             iconRect.anchorMax = new Vector2(iconRect.anchorMax.x, 0.66f);
         }
 
-        // // Test
-        // await _userService.LoadTestUserInfo(userId: 1);
-        // MainLobby_Item Setting
-        await _userService.LoadUserInfo();
+        if (Managers.Network.ActualUser == false)
+        {
+            await _userService.LoadTestUserInfo(userId: 1);
+        }
+        else
+        {
+            await _userService.LoadUserInfo();
+        }
+
         await Task.WhenAll(
             InitCollection(),
             InitShop(),
             _lobbyVm.InitFriendAlert(),
             _lobbyVm.InitMailAlert(),
             _lobbyVm.ConnectSignalR(_userService.UserInfo.UserName));
-        
+
         BindUserInfo();
         
 #if !UNITY_EDITOR
@@ -1250,10 +1274,10 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         
         if (User.Instance.IsGuest)
         {
-            var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+            var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
             const string titleKey = "warning_text";
             const string messageKey = "notify_warning_guest_account_message";
-            Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+            await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
             
             var tcs = new TaskCompletionSource<bool>();
             popup.SetYesCallback(() =>
@@ -1264,8 +1288,6 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             
             await tcs.Task;
         }
-
-        await Task.Yield();
         
         var sheepTutorialDone = _userService.TutorialInfo.SheepTutorialDone;
         var wolfTutorialDone = _userService.TutorialInfo.WolfTutorialDone;
@@ -1293,37 +1315,44 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         _textDict["ExpText"].GetComponent<TextMeshProUGUI>().text = $"{exp.ToString()} / {expMax.ToString()}";
     }
 
-    private void ProcessTutorial()
+    private async void ProcessTutorial()
     {
-        var tutorialInfo = _userService.TutorialInfo;
-        
-        Debug.Log($"{tutorialInfo.WolfTutorialDone} {tutorialInfo.SheepTutorialDone}");
-        
-        // Case 1: Both tutorials are completed
-        if (tutorialInfo.WolfTutorialDone && tutorialInfo.SheepTutorialDone)
+        try
         {
-            if (tutorialInfo.ChangeFactionTutorialDone) return;
-            Managers.UI.ShowPopupUI<UI_ChangeFactionPopup>();
-            return;
-        }
+            var tutorialInfo = _userService.TutorialInfo;
+        
+            Debug.Log($"{tutorialInfo.WolfTutorialDone} {tutorialInfo.SheepTutorialDone}");
+        
+            // Case 1: Both tutorials are completed
+            if (tutorialInfo.WolfTutorialDone && tutorialInfo.SheepTutorialDone)
+            {
+                if (tutorialInfo.ChangeFactionTutorialDone) return;
+                await Managers.UI.ShowPopupUI<UI_ChangeFactionPopup>();
+                return;
+            }
 
-        // Case 2: One of the tutorials is completed, Succeed in the other tutorial
-        if (tutorialInfo.WolfTutorialDone)
-        {
-            _tutorialVm.CompleteTutorialWolf();
+            // Case 2: One of the tutorials is completed, Succeed in the other tutorial
+            if (tutorialInfo.WolfTutorialDone)
+            {
+                _tutorialVm.CompleteTutorialWolf();
+            }
+            else if (tutorialInfo.SheepTutorialDone)
+            {
+                _tutorialVm.CompleteTutorialSheep();
+            }
+            // Case 3: Both tutorials are not completed -> First time to play
+            else
+            {
+                await Managers.UI.ShowPopupUI<UI_TutorialMainPopup>();
+            }
         }
-        else if (tutorialInfo.SheepTutorialDone)
+        catch (Exception e)
         {
-            _tutorialVm.CompleteTutorialSheep();
-        }
-        // Case 3: Both tutorials are not completed -> First time to play
-        else
-        {
-            Managers.UI.ShowPopupUI<UI_TutorialMainPopup>();
+            Debug.LogWarning(e);
         }
     }
     
-    private void SwitchLobbyUI(Faction faction)
+    private async Task SwitchLobbyUI(Faction faction)
     {
         GetImage((int)Images.TopPanel).color = Util.ThemeColor;
         GetImage((int)Images.GameImageGlow).color = Util.ThemeColor;
@@ -1338,12 +1367,12 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         switch (faction)
         {
             case Faction.Sheep:
-                gamePanelImage.sprite = Managers.Resource.Load<Sprite>("Sprites/Backgrounds/MainLobbySheep");
-                factionButtonIcon.sprite = Managers.Resource.Load<Sprite>("Sprites/SheepButton");
+                gamePanelImage.sprite = await Managers.Resource.LoadAsync<Sprite>("Sprites/Backgrounds/MainLobbySheep");
+                factionButtonIcon.sprite = await Managers.Resource.LoadAsync<Sprite>("Sprites/SheepButton");
                 break;
             case Faction.Wolf:
-                gamePanelImage.sprite = Managers.Resource.Load<Sprite>("Sprites/Backgrounds/MainLobbyWolf");
-                factionButtonIcon.sprite = Managers.Resource.Load<Sprite>("Sprites/WolfButton");
+                gamePanelImage.sprite = await Managers.Resource.LoadAsync<Sprite>("Sprites/Backgrounds/MainLobbyWolf");
+                factionButtonIcon.sprite = await Managers.Resource.LoadAsync<Sprite>("Sprites/WolfButton");
                 break;
         }
     }

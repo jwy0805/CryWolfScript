@@ -1,4 +1,6 @@
+using System;
 using System.Collections;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -40,13 +42,20 @@ public class UI_ChangeFactionPopup : UI_Popup
         _tutorialVm = tutorialViewModel;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            BindObjects();
+            InitButtonEvents();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
     protected override void BindObjects()
@@ -67,12 +76,12 @@ public class UI_ChangeFactionPopup : UI_Popup
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(OnExitClicked);
     }
 
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         _tutorialNpc = GameObject.FindGameObjectWithTag("Npc");
         if (_tutorialNpc == null)
         {
-            _tutorialNpc = Managers.Resource.Instantiate("Npc/NpcWerewolf");
+            _tutorialNpc = await Managers.Resource.Instantiate("Npc/NpcWerewolf");
         }
         
         var npcInfo = _tutorialNpc.GetComponent<TutorialNpcInfo>();
@@ -84,7 +93,7 @@ public class UI_ChangeFactionPopup : UI_Popup
         StartCoroutine(PointToFactionButton());
         
         const string key = "tutorial_change_faction_popup_text";
-        var textContent = Managers.Localization.BindLocalizedText(_speechBubbleText, key);
+        var textContent = await Managers.Localization.BindLocalizedText(_speechBubbleText, key);
         _speechBubbleText.text = textContent;
     }
     

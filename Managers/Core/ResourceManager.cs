@@ -21,93 +21,52 @@ public class ResourceManager
 {
     private const string MovedRoot = "Assets/Resources_moved/";
     
-    public long ToDownloadSize { get; set; }
+    public bool InitAddressables { get; set; }
 
     private bool ExistsInAddressables(string key)
     {
         return Addressables.ResourceLocators.Any(loc => loc.Keys.Contains(key));
-    }
-    
-    /// <summary>
-    /// Synchronously Loading.
-    /// If the Addressables bundles are already exist on the cache, returns directly.
-    /// If the bundles are not exist, it will load by Resources.Load.
-    /// * If there are Fast-Follow bundles needed to be additional downloaded, it must be downloaded by LoadAsync.
-    /// </summary>
-    public T Load<T>(string path) where T : Object
-    {
-        // Check pool first
-        if (typeof(T) == typeof(GameObject))
-        {
-            string name = Util.ExtractName(path);
-            GameObject pooledObject = Managers.Pool.GetOriginal(name);
-            if (pooledObject != null)
-                return pooledObject as T;
-        }
-        
-        // Check Addressables
-        if (ExistsInAddressables(path))
-        {
-            AsyncOperationHandle<T> handle = Addressables.LoadAssetAsync<T>(path);
-            if (handle.IsDone) 
-                return handle.Result;
-            
-            // If the handle is not done, it means the asset is not loaded yet.
-            Addressables.Release(handle);
-        }
-        
-        // Resources
-        T resource = Resources.Load<T>(path);
-        if (resource != null) return resource;
-        
-#if UNITY_EDITOR
-        // Editor -> Resources_Moved
-        string editorPath = FindInMovedFolder<T>(path);
-        if (editorPath != null)
-            return AssetDatabase.LoadAssetAtPath<T>(editorPath);
-#endif
-        return null;
     }
 
     /// <summary>
     /// Asynchronously Loading according to Addressables -> Pool -> Resources.
     /// If Fast-Follow / ODR bundles are needed, pending here.
     /// </summary>
-    public async Task<T> LoadAsync<T>(string path) where T : Object
+    public async Task<T> LoadAsync<T>(string key, string extension = "png") where T : Object
     {
         // Check pool first
         if (typeof(T) == typeof(GameObject))
         {
-            string name = Util.ExtractName(path);
+            string name = Util.ExtractName(key);
             GameObject pooledObject = Managers.Pool.GetOriginal(name);
             if (pooledObject != null) 
                 return pooledObject as T;
         }
-        
-        // Addressables
-        if (ExistsInAddressables(path))
+
+        if (Managers.Network.UseAddressables)
         {
-            AsyncOperationHandle<T> handle = Addressables.LoadAssetAsync<T>(path);
+            // Addressables
+            AsyncOperationHandle<T> handle = Addressables.LoadAssetAsync<T>($"{key}.{extension}");
             await handle.Task;
             if (handle.Status == AsyncOperationStatus.Succeeded)
             {
                 return handle.Result;
             }
 
-            Debug.LogError($"Failed to load asset from Addressables: {path}");
-            Addressables.Release(handle);
+            Debug.LogError($"Failed to load asset from Addressables: {key}.{extension}");
+            Addressables.Release(handle); 
         }
-        
-        // Resources
-        T resource = Resources.Load<T>(path);
-        if (resource != null) return resource;
-        
+        else
+        {
 #if UNITY_EDITOR
-        // Editor -> Resources_Moved
-        string editorPath = FindInMovedFolder<T>(path);
-        if (editorPath != null)
-            return AssetDatabase.LoadAssetAtPath<T>(editorPath);
+            // Editor -> Resources_Moved
+            string editorPath = FindInMovedFolder<T>(key);
+            if (editorPath != null)
+                return AssetDatabase.LoadAssetAtPath<T>(editorPath);
 #endif
+        }
+
+        Debug.Log("Not exists in Addressables : " + key);
         return null;
     }
     
@@ -149,72 +108,56 @@ public class ResourceManager
         return null;
     }
 #endif
-
-    public async Task<GameObject> InstantiateAsync(string path, Transform parent = null)
-    {
-        GameObject original = await LoadAsync<GameObject>($"Prefabs/{path}");
-        
-        if (original == null)
-        {
-            Debug.Log($"Failed to load Prefab : {path}");
-            return null;
-        }
-
-        if (original.TryGetComponent(out Poolable poolable))
-        {
-            return Managers.Pool.Pop(original, parent).gameObject;
-        }
-        
-        GameObject go = Object.Instantiate(original, parent);
-        go.name = original.name;
-        return go;
-    }
     
-    public GameObject Instantiate(string path, Transform parent = null)
+    public async Task<GameObject> Instantiate(string key, Transform parent = null)
     {
-        GameObject original = Load<GameObject>($"Prefabs/{path}");
+        GameObject original = await LoadAsync<GameObject>($"Prefabs/{key}", "prefab");
         
         if (original == null)
         {
-            Debug.Log($"Failed to load Prefab : {path}");
+            Debug.Log($"Failed to load Prefab : {key}");
             return null;
         }
 
-        if (original.GetComponent<Poolable>() != null)
+        if (original.TryGetComponent(out Poolable _))
+        {
             return Managers.Pool.Pop(original, parent).gameObject;
+        }
 
         GameObject go = Object.Instantiate(original, parent);
         go.name = original.name;
         return go;
     }   
     
-    public GameObject Instantiate(string path, Vector3 position)
+    public async Task<GameObject> Instantiate(string key, Vector3 position)
     {
-        GameObject original = Load<GameObject>($"Prefabs/{path}");
+        GameObject original = await LoadAsync<GameObject>($"Prefabs/{key}", "prefab");
         
         if (original == null)
         {
-            Debug.Log($"Failed to load Prefab : {path}");
+            Debug.Log($"Failed to load Prefab : {key}");
             return null;
         }
 
-        if (original.GetComponent<Poolable>() != null)
+        if (original.TryGetComponent(out Poolable _))
+        {
             return Managers.Pool.Pop(original).gameObject;
+        }
 
         GameObject go = Object.Instantiate(original, position, Quaternion.identity);
         go.name = original.name;
         return go;
     }
 
-    public GameObject InstantiateFromContainer(string path, Transform parent = null)
+    public async Task<GameObject> InstantiateAsyncFromContainer(string key, Transform parent = null)
     {
-        var original = Load<GameObject>($"Prefabs/{path}");
+        GameObject original = await LoadAsync<GameObject>($"Prefabs/{key}", "prefab");
         if (original == null)
         {
-            Debug.Log($"Failed to load Prefab : {path}");
+            Debug.Log($"Failed to load Prefab : {key}");
             return null;
         }
-
+        
         var installer = new ServiceInstaller();
 
         // Register services that are needed for the entire project
@@ -223,11 +166,11 @@ public class ResourceManager
         
         // Register services that are needed for the scene (especially view models)
         var sceneContext = Object.FindAnyObjectByType<SceneContext>().Container;
-        installer.CreateFactory(path, sceneContext);
+        installer.CreateFactory(key, sceneContext);
         
-        return sceneContext.InstantiatePrefab(original, parent);
+        return sceneContext.InstantiatePrefab(original, parent);    
     }
-
+    
     public void Destroy(GameObject go, float time)
     {
         if (go == null)
@@ -281,13 +224,13 @@ public class ResourceManager
         Object.Destroy(go, time * Time.deltaTime);
     }
     
-    public GameObject GetCardResources<TEnum>(
+    public async Task<GameObject> GetCardResourcesF<TEnum>(
         IAsset asset, 
         Transform parent, 
-        Action<PointerEventData> action = null, 
+        Func<PointerEventData, Task> action = null, 
         bool activateText = false) where TEnum : struct, Enum
     {
-        var cardFrame = Instantiate("UI/Deck/CardFrame", parent);
+        var cardFrame = await Instantiate("UI/Deck/CardFrame", parent);
         var card = cardFrame.GetOrAddComponent<Card>();
         
         card.Id = asset.Id;
@@ -302,7 +245,36 @@ public class ResourceManager
         };
         
         if (action != null) cardFrame.BindEvent(action);
-        SetCardContents<TEnum>(cardFrame, asset, card.AssetType);
+        await SetCardContents<TEnum>(cardFrame, asset, card.AssetType);
+        
+        var nameTextObject = Util.FindChild(cardFrame, "UnitNameText", true, true);
+        nameTextObject.SetActive(activateText);
+        
+        return cardFrame;
+    }
+    
+    public async Task<GameObject> GetCardResources<TEnum>(
+        IAsset asset, 
+        Transform parent, 
+        Action<PointerEventData> action = null, 
+        bool activateText = false) where TEnum : struct, Enum
+    {
+        var cardFrame = await Instantiate("UI/Deck/CardFrame", parent);
+        var card = cardFrame.GetOrAddComponent<Card>();
+        
+        card.Id = asset.Id;
+        card.Class = asset.Class;
+        card.AssetType = typeof(TEnum).Name switch
+        {
+            "UnitId" => Asset.Unit,
+            "SheepId" => Asset.Sheep,
+            "EnchantId" => Asset.Enchant,
+            "CharacterId" => Asset.Character,
+            _ => Asset.None
+        };
+        
+        if (action != null) cardFrame.BindEvent(action);
+        await SetCardContents<TEnum>(cardFrame, asset, card.AssetType);
         
         var nameTextObject = Util.FindChild(cardFrame, "UnitNameText", true, true);
         nameTextObject.SetActive(activateText);
@@ -310,10 +282,10 @@ public class ResourceManager
         return cardFrame;
     }
 
-    private void SetCardContents<TEnum>(GameObject cardFrame, IAsset asset, Asset assetType) where TEnum : struct, Enum
+    private async Task SetCardContents<TEnum>(GameObject cardFrame, IAsset asset, Asset assetType) where TEnum : struct, Enum
     {
         var enumValue = (TEnum)Enum.ToObject(typeof(TEnum), asset.Id);
-        var path = $"Sprites/Portrait/{enumValue.ToString()}";
+        var portraitKey = $"Sprites/Portrait/{enumValue.ToString()}";
         var background = Util.FindChild(cardFrame, "Bg", true).GetComponent<Image>();
         var gradient = Util.FindChild(cardFrame, "Gradient", true).GetComponent<Image>();
         var glow = Util.FindChild(cardFrame, "Glow", true).GetComponent<Image>();
@@ -323,9 +295,9 @@ public class ResourceManager
         var startPanel = Util.FindChild(cardFrame, "StarPanel", true);
         var nameTextObject = Util.FindChild(cardFrame, "UnitNameText", true, true);
         
-        unitInCard.GetComponent<Image>().sprite = Load<Sprite>(path);
+        unitInCard.GetComponent<Image>().sprite = await LoadAsync<Sprite>(portraitKey);
         BindUnitCardColor(asset.Class, background, gradient, glow);
-        BindUnitRoleIcon(asset.Id, roleIcon);
+        await BindUnitRoleIcon(asset.Id, roleIcon);
 
         var key = string.Empty;
         switch (assetType)
@@ -380,13 +352,13 @@ public class ResourceManager
         if (key != string.Empty)
         {
             var convertedKey = Managers.Localization.GetConvertedString(key);
-            Managers.Localization.UpdateTextAndFont(nameTextObject, convertedKey);
+            await Managers.Localization.UpdateTextAndFont(nameTextObject, convertedKey);
         }
     }
     
-    public GameObject GetMaterialResources(IAsset asset, Transform parent, Action<PointerEventData> action = null)
+    public async Task<GameObject> GetMaterialResources(IAsset asset, Transform parent, Action<PointerEventData> action = null)
     {
-        var itemFrame = Instantiate("UI/Deck/ItemFrame", parent);
+        var itemFrame = await Instantiate("UI/Deck/ItemFrame", parent);
         var materialInFrame = Util.FindChild(itemFrame, "ItemImage", true, true);
         var material = itemFrame.GetOrAddComponent<MaterialItem>();
         
@@ -400,7 +372,7 @@ public class ResourceManager
         var light = Util.FindChild(itemFrame, "Light", true).GetComponent<Image>();
         var glow = Util.FindChild(itemFrame, "Glow", true).GetComponent<Image>();
         
-        materialInFrame.GetComponent<Image>().sprite = Load<Sprite>(path);
+        materialInFrame.GetComponent<Image>().sprite = await LoadAsync<Sprite>(path);
         BindMaterialCardColor(material.Class, background, cornerDeco, light, glow);
         
         if (action != null) itemFrame.BindEvent(action);
@@ -442,13 +414,13 @@ public class ResourceManager
         }
     }
     
-    private void BindUnitRoleIcon(int id, Image roleIcon)
+    private async Task BindUnitRoleIcon(int id, Image roleIcon)
     {
         Managers.Data.UnitInfoDict.TryGetValue(id, out var unitInfo);
         if (unitInfo == null) return;
         
         var path = $"Sprites/Icons/icon_role_{unitInfo.Role.ToString().ToLower()}";
-        roleIcon.sprite = Load<Sprite>(path);
+        roleIcon.sprite = await LoadAsync<Sprite>(path);
     }
     
     private void BindMaterialCardColor(UnitClass materialClass, Image background, Image deco, Image light, Image glow)
@@ -497,9 +469,9 @@ public class ResourceManager
         return go.transform.parent.parent.GetChild(1).GetComponent<Image>();
     }
 
-    public GameObject GetFriendFrame(FriendUserInfo friendInfo, Transform parent, Action<PointerEventData> action = null)
+    public async Task<GameObject> GetFriendFrame(FriendUserInfo friendInfo, Transform parent, Action<PointerEventData> action = null)
     {
-        var frame = Instantiate("UI/Deck/FriendInfo", parent);
+        var frame = await Instantiate("UI/Deck/FriendInfo", parent);
         var nameText = Util.FindChild(frame, "NameText", true).GetComponent<TextMeshProUGUI>();
         var rankText = Util.FindChild(frame, "RankText", true).GetComponent<TextMeshProUGUI>();
         var actText = Util.FindChild(frame, "UserActText", true).GetComponent<TextMeshProUGUI>();
@@ -513,12 +485,12 @@ public class ResourceManager
         return frame;
     }
 
-    public GameObject GetFriendInviteFrame(
+    public async Task<GameObject> GetFriendInviteFrame(
         FriendUserInfo friendInfo,
         Transform parent,
         Action<PointerEventData> action = null)
     {
-        var frame = Instantiate("UI/Deck/FriendInviteFrame", parent);
+        var frame = await Instantiate("UI/Deck/FriendInviteFrame", parent);
         var nameText = Util.FindChild(frame, "NameText", true).GetComponent<TextMeshProUGUI>();
         var rankText = Util.FindChild(frame, "RankText", true).GetComponent<TextMeshProUGUI>();
         var actText = Util.FindChild(frame, "UserActText", true).GetComponent<TextMeshProUGUI>();
@@ -532,12 +504,12 @@ public class ResourceManager
         return frame;
     }
     
-    public GameObject GetFriendRequestFrame(
+    public async Task<GameObject> GetFriendRequestFrame(
         FriendUserInfo friendInfo, 
         Transform parent, 
         Action<PointerEventData> action = null)
     {
-        var frame = Instantiate("UI/Deck/FriendRequestInfo", parent);
+        var frame = await Instantiate("UI/Deck/FriendRequestInfo", parent);
         var nameText = Util.FindChild(frame, "NameText", true).GetComponent<TextMeshProUGUI>();
         var rankText = Util.FindChild(frame, "RankText", true).GetComponent<TextMeshProUGUI>();
         
@@ -549,9 +521,9 @@ public class ResourceManager
         return frame;
     }
 
-    public GameObject GetProductMailFrame(MailInfo mailInfo, Transform parent)
+    public async Task<GameObject> GetProductMailFrame(MailInfo mailInfo, Transform parent)
     {
-        var frame = Instantiate("UI/Deck/MailInfoProduct", parent);
+        var frame = await Instantiate("UI/Deck/MailInfoProduct", parent);
         var claimButton = Util.FindChild(frame, "ClaimButton", true);
         var countText = Util.FindChild(frame, "CountText", true).GetComponent<TextMeshProUGUI>();
         var infoText = Util.FindChild(frame, "InfoText", true).GetComponent<TextMeshProUGUI>();

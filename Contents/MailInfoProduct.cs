@@ -31,11 +31,18 @@ public class MailInfoProduct : UI_Base
         _lobbyVm = lobbyVm;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+        try
+        {
+            BindObjects();
+            InitButtonEvents();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     protected override void BindObjects()
@@ -44,7 +51,7 @@ public class MailInfoProduct : UI_Base
         Bind<Button>(typeof(Buttons));
 
         var claimText = GetText((int)Texts.ClaimText);
-        Managers.Localization.BindLocalizedText(claimText, "claim_text");
+        _ = Managers.Localization.BindLocalizedText(claimText, "claim_text");
     }
 
     protected override void InitButtonEvents()
@@ -52,19 +59,19 @@ public class MailInfoProduct : UI_Base
         GetButton((int)Buttons.ClaimButton).onClick.AddListener( () => _ =  OnClaimClicked());
     }
 
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         var infoText = GetText((int)Texts.InfoText);
-        Managers.Localization.UpdateFont(infoText);
+        await Managers.Localization.UpdateFont(infoText);
         var productKey = ((ProductId)MailInfo.ProductId).ToString();
-        Managers.Localization.BindLocalizedText(infoText, productKey);
+        await Managers.Localization.BindLocalizedText(infoText, productKey);
         
         var expiresText = GetText((int)Texts.ExpiresText);
         var key = "mail_expires_text";
         var placeholderKeys = new List<string> { "value" };
         var expiresAt = (MailInfo.ExpiresAt.Date - DateTime.Today).Days;
         var replacers = new List<string> { Mathf.Max(expiresAt, 0).ToString() };
-        Managers.Localization.FormatLocalizedText(expiresText, key, placeholderKeys, replacers);
+        await Managers.Localization.FormatLocalizedText(expiresText, key, placeholderKeys, replacers);
     }
 
     private async Task OnClaimClicked()

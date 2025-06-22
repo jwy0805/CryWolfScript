@@ -49,10 +49,12 @@ public class PolicyConsentManager
 
     public async Task RequestConsents(bool policyFinished, bool attFinished)
     {
+        Debug.Log("[Manager] Requesting consents...");
         if (policyFinished == false)
         {
             await ShowPolicyPopupAsync();
         }
+        Debug.Log("[Manager] Requesting consents2...");
 
 #if UNITY_IOS
         if (attFinished == false)
@@ -62,18 +64,17 @@ public class PolicyConsentManager
 #endif
     }
 
-    private Task<bool> ShowPolicyPopupAsync()
+    private async Task<bool> ShowPolicyPopupAsync()
     {
         _tcs = new TaskCompletionSource<bool>();
-        var popup = Managers.UI.ShowPopupUI<UI_PolicyPopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_PolicyPopup>();
         
         popup.SetYesCallback(() =>
         {
-            SetPolicyConsent(true);
             _tcs.SetResult(true);
         });
         
-        return _tcs.Task;
+        return await _tcs.Task;
     }
     
     public void SetPolicyConsent(bool consent)

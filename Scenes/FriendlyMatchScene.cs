@@ -1,15 +1,23 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class FriendlyMatchScene : BaseScene
 {
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        SceneType = Define.Scene.FriendlyMatch;
-        Managers.UI.ShowSceneUI<UI_FriendlyMatch>();
+            SceneType = Define.Scene.FriendlyMatch;
+            await Managers.UI.ShowSceneUI<UI_FriendlyMatch>();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
     public override void Clear() { }

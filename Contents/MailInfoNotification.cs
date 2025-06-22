@@ -45,7 +45,7 @@ public class MailInfoNotification : UI_Base
         Bind<Button>(typeof(Buttons));
 
         var checkText = GetText((int)Texts.CheckText);
-        Managers.Localization.BindLocalizedText(checkText, "check_text");
+        _ = Managers.Localization.BindLocalizedText(checkText, "check_text");
     }
 
     protected override void InitButtonEvents()
@@ -53,10 +53,10 @@ public class MailInfoNotification : UI_Base
         GetButton((int)Buttons.CheckButton).onClick.AddListener( () => _ =  OnCheckClicked());
     }
 
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         var infoText = GetText((int)Texts.InfoText);
-        Managers.Localization.UpdateFont(infoText);
+        await Managers.Localization.UpdateFont(infoText);
         infoText.text = MailInfo.Message;
         
         var expiresText = GetText((int)Texts.ExpiresText);
@@ -64,7 +64,7 @@ public class MailInfoNotification : UI_Base
         var placeholderKeys = new List<string> { "value" };
         var expiresAt = (MailInfo.ExpiresAt.Date - DateTime.Today).Days;
         var replacers = new List<string> { Mathf.Max(expiresAt, 0).ToString() };
-        Managers.Localization.FormatLocalizedText(expiresText, key, placeholderKeys, replacers);
+        await Managers.Localization.FormatLocalizedText(expiresText, key, placeholderKeys, replacers);
 
         GetButton((int)Buttons.CheckButton).interactable = !MailInfo.Claimed;
     }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -46,14 +47,21 @@ public class UI_ProductReservedInfoPopup : UI_Popup
         _shopVm = shopViewModel;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        GetProductInfo();
-        InitUI();
+            BindObjects();
+            InitButtonEvents();
+            GetProductInfo();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
     protected override void BindObjects()
@@ -69,10 +77,10 @@ public class UI_ProductReservedInfoPopup : UI_Popup
         GetButton((int)Buttons.BuyButton).gameObject.BindEvent(OnBuyButtonClicked);
     }
 
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
-        SetContents();
-        SetInfoText();
+        await SetContents();
+        await SetInfoText();
     }
     
     private void GetProductInfo()
@@ -80,7 +88,7 @@ public class UI_ProductReservedInfoPopup : UI_Popup
         _productInfo = _shopVm.SelectedProduct;
     }
 
-    private void SetContents()
+    private async Task SetContents()
     {
         var contentsPanel = Util.FindChild(gameObject, "Content", true);
 
@@ -89,7 +97,7 @@ public class UI_ProductReservedInfoPopup : UI_Popup
             var composition = _shopVm.ReservedProductsToBeClaimed[i];
             var key = _shopVm.ReservedProductKeys[i];
             var framePath = $"UI/Deck/ProductDetailInfo";
-            var productFrame = Managers.Resource.Instantiate(framePath, contentsPanel.transform);
+            var productFrame = await Managers.Resource.Instantiate(framePath, contentsPanel.transform);
             var frame = Util.FindChild(productFrame, "Frame", true);
             var layoutElement = productFrame.GetOrAddComponent<LayoutElement>();
             layoutElement.preferredHeight = Screen.height * 0.08f;
@@ -102,29 +110,29 @@ public class UI_ProductReservedInfoPopup : UI_Popup
                 _ => null
             };
             
-            var product = Managers.Resource.Instantiate(path, frame.transform);
+            var product = await Managers.Resource.Instantiate(path, frame.transform);
             var productRect = product.GetComponent<RectTransform>();
             var size = productFrame.GetComponent<RectTransform>().sizeDelta.y * 0.9f;
             productRect.sizeDelta = new Vector2(size, size);
             
             // Set description text
             var text = Util.FindChild(productFrame, "TextDescription", true).GetComponent<TextMeshProUGUI>();
-            text.text = Managers.Localization.BindLocalizedText(text, key);
+            text.text = await Managers.Localization.BindLocalizedText(text, key);
         }
     }
 
-    private void SetInfoText()
+    private async Task SetInfoText()
     {
         var composition = _productInfo.Compositions.FirstOrDefault(c => c.Id == _productInfo.Id);
         var str = _productInfo.Category == ProductCategory.GoldPackage ? "" : "X";
         var productText = GetText((int)Texts.TextName);
-        productText.text = Managers.Localization.BindLocalizedText(productText, _productInfo.ProductCode);
+        productText.text = await Managers.Localization.BindLocalizedText(productText, _productInfo.ProductCode);
         GetText((int)Texts.TextNum).text = str + composition?.Count;
         GetText((int)Texts.TextPrice).text = _productInfo.Price.ToString();
         
         var infoText = GetText((int)Texts.TextInfo);
         var key = $"product_info_{_productInfo.ProductCode}";
-        infoText.text = Managers.Localization.BindLocalizedText(infoText, key);
+        infoText.text = await Managers.Localization.BindLocalizedText(infoText, key);
     }
     
     private void OnBuyButtonClicked(PointerEventData data)

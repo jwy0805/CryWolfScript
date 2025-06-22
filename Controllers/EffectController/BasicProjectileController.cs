@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using UnityEngine;
 
@@ -17,36 +18,41 @@ public class BasicProjectileController : ProjectileController
 
     private string[] _effects;
     
-    protected override void Init()
+    protected override async void Init()
     {
         #region Effect
-
-        _rb = GetComponent<Rigidbody>();
-
-        flash = Managers.Resource.Load<GameObject>($"Prefabs/Effects/Flashes/{gameObject.name}Flash");
-        if (flash != null)
+        try
         {
-            //Instantiate flash effect on projectile position
-            var flashInstance = Instantiate(flash, transform.position, Quaternion.identity);
-            flashInstance.transform.forward = gameObject.transform.forward;
+            _rb = GetComponent<Rigidbody>();
+
+            flash = await Managers.Resource.LoadAsync<GameObject>($"Prefabs/Effects/Flashes/{gameObject.name}Flash", "prefab");
+            if (flash != null)
+            {
+                //Instantiate flash effect on projectile position
+                var flashInstance = Instantiate(flash, transform.position, Quaternion.identity);
+                flashInstance.transform.forward = gameObject.transform.forward;
             
-            //Destroy flash effect depending on particle Duration time
-            var flashPs = flashInstance.GetComponent<ParticleSystem>();
-            if (flashPs != null)
-            {
-                Managers.Resource.Destroy(flashInstance, flashPs.main.duration);
-            }
-            else
-            {
-                var flashPsParts = flashInstance.transform.GetChild(0).GetComponent<ParticleSystem>();
-                Managers.Resource.Destroy(flashInstance, flashPsParts.main.duration);
+                //Destroy flash effect depending on particle Duration time
+                var flashPs = flashInstance.GetComponent<ParticleSystem>();
+                if (flashPs != null)
+                {
+                    Managers.Resource.Destroy(flashInstance, flashPs.main.duration);
+                }
+                else
+                {
+                    var flashPsParts = flashInstance.transform.GetChild(0).GetComponent<ParticleSystem>();
+                    Managers.Resource.Destroy(flashInstance, flashPsParts.main.duration);
+                }
             }
         }
-
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
         #endregion
     }
     
-    protected override void FixedUpdate ()
+    protected override void FixedUpdate()
     {
         Vector3 dir = DestPos - transform.position;
         
@@ -61,7 +67,7 @@ public class BasicProjectileController : ProjectileController
         
         if (dir.sqrMagnitude < 0.01f)
         {
-            HitEffect();
+            _ = HitEffect();
         }
         else
         {
@@ -71,7 +77,7 @@ public class BasicProjectileController : ProjectileController
         }
     }
     
-    private void HitEffect()
+    private async Task HitEffect()
     {
         #region Effect
          
@@ -84,7 +90,7 @@ public class BasicProjectileController : ProjectileController
         Vector3 pos = point + point.normalized * hitOffset;
  
         //Spawn hit effect on collision
-        hit = Managers.Resource.Load<GameObject>($"Prefabs/Effects/Hits/{gameObject.name}Hit");
+        hit = await Managers.Resource.LoadAsync<GameObject>($"Prefabs/Effects/Hits/{gameObject.name}Hit", "prefab");
         if (hit != null)
         {
             var hitInstance = Instantiate(hit, pos, rot);

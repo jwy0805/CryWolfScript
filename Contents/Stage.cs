@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -33,7 +34,7 @@ public class Stage : MonoBehaviour
     private void Init()
     {
         BindObjects();
-        InitUI();
+        _ = InitUI();
     }
     
     private void BindObjects()
@@ -49,12 +50,12 @@ public class Stage : MonoBehaviour
         RewardInfo = _singlePlayVm.StageRewardInfos.FirstOrDefault(sri => sri.StageId == stageId)?.RewardProducts;
     }
 
-    private void InitUI()
+    private async Task InitUI()
     {
         var starPanel = transform.Find("Star");
         if (UserStageInfo == null)
         {
-            GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>("Sprites/UIIcons/stage_locked");
+            GetComponent<Image>().sprite = await Managers.Resource.LoadAsync<Sprite>("Sprites/UIIcons/stage_locked");
             for (var i = 0; i < 3; i++)
             {
                 starPanel.GetChild(i).gameObject.SetActive(false);
@@ -62,7 +63,7 @@ public class Stage : MonoBehaviour
         }
         else
         {
-            GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(
+            GetComponent<Image>().sprite = await Managers.Resource.LoadAsync<Sprite>(
                 UserStageInfo.IsCleared ? "Sprites/UIIcons/stage_cleared" : "Sprites/UIIcons/stage_unlocked");
             var stars = UserStageInfo.StageStar;
             for (var i = 0; i < 3; i++)

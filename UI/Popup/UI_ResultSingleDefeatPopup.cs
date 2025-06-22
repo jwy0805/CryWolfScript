@@ -40,7 +40,7 @@ public class UI_ResultSingleDefeatPopup : UI_Popup
         Bind<Button>(typeof(Buttons));
         Bind<TextMeshProUGUI>(typeof(Texts));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }
     
     protected override void InitButtonEvents()

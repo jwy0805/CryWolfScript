@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class SoundManager 
@@ -59,9 +60,9 @@ public class SoundManager
         _audioClips.Clear();
     }
 
-    public void Play(string path, Define.Sound type = Define.Sound.Effect, float pitch = 1.0f)
+    public async Task Play(string path, Define.Sound type = Define.Sound.Effect, float pitch = 1.0f)
     {
-        AudioClip audioClip = GetOrAddAudioClip(path, type);
+        AudioClip audioClip = await GetOrAddAudioClip(path, type);
         Play(audioClip, type, pitch);
     }
 
@@ -90,7 +91,7 @@ public class SoundManager
 		}
 	}
 
-	AudioClip GetOrAddAudioClip(string path, Define.Sound type = Define.Sound.Effect)
+	private async Task<AudioClip> GetOrAddAudioClip(string path, Define.Sound type = Define.Sound.Effect)
     {
 		if (path.Contains("Sounds/") == false)
 			path = $"Sounds/{path}";
@@ -99,13 +100,13 @@ public class SoundManager
 
 		if (type == Define.Sound.Bgm)
 		{
-			audioClip = Managers.Resource.Load<AudioClip>(path);
+			audioClip = await Managers.Resource.LoadAsync<AudioClip>(path, "mp3");
 		}
 		else
 		{
 			if (_audioClips.TryGetValue(path, out audioClip) == false)
 			{
-				audioClip = Managers.Resource.Load<AudioClip>(path);
+				audioClip = await Managers.Resource.LoadAsync<AudioClip>(path, "mp3");
 				_audioClips.Add(path, audioClip);
 			}
 		}
@@ -124,7 +125,7 @@ public class SoundManager
 		{
 			case Define.Scene.Game:
 				string nameBgm = "MuffinMan";
-				Play(nameBgm, Define.Sound.Bgm);
+				_ = Play(nameBgm, Define.Sound.Bgm);
 				break;
 		}
 	}

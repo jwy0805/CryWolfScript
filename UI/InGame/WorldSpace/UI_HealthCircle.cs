@@ -35,6 +35,11 @@ public class UI_HealthCircle : MonoBehaviour
     
     private void Update()
     {
+        if (_cc == null)
+        {
+            return;
+        }
+        
         // Shield
         if (_cc.ShieldAdd <= 0)
         {

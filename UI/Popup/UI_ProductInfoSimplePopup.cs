@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,14 +52,22 @@ public class UI_ProductInfoSimplePopup : UI_Popup
         _shopVm = shopViewModel;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        GetProductInfo();
-        InitUI();
+            BindObjects();
+            InitButtonEvents();
+            GetProductInfo();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
+        
     }
 
     protected override void BindObjects()
@@ -77,7 +86,7 @@ public class UI_ProductInfoSimplePopup : UI_Popup
         GetButton((int)Buttons.BuyButton).gameObject.BindEvent(OnBuyButtonClicked);
     }
 
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         var iconPath = _productInfo.CurrencyType == CurrencyType.Spinel 
             ? "Sprites/ShopIcons/icon_spinel"
@@ -86,14 +95,14 @@ public class UI_ProductInfoSimplePopup : UI_Popup
         var str = _productInfo.Category == ProductCategory.GoldPackage ? "" : "X";
         var frameRect = FrameObject.GetComponent<RectTransform>();
         
-        _icon.sprite = Managers.Resource.Load<Sprite>(iconPath);
+        _icon.sprite = await Managers.Resource.LoadAsync<Sprite>(iconPath);
         FrameObject.transform.SetParent(_frame.transform);
         frameRect.anchoredPosition = Vector2.zero;
         frameRect.sizeDelta = FrameSize;
         FrameObject.transform.localScale *= 0.85f;
         
         var productText = GetText((int)Texts.TextName);
-        productText.text = Managers.Localization.BindLocalizedText(productText, _productInfo.ProductCode);
+        productText.text = await Managers.Localization.BindLocalizedText(productText, _productInfo.ProductCode);
         GetText((int)Texts.TextNum).text = str + composition?.Count;
         GetText((int)Texts.TextPrice).text = _productInfo.Price.ToString();
 

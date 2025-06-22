@@ -13,7 +13,7 @@ public class DeckViewModel
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
 
-    public event Action<Faction> OnDeckInitialized;
+    public event Func<Faction, Task> OnDeckInitialized;
     public event Action<Faction> OnDeckSwitched;
     
     [Inject]

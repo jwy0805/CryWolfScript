@@ -34,13 +34,20 @@ public class UI_NotifySelectPopup : UI_Popup
         NoText,
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            BindObjects();
+            InitButtonEvents();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
     protected override void BindObjects()
@@ -56,7 +63,7 @@ public class UI_NotifySelectPopup : UI_Popup
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(OnExitClicked);
     }
     
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         var title = GetText((int)Texts.NotifyTitle).GetComponent<TextMeshProUGUI>();
         var message = GetText((int)Texts.NotifyText).GetComponent<TextMeshProUGUI>();
@@ -68,14 +75,14 @@ public class UI_NotifySelectPopup : UI_Popup
         message.text = MessageText;
         
         var yesText = GetText((int)Texts.YesText);
-        yesText.text = Managers.Localization.BindLocalizedText(yesText, "yes_text");
+        yesText.text = await Managers.Localization.BindLocalizedText(yesText, "yes_text");
         if (ButtonFontSize != 0)
         {
             GetText((int)Texts.YesText).fontSize = ButtonFontSize;
         }
 
         var noText = GetText((int)Texts.NoText);
-        noText.text = Managers.Localization.BindLocalizedText(noText, "no_text");
+        noText.text = await Managers.Localization.BindLocalizedText(noText, "no_text");
         if (ButtonFontSize != 0)
         {
             GetText((int)Texts.NoText).fontSize = ButtonFontSize;
@@ -87,7 +94,7 @@ public class UI_NotifySelectPopup : UI_Popup
         _yesCallback = callback;
     }
 
-    public void SetYesCallback(Func<Task> callback)
+    public void SetYesCallbackF(Func<Task> callback)
     {
         _yesAsyncCallback = callback;
     }

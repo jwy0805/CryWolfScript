@@ -1,3 +1,4 @@
+using System;
 using Google.Protobuf.Protocol;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -128,22 +129,29 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         _tutorialVm.PortraitDragEndHandler();
     }
     
-    public void ShowRing(float attackRange, float skillRange)
+    public async void ShowRing(float attackRange, float skillRange)
     {
-        if (attackRange > 0)
+        try
         {
-            _attackRangeRing = Managers.Resource.Instantiate("WorldObjects/RangeRing");
-            if (_attackRangeRing.TryGetComponent(out UI_RangeRing ring)) ring.AboutAttack = true;
-            _attackRangeRing.transform.position = _hitPoint;
-            ring.SetScale(attackRange);
-        }
+            if (attackRange > 0)
+            {
+                _attackRangeRing = await Managers.Resource.Instantiate("WorldObjects/RangeRing");
+                if (_attackRangeRing.TryGetComponent(out UI_RangeRing ring)) ring.AboutAttack = true;
+                _attackRangeRing.transform.position = _hitPoint;
+                ring.SetScale(attackRange);
+            }
 
-        if (skillRange > 0)
+            if (skillRange > 0)
+            {
+                _skillRangeRing = await Managers.Resource.Instantiate("WorldObjects/RangeRing");
+                if (_skillRangeRing.TryGetComponent(out UI_RangeRing ring)) ring.AboutSkill = true;
+                _skillRangeRing.transform.position = _hitPoint;
+                ring.SetScale(skillRange);
+            }
+        }
+        catch (Exception e)
         {
-            _skillRangeRing = Managers.Resource.Instantiate("WorldObjects/RangeRing");
-            if (_skillRangeRing.TryGetComponent(out UI_RangeRing ring)) ring.AboutSkill = true;
-            _skillRangeRing.transform.position = _hitPoint;
-            ring.SetScale(skillRange);
+            Debug.LogWarning(e);
         }
     }
     
@@ -162,11 +170,18 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         }
     }
     
-    public void ShowSpawnableBounds(float minZ, float maxZ)
+    public async void ShowSpawnableBounds(float minZ, float maxZ)
     {
-        _spawnableBounds = Managers.Resource.Instantiate("WorldObjects/SpawnableBounds");
-        _spawnableBounds.transform.position = new Vector3(0, 6.01f, minZ + (maxZ - minZ) / 2);
-        _spawnableBounds.transform.localScale = new Vector3(22, maxZ - minZ);
+        try
+        {
+            _spawnableBounds = await Managers.Resource.Instantiate("WorldObjects/SpawnableBounds");
+            _spawnableBounds.transform.position = new Vector3(0, 6.01f, minZ + (maxZ - minZ) / 2);
+            _spawnableBounds.transform.localScale = new Vector3(220, (maxZ - minZ) * 10);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     private void HideSpawnableBounds()

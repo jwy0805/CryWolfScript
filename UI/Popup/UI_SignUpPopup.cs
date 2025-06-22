@@ -48,25 +48,32 @@ public class UI_SignUpPopup : UI_Popup
         _loginViewModel = loginViewModel;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            await BindObjectsAsync();
+            InitButtonEvents();
+            InitUI();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
-    protected override void BindObjects()
+    protected override async Task BindObjectsAsync()
     {
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         Bind<TMP_InputField>(typeof(TextInputs));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
-        Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.EmailInput));
-        Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.PasswordInput));
-        Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.PasswordConfirmInput));
+        await Managers.Localization.UpdateTextAndFont(_textDict);
+        await Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.EmailInput));
+        await Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.PasswordInput));
+        await Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.PasswordConfirmInput));
     }
     
     protected override void InitButtonEvents()
@@ -88,76 +95,93 @@ public class UI_SignUpPopup : UI_Popup
         Managers.UI.ClosePopupUI();
     }
 
-    private void OnPasswordInputEnd(string text)
+    private async void OnPasswordInputEnd(string text)
     {
-        bool hasNumber = false;
-        bool hasSpecialChar = false;
-        bool hasLetter = false;
-            
-        foreach (var c in text)
+        try
         {
-            if (char.IsDigit(c))
+            bool hasNumber = false;
+            bool hasSpecialChar = false;
+            bool hasLetter = false;
+            
+            foreach (var c in text)
             {
-                hasNumber = true;
-            }
-            else if (char.IsLetter(c))
-            {
-                hasLetter = true;
-            }
-            else 
-            {
-                if (AllowedSpecialCharacters.Contains(c))
+                if (char.IsDigit(c))
                 {
-                    hasSpecialChar = true;
+                    hasNumber = true;
                 }
-                else
+                else if (char.IsLetter(c))
                 {
-                    var warningText = _textDict["SignUpWarningText"].gameObject;
-                    warningText.SetActive(true);
-                    Managers.Localization.UpdateTextAndFont(warningText, 
-                        "sign_up_warning_text_allowed_special_characters", 
-                        $"\n{AllowedSpecialCharacters}");
-                    return;
+                    hasLetter = true;
+                }
+                else 
+                {
+                    if (AllowedSpecialCharacters.Contains(c))
+                    {
+                        hasSpecialChar = true;
+                    }
+                    else
+                    {
+                        var warningText = _textDict["SignUpWarningText"].gameObject;
+                        warningText.SetActive(true);
+                        await Managers.Localization.UpdateTextAndFont(warningText, 
+                            "sign_up_warning_text_allowed_special_characters", 
+                            $"\n{AllowedSpecialCharacters}");
+                        return;
+                    }
+                }
+
+                if (hasNumber && hasLetter && hasSpecialChar)
+                {
+                    break;
                 }
             }
 
+            if (text.Length < 8)
+            {
+                var warningText = _textDict["SignUpWarningText"].gameObject;
+                var warningKey = "sign_up_warning_text_password_length";
+                warningText.SetActive(true);
+                await Managers.Localization.UpdateTextAndFont(warningText.gameObject, warningKey);
+            }
+        
             if (hasNumber && hasLetter && hasSpecialChar)
             {
-                break;
+                _textDict["SignUpWarningText"].gameObject.SetActive(false);
+            }
+            else
+            {
+                var warningText = _textDict["SignUpWarningText"].gameObject;
+                var warningKey = "sign_up_warning_text_invalid_password";
+                warningText.SetActive(true);
+                await Managers.Localization.UpdateTextAndFont(warningText.gameObject, warningKey);
             }
         }
-
-        if (text.Length < 8)
+        catch (Exception e)
         {
-            var warningText = _textDict["SignUpWarningText"].gameObject;
-            warningText.SetActive(true);
-            Managers.Localization.UpdateTextAndFont(warningText.gameObject, "sign_up_warning_text_password_length");
-        }
-        
-        if (hasNumber && hasLetter && hasSpecialChar)
-        {
-            _textDict["SignUpWarningText"].gameObject.SetActive(false);
-        }
-        else
-        {
-            var warningText = _textDict["SignUpWarningText"].gameObject;
-            warningText.SetActive(true);
-            Managers.Localization.UpdateTextAndFont(warningText.gameObject, "sign_up_warning_text_invalid_password");
+            Debug.LogWarning(e);
         }
     }
     
-    private void OnPasswordConfirmInputEnd(string text)
+    private async void OnPasswordConfirmInputEnd(string text)
     {
-        var warningText = _textDict["SignUpWarningText"].gameObject;
-
-        if (text != GetTextInput((int)TextInputs.PasswordInput).text)
+        try
         {
-            warningText.gameObject.SetActive(true);
-            Managers.Localization.UpdateTextAndFont(warningText.gameObject, "sign_up_warning_text_password_not_match");
+            var warningText = _textDict["SignUpWarningText"].gameObject;
+            var warningKey = "sign_up_warning_text_password_not_match";
+            
+            if (text != GetTextInput((int)TextInputs.PasswordInput).text)
+            {
+                warningText.gameObject.SetActive(true);
+                await Managers.Localization.UpdateTextAndFont(warningText.gameObject, warningKey);
+            }
+            else
+            {
+                OnPasswordInputEnd(text); 
+            }
         }
-        else
+        catch (Exception e)
         {
-            OnPasswordInputEnd(text); 
+            Debug.LogWarning(e);
         }
     }
     
@@ -182,8 +206,8 @@ public class UI_SignUpPopup : UI_Popup
             
             if (completedTask == timeoutTask)
             {
-                var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-                Managers.Localization.UpdateNotifyPopupText(popup, 
+                var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+                await Managers.Localization.UpdateNotifyPopupText(popup, 
                     "notify_network_error_title", 
                     "notify_network_error_message");
             }
@@ -192,26 +216,26 @@ public class UI_SignUpPopup : UI_Popup
             
             if (response.ValidateOk)
             {
-                var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-                Managers.Localization.UpdateNotifyPopupText(popup, 
+                var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+                await Managers.Localization.UpdateNotifyPopupText(popup, 
                     "notify_validation_email_sent_title", 
                     "notify_validation_email_sent_message");
             }
             else
             {
-                var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+                var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
 
                 switch (response.ErrorCode)
                 {
                     case 0:
                         break;
                     case 1:
-                        Managers.Localization.UpdateNotifyPopupText(popup,
+                        await Managers.Localization.UpdateNotifyPopupText(popup,
                             "notify_sign_up_error_title", 
                             "notify_sign_up_error_message_email_in_use");
                         break;
                     case 2:
-                        Managers.Localization.UpdateNotifyPopupText(popup,
+                        await Managers.Localization.UpdateNotifyPopupText(popup,
                             "notify_sign_up_error_title", 
                             "notify_sign_up_error_message_invalid_password");
                         break;
@@ -222,8 +246,8 @@ public class UI_SignUpPopup : UI_Popup
         }
         catch (Exception)
         {
-            var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-            Managers.Localization.UpdateNotifyPopupText(popup, 
+            var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+            await Managers.Localization.UpdateNotifyPopupText(popup, 
                 "notify_sign_up_unexpected_error_title", 
                 "notify_sign_up_unexpected_error_message");
         }

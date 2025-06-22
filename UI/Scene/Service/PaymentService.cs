@@ -44,7 +44,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
     
     public event Action OnCashPaymentSuccess;
     public event Action OnPaymentSuccess;
-    public event Action<int> OnDailyPaymentSuccess;
+    public event Func<int, Task> OnDailyPaymentSuccess;
     
     [Inject]
     public PaymentService(IWebService webService, ITokenService tokenService)
@@ -91,10 +91,10 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         await _webService.SendWebRequestAsync<VirtualPaymentPacketResponse>(
             "Payment/Purchase", UnityWebRequest.kHttpVerbPUT, packet);
         
-        var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         var titleKey = "notify_payment_success_title";
         var messageKey = "notify_payment_success_message";
-        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
         OnPaymentSuccess?.Invoke();
     }
 
@@ -109,10 +109,10 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         var task = await _webService.SendWebRequestAsync<DailyPaymentPacketResponse>(
             "Payment/PurchaseDaily", UnityWebRequest.kHttpVerbPUT, packet);
 
-        var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         var titleKey = "notify_payment_success_title";
         var messageKey = "notify_payment_success_message";
-        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
 
         if (task.PaymentOk)
         {
@@ -151,19 +151,19 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
             _storeController.ConfirmPendingPurchase(product);
             if (ok)
             {
-                ShowPurchaseSuccessPopup();
+                await ShowPurchaseSuccessPopup();
                 OnCashPaymentSuccess?.Invoke();
             }
             else
             {
-                ShowPurchaseFailedPopup();
+                await ShowPurchaseFailedPopup();
             }
         }
         catch (Exception e)
         {
             Debug.LogError(e);
             _storeController.ConfirmPendingPurchase(product);
-            ShowPurchaseFailedPopup();
+            await ShowPurchaseFailedPopup();
         }
     }
     
@@ -205,31 +205,45 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
 #endif
     }
     
-    private void ShowPurchaseSuccessPopup()
+    private async Task ShowPurchaseSuccessPopup()
     {
-        var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         const string titleKey = "notify_payment_success_title";
         const string messageKey = "notify_payment_success_message";
-        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
     }
     
-    private void ShowPurchaseFailedPopup()
+    private async Task ShowPurchaseFailedPopup()
     {
-        var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         const string titleKey = "notify_payment_failed_title";
         const string messageKey = "notify_payment_failed_message";
-        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
     }
     
-    public void OnPurchaseFailed(Product product, PurchaseFailureReason failureReason)
+    public async void OnPurchaseFailed(Product product, PurchaseFailureReason failureReason)
     {
-        Debug.LogError($"Purchase failed: {product.definition.id}, Reason: {failureReason}");
-        ShowPurchaseFailedPopup();
+        try
+        {
+            Debug.LogWarning($"Purchase failed: {product.definition.id}, Reason: {failureReason}");
+            await ShowPurchaseFailedPopup();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
-    public void OnPurchaseFailed(Product product, PurchaseFailureDescription failureDescription)
+    public async void OnPurchaseFailed(Product product, PurchaseFailureDescription failureDescription)
     {
-        Debug.LogError($"Purchase failed: {product.definition.id}, Reason: {failureDescription.reason}, Message: {failureDescription.message}");
-        ShowPurchaseFailedPopup();
+        try
+        {
+            Debug.LogError($"Purchase failed: {product.definition.id}, Reason: {failureDescription.reason}, Message: {failureDescription.message}");
+            await ShowPurchaseFailedPopup();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Google.Protobuf.Protocol;
@@ -54,9 +55,18 @@ public class UI_UpgradePopupNoCost : UI_Popup
         GetButton((int)Buttons.DenyButton).gameObject.BindEvent(OnDenyClicked);
     }
 
-    public void SetPopup(S_SetUpgradePopup packet)
+    public async void SetPopup(S_SetUpgradePopup packet)
     {
-        GetText((int)Texts.SkillInfoText).gameObject.GetComponent<TextMeshProUGUI>().text = packet.SkillInfo.Explanation;
+        try
+        {
+            var skillText = GetText((int)Texts.SkillInfoText);
+            var skillId = packet.SkillInfo.Id;
+            await Managers.Localization.BindLocalizedBaseSkillText(skillText, skillId);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     private void OnAcceptClicked(PointerEventData data)

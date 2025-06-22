@@ -47,26 +47,33 @@ public class UI_SinglePlayMapPopup : UI_Popup
         SinglePlayMapRewardText,
     }
 
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            await BindObjectsAsync();
+            InitButtonEvents();
+            InitUI();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
-    protected override void BindObjects()
+    protected override async Task BindObjectsAsync()
     {
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        await Managers.Localization.UpdateTextAndFont(_textDict);
         
         var path = $"Map/SingleMap_{Faction}{_singlePlayVm.StageLevel}";
         var parent = Util.FindChild(gameObject, "Content", true);
-        _map = Managers.Resource.Instantiate(path, parent.transform);
+        _map = await Managers.Resource.Instantiate(path, parent.transform);
     }
     
     protected override void InitButtonEvents()
@@ -88,7 +95,7 @@ public class UI_SinglePlayMapPopup : UI_Popup
         GetImage((int)Images.StageInfoPanel).gameObject.SetActive(false);
     }
 
-    private void BindStageInfoPanel(Stage stage)
+    private async Task BindStageInfoPanel(Stage stage)
     {
         var stageInfoPanel = GetImage((int)Images.StageInfoPanel).transform;
         var deckPanel = stageInfoPanel.Find("Deck");
@@ -109,14 +116,14 @@ public class UI_SinglePlayMapPopup : UI_Popup
         
         foreach (var unitInfo in unitInfos)
         {
-            var cardObject = Managers.Resource.GetCardResources<UnitId>(unitInfo, deckPanel);
+            var cardObject = await Managers.Resource.GetCardResources<UnitId>(unitInfo, deckPanel);
             cardObject.GetComponent<Card>().SetLocalScale(1, false);
         }
 
         foreach (var singleRewardInfo in singleRewardInfos)
         {
             var framePath = "UI/Deck/ProductInfo";
-            var rewardFrame = Managers.Resource.Instantiate(framePath, rewardPanel);
+            var rewardFrame = await Managers.Resource.Instantiate(framePath, rewardPanel);
             var countText = Util.FindChild(rewardFrame, "TextNum", true);
             var count = singleRewardInfo.Count;
             
@@ -130,7 +137,7 @@ public class UI_SinglePlayMapPopup : UI_Popup
                 case ProductType.Material:
                     var rewardName = ((ProductId)singleRewardInfo.ItemId).ToString();
                     path = $"UI/Shop/NormalizedProducts/{rewardName}";
-                    reward = Managers.Resource.Instantiate(path, rewardFrame.transform);
+                    reward = await Managers.Resource.Instantiate(path, rewardFrame.transform);
                     reward.transform.SetAsFirstSibling();
                     break;
                     
@@ -140,7 +147,7 @@ public class UI_SinglePlayMapPopup : UI_Popup
                         >= 100 => "UI/Shop/NormalizedProducts/SpinelFistful",
                         _ => "UI/Shop/NormalizedProducts/SpinelPile"
                     };
-                    reward = Managers.Resource.Instantiate(path, rewardFrame.transform);
+                    reward = await Managers.Resource.Instantiate(path, rewardFrame.transform);
                     reward.transform.SetAsFirstSibling();
                     break;
                 
@@ -152,7 +159,7 @@ public class UI_SinglePlayMapPopup : UI_Popup
                         >= 2500 => "UI/Shop/NormalizedProducts/GoldPouch",
                         _ => "UI/Shop/NormalizedProducts/GoldPile"
                     };
-                    reward = Managers.Resource.Instantiate(path, rewardFrame.transform);
+                    reward = await Managers.Resource.Instantiate(path, rewardFrame.transform);
                     reward.transform.SetAsFirstSibling();
                     break;
                 
@@ -170,7 +177,7 @@ public class UI_SinglePlayMapPopup : UI_Popup
                 rewardRect.anchorMax = new Vector2(0.5f, 0.5f);
 
                 var starPath = "UI/Deck/Star";
-                var star = Managers.Resource.Instantiate(starPath, rewardFrame.transform);
+                var star = await Managers.Resource.Instantiate(starPath, rewardFrame.transform);
                 var starRect = star.GetComponent<RectTransform>();
                 starRect.sizeDelta = new Vector2(150, 35);
                 starRect.anchoredPosition = Vector2.zero;
@@ -186,12 +193,12 @@ public class UI_SinglePlayMapPopup : UI_Popup
     }
     
     // Button Events
-    private void OnStageClicked(PointerEventData data)
+    private async Task OnStageClicked(PointerEventData data)
     {
         var stage = data.pointerPress.GetComponent<Stage>();
         _selectedStage = stage;
         _singlePlayVm.SelectedStageId = stage.stageId;
-        BindStageInfoPanel(stage);
+        await BindStageInfoPanel(stage);
     }
     
     private async Task OnFightClicked(PointerEventData data)

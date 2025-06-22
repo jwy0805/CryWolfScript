@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Google.Protobuf.Protocol;
@@ -7,12 +8,19 @@ public class FenceController : CreatureController
 {
     private readonly float _destroySpeed = 1f;
     
-    protected override void Init()
+    protected override async void Init()
     {
-        ObjectType = GameObjectType.Fence;
-        // Instantiate Health bar
-        Managers.Resource.Instantiate("WorldObjects/HealthSlider", transform);
-        Util.GetOrAddComponent<UI_HealthBar>(gameObject);
+        try
+        {
+            ObjectType = GameObjectType.Fence;
+            // Instantiate Health bar
+            await Managers.Resource.Instantiate("WorldObjects/HealthSlider", transform);
+            Util.GetOrAddComponent<UI_HealthBar>(gameObject);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     protected override void UpdateDie()

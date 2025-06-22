@@ -4,11 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf.Protocol;
 using UnityEngine;
+using UnityEngine.Scripting;
 using UnityEngine.Serialization;
 
 public class Contents
 {
     [Serializable]
+    [Preserve]
     public class UnitData
     {
         public int Id { get; set; }
@@ -23,6 +25,7 @@ public class Contents
     }
     
     [Serializable]
+    [Preserve]
     public class ObjectData
     {
         public int Id { get; set; }
@@ -31,6 +34,7 @@ public class Contents
     }
 
     [Serializable]
+    [Preserve]
     public class SkillData
     {
         public int Id { get; set; }
@@ -41,6 +45,7 @@ public class Contents
     }
 
     [Serializable]
+    [Preserve]
     public class TutorialData
     {
         public TutorialType Type { get; set; }
@@ -48,6 +53,7 @@ public class Contents
     }
 
     [Serializable]
+    [Preserve]
     public class TutorialStep
     {
         public int Step { get; set; }
@@ -58,6 +64,7 @@ public class Contents
     }
     
     [Serializable]
+    [Preserve]
     public class LocalizationEntry
     {
         public string Text { get; set; }
@@ -66,6 +73,7 @@ public class Contents
     }
 
     [Serializable]
+    [Preserve]
     public class LocalizationItem
     {
         public string Key { get; set; }
@@ -73,18 +81,19 @@ public class Contents
     }
     
     [Serializable]
+    [Preserve]
     public class UnitLoader : ILoader<int, UnitData>
     {
         public List<UnitData> Units { get; set; } = new();
     
         public Dictionary<int, UnitData> MakeDict()
         {
-            Debug.Log($"Admin Log: Making UnitDict {Units.Count}, {Units.First().Id}");
             return Units.ToDictionary(unit => unit.Id);
         }
     }
 
     [Serializable]
+    [Preserve]
     public class ObjectLoader : ILoader<int, ObjectData>
     {
         public List<ObjectData> Objects { get; set; } = new();
@@ -96,6 +105,7 @@ public class Contents
     }
 
     [Serializable]
+    [Preserve]
     public class SkillLoader : ILoader<int, SkillData>
     {
         public List<SkillData> Skills { get; set; } = new();
@@ -107,6 +117,7 @@ public class Contents
     }
     
     [Serializable]
+    [Preserve]
     public class TutorialLoader : ILoader<TutorialType, TutorialData>
     {
         public List<TutorialData> Tutorials { get; set; } = new();

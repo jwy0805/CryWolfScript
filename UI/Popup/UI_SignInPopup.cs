@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -54,24 +55,31 @@ public class UI_SignInPopup : UI_Popup
         _loginViewModel.OnDirectLoginFailed += ShowLoginErrorMessage;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
+            await BindObjectsAsync();
+            InitButtonEvents();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
-    protected override void BindObjects()
+    protected override async Task BindObjectsAsync()
     {
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         Bind<TMP_InputField>(typeof(TextInputs));
         Bind<Toggle>(typeof(Toggles));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
-        Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.EmailInput));
-        Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.PasswordInput));
+        await Managers.Localization.UpdateTextAndFont(_textDict);
+        await Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.EmailInput));
+        await Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.PasswordInput));
     }
 
     protected override void InitButtonEvents()
@@ -93,9 +101,9 @@ public class UI_SignInPopup : UI_Popup
         _loginViewModel.TryDirectLogin();
     }   
     
-    private void SignUpClicked(PointerEventData data)
+    private async Task SignUpClicked(PointerEventData data)
     {
-        _loginViewModel.SignUp();
+        await _loginViewModel.SignUp();
     }
     
     private void OnForgetPasswordClicked(PointerEventData data)

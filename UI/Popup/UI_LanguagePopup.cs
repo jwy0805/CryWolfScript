@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -55,7 +56,7 @@ public class UI_LanguagePopup : UI_Popup
         _buttonDict.TryAdd("ja", GetButton((int)Buttons.JaButton).gameObject);
         _buttonDict.TryAdd("vi", GetButton((int)Buttons.ViButton).gameObject);
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }
     
     protected override void InitButtonEvents()
@@ -92,20 +93,21 @@ public class UI_LanguagePopup : UI_Popup
         }
     }
     
-    private void OnLanguageClicked(PointerEventData data)
+    private async Task OnLanguageClicked(PointerEventData data)
     {
         var clickedButton = data.pointerPress.gameObject;
         var language2Letter = clickedButton.name.Replace("Button", "").ToLower();
         
-        StartCoroutine(ChangeLanguageCoroutine(language2Letter));
+        await ChangeLanguageAsync(language2Letter);
     }
     
-    private IEnumerator ChangeLanguageCoroutine(string language2Letter)
+    private async Task ChangeLanguageAsync(string language2Letter)
     {
-        SettingsPopup.UpdateFlag(language2Letter);
-        SettingsPopup.ChangeLanguage(language2Letter);
+        await SettingsPopup.UpdateFlag(language2Letter);
+        await SettingsPopup.ChangeLanguage(language2Letter);
         _lobbyVm.ChangeLanguage(language2Letter);
-        yield return null;
+
+        await Task.Delay(1000); // Wait for the UI to update
         
         Managers.Localization.SetLanguage(language2Letter);
         Managers.UI.ClosePopupUI();

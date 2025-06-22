@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,14 +52,21 @@ public class UI_ProductInfoPopup : UI_Popup
         _shopVm = shopViewModel;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        GetProductInfo();
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            GetProductInfo();
+            BindObjects();
+            InitButtonEvents();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     protected override void BindObjects()
@@ -77,14 +85,14 @@ public class UI_ProductInfoPopup : UI_Popup
         GetButton((int)Buttons.BuyButton).gameObject.BindEvent(OnBuyButtonClicked);
     }
 
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         var frameRect = FrameObject.GetComponent<RectTransform>();
         var iconPath = _productInfo.CurrencyType == CurrencyType.Spinel 
             ? "Sprites/ShopIcons/icon_spinel"
             : "Sprites/ShopIcons/icon_gold";
         
-        _icon.sprite = Managers.Resource.Load<Sprite>(iconPath);
+        _icon.sprite = await Managers.Resource.LoadAsync<Sprite>(iconPath);
         FrameObject.transform.SetParent(_frame.transform);
         frameRect.anchoredPosition = Vector2.zero;
         frameRect.sizeDelta = FrameSize;
@@ -99,10 +107,10 @@ public class UI_ProductInfoPopup : UI_Popup
         }
         
         var productText = GetText((int)Texts.TextName);
-        productText.text = Managers.Localization.BindLocalizedText(productText, _productInfo.ProductCode);
+        productText.text = await Managers.Localization.BindLocalizedText(productText, _productInfo.ProductCode);
         GetText((int)Texts.TextPrice).text = _productInfo.Price.ToString();
         GetText((int)Texts.TextNum).gameObject.SetActive(false);
-        SetContents();
+        await SetContents();
         // SetInfoText();
     }
     
@@ -111,7 +119,7 @@ public class UI_ProductInfoPopup : UI_Popup
         _productInfo = _shopVm.SelectedProduct;
     }
 
-    private void SetContents()
+    private async Task SetContents()
     {
         var contentsPanel = Util.FindChild(gameObject, "Content", true);
         var panelRect = contentsPanel.GetComponent<RectTransform>();
@@ -126,7 +134,7 @@ public class UI_ProductInfoPopup : UI_Popup
         foreach (var composition in sortedCompositions)
         {
             var framePath = $"UI/Deck/ProductInfo";
-            var productFrame = Managers.Resource.Instantiate(framePath, contentsPanel.transform);
+            var productFrame = await Managers.Resource.Instantiate(framePath, contentsPanel.transform);
             var countText = Util.FindChild(productFrame, "TextNum", true);
             var layoutElement = productFrame.AddComponent<LayoutElement>();
             var count = composition.Count;
@@ -146,21 +154,21 @@ public class UI_ProductInfoPopup : UI_Popup
                 case ProductType.None:
                     productName = ((ProductId)composition.CompositionId).ToString();
                     path = $"UI/Shop/NormalizedProducts/{productName}";
-                    product = Managers.Resource.Instantiate(path, productFrame.transform);
+                    product = await Managers.Resource.Instantiate(path, productFrame.transform);
                     break;
                 
                 case ProductType.Unit:
                     productName = ((UnitId)composition.CompositionId).ToString();
                     Managers.Data.UnitInfoDict.TryGetValue(composition.CompositionId, out var unit);
                     path = $"UI/Shop/NormalizedProducts/Product{unit?.Class}";
-                    product = Managers.Resource.Instantiate(path, productFrame.transform);
+                    product = await Managers.Resource.Instantiate(path, productFrame.transform);
                     var image = Util.FindChild(product, "CardUnit", true).GetComponent<Image>();
-                    image.sprite = Managers.Resource.Load<Sprite>($"Sprites/Portrait/{productName}");
+                    image.sprite = await Managers.Resource.LoadAsync<Sprite>($"Sprites/Portrait/{productName}");
                     break;
                 
                 case ProductType.Material:
                     Managers.Data.MaterialInfoDict.TryGetValue(composition.CompositionId, out var material);
-                    product = Managers.Resource.GetMaterialResources(material, productFrame.transform);                  
+                    product = await Managers.Resource.GetMaterialResources(material, productFrame.transform);                  
                     break;
                 
                 case ProductType.Enchant:
@@ -176,7 +184,7 @@ public class UI_ProductInfoPopup : UI_Popup
                         >= 2500 => "UI/Shop/NormalizedProducts/GoldPouch",
                         _ => "UI/Shop/NormalizedProducts/GoldPile"
                     };
-                    product = Managers.Resource.Instantiate(path, productFrame.transform);
+                    product = await Managers.Resource.Instantiate(path, productFrame.transform);
                     break;
             }
             
@@ -191,10 +199,10 @@ public class UI_ProductInfoPopup : UI_Popup
         }
     }
     
-    private void SetInfoText()
+    private async Task SetInfoText()
     {
         var infoText = GetText((int)Texts.TextInfo);
-        Managers.Localization.BindLocalizedText(infoText, $"product_info_{_productInfo.ProductCode}");
+        await Managers.Localization.BindLocalizedText(infoText, $"product_info_{_productInfo.ProductCode}");
     }
     
     private void OnBuyButtonClicked(PointerEventData data)

@@ -37,26 +37,34 @@ public class UI_InputPopup : UI_Popup
         EnterText
     }
 
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            await BindObjectsAsync();
+            InitButtonEvents();
+            InitUI();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 
-    protected override void BindObjects()
+    protected override async Task BindObjectsAsync()
     {
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         Bind<TMP_InputField>(typeof(TextInputs));
         
         var enterText = GetText((int)Texts.EnterText).gameObject;
-        Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.InputText));
-        Managers.Localization.UpdateTextAndFont(enterText, "enter_text");
-        Managers.Localization.UpdateTextAndFont(GetText((int)Texts.InputTitleText).gameObject, TitleKey);
-        Managers.Localization.UpdateTextAndFont(GetText((int)Texts.RuleText).gameObject, RuleKey);
+        await Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.InputText));
+        await Managers.Localization.UpdateTextAndFont(enterText, "enter_text");
+        await Managers.Localization.UpdateTextAndFont(GetText((int)Texts.InputTitleText).gameObject, TitleKey);
+        await Managers.Localization.UpdateTextAndFont(GetText((int)Texts.RuleText).gameObject, RuleKey);
     }
 
     protected override void InitButtonEvents()

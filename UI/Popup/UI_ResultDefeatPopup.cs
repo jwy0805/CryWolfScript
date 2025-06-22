@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -50,7 +51,7 @@ public class UI_ResultDefeatPopup : UI_Popup
         Bind<Button>(typeof(Buttons));
         Bind<TextMeshProUGUI>(typeof(Texts));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }
     
     protected override void InitButtonEvents()
@@ -69,9 +70,9 @@ public class UI_ResultDefeatPopup : UI_Popup
         Managers.Network.Disconnect();
     }
     
-    private void OnContinueClicked(PointerEventData data)
+    private async Task OnContinueClicked(PointerEventData data)
     {
-        var popup = Managers.UI.ShowPopupUI<UI_RewardPopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_RewardPopup>();
         popup.Rewards = Reward;
         popup.FromRank = true;
     }

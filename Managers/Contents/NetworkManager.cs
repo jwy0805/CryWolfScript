@@ -25,6 +25,8 @@ public class NetworkManager
     public Action OnInternetRestored;
 
     public Env Environment => Env.Dev;
+    public readonly bool ActualUser = true;
+    public readonly bool UseAddressables = true;
     public bool IsFriendlyMatchHost { get; set; }
 
     public int SessionId
@@ -38,7 +40,7 @@ public class NetworkManager
             
             var sceneContext = UnityEngine.Object.FindAnyObjectByType<SceneContext>();
             if (sceneContext == null) return;
-        
+            
             var tutorialVm = sceneContext.Container.TryResolve<TutorialViewModel>();
             if (tutorialVm == null)
             {
@@ -94,18 +96,18 @@ public class NetworkManager
         if (_timer >= CheckInterval)
         {
             _timer = 0f;
-            CheckInternetConnection();
+            _ = CheckInternetConnection();
         }
     }
 
-    private void CheckInternetConnection()
+    private async Task CheckInternetConnection()
     {
         if (Application.internetReachability == NetworkReachability.NotReachable)
         {
             if (_noInternetPopupShowing == false)
             {
                 _noInternetPopupShowing = true;
-                Managers.UI.ShowPopupUI<UI_NetworkErrorPopup>();
+                await Managers.UI.ShowPopupUI<UI_NetworkErrorPopup>();
             }
         }
         else

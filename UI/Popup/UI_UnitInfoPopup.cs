@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -41,10 +42,7 @@ public class UI_UnitInfoPopup : UI_Popup
         set
         {
             _showDetails = value;
-            var detailButtonText = GetText((int)Texts.UnitInfoDetailButtonText).GetComponent<TextMeshProUGUI>();
-            var key = _showDetails ? "unit_info_detail_button_text_summary" : "unit_info_detail_button_text_detail";
-            detailButtonText.text = Managers.Localization.BindLocalizedText(detailButtonText, key);
-            ToggleStatDetailPanel();
+            _ = ToggleStatDetailPanel();
         }
     }
 
@@ -162,15 +160,22 @@ public class UI_UnitInfoPopup : UI_Popup
     
     #endregion
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        GetUnitInfo((UnitId)SelectedCard.Id);
-        InitUI();
-        SetLevelButton(_unitInfo);
+            BindObjects();
+            InitButtonEvents();
+            GetUnitInfo((UnitId)SelectedCard.Id);
+            InitUI();
+            await SetLevelButton(_unitInfo);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     protected override void BindObjects()
@@ -179,7 +184,7 @@ public class UI_UnitInfoPopup : UI_Popup
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        _ = Managers.Localization.UpdateTextAndFont(_textDict);
         
         _levelButtons.Add(1, GetButton((int)Buttons.LevelButton1));
         _levelButtons.Add(2, GetButton((int)Buttons.LevelButton2));
@@ -243,7 +248,7 @@ public class UI_UnitInfoPopup : UI_Popup
         }
     }
     
-    private void SetLevelButton(UnitInfo unitInfo)
+    private async Task SetLevelButton(UnitInfo unitInfo)
     {
         foreach (var button in _levelButtons.Values)
         {
@@ -251,11 +256,8 @@ public class UI_UnitInfoPopup : UI_Popup
         }
         
         SelectedButton = _levelButtons[unitInfo.Level].GetComponent<Button>();
-        
-        SetCardImage(_unitInfo);
-        SetStatus();
-        SetSkillPanel(_unitInfo);
-        SetMainSkillPanel(_unitInfo);
+
+        await Task.WhenAll(SetCardImage(_unitInfo), SetStatus(), SetSkillPanel(_unitInfo), SetMainSkillPanel(_unitInfo));
 
         if (_statDetailPanel.gameObject.activeSelf)
         {
@@ -263,22 +265,21 @@ public class UI_UnitInfoPopup : UI_Popup
         }
     }
 
-    private void SetCardImage(IAsset asset)
+    private async Task SetCardImage(IAsset asset)
     {
         // Set card image
-        SetObjectSize(GetImage((int)Images.CardPanel).gameObject, 0.7f, 1.12f);
+        SetObjectSize(GetImage((int)Images.CardPanel).gameObject, 0.8f, 1.28f);
         
         var parent = GetImage((int)Images.CardPanel).transform;
-        var cardFrame = Managers.Resource.GetCardResources<UnitId>(asset, parent);
+        var cardFrame = await Managers.Resource.GetCardResources<UnitId>(asset, parent);
         var rect = cardFrame.GetComponent<RectTransform>();
         
         Util.FindChild(cardFrame, "Role", true).SetActive(false);
-        rect.sizeDelta = new Vector2(Screen.width * 0.3f, Screen.width * 0.48f);
         rect.anchorMin = new Vector2(0.5f, 0.5f);
         rect.anchorMax = new Vector2(0.5f, 0.5f);
     }
 
-    private void SetStatus()
+    private async Task SetStatus()
     {
         var classPath = $"Sprites/Icons/icon_class_{_unitInfo.Class.ToString()}";
         var regionPath = $"Sprites/Icons/icon_region_{_unitInfo.Region.ToString()}";
@@ -298,14 +299,14 @@ public class UI_UnitInfoPopup : UI_Popup
         var attackTypePath = $"Sprites/Icons/icon_attack_{attackType}";
         var unitNameText = GetText((int)Texts.UnitInfoNameText);
         var key = string.Concat("unit_name_", Managers.Localization.GetConvertedString(_unitData.Name));
-        Managers.Localization.BindLocalizedText(unitNameText, key, FontType.BlackLined);
+        await Managers.Localization.BindLocalizedText(unitNameText, key, FontType.BlackLined);
         
-        GetImage((int)Images.UnitClassImage).sprite = Managers.Resource.Load<Sprite>(classPath);
-        GetImage((int)Images.UnitRegionImage).sprite = Managers.Resource.Load<Sprite>(regionPath);
-        GetImage((int)Images.UnitRoleImage).sprite = Managers.Resource.Load<Sprite>(rolePath);
-        GetImage((int)Images.UnitLocationImage).sprite = Managers.Resource.Load<Sprite>(locationPath);
-        GetImage((int)Images.UnitTypeImage).sprite = Managers.Resource.Load<Sprite>(typePath);
-        GetImage((int)Images.UnitAttackTypeImage).sprite = Managers.Resource.Load<Sprite>(attackTypePath);
+        GetImage((int)Images.UnitClassImage).sprite = await Managers.Resource.LoadAsync<Sprite>(classPath);
+        GetImage((int)Images.UnitRegionImage).sprite = await Managers.Resource.LoadAsync<Sprite>(regionPath);
+        GetImage((int)Images.UnitRoleImage).sprite = await Managers.Resource.LoadAsync<Sprite>(rolePath);
+        GetImage((int)Images.UnitLocationImage).sprite = await Managers.Resource.LoadAsync<Sprite>(locationPath);
+        GetImage((int)Images.UnitTypeImage).sprite = await Managers.Resource.LoadAsync<Sprite>(typePath);
+        GetImage((int)Images.UnitAttackTypeImage).sprite = await Managers.Resource.LoadAsync<Sprite>(attackTypePath);
         
         GetText((int)Texts.UnitClassText).text = _unitInfo.Class.ToString();
         GetText((int)Texts.UnitRegionText).text = _unitInfo.Region.ToString();
@@ -315,7 +316,7 @@ public class UI_UnitInfoPopup : UI_Popup
         GetText((int)Texts.UnitAttackTypeText).text = attackType;
     }
     
-    private void SetSkillPanel(IAsset asset)
+    private async Task SetSkillPanel(IAsset asset)
     {
         if (_currentSkillPanel != null)
         {
@@ -324,7 +325,7 @@ public class UI_UnitInfoPopup : UI_Popup
         
         var parent = GetImage((int)Images.SkillPanel);
         var skillPanelPath = $"UI/InGame/SkillPanel/{((UnitId)asset.Id).ToString()}SkillPanel";
-        _currentSkillPanel = Managers.Resource.Instantiate(skillPanelPath);
+        _currentSkillPanel = await Managers.Resource.Instantiate(skillPanelPath);
         _currentSkillPanel.transform.SetParent(parent.transform);
         
         var skillPanelRect = _currentSkillPanel.GetComponent<RectTransform>();
@@ -342,7 +343,7 @@ public class UI_UnitInfoPopup : UI_Popup
         _skillDescriptionPanel.gameObject.SetActive(false);
     }
 
-    private void SetMainSkillPanel(IAsset asset)
+    private async Task SetMainSkillPanel(IAsset asset)
     {
         if (_mainSkillIcon != null)
         {
@@ -375,7 +376,8 @@ public class UI_UnitInfoPopup : UI_Popup
 
             Managers.Data.SkillDict.TryGetValue((int)skillId, out var skillData);
             if (skillData == null || mainSkillIcon == null) return;
-            Managers.Localization.GetLocalizedSkillText(mainSkillText, skillData, _unitInfo.Id);
+            
+            await Managers.Localization.BindLocalizedSkillText(mainSkillText, skillData, _unitInfo.Id);
             mainSkillImageRect.sizeDelta = new Vector2(Screen.width * 0.1f, Screen.width * 0.1f);
             
             _mainSkillIcon.transform.SetParent(mainSkillImage.transform);
@@ -402,9 +404,13 @@ public class UI_UnitInfoPopup : UI_Popup
         GetText((int)Texts.UnitSkillRangeText).text = _unitData.Stat.SkillRange.ToString();
     }
 
-    private void ToggleStatDetailPanel()
+    private async Task ToggleStatDetailPanel()
     {
         if (_isAnimating) return;
+        
+        var detailButtonText = GetText((int)Texts.UnitInfoDetailButtonText).GetComponent<TextMeshProUGUI>();
+        var key = ShowDetails ? "unit_info_detail_button_text_summary" : "unit_info_detail_button_text_detail";
+        detailButtonText.text = await Managers.Localization.BindLocalizedText(detailButtonText, key);
 
         var rect = _statDetailPanel.GetComponent<RectTransform>();
         
@@ -444,7 +450,7 @@ public class UI_UnitInfoPopup : UI_Popup
     }
     
     // Button events
-    private void OnLevelButtonClicked(PointerEventData data)
+    private async Task OnLevelButtonClicked(PointerEventData data)
     {
         var cardPanel = GetImage((int)Images.CardPanel);
         var clickedButton = data.pointerPress.GetComponent<Button>();
@@ -456,10 +462,10 @@ public class UI_UnitInfoPopup : UI_Popup
         
         Util.DestroyAllChildren(cardPanel.transform);
         GetUnitInfo((UnitId)newUnitId);
-        SetLevelButton(_unitInfo);
+        await SetLevelButton(_unitInfo);
     }
 
-    private void OnSkillButtonClicked(PointerEventData data)
+    private async Task OnSkillButtonClicked(PointerEventData data)
     {
         _skillDescriptionPanel.gameObject.SetActive(true);
         
@@ -475,7 +481,8 @@ public class UI_UnitInfoPopup : UI_Popup
 
         if (skillData == null) return;
         skillDescriptionGoldImage.rectTransform.sizeDelta = new Vector2(Screen.width * 0.045f, Screen.width * 0.045f);
-        Managers.Localization.GetLocalizedSkillText(skillDescriptionText, skillData, _unitInfo.Id);
+        
+        await Managers.Localization.BindLocalizedSkillText(skillDescriptionText, skillData, _unitInfo.Id);
         skillDescriptionGoldText.text = skillData.Cost.ToString();
     }
     

@@ -94,7 +94,7 @@ public class UI_MatchMaking : UI_Scene
         _matchMakingVm.StartMatchMaking();
     }
 
-    private void SetUserInfo()
+    private async Task SetUserInfo()
     {
         var faction = Util.Faction;
         var deck = _deckVm.GetDeck(faction);
@@ -102,17 +102,17 @@ public class UI_MatchMaking : UI_Scene
         var userNameText = GetText((int)Texts.UserNameText);
         var rankPointText = GetText((int)Texts.RankPointText);
         
-        Managers.Localization.UpdateFont(userNameText);
+        await Managers.Localization.UpdateFont(userNameText);
         userNameText.text = _userService.UserInfo.UserName;
         rankPointText.text = _userService.UserInfo.RankPoint.ToString();
         
         foreach (var unit in deck.UnitsOnDeck)
         {
-            Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform);
+            await Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform);
         }
     }
     
-    public void SetEnemyUserInfo(S_MatchMakingSuccess matchPacket)
+    public async Task SetEnemyUserInfo(S_MatchMakingSuccess matchPacket)
     {
         _loadingMarkActive = false;
         
@@ -125,7 +125,7 @@ public class UI_MatchMaking : UI_Scene
         var enemyUserNameText = GetText((int)Texts.EnemyUserNameText);
         var enemyRankPointText = GetText((int)Texts.EnemyRankPointText);
         
-        Managers.Localization.UpdateFont(enemyUserNameText);
+        await Managers.Localization.UpdateFont(enemyUserNameText);
         enemyUserNameText.text = matchPacket.EnemyUserName;
         enemyRankPointText.text = matchPacket.EnemyRankPoint.ToString();
         
@@ -133,13 +133,13 @@ public class UI_MatchMaking : UI_Scene
         {
             Managers.Data.UnitInfoDict.TryGetValue(unitId, out var unitInfo);
             if (unitInfo == null) continue;
-            Managers.Resource.GetCardResources<UnitId>(unitInfo, deckImage.transform);
+            await Managers.Resource.GetCardResources<UnitId>(unitInfo, deckImage.transform);
         }
 
         StartCoroutine(CountDown());
     }
 
-    private void SetQueueInfo(int queueCountsWolf, int queueCountsSheep)
+    private async Task SetQueueInfo(int queueCountsWolf, int queueCountsSheep)
     {
         var text = GetText((int)Texts.MatchMakingQueueInfoText);
         var key = "match_making_queue_info_text";
@@ -157,7 +157,7 @@ public class UI_MatchMaking : UI_Scene
         }
         
         var replaceValues = new List<string> { queueCountsWolf.ToString(), queueCountsSheep.ToString() };
-        Managers.Localization.FormatLocalizedText(text, key, placeholders, replaceValues);
+        await Managers.Localization.FormatLocalizedText(text, key, placeholders, replaceValues);
     }
     
     private IEnumerator CountDown(int seconds = 6)
@@ -170,7 +170,7 @@ public class UI_MatchMaking : UI_Scene
             var key = "match_making_count_down_text";
             var placeHolderKeys = new List<string> {"value"};
             var replaceValues = new List<string> {i.ToString()};
-            Managers.Localization.FormatLocalizedText(text, key, placeHolderKeys, replaceValues);
+            _ = Managers.Localization.FormatLocalizedText(text, key, placeHolderKeys, replaceValues);
             yield return new WaitForSeconds(1);
         }
         

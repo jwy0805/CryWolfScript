@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -37,21 +38,15 @@ public class GameManager
         Managers.Network.Send(spawnPacket);
     }
     
-    public GameObject Spawn(string path, Transform parent = null)
+    public async Task<GameObject> Spawn(string path, Transform parent = null)
     {
-        var go = Managers.Resource.Instantiate(path, parent);
+        var go = await Managers.Resource.Instantiate(path, parent);
         return go;
     }
     
-    public GameObject Spawn(string path, Vector3 position)
+    public async Task<GameObject> Spawn(string path, Vector3 position)
     {
-        var go = Managers.Resource.Instantiate(path, position);
-        return go;
-    }
-
-    public GameObject SpawnFromContainer(string path, Transform parent = null)
-    {
-        var go = Managers.Resource.InstantiateFromContainer(path, parent);
+        var go = await Managers.Resource.Instantiate(path, position);
         return go;
     }
     

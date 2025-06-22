@@ -1,4 +1,6 @@
+using System;
 using System.Collections;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -52,14 +54,21 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         _tutorialVm = tutorialViewModel;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
 
-        BindObjects();
-        BindActions();
-        InitButtonEvents();
-        InitUI();
+            BindObjects();
+            BindActions();
+            InitButtonEvents();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
     protected override void BindObjects()
@@ -112,12 +121,12 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         GetButton((int)Buttons.ContinueButton).gameObject.BindEvent(OnContinueClicked);
     }
 
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         _tutorialNpc = GameObject.FindGameObjectWithTag("Npc");
         if (_tutorialNpc == null)
         {
-            _tutorialNpc = Managers.Resource.Instantiate("Npc/NpcFlower");
+            _tutorialNpc = await Managers.Resource.Instantiate("Npc/NpcFlower");
             _flowerFace = Util.FindChild(_tutorialNpc, "+ Head", true);
         }
 
@@ -275,31 +284,38 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
     
     #endregion
 
-    private void StepTutorial()
+    private async void StepTutorial()
     {
-        _tutorialVm.Step++;
-        Managers.Data.TutorialDict.TryGetValue(TutorialType.BattleSheep, out var tutorialData);
-        var step = tutorialData?.Steps.Find(s => s.Step == _tutorialVm.Step);
-        if (step == null) return;
-        foreach (var eventString in step.Events)
+        try
         {
-            _tutorialVm.BattleSheepEventDict[eventString]?.Invoke();
-        }
+            _tutorialVm.Step++;
+            Managers.Data.TutorialDict.TryGetValue(TutorialType.BattleSheep, out var tutorialData);
+            var step = tutorialData?.Steps.Find(s => s.Step == _tutorialVm.Step);
+            if (step == null) return;
+            foreach (var eventString in step.Events)
+            {
+                _tutorialVm.BattleSheepEventDict[eventString]?.Invoke();
+            }
 
-        switch (step.Speaker)
+            switch (step.Speaker)
+            {
+                case "Flower":
+                {
+                    var textContent = await Managers.Localization.BindLocalizedText(_speechBubbleText, step.DialogKey);
+                    _speechBubbleText.text = textContent;
+                    break;
+                }
+                case "Echo":
+                {
+                    var textContent = await Managers.Localization.BindLocalizedText(_infoBubbleText, step.DialogKey);
+                    _infoBubbleText.text = textContent;
+                    break;
+                }
+            }
+        }
+        catch (Exception e)
         {
-            case "Flower":
-            {
-                var textContent = Managers.Localization.BindLocalizedText(_speechBubbleText, step.DialogKey);
-                _speechBubbleText.text = textContent;
-                break;
-            }
-            case "Echo":
-            {
-                var textContent = Managers.Localization.BindLocalizedText(_infoBubbleText, step.DialogKey);
-                _infoBubbleText.text = textContent;
-                break;
-            }
+            Debug.LogWarning(e);
         }
     }
     
@@ -544,7 +560,7 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
     {
         _tutorialNpc = GameObject.FindGameObjectWithTag("Npc");
         _flowerFace = Util.FindChild(_tutorialNpc, "+ Head", true);
-        Managers.Resource.Instantiate("Npc/Face Happy", _flowerFace.transform);
+        _ = Managers.Resource.Instantiate("Npc/Face Happy", _flowerFace.transform);
     }
     
     private void ClearScene()
@@ -562,11 +578,11 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         _tutorialVm.SendHoldPacket(false);
     }
     
-    private void OnContinueClicked(PointerEventData data)
+    private async Task OnContinueClicked(PointerEventData data)
     {
         if (_tutorialVm.Step == 23)
         {
-            _tutorialVm.BattleTutorialEndHandler(Faction.Sheep);
+            await _tutorialVm.BattleTutorialEndHandler(Faction.Sheep);
             return;
         }
         

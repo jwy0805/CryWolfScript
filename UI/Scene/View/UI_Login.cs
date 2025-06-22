@@ -48,9 +48,7 @@ public class UI_Login : UI_Scene
         try
         {
             base.Init();
-
-            BindObjects();
-            await InitAddressables();
+            await BindObjectsAsync();
             InitButtonEvents();
             InitEvents();
         }
@@ -69,13 +67,13 @@ public class UI_Login : UI_Scene
 
     #region SetUiSize
 
-    protected override void BindObjects()
+    protected override async Task BindObjectsAsync()
     {
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         Bind<Image>(typeof(Images));
-
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        
+        await Managers.Localization.UpdateTextAndFont(_textDict);
     }
     
     protected override void InitButtonEvents()
@@ -92,27 +90,10 @@ public class UI_Login : UI_Scene
     }
     
     #endregion
-
-    private async Task InitAddressables()
-    {
-        await Addressables.InitializeAsync().Task;
-
-        const string packLabel = "Fast Follow Resources";
-        Managers.Resource.ToDownloadSize = await Addressables.GetDownloadSizeAsync(packLabel).Task;
-        Debug.Log($"[PAD] Resources to download: {Managers.Resource.ToDownloadSize} Bytes");
-        if (Managers.Resource.ToDownloadSize > 0)
-        {
-            var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-            const string titleKey = "notify_additional_download_title";
-            const string messageKey = "notify_additional_download_message";
-            Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
-            popup.SetYesCallback(() => Managers.Scene.LoadScene(Define.Scene.Loading));
-        }
-    }
     
-    private void OnSignUpClicked(PointerEventData data)
+    private async Task OnSignUpClicked(PointerEventData data)
     {
-        _viewModel.SignIn();
+        await _viewModel.SignIn();
     }
 
     private void OnGuestLoginClicked(PointerEventData data)
@@ -128,19 +109,20 @@ public class UI_Login : UI_Scene
         data.pointerPress.gameObject.GetComponent<Button>().interactable = false;
     }
 
-    private void OnAppleClicked(PointerEventData data)
+    private async Task OnAppleClicked(PointerEventData data)
     {
 #if UNITY_ANDROID
-        var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         const string titleKey = "notify_sign_in_error_title";
         const string messageKey = "notify_apple_login_not_supported_message";
-        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
         return;
 #endif
         if (_viewModel.ProcessingLogin) return;
         _viewModel.ProcessingLogin = true;
         _viewModel.RequestAppleLogin();
         data.pointerPress.gameObject.GetComponent<Button>().interactable = false;
+        await Task.Delay(100);
     }
 
     private void RestoreButton()

@@ -68,7 +68,7 @@ public class UI_FriendsListPopup : UI_Popup
         Bind<Button>(typeof(Buttons));
         Bind<Image>(typeof(Images));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }
 
     protected override void InitButtonEvents()
@@ -104,7 +104,7 @@ public class UI_FriendsListPopup : UI_Popup
                 foreach (var friendInfo in friendList)
                 {
                     friendInfo.FriendStatus = FriendStatus.Accepted;
-                    var friendFrame = Managers.Resource.GetFriendFrame(friendInfo, parent, OnSelectFriend);
+                    var friendFrame = await Managers.Resource.GetFriendFrame(friendInfo, parent, OnSelectFriend);
                     BindFriendRequestButton(friendFrame, friendInfo);
                 }
             }
@@ -160,9 +160,9 @@ public class UI_FriendsListPopup : UI_Popup
         // Make a match with the selected friend
     }
     
-    private void OnFriendsAddClicked(PointerEventData data)
+    private async Task OnFriendsAddClicked(PointerEventData data)
     {
-        Managers.UI.ShowPopupUI<UI_FriendsAddPopup>();
+        await Managers.UI.ShowPopupUI<UI_FriendsAddPopup>();
     }
     
     private void OnAlreadyFriendClicked(PointerEventData data)
@@ -173,7 +173,7 @@ public class UI_FriendsListPopup : UI_Popup
         blockDeletePanel.SetActive(!blockDeletePanel.activeSelf);
     }
     
-    private async void OnDeleteClicked(PointerEventData data, FriendUserInfo friendInfo, bool isBlock = false)
+    private async Task OnDeleteClicked(PointerEventData data, FriendUserInfo friendInfo, bool isBlock = false)
     {
         var response = await _lobbyVm.DeleteFriend(friendInfo, isBlock);
         

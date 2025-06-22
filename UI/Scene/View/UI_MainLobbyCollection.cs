@@ -38,7 +38,7 @@ public partial class UI_MainLobby
         InitCollectionUI();
     }
     
-    private void SetDeckUI(Faction faction)
+    private async Task SetDeckUI(Faction faction)
     {
         // Set Deck - As using layout group, no need to set position
         var deck = _deckVm.GetDeck(faction);
@@ -47,8 +47,8 @@ public partial class UI_MainLobby
             
         foreach (var unit in deck.UnitsOnDeck)
         {
-            Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform, OnCardClicked);
-            Managers.Resource.GetCardResources<UnitId>(unit, lobbyDeckImage.transform);
+            await Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform, OnCardClicked);
+            await Managers.Resource.GetCardResources<UnitId>(unit, lobbyDeckImage.transform);
         }
 
         var assetParent = GetImage((int)Images.BattleSettingPanel).transform;
@@ -57,21 +57,28 @@ public partial class UI_MainLobby
         // Set Asset Frame
         IAsset asset = faction == Faction.Sheep ? User.Instance.BattleSetting.SheepInfo : User.Instance.BattleSetting.EnchantInfo;
         var assetFrame = faction == Faction.Sheep ?
-            Managers.Resource.GetCardResources<SheepId>(asset, assetParent, OnCardClicked):
-            Managers.Resource.GetCardResources<EnchantId>(asset, assetParent, OnCardClicked);
+            await Managers.Resource.GetCardResources<SheepId>(asset, assetParent, OnCardClicked):
+            await Managers.Resource.GetCardResources<EnchantId>(asset, assetParent, OnCardClicked);
         
         // Set Character Frame
         var character = User.Instance.BattleSetting.CharacterInfo;
-        Managers.Resource.GetCardResources<CharacterId>(character, assetParent, OnCardClicked);
+        await Managers.Resource.GetCardResources<CharacterId>(character, assetParent, OnCardClicked);
     }
     
-    private void SetCollectionUI(Faction faction)
+    private async void SetCollectionUI(Faction faction)
     {
-        SetCollectionUIDetails(faction);
-        SelectMode = SelectModeEnums.Normal;
+        try
+        {
+            await SetCollectionUIDetails(faction);
+            SelectMode = SelectModeEnums.Normal;
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
-    private void SetCollectionUIDetails(Faction faction)
+    private async Task SetCollectionUIDetails(Faction faction)
     {
         var verticalContent = _unitCollection.parent.GetComponent<RectTransform>();
         var ownedUnits = OrderOwnedUnits();
@@ -98,16 +105,17 @@ public partial class UI_MainLobby
         foreach (var unit in ownedUnits)
         {
             var cardFrame = 
-                Managers.Resource.GetCardResources<UnitId>(unit.UnitInfo, _unitCollection, OnCardClicked);
+                await Managers.Resource.GetCardResources<UnitId>(unit.UnitInfo, _unitCollection, OnCardClicked);
             GetCountText(cardFrame.transform, unit.Count);
         }
 
         foreach (var unit in notOwnedUnits)
         {
-            var cardFrame = Managers.Resource.GetCardResources<UnitId>(unit, _unitNoCollection, OnCardClicked);
+            var cardFrame = 
+                await Managers.Resource.GetCardResources<UnitId>(unit, _unitNoCollection, OnCardClicked);
             var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
             var path = $"Sprites/Portrait/{((UnitId)unit.Id).ToString()}_gray";
-            cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
+            cardUnit.GetComponent<Image>().sprite = await Managers.Resource.LoadAsync<Sprite>(path);
         }
 
         // Assets in collection UI
@@ -116,17 +124,17 @@ public partial class UI_MainLobby
             foreach (var sheep in ownedSheep)
             {
                 var cardFrame = 
-                    Managers.Resource.GetCardResources<SheepId>(sheep.SheepInfo, _assetCollection, OnCardClicked);
+                    await Managers.Resource.GetCardResources<SheepId>(sheep.SheepInfo, _assetCollection, OnCardClicked);
                 GetCountText(cardFrame.transform, sheep.Count);
             }
 
             foreach (var sheep in notOwnedSheep)
             {
                 var cardFrame = 
-                    Managers.Resource.GetCardResources<SheepId>(sheep, _assetNoCollection, OnCardClicked);
+                    await Managers.Resource.GetCardResources<SheepId>(sheep, _assetNoCollection, OnCardClicked);
                 var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
                 var path = $"Sprites/Portrait/{((SheepId)sheep.Id).ToString()}_gray";
-                cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
+                cardUnit.GetComponent<Image>().sprite = await Managers.Resource.LoadAsync<Sprite>(path);
             }
         }
         else
@@ -134,17 +142,17 @@ public partial class UI_MainLobby
             foreach (var enchant in ownedEnchants)
             {
                 var cardFrame = 
-                    Managers.Resource.GetCardResources<EnchantId>(enchant.EnchantInfo, _assetCollection, OnCardClicked);
+                    await Managers.Resource.GetCardResources<EnchantId>(enchant.EnchantInfo, _assetCollection, OnCardClicked);
                 GetCountText(cardFrame.transform, enchant.Count);
             }
 
             foreach (var enchant in notOwnedEnchants)     
             {
                 var cardFrame = 
-                    Managers.Resource.GetCardResources<EnchantId>(enchant, _assetNoCollection, OnCardClicked);
+                    await Managers.Resource.GetCardResources<EnchantId>(enchant, _assetNoCollection, OnCardClicked);
                 var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
                 var path = $"Sprites/Portrait/{((EnchantId)enchant.Id).ToString()}_gray";
-                cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
+                cardUnit.GetComponent<Image>().sprite = await Managers.Resource.LoadAsync<Sprite>(path);
             }
         }
         
@@ -152,23 +160,24 @@ public partial class UI_MainLobby
         foreach (var character in ownedCharacters)
         {
             var cardFrame = 
-                Managers.Resource.GetCardResources<CharacterId>(character.CharacterInfo, _characterCollection, OnCardClicked);
+                await Managers.Resource.GetCardResources<CharacterId>(character.CharacterInfo, _characterCollection, OnCardClicked);
             GetCountText(cardFrame.transform, character.Count);
         }
         
         foreach (var character in notOwnedCharacters)
         {
             var cardFrame = 
-                Managers.Resource.GetCardResources<CharacterId>(character, _characterNoCollection, OnCardClicked);
+                await Managers.Resource.GetCardResources<CharacterId>(character, _characterNoCollection, OnCardClicked);
             var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
             var path = $"Sprites/Portrait/{((CharacterId)character.Id).ToString()}_gray";
-            cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
+            cardUnit.GetComponent<Image>().sprite = await Managers.Resource.LoadAsync<Sprite>(path);
         }
         
         // Materials in collection UI
         foreach (var material in ownedMaterials)
         {
-            var cardFrame = Managers.Resource.GetMaterialResources(material.MaterialInfo, _materialCollection);
+            var cardFrame =
+                await Managers.Resource.GetMaterialResources(material.MaterialInfo, _materialCollection);
             GetCountText(cardFrame.transform, material.Count);
         }
         
@@ -203,10 +212,10 @@ public partial class UI_MainLobby
         GetButton((int)Buttons.ArrangeAllButton).GetComponentInChildren<Image>().color = Color.cyan;
     }
 
-    private void SetCardPopupUI(Card card)
+    private async Task SetCardPopupUI(Card card)
     {
         _selectedCard = card;
-        CardPopup = Managers.UI.ShowPopupUI<UI_CardClickPopup>();
+        CardPopup = await Managers.UI.ShowPopupUI<UI_CardClickPopup>();
         CardPopup.SelectedCard = _selectedCard;
         CardPopup.CardPosition = _selectedCard.transform.position - new Vector3(0, 60);
         CardPopup.FromDeck = card.gameObject.transform.parent == GetImage((int)Images.Deck).transform 
@@ -239,7 +248,7 @@ public partial class UI_MainLobby
         var lobbyDeckParent = GetImage((int)Images.LobbyDeck).transform;
         Util.DestroyAllChildren(deckParent);
         Util.DestroyAllChildren(lobbyDeckParent);
-        SetDeckUI(faction);
+        _ = SetDeckUI(faction);
     }
     
     private void SwitchCollection(Faction faction) 
@@ -253,9 +262,9 @@ public partial class UI_MainLobby
         countText.GetComponent<TextMeshProUGUI>().text = count.ToString();
     }
 
-    private void GetInDeckText(Transform parent, float rate = 0.7f)
+    private async Task GetInDeckText(Transform parent, float rate = 0.7f)
     {
-        var inDeckTextPanel = Managers.Resource.Instantiate("UI/Deck/DeckMarkPanel", parent);
+        var inDeckTextPanel = await Managers.Resource.Instantiate("UI/Deck/DeckMarkPanel", parent);
         var gridLayout = parent.transform.parent.GetComponent<GridLayoutGroup>();
         var inDeckTextRect = inDeckTextPanel.GetComponent<RectTransform>();
         inDeckTextRect.sizeDelta = new Vector2(gridLayout.cellSize.x * rate, inDeckTextRect.sizeDelta.y);
@@ -314,22 +323,29 @@ public partial class UI_MainLobby
         LoadCraftingCard(card);
     }
 
-    private void LoadCraftingCard(Card card)
+    private async void LoadCraftingCard(Card card)
     {
-        var parent = GetImage((int)Images.CraftingCardPanel).transform;
-        Util.DestroyAllChildren(parent);
-        var cardFrame = card.AssetType switch
+        try
         {
-            Asset.Unit => Managers.Resource.GetCardResources<UnitId>(card, parent),
-            Asset.Sheep => Managers.Resource.GetCardResources<SheepId>(card, parent),
-            Asset.Enchant => Managers.Resource.GetCardResources<EnchantId>(card, parent),
-            Asset.Character => Managers.Resource.GetCardResources<CharacterId>(card, parent),
-            _ => null
-        };
+            var parent = GetImage((int)Images.CraftingCardPanel).transform;
+            Util.DestroyAllChildren(parent);
+            var cardFrame = card.AssetType switch
+            {
+                Asset.Unit => await Managers.Resource.GetCardResources<UnitId>(card, parent),
+                Asset.Sheep => await Managers.Resource.GetCardResources<SheepId>(card, parent),
+                Asset.Enchant => await Managers.Resource.GetCardResources<EnchantId>(card, parent),
+                Asset.Character => await Managers.Resource.GetCardResources<CharacterId>(card, parent),
+                _ => null
+            };
         
-        if (cardFrame == null) return;
-        var cardFrameRect = cardFrame.GetComponent<RectTransform>();
-        cardFrameRect.sizeDelta = new Vector2(250, 400);
+            if (cardFrame == null) return;
+            var cardFrameRect = cardFrame.GetComponent<RectTransform>();
+            cardFrameRect.sizeDelta = new Vector2(250, 400);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
     private void InitCraftingPanel()
@@ -382,22 +398,22 @@ public partial class UI_MainLobby
         GetText((int)Texts.CraftCountText).text = _craftingVm.CraftingCount.ToString();
     }
 
-    private void InitMaterialsOnCraftPanel(List<OwnedMaterialInfo> craftingMaterials, List<OwnedMaterialInfo> ownedMaterials)
+    private async Task InitMaterialsOnCraftPanel(List<OwnedMaterialInfo> craftingMaterials, List<OwnedMaterialInfo> ownedMaterials)
     {
         var parent = GetImage((int)Images.MaterialPanel).transform;
         Util.DestroyAllChildren(parent);
 
         foreach (var material in craftingMaterials)
         {
-            var craftingFrame = Managers.Resource.Instantiate("UI/Deck/CraftingMaterialFrame", parent);
-            var itemPanel =  Managers.Resource.GetMaterialResources(material.MaterialInfo, craftingFrame.transform);
+            var craftingFrame = await Managers.Resource.Instantiate("UI/Deck/CraftingMaterialFrame", parent);
+            var itemPanel =  await Managers.Resource.GetMaterialResources(material.MaterialInfo, craftingFrame.transform);
             var itemPanelRect = itemPanel.GetComponent<RectTransform>();
             var countTextObject = Util.FindChild(craftingFrame, "CountText", true);
             var countText = countTextObject.GetComponent<TextMeshProUGUI>();
             var nameTextObject = Util.FindChild(craftingFrame, "MaterialNameText", true);
             var nameText = nameTextObject.GetComponent<TextMeshProUGUI>();
             var key = $"material_id_{material.MaterialInfo.Id}";
-            var materialName = Managers.Localization.BindLocalizedText(nameText, key);
+            var materialName = await Managers.Localization.BindLocalizedText(nameText, key);
             if (materialName.Length > 11)
             {
                 materialName = materialName.Substring(0, 9) + "..";
@@ -456,7 +472,7 @@ public partial class UI_MainLobby
         }
     }
     
-    private void InitReinforcePanel()
+    private async Task InitReinforcePanel()
     {
         var cardParent = GetImage((int)Images.ReinforceCardPanel).transform;
         var resultParent = GetImage((int)Images.ReinforceResultPanel).transform;
@@ -466,8 +482,8 @@ public partial class UI_MainLobby
 
         var selectedUnit = Managers.Data.UnitInfoDict[_selectedCardForCrafting.Id];
         var resultUnit = Managers.Data.UnitInfoDict[_selectedCardForCrafting.Id + 1];
-        var cardFrame = Managers.Resource.GetCardResources<UnitId>(selectedUnit, cardParent);
-        var resultFrame = Managers.Resource.GetCardResources<UnitId>(resultUnit, resultParent);
+        var cardFrame = await Managers.Resource.GetCardResources<UnitId>(selectedUnit, cardParent);
+        var resultFrame = await Managers.Resource.GetCardResources<UnitId>(resultUnit, resultParent);
         var cardFrameRect = cardFrame.GetComponent<RectTransform>();
         var resultFrameRect = resultFrame.GetComponent<RectTransform>();
         var cardNumberText = GetText((int)Texts.ReinforceCardNumberText);
@@ -493,7 +509,7 @@ public partial class UI_MainLobby
         arrowPanel.GetComponent<ReinforceArrowController>().SetArrowColors(rate);
     }
 
-    private void ResetCollectionUIForReinforce()
+    private async Task ResetCollectionUIForReinforce()
     {
         List<OwnedUnitInfo> units;
         switch (ArrangeMode)
@@ -550,32 +566,32 @@ public partial class UI_MainLobby
         foreach (var unit in units)
         {
             var cardFrame = 
-                Managers.Resource.GetCardResources<UnitId>(unit.UnitInfo, _unitCollection, OnCardClicked);
+                await Managers.Resource.GetCardResources<UnitId>(unit.UnitInfo, _unitCollection, OnCardClicked);
             GetCountText(cardFrame.transform, unit.Count);
-            if (_craftingVm.IsUnitInDecks(unit.UnitInfo)) GetInDeckText(cardFrame.transform);
+            if (_craftingVm.IsUnitInDecks(unit.UnitInfo)) await GetInDeckText(cardFrame.transform);
         }
     }
 
-    private bool VerifyCard(UnitInfo unitInfo)
+    private async Task<bool> VerifyCard(UnitInfo unitInfo)
     {
         if (_craftingVm.VerityCardByCondition1(unitInfo) == false)
         {
-            var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            Managers.Localization.UpdateWarningPopupText(popup, "warning_cards_cannot_be_used_as_materials");
+            var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+            await Managers.Localization.UpdateWarningPopupText(popup, "warning_cards_cannot_be_used_as_materials");
             return false;
         }
             
         if (_craftingVm.VerifyCardByCondition2(unitInfo) == false)
         {
-            var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            Managers.Localization.UpdateWarningPopupText(popup, "warning_keep_minimum_cards");
+            var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+            await Managers.Localization.UpdateWarningPopupText(popup, "warning_keep_minimum_cards");
             return false;
         }
             
         if (_craftingVm.VerifyCardByCondition3(unitInfo) == false)
         {
-            var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            Managers.Localization.UpdateWarningPopupText(popup, "no_cards_available");
+            var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+            await Managers.Localization.UpdateWarningPopupText(popup, "no_cards_available");
             return false;
         }
 

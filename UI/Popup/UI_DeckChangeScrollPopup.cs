@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -82,15 +83,21 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         _deckVm = deckViewModel;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
-        SetCollectionInPopup();
-        SetDeckInPopup();
+            BindObjects();
+            InitButtonEvents();
+            InitUI();
+            await Task.WhenAll(SetCollectionInPopup(), SetDeckInPopup());
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     protected override void BindObjects()
@@ -99,7 +106,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        _ = Managers.Localization.UpdateTextAndFont(_textDict);
         
         _deckButtonDict = new Dictionary<string, GameObject>
         {
@@ -136,7 +143,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         selectTextPanel.SetActive(false);
     }
     
-    private void SetDeckInPopup()
+    private async Task SetDeckInPopup()
     {
         var parent = GetImage((int)Images.Deck).transform;
         foreach (Transform child in parent) Destroy(child.gameObject);
@@ -144,14 +151,14 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         var deck = _deckVm.GetDeck(Util.Faction).UnitsOnDeck;
         foreach (var unit in deck)
         {
-            var cardFrame = Managers.Resource.GetCardResources<UnitId>(unit, parent, OnDeckCardClicked);
+            var cardFrame = await Managers.Resource.GetCardResources<UnitId>(unit, parent, OnDeckCardClicked);
             cardFrame.TryGetComponent(out RectTransform rectTransform);
         }
         
         _deckVm.ResetDeckUI(Util.Faction);
     }
 
-    private void SetCollectionInPopup()
+    private async Task SetCollectionInPopup()
     {
         var parent = GetImage((int)Images.CollectionPanel).transform;
         foreach (Transform child in parent) Destroy(child.gameObject);
@@ -165,7 +172,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         foreach (var unit in units)
         {
             var cardFrame = 
-                Managers.Resource.GetCardResources<UnitId>(unit.UnitInfo, parent, OnCollectionCardClicked);
+                await Managers.Resource.GetCardResourcesF<UnitId>(unit.UnitInfo, parent, OnCollectionCardClicked);
             cardFrame.TryGetComponent(out RectTransform rectTransform);
             rectTransform.anchorMax = Vector2.one;
             rectTransform.anchorMin = Vector2.zero;
@@ -175,7 +182,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
     }
     
     // Event Methods
-    private void OnCollectionCardClicked(PointerEventData data)
+    private async Task OnCollectionCardClicked(PointerEventData data)
     {
         if (CardPopup != null) Managers.UI.ClosePopupUI(CardPopup);
         if (data.pointerPress.TryGetComponent(out Card card) == false) return;
@@ -186,14 +193,14 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
             _deckVm.UpdateDeck(SelectedCard, card);
             
             // Scroll Popup 내 UI 변경
-            SetDeckInPopup();
-            SetCollectionInPopup();
+
+            await Task.WhenAll(SetCollectionInPopup(), SetDeckInPopup());
             
             Changing = false;
         }
         else
         {
-            SetCardPopupUI(card);
+            await SetCardPopupUI(card);
         }
     }
     
@@ -217,10 +224,10 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         if (CardPopup != null) Managers.UI.ClosePopupUI(CardPopup);
     }
     
-    private void SetCardPopupUI(Card card)
+    private async Task SetCardPopupUI(Card card)
     {
         SelectedCard = card;
-        CardPopup = Managers.UI.ShowPopupUI<UI_CardClickPopup>();
+        CardPopup = await Managers.UI.ShowPopupUI<UI_CardClickPopup>();
         CardPopup.FromDeck = false;
         CardPopup.SelectedCard = SelectedCard;
         CardPopup.CardPosition = SelectedCard.transform.position;

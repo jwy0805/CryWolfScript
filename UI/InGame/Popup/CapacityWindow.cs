@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using NUnit.Framework;
 using TMPro;
@@ -15,7 +16,7 @@ using Zenject;
 
 public interface ICapacityWindow
 {
-    void InitSlot(int index);
+    Task InitSlotAsync(int index);
     void DeleteAllSlots();
     void UpdateUpgradeCostText(int cost);
     void UpdateDeleteCostText(int cost);
@@ -120,22 +121,29 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         }
     }
 
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
-        _gameVm.CapacityWindow = this;
-        
-        BindObjects();
-        InitUI();
-        InitButtonEvents();
-        InitSlot(0);
-        InitEvents();
-        
-        // Tutorial
-        if ((_tutorialVm.Step == 16 && Util.Faction == Faction.Wolf) ||
-            (_tutorialVm.Step == 21 && Util.Faction == Faction.Sheep))
+        try
         {
-            _ = _tutorialVm.ShowTutorialPopup();
+            base.Init();
+            _gameVm.CapacityWindow = this;
+        
+            BindObjects();
+            InitUI();
+            InitButtonEvents();
+            await InitSlotAsync(0);
+            InitEvents();
+        
+            // Tutorial
+            if ((_tutorialVm.Step == 16 && Util.Faction == Faction.Wolf) ||
+                (_tutorialVm.Step == 21 && Util.Faction == Faction.Sheep))
+            {
+                _ = _tutorialVm.ShowTutorialPopup();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
         }
     }
 
@@ -240,7 +248,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         _buttonDict["UnitRepairButton"].BindEvent(OnRepairClicked);
     }
     
-    public void InitSlot(int index)
+    public async Task InitSlotAsync(int index)
     {
         _gameVm.UpdateUnitUpgradeCostRequired(_gameVm.SelectedObjectIds.ToArray());
         _gameVm.UpdateUnitDeleteCostRequired(_gameVm.SelectedObjectIds.ToArray());
@@ -267,7 +275,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
             _ => throw new ArgumentOutOfRangeException()
         };
         
-        image.sprite = Managers.Resource.Load<Sprite>(path);
+        image.sprite = await Managers.Resource.LoadAsync<Sprite>(path);
         SetObjectSize(slotPanel, 0.25f);   
     }
     
@@ -353,10 +361,10 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         _gameVm.OnUnitRepairClicked(_gameVm.SelectedObjectIds);
     }
     
-    private void OnSlotClicked(PointerEventData data)
+    private async Task OnSlotClicked(PointerEventData data)
     {
         var index = GetButtonIndex(data.pointerPress.gameObject);
-        _gameVm.OnSlotClicked(index);
+        await _gameVm.OnSlotClicked(index);
     }
     
     private void OnDestroy()

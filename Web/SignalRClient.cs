@@ -177,10 +177,10 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
         OnInvitationSent?.Invoke();
     }
     
-    private void OnToastNotification()
+    private async Task OnToastNotification()
     {
-        var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-        Managers.Localization.UpdateWarningPopupText(popup, "warning_invitation_sent");
+        var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+        await Managers.Localization.UpdateWarningPopupText(popup, "warning_invitation_sent");
     }
     
     private void OnGameRoomJoined(AcceptInvitationPacketResponse response)
@@ -188,10 +188,10 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
         OnInvitationSuccess?.Invoke(response);
     }
     
-    private void OnRejectInvitation(AcceptInvitationPacketResponse response)
+    private async Task OnRejectInvitation(AcceptInvitationPacketResponse response)
     {
-        var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-        Managers.Localization.UpdateWarningPopupText(popup, "warning_invitation_rejected");
+        var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+        await Managers.Localization.UpdateWarningPopupText(popup, "warning_invitation_rejected");
     }
     
     private void OnFriendRequestNotification(FriendRequestPacketResponse response)

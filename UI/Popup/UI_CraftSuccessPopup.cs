@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -52,7 +53,7 @@ public class UI_CraftSuccessPopup : UI_Popup
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }
     
     protected override void InitButtonEvents()
@@ -60,15 +61,15 @@ public class UI_CraftSuccessPopup : UI_Popup
         GetButton((int)Buttons.TextButton).gameObject.BindEvent(ClosePopup);
     }
     
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         var parent = GetImage((int)Images.CardPanel).transform;
         var cardFrame = _craftingVm.CardToBeCrafted.AssetType switch
         {
-            Asset.Unit => Managers.Resource.GetCardResources<UnitId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
-            Asset.Sheep => Managers.Resource.GetCardResources<SheepId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
-            Asset.Enchant => Managers.Resource.GetCardResources<EnchantId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
-            Asset.Character => Managers.Resource.GetCardResources<CharacterId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
+            Asset.Unit => await Managers.Resource.GetCardResources<UnitId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
+            Asset.Sheep => await Managers.Resource.GetCardResources<SheepId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
+            Asset.Enchant => await Managers.Resource.GetCardResources<EnchantId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
+            Asset.Character => await Managers.Resource.GetCardResources<CharacterId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
             _ => null
         };
         

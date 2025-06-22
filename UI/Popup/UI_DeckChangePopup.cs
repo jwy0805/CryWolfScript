@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -46,15 +47,22 @@ public class UI_DeckChangePopup : UI_Popup
         _deckVm = deckViewModel;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
-        SetCardInPopup();
-        SetDeckUiInPopup();
+            BindObjects();
+            InitButtonEvents();
+            InitUI();
+            await SetCardInPopup();
+            SetDeckUiInPopup();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     protected override void BindObjects()
@@ -63,7 +71,7 @@ public class UI_DeckChangePopup : UI_Popup
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }
 
     protected override void InitButtonEvents()
@@ -84,20 +92,20 @@ public class UI_DeckChangePopup : UI_Popup
         var deck = _deckVm.GetDeck(Util.Faction);
         foreach (var unit in deck.UnitsOnDeck)
         {
-            var cardFrame = Managers.Resource.GetCardResources<UnitId>(unit, parent, data =>
+            var cardFrame = Managers.Resource.GetCardResourcesF<UnitId>(unit, parent, async data =>
             {
                 // 실제 덱이 수정되고, DeckChangeScrollPopup으로 넘어감
                 if (data.pointerPress.TryGetComponent(out Card card) == false) return;
                 _deckVm.UpdateDeck(card, SelectedCard);
-                Managers.UI.ShowPopupUI<UI_DeckChangeScrollPopup>();
+                await Managers.UI.ShowPopupUI<UI_DeckChangeScrollPopup>();
             });
         }
     }
 
-    private void SetCardInPopup()
+    private async Task SetCardInPopup()
     {
         var parent = GetImage((int)Images.CardPanel).transform;
-        var cardFrame = Managers.Resource.GetCardResources<UnitId>(SelectedCard, parent);
+        var cardFrame = await Managers.Resource.GetCardResources<UnitId>(SelectedCard, parent);
         cardFrame.TryGetComponent(out RectTransform rectTransform);
         rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
         rectTransform.anchorMin = new Vector2(0.5f, 0.5f);

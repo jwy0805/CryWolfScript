@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -32,13 +34,20 @@ public class UI_AssetInfoPopup : UI_Popup
         EquipText,
     }
 
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            BindObjects();
+            InitButtonEvents();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     protected override void BindObjects()
@@ -47,7 +56,7 @@ public class UI_AssetInfoPopup : UI_Popup
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }
     
     protected override void InitButtonEvents()
@@ -56,7 +65,7 @@ public class UI_AssetInfoPopup : UI_Popup
         GetButton((int)Buttons.EquipButton).onClick.AddListener(OnEquipButtonClicked);
     }
 
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         var frame = GetImage((int)Images.Frame);
         var frameRect = frame.GetComponent<RectTransform>();
@@ -90,19 +99,28 @@ public class UI_AssetInfoPopup : UI_Popup
                 break;
         }
 
-        GetImage((int)Images.AssetTypeIcon).sprite = Managers.Resource.Load<Sprite>(iconPath);
+        GetImage((int)Images.AssetTypeIcon).sprite = await Managers.Resource.LoadAsync<Sprite>(iconPath);
         cardRect.sizeDelta = new Vector2(250, 400);
         cardRect.anchorMin = new Vector2(0.5f, 0.5f);
         cardRect.anchorMax = new Vector2(0.5f, 0.5f);
         
-        Managers.Localization.BindLocalizedText(assetTypeText, assetTypeKey, FontType.BlackLined);
-        Managers.Localization.BindLocalizedText(assetTitleText, assetNameKey, FontType.BlackLined);
-        Managers.Localization.BindLocalizedText(assetClassText, assetClassKey, FontType.BlackLined);
+        var task1 = Managers.Localization.BindLocalizedText(assetTypeText, assetTypeKey, FontType.BlackLined);
+        var task2 = Managers.Localization.BindLocalizedText(assetTitleText, assetNameKey, FontType.BlackLined);
+        var task3 = Managers.Localization.BindLocalizedText(assetClassText, assetClassKey, FontType.BlackLined);
+        
+        await Task.WhenAll(task1, task2, task3);
     }
     
-    private void OnEquipButtonClicked()
+    private async void OnEquipButtonClicked()
     {
-        if (SelectedCard == null) return;
-        Managers.UI.ShowPopupUI<UI_AssetChangeScrollPopup>();
+        try
+        {
+            if (SelectedCard == null) return;
+            await Managers.UI.ShowPopupUI<UI_AssetChangeScrollPopup>();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 }

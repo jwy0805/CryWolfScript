@@ -7,8 +7,12 @@ using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using Unity.VisualScripting;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 /* Last Modified : 24. 10. 08
    * Version : 1.013
@@ -21,6 +25,7 @@ public interface ILoader<TKey, TValue>
 
 public class DataManager
 {
+    private bool _isInitialized = false;
     public Dictionary<int, Contents.UnitData> UnitDict { get; private set; } = new();
     public Dictionary<int, Contents.ObjectData> ObjectDict { get; private set; } = new();
     public Dictionary<int, Contents.SkillData> SkillDict { get; private set; } = new();
@@ -97,45 +102,29 @@ public class DataManager
 
     public async Task InitAsync()
     {
-        if (UnitDict.Count != 0 
-            && ObjectDict.Count != 0 
-            && SkillDict.Count != 0 
-            && TutorialDict.Count != 0
-            && LocalizationDict.Count != 0)
-        {
-            return;
-        }
+        if (_isInitialized) return;
+        if (UnitDict.Count > 0 || ObjectDict.Count > 0 || SkillDict.Count > 0 || TutorialDict.Count > 0 ||
+            LocalizationDict.Count > 0) return;
         
-        Debug.Log("Admin Log: Loading contents...");
+        var unitLoaderTask = LoadJsonAsync<Contents.UnitLoader>("UnitData");
+        var objectLoaderTask = LoadJsonAsync<Contents.ObjectLoader>("ObjectData");
+        var skillLoaderTask = LoadJsonAsync<Contents.SkillLoader>("SkillData");
+        var tutorialLoaderTask = LoadJsonAsync<Contents.TutorialLoader>("TutorialData");
+        var localeDictTask = LoadJsonAsync<Dictionary<string, Dictionary<string, Contents.LocalizationEntry>>>("LanguageData");
         
-        var unitDictTask = LoadJsonAsync<Contents.UnitLoader, int, Contents.UnitData>("UnitData");
-        var objectDictTask = LoadJsonAsync<Contents.ObjectLoader, int, Contents.ObjectData>("ObjectData");
-        var skillDictTask = LoadJsonAsync<Contents.SkillLoader, int, Contents.SkillData>("SkillData");
-        var tutorialDictTask = LoadJsonAsync<Contents.TutorialLoader, TutorialType, Contents.TutorialData>("TutorialData");
-        var localizationDictTask = LoadJsonAsync<Dictionary<string, Dictionary<string, Contents.LocalizationEntry>>>("LanguageData");
+        await Task.WhenAll(unitLoaderTask, objectLoaderTask, skillLoaderTask, tutorialLoaderTask, localeDictTask);
         
-        await Task.WhenAll(unitDictTask, objectDictTask, skillDictTask, tutorialDictTask, localizationDictTask);
+        UnitDict = unitLoaderTask.Result!.MakeDict();
+        ObjectDict = objectLoaderTask.Result!.MakeDict();
+        SkillDict = skillLoaderTask.Result!.MakeDict();
+        TutorialDict = tutorialLoaderTask.Result!.MakeDict();
+        LocalizationDict = localeDictTask.Result;
         
-        var loader = unitDictTask.Result!; // Contents.UnitLoader
-        // 중복 Id 찾아서 로그 남기기
-        var dupes = loader.Units
-            .GroupBy(u => u.Id)
-            .Where(g => g.Count() > 1)
-            .Select(g => g.Key)
-            .ToList();
-        if (dupes.Any())
-            Debug.LogError($"UnitData.json에 중복된 Id 발견! [{string.Join(", ", dupes)}]");
+        Debug.Log($"Data Initialization completed. {UnitDict.Count} units, " +
+                  $"{ObjectDict.Count} objects, {SkillDict.Count} skills, " +
+                  $"{TutorialDict.Count} tutorials, {LocalizationDict.Count} languages loaded.");
         
-        UnitDict = unitDictTask.Result!.MakeDict();
-        ObjectDict = objectDictTask.Result!.MakeDict();
-        SkillDict = skillDictTask.Result!.MakeDict();
-        TutorialDict = tutorialDictTask.Result!.MakeDict();
-        LocalizationDict = localizationDictTask.Result;
-    }
-
-    private async Task<TLoader> LoadJsonAsync<TLoader, TKey, TValue>(string data) where TLoader : ILoader<TKey, TValue>
-    {
-        return await LoadJsonAsync<TLoader>(data);
+        _isInitialized = true;
     }
 
     private async Task<T> LoadJsonAsync<T>(string data)
@@ -149,37 +138,52 @@ public class DataManager
 
         try
         {
-            return JsonConvert.DeserializeObject<T>(json);
+            var settings = new JsonSerializerSettings
+            {
+                Converters = new List<JsonConverter>
+                {
+                    new StringEnumConverter(),
+                    new StringEnumConverter(),
+                },
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            };
+            return JsonConvert.DeserializeObject<T>(json, settings);
         }
         catch (Exception e)
         {
-            Debug.LogError($"JSON deserialization error: {e.Message}");
+            Debug.LogError($"DataManager : JSON deserialization error for {data}.json: {e.Message}");
             throw;
         }
     }
-
+    
     private async Task<string> LoadJsonStringAsync(string data)
     {
-        var filePath = Path.Combine(Application.streamingAssetsPath, $"{data}.json");
-        
-#if UNITY_ANDROID && !UNITY_EDITOR
-        var url = filePath.StartsWith("jar:") ? filePath : $"jar:file://{filePath}";
-        using var req = UnityWebRequest.Get(url);
-        await req.SendWebRequest();
-        if (req.result != UnityWebRequest.Result.Success)
+        if (Managers.Network.UseAddressables)
         {
-            Debug.LogError($"Cannot load {data}.json: {req.error}");
-            return null;
+            var handle = Addressables.LoadAssetAsync<TextAsset>($"Data/{data}.json");
+
+            try
+            {
+                await handle.Task;
+                if (handle.Status == AsyncOperationStatus.Succeeded)
+                    return handle.Result.text;
+
+                Debug.LogError($"[DataManager] Addressables key miss: {data}.json");
+                return null;
+            }
+            finally
+            {
+                Addressables.Release(handle);
+            }
         }
-        return req.downloadHandler.text;
-#else
+
+        var filePath = Path.Combine(Application.dataPath, "Data", $"{data}.json");
         if (File.Exists(filePath))
         {
             return await File.ReadAllTextAsync(filePath);
         }
         
-        Debug.LogError($"Cannot find {data}.json");
+        Debug.LogError($"Data Manager : Cannot find {data}.json");
         return null;
-#endif
     }
 }

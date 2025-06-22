@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -52,24 +53,31 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
         _deckVm = deckViewModel;
     }
 
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
-
-        BindObjects();
-        InitButtonEvents();
-
-        switch (SelectedCard.AssetType)
+        try
         {
-            case Asset.Sheep:
-                InitUI<SheepId>();
-                break;
-            case Asset.Enchant:
-                InitUI<EnchantId>();
-                break;
-            case Asset.Character:
-                InitUI<CharacterId>();
-                break;
+            base.Init();
+
+            BindObjects();
+            InitButtonEvents();
+
+            switch (SelectedCard.AssetType)
+            {
+                case Asset.Sheep:
+                    await InitUIAsync<SheepId>();
+                    break;
+                case Asset.Enchant:
+                    await InitUIAsync<EnchantId>();
+                    break;
+                case Asset.Character:
+                    await InitUIAsync<CharacterId>();
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
         }
     }
     
@@ -82,12 +90,11 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
         _assetPanel = Util.FindChild(gameObject, "AssetPanel", true);
     }
 
-    private void InitUI<TEnum>() where TEnum : struct, Enum
+    private async Task InitUIAsync<TEnum>() where TEnum : struct, Enum
     {
         GetImage((int)Images.SelectTextPanel).gameObject.SetActive(false);
-        
-        SetSelectedCardInPopup<TEnum>();
-        SetCardInPopup<TEnum>();
+
+        await Task.WhenAll(SetSelectedCardInPopup<TEnum>(), SetCardInPopup<TEnum>());
     }
     
     protected override void InitButtonEvents()
@@ -97,12 +104,12 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
         GetButton((int)Buttons.EnterButton).gameObject.BindEvent(CloseAllPopup);
     }
 
-    private void SetSelectedCardInPopup<TEnum>() where TEnum : struct, Enum
+    private async Task SetSelectedCardInPopup<TEnum>() where TEnum : struct, Enum
     {
         var parent = _assetPanel.transform;
         foreach (Transform child in parent) Destroy(child.gameObject);
         
-        var cardFrame = Managers.Resource.GetCardResources<TEnum>(SelectedCard, parent, data =>
+        var cardFrame = await Managers.Resource.GetCardResources<TEnum>(SelectedCard, parent, data =>
         {
             SelectedCard = data.pointerPress.GetComponent<Card>();
             Changing = true;
@@ -115,7 +122,7 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
         cardRect.sizeDelta = Vector2.zero;
     }
     
-    private void SetCardInPopup<TEnum>() where TEnum : struct, Enum
+    private async Task SetCardInPopup<TEnum>() where TEnum : struct, Enum
     {
         var parent = GetImage((int)Images.CollectionPanel).transform;
         foreach (Transform child in parent) Destroy(child.gameObject);
@@ -135,7 +142,7 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
 
         foreach (var asset in assets)
         {
-            var cardFrame = Managers.Resource.GetCardResources<TEnum>(asset, parent, data =>
+            var cardFrame = await Managers.Resource.GetCardResourcesF<TEnum>(asset, parent, async data => 
             {
                 if (data.pointerPress.TryGetComponent(out Card card) == false) return;
 
@@ -148,8 +155,8 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
                 Changing = false;
                 
                 // Change UI in Scroll Popup
-                SetSelectedCardInPopup<TEnum>();
-                SetCardInPopup<TEnum>();
+                await SetSelectedCardInPopup<TEnum>();
+                await SetCardInPopup<TEnum>();
             });
             var cardRect = cardFrame.GetComponent<RectTransform>();
             

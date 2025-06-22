@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using AssetKits.ParticleImage;
 using Febucci.UI;
 using Google.Protobuf.Protocol;
@@ -68,17 +69,24 @@ public class UI_TutorialMainPopup : UI_Popup
         _tutorialVm = tutorialViewModel;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        BindActions();
-        InitButtonEvents();
-        InitUI();
+            await BindObjectsAsync ();
+            BindActions();
+            InitButtonEvents();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
-    protected override void BindObjects()
+    protected override async Task BindObjectsAsync()
     {
         Bind<Button>(typeof(Buttons)); 
         Bind<Image>(typeof(Images));
@@ -93,12 +101,14 @@ public class UI_TutorialMainPopup : UI_Popup
         _tutorialMainSelectText = Util.FindChild(_selectPanel, "TutorialMainSelectText", true).GetComponent<TextMeshProUGUI>();
         _factionText = Util.FindChild(_selectPanel, "FactionText", true).GetComponent<TextMeshProUGUI>();
         _factionInfoText = Util.FindChild(_selectPanel, "FactionInfoText", true).GetComponent<TextMeshProUGUI>();
-        _buttonSelectEffect = Managers.Resource.Instantiate("UIEffects/ButtonSelectEffect", _selectPanel.transform);
+        _buttonSelectEffect = await Managers.Resource.Instantiate("UIEffects/ButtonSelectEffect", _selectPanel.transform);
         _videoPlayer = Util.FindChild(_selectPanel, "VideoPlayer", true).GetComponent<VideoPlayer>();
         _masking = Util.FindChild(_selectPanel, "TutorialMainVideoMasking", true);
         
-        _videoClips.Add("Wolf", Managers.Resource.Load<VideoClip>("VideoClips/TutorialWolf"));
-        _videoClips.Add("Sheep", Managers.Resource.Load<VideoClip>("VideoClips/TutorialSheep"));
+        var wolfVideo = await Managers.Resource.LoadAsync<VideoClip>("VideoClips/TutorialWolf");
+        var sheepVideo = await Managers.Resource.LoadAsync<VideoClip>("VideoClips/TutorialSheep");
+        _videoClips.Add("Wolf", wolfVideo);
+        _videoClips.Add("Sheep", sheepVideo);
     }
 
     private void BindActions()
@@ -121,10 +131,10 @@ public class UI_TutorialMainPopup : UI_Popup
         GetButton((int)Buttons.PlayButton).gameObject.BindEvent(OnPlayClicked);
     }
     
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         var factionText = Util.FindChild(_selectPanel, "FactionText", true).GetComponent<TextMeshProUGUI>();
-        factionText.text = Managers.Localization.BindLocalizedText(factionText, "tutorial_main_faction_text");
+        factionText.text = await Managers.Localization.BindLocalizedText(factionText, "tutorial_main_faction_text");
         
         _speaker1Panel.SetActive(false);
         _speaker2Panel.SetActive(false);
@@ -132,8 +142,8 @@ public class UI_TutorialMainPopup : UI_Popup
         _selectPanel.SetActive(false);
         _buttonSelectEffect.SetActive(false);
         
-        var tutorialNpc1 = Managers.Resource.Instantiate("Npc/NpcWerewolf");
-        var tutorialNpc2 = Managers.Resource.Instantiate("Npc/NpcFlower");
+        var tutorialNpc1 = await Managers.Resource.Instantiate("Npc/NpcWerewolf");
+        var tutorialNpc2 = await Managers.Resource.Instantiate("Npc/NpcFlower");
         _tutorialNpcInfo1 = tutorialNpc1.GetComponent<TutorialNpcInfo>();
         _tutorialNpcInfo2 = tutorialNpc2.GetComponent<TutorialNpcInfo>();
         _flowerFace = Util.FindChild(tutorialNpc2, "+ Head", true);
@@ -143,7 +153,8 @@ public class UI_TutorialMainPopup : UI_Popup
         var camera1Pos = _tutorialNpcInfo1.CameraPosition;
         var camera2Pos = _tutorialNpcInfo2.CameraPosition;
         _tutorialVm.InitTutorialMain(npc1Pos, camera1Pos, npc2Pos, camera2Pos);
-        StepTutorial();
+        
+        await StepTutorial();
         StartCoroutine(nameof(SmoothAlphaRoutine));
     }
     
@@ -207,7 +218,7 @@ public class UI_TutorialMainPopup : UI_Popup
     
     # endregion
 
-    private void StepTutorial()
+    private async Task StepTutorial()
     {
         _tutorialVm.Step++;
         Managers.Data.TutorialDict.TryGetValue(TutorialType.Main, out var tutorialData);
@@ -218,7 +229,7 @@ public class UI_TutorialMainPopup : UI_Popup
             _tutorialVm.MainEventDict[eventString]?.Invoke();
         }
         
-        var textContent = Managers.Localization.BindLocalizedText(_speechBubbleText, step.DialogKey);
+        var textContent = await Managers.Localization.BindLocalizedText(_speechBubbleText, step.DialogKey);
         _speechBubbleText.text = textContent;
     }
 
@@ -259,33 +270,61 @@ public class UI_TutorialMainPopup : UI_Popup
         }
     }
     
-    private void ShowFactionSelectPopup()
+    private async void ShowFactionSelectPopup()
     {
-        _selectPanel.SetActive(true);
-        _masking.SetActive(false);
+        try
+        {
+            _selectPanel.SetActive(true);
+            _masking.SetActive(false);
         
-        var playButtonText = Util.FindChild(_selectPanel, "PlayButtonText", true).GetComponent<TextMeshProUGUI>();
-        var titleText = Util.FindChild(_selectPanel, "TutorialMainSelectText", true).GetComponent<TextMeshProUGUI>();
-        playButtonText.text = Managers.Localization.BindLocalizedText(playButtonText, "play_button_text");
-        titleText.text = Managers.Localization.BindLocalizedText(titleText, "tutorial_main_select_text");
+            var playButtonText = Util.FindChild(_selectPanel, "PlayButtonText", true).GetComponent<TextMeshProUGUI>();
+            var titleText = Util.FindChild(_selectPanel, "TutorialMainSelectText", true).GetComponent<TextMeshProUGUI>();
+            playButtonText.text = await Managers.Localization.BindLocalizedText(playButtonText, "play_button_text");
+            titleText.text = await Managers.Localization.BindLocalizedText(titleText, "tutorial_main_select_text");
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
-    private void ChangeFaceNormal()
+    private async void ChangeFaceNormal()
     {
-        Util.DestroyAllChildren(_flowerFace.transform);
-        Managers.Resource.Instantiate("Npc/Blinking Eyes 01", _flowerFace.transform);
+        try
+        {
+            Util.DestroyAllChildren(_flowerFace.transform);
+            await Managers.Resource.Instantiate("Npc/Blinking Eyes 01", _flowerFace.transform);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
-    private void ChangeFaceHappy()
+    private async void ChangeFaceHappy()
     {
-        Util.DestroyAllChildren(_flowerFace.transform);
-        Managers.Resource.Instantiate("Npc/Face Happy", _flowerFace.transform);
+        try
+        {
+            Util.DestroyAllChildren(_flowerFace.transform);
+            await Managers.Resource.Instantiate("Npc/Face Happy", _flowerFace.transform);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
-    private void ChangeFaceCry()
+    private async void ChangeFaceCry()
     {
-        Util.DestroyAllChildren(_flowerFace.transform);
-        Managers.Resource.Instantiate("Npc/Face Cry", _flowerFace.transform);
+        try
+        {
+            Util.DestroyAllChildren(_flowerFace.transform);
+            await Managers.Resource.Instantiate("Npc/Face Cry", _flowerFace.transform);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     private IEnumerator AlertRoutine()
@@ -296,13 +335,32 @@ public class UI_TutorialMainPopup : UI_Popup
         yield return new WaitForSeconds(0.75f);
         text.color = Color.white;
     }
-    
-    private void OnContinueClicked(PointerEventData data)
+
+    private async Task PlayFactionVideo(VideoClip clip)
     {
-        StepTutorial();
+        _videoPlayer.Stop();
+        _videoPlayer.source = VideoSource.VideoClip;
+        _videoPlayer.clip = clip;
+        _videoPlayer.time = 0;
+        _videoPlayer.timeReference = VideoTimeReference.ExternalTime;
+        _videoPlayer.Prepare();
+        
+        while (!_videoPlayer.isPrepared)
+        {
+            await Task.Delay(100);
+        }
+        
+        _videoPlayer.Play();
+    }
+    
+    #region ButtonEvents
+    
+    private async Task OnContinueClicked(PointerEventData data)
+    {
+        await StepTutorial();
     }
 
-    private void OnWolfClicked(PointerEventData data)
+    private async Task OnWolfClicked(PointerEventData data)
     {
         if (_masking.activeSelf == false)
         {
@@ -311,17 +369,16 @@ public class UI_TutorialMainPopup : UI_Popup
 
         Util.Faction = Faction.Wolf;
         _tutorialVm.TutorialFaction = Faction.Wolf;
-        _factionText.text = Managers.Localization.BindLocalizedText(_factionText, "wolf_text");
-        _factionInfoText.text = Managers.Localization.BindLocalizedText(_factionInfoText, "faction_info_text_wolf");
+        _factionText.text = await Managers.Localization.BindLocalizedText(_factionText, "wolf_text");
+        _factionInfoText.text = await Managers.Localization.BindLocalizedText(_factionInfoText, "faction_info_text_wolf");
         _buttonSelectEffect.SetActive(true);
         _buttonSelectEffect.transform.position = GetButton((int)Buttons.WolfButton).transform.position;
         _buttonSelectEffect.GetComponent<ParticleImage>().Play();
-        _videoPlayer.source = VideoSource.VideoClip;
-        _videoPlayer.clip = _videoClips["Wolf"];
-        _videoPlayer.Play();
+
+        await PlayFactionVideo(_videoClips["Wolf"]);
     }
     
-    private void OnSheepClicked(PointerEventData data)
+    private async Task OnSheepClicked(PointerEventData data)
     {
         if (_masking.activeSelf == false)
         {
@@ -330,14 +387,13 @@ public class UI_TutorialMainPopup : UI_Popup
         
         Util.Faction = Faction.Sheep;
         _tutorialVm.TutorialFaction = Faction.Sheep;
-        _factionText.text = Managers.Localization.BindLocalizedText(_factionText, "sheep_text");
-        _factionInfoText.text = Managers.Localization.BindLocalizedText(_factionInfoText, "faction_info_text_sheep");
+        _factionText.text = await Managers.Localization.BindLocalizedText(_factionText, "sheep_text");
+        _factionInfoText.text = await Managers.Localization.BindLocalizedText(_factionInfoText, "faction_info_text_sheep");
         _buttonSelectEffect.SetActive(true);
         _buttonSelectEffect.transform.position = GetButton((int)Buttons.SheepButton).transform.position;
         _buttonSelectEffect.GetComponent<ParticleImage>().Play();
-        _videoPlayer.source = VideoSource.VideoClip;
-        _videoPlayer.clip = _videoClips["Sheep"];
-        _videoPlayer.Play();
+        
+        await PlayFactionVideo(_videoClips["Sheep"]);
     }
 
     private void OnPlayClicked(PointerEventData data)
@@ -352,14 +408,14 @@ public class UI_TutorialMainPopup : UI_Popup
         _ = Managers.Network.ConnectGameSession();
     }
     
-    private void OnExitClicked(PointerEventData data)
+    private async Task OnExitClicked(PointerEventData data)
     {
-        var popup = Managers.UI.ShowPopupUI<UI_NotifySelectPopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_NotifySelectPopup>();
         
-        Managers.Localization.UpdateNotifySelectPopupText(popup,
+        await Managers.Localization.UpdateNotifySelectPopupText(popup,
             "notify_select_tutorial_exit_title", 
             "notify_select_tutorial_exit_message");
-        popup.SetYesCallback(async () =>
+        popup.SetYesCallbackF(async () =>
         {
             var packet = new UpdateTutorialRequired
             {
@@ -374,6 +430,8 @@ public class UI_TutorialMainPopup : UI_Popup
             Managers.UI.CloseAllPopupUI();
         });
     }
+    
+    #endregion
 
     private void OnDestroy()
     {

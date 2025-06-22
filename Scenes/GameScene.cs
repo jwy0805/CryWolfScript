@@ -1,16 +1,27 @@
+using System;
 using Google.Protobuf.Protocol;
 using UnityEngine;
 
 public class GameScene : BaseScene
 {
-    protected override void Awake()
+    protected override async void Awake()
     {
-        base.Init();
-        SceneType = Define.Scene.Game;
+        try
+        {
+            base.Init();
+            Debug.Log($"ShadowDist={QualitySettings.shadowDistance}, Casc={QualitySettings.shadowCascades}");
+            QualitySettings.shadowDistance  = 80f;
+            QualitySettings.shadowCascades  = 2;
+            SceneType = Define.Scene.Game;
 
-        var mapNumber = Managers.Map.MapId;
-        Managers.Map.LoadMap(mapNumber);
-        InitObjects();
+            var mapNumber = Managers.Map.MapId;
+            await Managers.Map.LoadMap(mapNumber);
+            InitObjects();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
     public override void Clear()

@@ -12,8 +12,8 @@ public class MatchMakingViewModel
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
     
-    public event Action OnMatchMakingStarted; 
-    public event Action<int, int> OnRefreshQueueCounts; 
+    public event Func<Task> OnMatchMakingStarted; 
+    public event Func<int, int, Task> OnRefreshQueueCounts; 
     
     public int SessionId { get; set; }
     

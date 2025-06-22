@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Google.Protobuf.Protocol;
@@ -74,14 +75,21 @@ public class CreatureController : BaseController, ISkillObserver
     public int Level => Stat.Level;
     public float TotalMoveSpeed { get; set; }
 
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
-        SkillSubject = GameObject.Find("Subject").GetComponent<SkillSubject>();
-        SkillSubject.AddObserver(this);
-        // Instantiate Health Circle
-        Managers.Resource.Instantiate("WorldObjects/HealthCircle", transform);
-        Util.GetOrAddComponent<UI_HealthCircle>(gameObject);
+        try
+        {
+            base.Init();
+            SkillSubject = GameObject.Find("Subject").GetComponent<SkillSubject>();
+            SkillSubject.AddObserver(this);
+            // Instantiate Health Circle
+            await Managers.Resource.Instantiate("WorldObjects/HealthCircle", transform);
+            Util.GetOrAddComponent<UI_HealthCircle>(gameObject);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     protected override void UpdateIdle()

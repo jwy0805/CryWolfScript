@@ -2,7 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.EventSystems;
 using Zenject;
 using Object = UnityEngine.Object;
@@ -42,14 +45,14 @@ public class UIManager
         }
     }
 
-    public T MakeWorldSpaceUI<T>(Transform parent = null, string name = null) where T : UI_Base
+    public async Task<T> MakeWorldSpaceUI<T>(Transform parent = null, string name = null) where T : UI_Base
     {
         if (string.IsNullOrEmpty(name))
         {
             name = typeof(T).Name;
         }
 
-        GameObject gameObject = Managers.Resource.Instantiate($"UI/WorldSpace/{name}");
+        GameObject gameObject = await Managers.Resource.Instantiate($"UI/WorldSpace/{name}");
         if (parent != null)
         {
             gameObject.transform.SetParent(parent);
@@ -62,14 +65,14 @@ public class UIManager
         return Util.GetOrAddComponent<T>(gameObject);
     }
 
-    public T MakeSubItem<T>(Transform parent = null, string name = null) where T : UI_Base
+    public async Task<T> MakeSubItem<T>(Transform parent = null, string name = null) where T : UI_Base
     {
         if (string.IsNullOrEmpty(name))
         {
             name = typeof(T).Name;
         }
 
-        GameObject gameObject = Managers.Resource.Instantiate($"UI/InGame/SubItem/{name}");
+        GameObject gameObject = await Managers.Resource.Instantiate($"UI/InGame/SubItem/{name}");
         if (parent != null)
         {
             gameObject.transform.SetParent(parent);
@@ -78,7 +81,7 @@ public class UIManager
         return Util.GetOrAddComponent<T>(gameObject);
     }
 
-    public async void ShowSceneUI<T>(string name = null) where T : UI_Scene
+    public async Task ShowSceneUI<T>(string name = null) where T : UI_Scene
     {
         try
         {
@@ -86,9 +89,18 @@ public class UIManager
             {
                 name = typeof(T).Name;
             }
-        
+
+            if (Managers.Resource.InitAddressables == false && name != "UI_Loading")
+            {
+                Managers.Localization.InitLanguage(Application.systemLanguage.ToString());
+                await Addressables.InitializeAsync().Task;
+                await Addressables.LoadAssetAsync<TMP_Settings>("Externals/TextMesh Pro/Resources/TMP Settings.asset").Task;
+                Managers.Resource.InitAddressables = true;
+            }
+            
             await Managers.Data.InitAsync();
-            var sceneUI = Managers.Resource.InstantiateFromContainer($"UI/Scene/{name}", Root.transform);
+            var key = $"UI/Scene/{name}";
+            var sceneUI = await Managers.Resource.InstantiateAsyncFromContainer(key, Root.transform);
             sceneUI.GetComponent<UI_Scene>().Clear();
         }
         catch (Exception e)
@@ -110,14 +122,14 @@ public class UIManager
         return null;
     }
     
-    public T ShowPopupUI<T>(string name = null) where T : UI_Popup
+    public async Task<T> ShowPopupUI<T>(string name = null) where T : UI_Popup
     {
         if (string.IsNullOrEmpty(name))
         {
             name = typeof(T).Name;
         }
 
-        var gameObject = Managers.Resource.Instantiate($"UI/Popup/{name}");
+        var gameObject = await Managers.Resource.Instantiate($"UI/Popup/{name}");
         var popup = Util.GetOrAddComponent<T>(gameObject);
         PopupList.Add(popup);
         
@@ -127,14 +139,14 @@ public class UIManager
         return popup;
     }
     
-    public T ShowPopupUiInGame<T>(string name = null) where T : UI_Popup
+    public async Task<T> ShowPopupUiInGame<T>(string name = null) where T : UI_Popup
     {
         if (string.IsNullOrEmpty(name))
         {
             name = typeof(T).Name;
         }
 
-        var gameObject = Managers.Resource.Instantiate($"UI/InGame/Popup/{name}");
+        var gameObject = await Managers.Resource.Instantiate($"UI/InGame/Popup/{name}");
         var popup = Util.GetOrAddComponent<T>(gameObject);
         PopupList.Add(popup);
         
@@ -144,9 +156,9 @@ public class UIManager
         return popup;
     }
 
-    public void ShowErrorPopup(string errorMessage, Action callback = null)
+    public async Task ShowErrorPopup(string errorMessage, Action callback = null)
     {
-        var popup = ShowPopupUI<UI_NotifyPopup>();
+        var popup = await ShowPopupUI<UI_NotifyPopup>();
         popup.MessageText = errorMessage;
         if (callback != null)
         {
@@ -154,20 +166,20 @@ public class UIManager
         }
     }
     
-    public void ShowNotifyPopup(string titleKey, string messageKey, Action callback = null)
+    public async Task ShowNotifyPopup(string titleKey, string messageKey, Action callback = null)
     {
-        var popup = ShowPopupUI<UI_NotifyPopup>();
-        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        var popup = await ShowPopupUI<UI_NotifyPopup>();
+        await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
         if (callback != null)
         {
             popup.SetYesCallback(callback);
         }
     }
     
-    public void ShowNotifySelectPopup(string titleKey, string messageKey, Action yesCallback, Action noCallback)
+    public async Task ShowNotifySelectPopup(string titleKey, string messageKey, Action yesCallback, Action noCallback)
     {
-        var popup = ShowPopupUI<UI_NotifySelectPopup>();
-        Managers.Localization.UpdateNotifySelectPopupText(popup, titleKey, messageKey);
+        var popup = await ShowPopupUI<UI_NotifySelectPopup>();
+        await Managers.Localization.UpdateNotifySelectPopupText(popup, titleKey, messageKey);
         popup.SetYesCallback(yesCallback);
         popup.SetNoCallBack(noCallback);
     }

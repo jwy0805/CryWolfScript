@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using ModestTree;
 using TMPro;
@@ -21,12 +23,14 @@ public class MyPlayerController : PlayerController
     private float _lastSendTime;
 
     private float _lastClickTime;
-    private const float DoubleClickThreshold = 0.35f;
+    private const float DoubleClickThreshold = 0.3f;
+    private const float CmFingerTolerance = 0.5f;
     private Vector3 _lastClickPos;
     private bool _isDragging;
     private Vector3 _lastMousePos;
+    private GameObject _lastClickedObject;
     private GameObject _cameraObject;
-
+    private bool _cameraFound;
     
     [Inject]
     public void Construct(GameViewModel gameViewModel, TutorialViewModel tutorialViewModel)
@@ -39,7 +43,6 @@ public class MyPlayerController : PlayerController
     {
         base.Init();
         ObjectType = GameObjectType.Player;
-        Managers.Input.MouseAction -= OnMouseEvent;
         Managers.Input.MouseAction += OnMouseEvent;
         _cameraObject = GameObject.FindWithTag("CameraFocus");
 
@@ -176,84 +179,124 @@ public class MyPlayerController : PlayerController
         Managers.Network.Send(spawnPacket14);
     }
     
-    private void OnMouseEvent(Define.MouseEvent evt)
+    private async void OnMouseEvent(Define.MouseEvent evt)
     {
-        var ray = Camera.main!.ScreenPointToRay(Input.mousePosition);
-        bool raycastHit = Physics.Raycast(ray, out var hit, 100.0f);
-
-        switch (evt)
+        try
         {
-            case Define.MouseEvent.Click:
-                break;
-            
-            case Define.MouseEvent.PointerDown:
-                if (raycastHit == false || _gameVm.OnPortraitDrag) { return; }
-                var go = hit.collider.gameObject;
-                HandleSingleOrDoubleClick(go);
-                break;
-            
-            case Define.MouseEvent.PointerUp:
-                _isDragging = false;
-                break;
-            
-            case Define.MouseEvent.Press:
-                if (_isDragging)
+            if (_cameraObject == null && _cameraFound == false)
+            {
+                _cameraObject = GameObject.FindWithTag("CameraFocus");
+                if (_cameraObject != null)
                 {
-                    var currentMousePos = Input.mousePosition;
-                    var pressedY = _lastMousePos.y;
-                    var direction = axisYInversion ? currentMousePos.y - pressedY : pressedY - currentMousePos.y;
-                    var moveZ = direction * Time.deltaTime * 0.08f;
-
-                    if (Faction == Faction.Sheep)
-                    {
-                        switch (_cameraObject.transform.position.z)
-                        {
-                            case < -12.1f when moveZ < 0:
-                            case > 12.1f when moveZ > 0:
-                                return;
-                            default:
-                                _cameraObject.transform.Translate(0, 0, moveZ);
-                                break;
-                        }
-                    }
-
-                    if (Faction == Faction.Wolf)
-                    {
-                        switch (_cameraObject.transform.position.z)
-                        {
-                            case < -12.1f when moveZ > 0:
-                                return;
-                            case > 12.1f when moveZ < 0:
-                                return;
-                            default:
-                                _cameraObject.transform.Translate(0, 0, moveZ);
-                                break;
-                        }
-                    }
+                    _cameraFound = true;
                 }
-                break;
+                else
+                {
+                    Debug.LogWarning("CameraFocus object not found. Please ensure it exists in the scene.");
+                    return;
+                }
+            }
+            
+            var ray = Camera.main!.ScreenPointToRay(Input.mousePosition);
+            bool raycastHit = Physics.Raycast(ray, out var hit, 100.0f);
+
+            Debug.Log($"Mouse Event: {evt}, Raycast Hit: {raycastHit}, Position: {Input.mousePosition}");
+            Debug.Log($"CameraObject Position: {_cameraObject.transform.position}");
+            if (_cameraObject == null)
+            {
+                Debug.LogWarning("CameraObject is null. Please ensure it is assigned.");
+                return;
+            }
+
+            if (_gameVm == null)
+            {
+                Debug.LogWarning("gameVm is null. Please ensure it is assigned.");
+            }
+            
+            switch (evt)
+            {
+                case Define.MouseEvent.Click:
+                    break;
+                
+                case Define.MouseEvent.PointerDown:
+                    if (raycastHit == false || _gameVm.OnPortraitDrag) { return; }
+                    var go = hit.collider.gameObject;
+                    await HandleSingleOrDoubleClick(go);
+                    break;
+                
+                case Define.MouseEvent.PointerUp:
+                    _isDragging = false;
+                    break;
+                
+                case Define.MouseEvent.Press:
+                    if (_isDragging)
+                    {
+                        var currentMousePos = Input.mousePosition;
+                        var pressedY = _lastMousePos.y;
+                        var direction = axisYInversion ? currentMousePos.y - pressedY : pressedY - currentMousePos.y;
+                        var moveZ = direction * Time.deltaTime * 0.08f;
+
+                        if (Faction == Faction.Sheep)
+                        {
+                            switch (_cameraObject.transform.position.z)
+                            {
+                                case < -12.1f when moveZ < 0:
+                                case > 12.1f when moveZ > 0:
+                                    return;
+                                default:
+                                    _cameraObject.transform.Translate(0, 0, moveZ);
+                                    break;
+                            }
+                        }
+
+                        if (Faction == Faction.Wolf)
+                        {
+                            switch (_cameraObject.transform.position.z)
+                            {
+                                case < -12.1f when moveZ > 0:
+                                    return;
+                                case > 12.1f when moveZ < 0:
+                                    return;
+                                default:
+                                    _cameraObject.transform.Translate(0, 0, moveZ);
+                                    break;
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
         }
     }
     
-    private void HandleSingleOrDoubleClick(GameObject go)
+    private async Task HandleSingleOrDoubleClick(GameObject go)
     {
-        var currentTime = Time.time;
-        var timeSinceLastClick = currentTime - _lastClickTime;
+        var now = Time.unscaledTime;
+        var delta = now - _lastClickTime;
 
-        if (timeSinceLastClick <= DoubleClickThreshold && Vector3.Distance(_lastClickPos, Input.mousePosition) < 2f)
+        float dpi = Screen.dpi <= 0 ? 200 : Screen.dpi;
+        float pxTolerance = CmFingerTolerance * dpi / 2.54f;
+        bool isCloseEnough = Vector2.Distance(Input.mousePosition, _lastClickPos) < pxTolerance;
+        bool isSameTarget = go == _lastClickedObject;
+        
+        if (delta <= DoubleClickThreshold && isCloseEnough && isSameTarget)
         {
-            OnDoubleClick(go);
+            await OnDoubleClick(go);
         }
         else
         {
-            OnClick(go);
+            await OnClick(go);
         }
 
-        _lastClickTime = currentTime;
+        _lastClickTime = now;
         _lastClickPos = Input.mousePosition;
+        _lastClickedObject = go;
     }
 
-    private void OnClick(GameObject go)
+    private async Task OnClick(GameObject go)
     {
         var layer = go.layer;
 
@@ -273,7 +316,7 @@ public class MyPlayerController : PlayerController
             case var _ when layer == LayerMask.NameToLayer("Tower"):
                 if (Faction == Faction.Sheep)
                 {
-                    AdjustUI<UnitControlWindow>(go, GameObjectType.Tower);
+                    await AdjustUI<UnitControlWindow>(go, GameObjectType.Tower);
                     _gameVm.SetPortraitFromFieldUnit(cc.UnitId);
                     
                     // Tutorial
@@ -293,7 +336,7 @@ public class MyPlayerController : PlayerController
                     }
                     else
                     {
-                        var window = Managers.UI.ShowPopupUiInGame<UnitControlWindow>();
+                        var window = await Managers.UI.ShowPopupUiInGame<UnitControlWindow>();
                         window.SelectedUnit = go;
                     }
                 }                
@@ -302,7 +345,7 @@ public class MyPlayerController : PlayerController
             case var _ when layer == LayerMask.NameToLayer("MonsterStatue"):
                 if (Faction == Faction.Wolf)
                 {
-                    AdjustUI<UnitControlWindow>(go, GameObjectType.MonsterStatue);
+                    await AdjustUI<UnitControlWindow>(go, GameObjectType.MonsterStatue);
                     _gameVm.SetPortraitFromFieldUnit(cc.UnitId);
                     
                     // Tutorial
@@ -316,7 +359,7 @@ public class MyPlayerController : PlayerController
             case var _ when layer == LayerMask.NameToLayer("Fence"):
                 if (Faction == Faction.Sheep)
                 {
-                    AdjustUI<UnitControlWindow>(go, GameObjectType.Fence);
+                    await AdjustUI<UnitControlWindow>(go, GameObjectType.Fence);
                     
                     // Tutorial
                     if (_tutorialVm.Step == 13 && Faction == Faction.Sheep)
@@ -331,7 +374,7 @@ public class MyPlayerController : PlayerController
                 {
                     _gameVm.TurnOffSelectRing();
                     _gameVm.TurnOnSelectRing(cc.Id);
-                    Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
+                    await Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
                 }
                 break;
             
@@ -340,7 +383,7 @@ public class MyPlayerController : PlayerController
                 if (_isDragging) return;
                 _gameVm.TurnOffSelectRing();
                 // _gameVm.TurnOnSelectRing(cc.Id);
-                Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
+                await Managers.UI.ShowPopupUiInGame<BaseSkillWindow>();
                 break;
         }
 
@@ -348,7 +391,7 @@ public class MyPlayerController : PlayerController
         _lastMousePos = Input.mousePosition;
     }
     
-    private void OnDoubleClick(GameObject go)
+    private async Task OnDoubleClick(GameObject go)
     {
         Managers.UI.CloseAllPopupUI();
         CapacityWindow window = null;
@@ -358,11 +401,11 @@ public class MyPlayerController : PlayerController
             switch (go.layer)
             {
                 case var _ when go.layer == LayerMask.NameToLayer("Tower"):
-                    window = Managers.UI.ShowPopupUiInGame<CapacityWindow>();
+                    window = await Managers.UI.ShowPopupUiInGame<CapacityWindow>();
                     window.ObjectType = GameObjectType.Tower;
                     break;
                 case var _ when go.layer == LayerMask.NameToLayer("Fence"):
-                    window = Managers.UI.ShowPopupUiInGame<CapacityWindow>();
+                    window = await Managers.UI.ShowPopupUiInGame<CapacityWindow>();
                     window.ObjectType = GameObjectType.Fence;
                     break;
             }
@@ -372,7 +415,7 @@ public class MyPlayerController : PlayerController
             switch (go.layer)
             {
                 case var _ when go.layer == LayerMask.NameToLayer("MonsterStatue"):
-                    window = Managers.UI.ShowPopupUiInGame<CapacityWindow>();
+                    window = await Managers.UI.ShowPopupUiInGame<CapacityWindow>();
                     window.ObjectType = GameObjectType.MonsterStatue;
                     break;
             }
@@ -384,7 +427,7 @@ public class MyPlayerController : PlayerController
         }
     }
 
-    private void AdjustUI<T>(GameObject go, GameObjectType type) where T : UI_Popup
+    private async Task AdjustUI<T>(GameObject go, GameObjectType type) where T : UI_Popup
     {
         var cc = go.GetComponent<CreatureController>();
         UI_Popup window;
@@ -392,7 +435,7 @@ public class MyPlayerController : PlayerController
         {
             if (_gameVm.SelectedObjectIds.Contains(cc.Id))
             {
-                window = Managers.UI.ShowPopupUiInGame<T>();
+                window = await Managers.UI.ShowPopupUiInGame<T>();
                 if (window is UnitControlWindow unitControlWindow)
                 {
                     unitControlWindow.SelectedUnit = cc.gameObject;
@@ -404,11 +447,16 @@ public class MyPlayerController : PlayerController
         {
             _gameVm.TurnOffSelectRing();
             _gameVm.TurnOnSelectRing(cc.Id);
-            window = Managers.UI.ShowPopupUiInGame<T>();
+            window = await Managers.UI.ShowPopupUiInGame<T>();
             if (window is UnitControlWindow unitControlWindow)
             {
                 unitControlWindow.SelectedUnit = cc.gameObject;
             }        
         }
+    }
+
+    private void OnDestroy()
+    {
+        Managers.Input.MouseAction -= OnMouseEvent;
     }
 }

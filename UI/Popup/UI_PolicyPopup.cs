@@ -68,7 +68,8 @@ public class UI_PolicyPopup : UI_Popup
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         Bind<Toggle>(typeof(Toggles));
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        
+        _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }
 
     protected override void InitButtonEvents()
@@ -89,8 +90,8 @@ public class UI_PolicyPopup : UI_Popup
         Managers.Policy.ReadTerms = true;
         
         var ageToggle = GetToggle((int)Toggles.AgeToggle);
-        ageToggle.onValueChanged.AddListener(value => Managers.Policy.AgeUnder13 = value);
-        ageToggle.isOn = false;
+        ageToggle.onValueChanged.AddListener(value => Managers.Policy.AgeUnder13 = !value);
+        ageToggle.isOn = true;
     }
 
     protected override void InitUI()
@@ -123,7 +124,7 @@ public class UI_PolicyPopup : UI_Popup
             {
                 var textObject = _textDict["PolicyWarningText"].gameObject;
                 textObject.SetActive(true);
-                Managers.Localization.UpdateTextAndFont(textObject, "policy_warning_text_must_agree");
+                await Managers.Localization.UpdateTextAndFont(textObject, "policy_warning_text_must_agree");
                 return;
             }
 
@@ -142,13 +143,14 @@ public class UI_PolicyPopup : UI_Popup
             {
                 Managers.UI.ClosePopupUI<UI_PolicyPopup>();
                 Managers.Policy.SetPolicyConsent(true);
+                _yesCallback?.Invoke();
             }
             else
             {
-                var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+                var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
                 var titleKey = "notify_network_error_title";
                 var messageKey = "notify_network_error_message";
-                Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+                await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
             }
         }
         catch (Exception e)

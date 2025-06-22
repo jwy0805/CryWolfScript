@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -67,25 +68,32 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
         _tutorialVm = tutorialViewModel;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
-        _gameVm.BaseSkillWindow = this;
-        _gameVm.SetBaseSkillCostRequired();
-
-        BindObjects();
-        InitUI();
-        InitButtonEvents();
-        
-        // Tutorial
-        if ((_tutorialVm.Step == 13 && Util.Faction == Faction.Wolf) ||
-            (_tutorialVm.Step == 17 && Util.Faction == Faction.Sheep))
+        try
         {
-            _tutorialVm.StepTutorialByClickingUI();
+            base.Init();
+            _gameVm.BaseSkillWindow = this;
+            _gameVm.SetBaseSkillCostRequired();
+
+            BindObjects();
+            await InitUIAsync();
+            InitButtonEvents();
+        
+            // Tutorial
+            if ((_tutorialVm.Step == 13 && Util.Faction == Faction.Wolf) ||
+                (_tutorialVm.Step == 17 && Util.Faction == Faction.Sheep))
+            {
+                _tutorialVm.StepTutorialByClickingUI();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
         }
     }
 
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         var resourceString = Util.Faction == Faction.Sheep ? "IncreaseSheepResource" : "IncreaseWolfResource";
         var assetString = Util.Faction == Faction.Sheep ? "CreateSheep" : "Enchant";
@@ -95,9 +103,11 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
         var repairText = GetText((int)Texts.RepairText);
         var resourceText = GetText((int)Texts.ResourceText);
         var assetText = GetText((int)Texts.AssetText);
+        var resourceKey = $"Sprites/Icons/icon_base_skill_{resourceString}";
+        var assetKey = $"Sprites/Icons/icon_base_skill_{assetString}";
         
-        resourceButtonImage.sprite = Managers.Resource.Load<Sprite>($"Sprites/Icons/icon_base_skill_{resourceString}");
-        assetButtonImage.sprite = Managers.Resource.Load<Sprite>($"Sprites/Icons/icon_base_skill_{assetString}");
+        resourceButtonImage.sprite = await Managers.Resource.LoadAsync<Sprite>(resourceKey);
+        assetButtonImage.sprite = await Managers.Resource.LoadAsync<Sprite>(assetKey);
 
         baseUpgradeText.text = Util.Faction == Faction.Sheep ? "기지\n업그레이드" : "포탈\n업그레이드";
         repairText.text = Util.Faction == Faction.Sheep ? "모든 울타리\n수리" : "모든 석상\n수리";
@@ -130,7 +140,7 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
         }
     }
     
-    private void OnSkillButtonClicked(PointerEventData data)
+    private async Task OnSkillButtonClicked(PointerEventData data)
     {
         Managers.UI.ClosePopupUI<UI_UpgradePopupNoCost>();
         foreach (var skillButton in _buttonDict.Values)
@@ -147,7 +157,7 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
         var skillName = _gameVm.CurrentSelectedSkillButton.Name.Replace("Button", "");
         var camp = Util.Faction.ToString();
         var skillNameCamp = $"{skillName}{camp}";
-        _gameVm.ShowUpgradePopupNoCost(skillNameCamp);
+        await _gameVm.ShowUpgradePopupNoCost(skillNameCamp);
     }
 
     public void UpdateBaseSkillCost(S_SetBaseSkillCost packet)

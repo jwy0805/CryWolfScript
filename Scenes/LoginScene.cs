@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,13 +8,19 @@ using Zenject;
 
 public class LoginScene : BaseScene
 {
-
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        SceneType = Define.Scene.Login;
-        Managers.UI.ShowSceneUI<UI_Login>();
+            SceneType = Define.Scene.Login;
+            await Managers.UI.ShowSceneUI<UI_Login>();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
     public override void Clear()

@@ -270,47 +270,61 @@ public class PacketHandler
             updatePacket.ObjectEnumId, updatePacket.ObjectType, updatePacket.SkillType, updatePacket.Step);
     }
 
-    public static void S_PortraitUpgradeHandler(PacketSession session, IMessage packet)
+    public static async void S_PortraitUpgradeHandler(PacketSession session, IMessage packet)
     {
-        var upgradePacket = (S_PortraitUpgrade)packet;
-        var ui = GameObject.FindWithTag("UI").GetComponent<UI_GameSingleWay>();
-        ui.UpgradePortrait(upgradePacket.UnitId.ToString());
+        try
+        {
+            var upgradePacket = (S_PortraitUpgrade)packet;
+            var ui = GameObject.FindWithTag("UI").GetComponent<UI_GameSingleWay>();
+            await ui.UpgradePortrait(upgradePacket.UnitId.ToString());
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
-    public static void S_GetDamageHandler(PacketSession session, IMessage packet)
-    {   
-        var damagePacket = (S_GetDamage)packet;
-        var go = Managers.Object.FindById(damagePacket.ObjectId);
-        if (go == null) return;
-        // Floating text instantiate
-        var floatingTextObject = Managers.Resource.Instantiate("WorldObjects/DmgText");
-        var text = floatingTextObject.GetComponentInChildren<TextMeshPro>();
-        var typeWriter = floatingTextObject.GetComponentInChildren<TypewriterByCharacter>();
-        floatingTextObject.transform.position = go.transform.position + Vector3.up;
-        typeWriter.ShowText($"{damagePacket.Damage}");
-        switch (damagePacket.DamageType)
+    public static async void S_GetDamageHandler(PacketSession session, IMessage packet)
+    {
+        try
         {
-            case Damage.Normal:
-                text.color = new Color32(255, 114, 4, 255);
-                // text.outlineColor = new Color32(255, 30, 0, 255);
-                break;
-            case Damage.Magical:
-                text.color = new Color32(0, 255, 245, 255);
-                // text.outlineColor = new Color32(0, 35, 255, 255);
-                break;
-            case Damage.Poison:
-                text.color = new Color32(177, 0, 255, 255);
-                // text.outlineColor = new Color32(57, 0, 255, 255);
-                break;
-            case Damage.True:
-                text.color = new Color32(255, 255, 186, 255);
-                break;
-            case Damage.None:
-            case Damage.Fire:
-            default:
-                text.color = new Color32(255, 255, 255, 255);
-                text.outlineColor = Color.black;
-                break;
+            var damagePacket = (S_GetDamage)packet;
+            var go = Managers.Object.FindById(damagePacket.ObjectId);
+            if (go == null) return;
+            // Floating text instantiate
+            var floatingTextObject = await Managers.Resource.Instantiate("WorldObjects/DmgText");
+            var text = floatingTextObject.GetComponentInChildren<TextMeshPro>();
+            var typeWriter = floatingTextObject.GetComponentInChildren<TypewriterByCharacter>();
+            floatingTextObject.transform.position = go.transform.position + Vector3.up;
+            typeWriter.ShowText($"{damagePacket.Damage}");
+            switch (damagePacket.DamageType)
+            {
+                case Damage.Normal:
+                    text.color = new Color32(255, 114, 4, 255);
+                    // text.outlineColor = new Color32(255, 30, 0, 255);
+                    break;
+                case Damage.Magical:
+                    text.color = new Color32(0, 255, 245, 255);
+                    // text.outlineColor = new Color32(0, 35, 255, 255);
+                    break;
+                case Damage.Poison:
+                    text.color = new Color32(177, 0, 255, 255);
+                    // text.outlineColor = new Color32(57, 0, 255, 255);
+                    break;
+                case Damage.True:
+                    text.color = new Color32(255, 255, 186, 255);
+                    break;
+                case Damage.None:
+                case Damage.Fire:
+                default:
+                    text.color = new Color32(255, 255, 255, 255);
+                    text.outlineColor = Color.black;
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
         }
     }
     
@@ -510,57 +524,79 @@ public class PacketHandler
         Managers.Event.TriggerEvent("SetBaseSkillCost", packet);
     }
     
-    public static void S_SendWarningInGameHandler(PacketSession session, IMessage packet)
+    public static async void S_SendWarningInGameHandler(PacketSession session, IMessage packet)
     {
-        var popupPacket = (S_SendWarningInGame)packet;
-        var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
-        Managers.Localization.UpdateWarningPopupText(popup, popupPacket.MessageKey);
-        
-        var sceneContext = UnityEngine.Object.FindAnyObjectByType<SceneContext>();
-        var gameViewModel = sceneContext.Container.TryResolve<GameViewModel>();
-        gameViewModel?.WarningHandler(popupPacket.MessageKey);
-    }
-
-    public static void S_ShowRankResultPopupHandler(PacketSession session, IMessage packet)
-    {
-        var resultPacket = (S_ShowRankResultPopup)packet;
-        Managers.UI.CloseAllPopupUI();
-        Managers.Game.GameResult = resultPacket.Win;
-        
-        if (resultPacket.Win)
+        try
         {
-            var popup = Managers.UI.ShowPopupUI<UI_ResultVictoryPopup>();
-            popup.RankPointValue = resultPacket.RankPointValue;
-            popup.RankPoint = resultPacket.RankPoint;
-            popup.Reward = resultPacket.Rewards.ToList();
+            var popupPacket = (S_SendWarningInGame)packet;
+            var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+            await Managers.Localization.UpdateWarningPopupText(popup, popupPacket.MessageKey);
+        
+            var sceneContext = UnityEngine.Object.FindAnyObjectByType<SceneContext>();
+            var gameViewModel = sceneContext.Container.TryResolve<GameViewModel>();
+            gameViewModel?.WarningHandler(popupPacket.MessageKey);
         }
-        else
+        catch (Exception e)
         {
-            var popup = Managers.UI.ShowPopupUI<UI_ResultDefeatPopup>();
-            popup.RankPointValue = resultPacket.RankPointValue;
-            popup.RankPoint = resultPacket.RankPoint;
-            popup.Reward = resultPacket.Rewards.ToList();
+            Debug.LogWarning(e);
         }
     }
 
-    public static void S_ShowSingleResultPopupHandler(PacketSession session, IMessage packet)
+    public static async void S_ShowRankResultPopupHandler(PacketSession session, IMessage packet)
     {
-        var resultPacket = (S_ShowSingleResultPopup)packet;
-        Managers.UI.CloseAllPopupUI();
-        Managers.Game.GameResult = resultPacket.Win;
-        
-        if (resultPacket.Win)
+        try
         {
-            var popup = Managers.UI.ShowPopupUI<UI_ResultSingleVictoryPopup>();
-            popup.Star = resultPacket.Star;
-            popup.Reward = resultPacket.SingleRewards.Select(sr => new Reward
+            var resultPacket = (S_ShowRankResultPopup)packet;
+            Managers.UI.CloseAllPopupUI();
+            Managers.Game.GameResult = resultPacket.Win;
+        
+            if (resultPacket.Win)
             {
-                ItemId = sr.ItemId, Count = sr.Count
-            }).ToList();
+                var popup = await Managers.UI.ShowPopupUI<UI_ResultVictoryPopup>();
+                popup.RankPointValue = resultPacket.RankPointValue;
+                popup.RankPoint = resultPacket.RankPoint;
+                popup.Reward = resultPacket.Rewards.ToList();
+            }
+            else
+            {
+                var popup = await Managers.UI.ShowPopupUI<UI_ResultDefeatPopup>();
+                popup.RankPointValue = resultPacket.RankPointValue;
+                popup.RankPoint = resultPacket.RankPoint;
+                popup.Reward = resultPacket.Rewards.ToList();
+            }
         }
-        else
+        catch (Exception e)
         {
-            Managers.UI.ShowPopupUI<UI_ResultSingleDefeatPopup>();
+            Debug.LogWarning(e);
+        }
+    }
+
+    public static async void S_ShowSingleResultPopupHandler(PacketSession session, IMessage packet)
+    {
+        try
+        {
+            var resultPacket = (S_ShowSingleResultPopup)packet;
+            Managers.UI.CloseAllPopupUI();
+            Managers.Game.GameResult = resultPacket.Win;
+        
+            if (resultPacket.Win)
+            {
+                var popup = await Managers.UI.ShowPopupUI<UI_ResultSingleVictoryPopup>();
+                popup.Star = resultPacket.Star;
+                popup.Reward = resultPacket.SingleRewards.Select(sr => new Reward
+                {
+                    ItemId = sr.ItemId, Count = sr.Count
+                }).ToList();
+            }
+            else
+            {
+                await Managers.UI.ShowPopupUI<UI_ResultSingleDefeatPopup>();
+            }
+        }
+        catch (Exception e)
+        {
+            
+            Debug.LogWarning(e);
         }
     }
     
@@ -579,10 +615,17 @@ public class PacketHandler
         _ = tutorialVm.ShowTutorialPopup();
     }
     
-    public static void S_MatchMakingSuccessHandler(PacketSession session, IMessage packet)
+    public static async void S_MatchMakingSuccessHandler(PacketSession session, IMessage packet)
     {
-        var matchMakingPacket = (S_MatchMakingSuccess)packet;
-        var ui = GameObject.FindWithTag("UI").GetComponent<UI_MatchMaking>();
-        ui.SetEnemyUserInfo(matchMakingPacket);
+        try
+        {
+            var matchMakingPacket = (S_MatchMakingSuccess)packet;
+            var ui = GameObject.FindWithTag("UI").GetComponent<UI_MatchMaking>();
+            await ui.SetEnemyUserInfo(matchMakingPacket);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 }

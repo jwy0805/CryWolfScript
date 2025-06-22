@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -64,14 +65,21 @@ public class UI_FriendlyMatch : UI_Scene
         _deckVm = deckVm;
     }
 
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindEvents();
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            BindEvents();
+            BindObjects();
+            InitButtonEvents();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     protected void Update()
@@ -100,7 +108,7 @@ public class UI_FriendlyMatch : UI_Scene
         GetButton((int)Buttons.InviteButton).gameObject.BindEvent(OnInviteClicked);
     }
 
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         IsHost = Managers.Network.IsFriendlyMatchHost;
         _loadingMark = GetImage((int)Images.LoadingMarkImage).rectTransform;
@@ -121,10 +129,10 @@ public class UI_FriendlyMatch : UI_Scene
         
         GetImage((int)Images.BackgroundPanel).color = Util.ThemeColor;
         SetObjectSize(_loadingMark.gameObject, 0.2f);
-        SetUserInfo();
+        await SetUserInfo();
     }
     
-    private void SetUserInfo()
+    private async Task SetUserInfo()
     {
         var faction = Util.Faction;
         var deck = _deckVm.GetDeck(faction);
@@ -137,18 +145,25 @@ public class UI_FriendlyMatch : UI_Scene
         
         foreach (var unit in deck.UnitsOnDeck)
         {
-            Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform);
+            await Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform);
         }
     }
     
-    private void OnInvitationSuccess(AcceptInvitationPacketResponse response)
+    private async void OnInvitationSuccess(AcceptInvitationPacketResponse response)
     {
-        _enemyFrame.gameObject.SetActive(true);
-        GetImage((int)Images.InviteFrame).gameObject.SetActive(false);
-        SetEnemyInfo(response);
+        try
+        {
+            _enemyFrame.gameObject.SetActive(true);
+            GetImage((int)Images.InviteFrame).gameObject.SetActive(false);
+            await SetEnemyInfo(response);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
-    private void SetEnemyInfo(AcceptInvitationPacketResponse response)
+    private async Task SetEnemyInfo(AcceptInvitationPacketResponse response)
     {
         var enemyDeckImage = GetImage((int)Images.EnemyDeck).transform;
         var enemyUserNameText = GetText((int)Texts.EnemyUserNameText);
@@ -160,7 +175,7 @@ public class UI_FriendlyMatch : UI_Scene
 
         foreach (var unit in enemyDeckInfo.UnitInfo)
         {
-            Managers.Resource.GetCardResources<UnitId>(unit, enemyDeckImage.transform);
+            await Managers.Resource.GetCardResources<UnitId>(unit, enemyDeckImage.transform);
         }
     }
     
@@ -189,9 +204,9 @@ public class UI_FriendlyMatch : UI_Scene
         _friendlyMatchVm.SwitchFaction();
     }
     
-    private void OnInviteClicked(PointerEventData data)
+    private async Task OnInviteClicked(PointerEventData data)
     {
-        Managers.UI.ShowPopupUI<UI_FriendsInvitePopup>();
+        await Managers.UI.ShowPopupUI<UI_FriendsInvitePopup>();
     }
 
     private void OnDestroy()

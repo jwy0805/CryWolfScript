@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -11,7 +12,6 @@ public class LocalizationManager
     private TextMeshProUGUI _uiText;
     private string _language2Letter;
 
-    private Dictionary<string, Dictionary<string, Contents.LocalizationEntry>> _localizationDict = new();
     private readonly Dictionary<string, string> _languageMap = new()
     {
         {"Korean", "ko"},
@@ -90,7 +90,7 @@ public class LocalizationManager
             
             return _language2Letter;
         }
-        set
+        private set
         {
             if (value.Length != 2)
             {
@@ -107,6 +107,19 @@ public class LocalizationManager
             {
                 _language2Letter = value;
             }
+        }
+    }
+
+    public void InitLanguage(string language)
+    {
+        if (PlayerPrefs.HasKey("Language"))
+        {
+            var language2Letter = PlayerPrefs.GetString("Language");
+            SetLanguage(language2Letter);
+        }
+        else
+        {
+            SetLanguage(language);
         }
     }
     
@@ -132,12 +145,12 @@ public class LocalizationManager
         }
     }
     
-    private TMP_FontAsset GetFont(string fontName)
+    private async Task<TMP_FontAsset> GetFont(string fontName)
     {
-        return Managers.Resource.Load<TMP_FontAsset>($"Fonts/{fontName}");
+        return await Managers.Resource.LoadAsync<TMP_FontAsset>($"Fonts/{fontName}", "asset");
     }
 
-    private TMP_FontAsset GetFontFromDictionary(FontType fontType)
+    private async Task<TMP_FontAsset> GetFontFromDictionary(FontType fontType)
     {
         var fontName = fontType switch
         {
@@ -147,7 +160,7 @@ public class LocalizationManager
             _ => _basicFontMap.GetValueOrDefault(Language2Letter, "esamanru Medium SDF")
         };
 
-        return GetFont(fontName);
+        return await GetFont(fontName);
     }
 
     public string GetConvertedString(string str)
@@ -156,30 +169,33 @@ public class LocalizationManager
         return Regex.Replace(str, "([a-z])([A-Z])", "$1_$2").ToLower();
     }
     
-    public void UpdateTextAndFont(Dictionary<string, GameObject> textDict)
+    public async Task UpdateTextAndFont(Dictionary<string, GameObject> textDict)
     {
         foreach (var go in textDict.Values)
         {
-            UpdateTextAndFont(go, GetConvertedString(go.name));
+            await UpdateTextAndFont(go, GetConvertedString(go.name));
         }
     }
 
-    public void UpdateTextAndFont(GameObject go, string key, string additionalText = "")
+    public async Task UpdateTextAndFont(GameObject go, string key, string additionalText = "")
     {
-        if (_localizationDict.Any() == false)
-        {
-            _localizationDict = Managers.Data.LocalizationDict;
-        }
+        var langDictionary = Managers.Data.LocalizationDict;
         
         // entryDictionary = "continue_button_text": { "en": { ... }, "ko": { ... } }
-        if (_localizationDict.TryGetValue(key, out var entryDictionary) == false) return;
+        if (langDictionary.TryGetValue(key, out var entryDictionary) == false)
+        {
+            return;
+        }
         // entry = "en": { "text": "Continue", "font": Sen SDF", "fontSize": 20 }
-        if (entryDictionary.TryGetValue(Language2Letter, out var entry) == false) return;
+        if (entryDictionary.TryGetValue(Language2Letter, out var entry) == false)
+        {
+            return;
+        }
         
         if (go.TryGetComponent(out TextMeshProUGUI tmpro))
         {
             tmpro.text = entry.Text + additionalText;
-            tmpro.font = GetFont(entry.Font);
+            tmpro.font = await GetFont(entry.Font);
             if (entry.FontSize != 0)
             {
                 tmpro.fontSize = entry.FontSize;
@@ -191,30 +207,27 @@ public class LocalizationManager
         }
     }
 
-    public void UpdateChangedTextAndFont(Dictionary<string, GameObject> textDict, string language2Letter)
+    public async Task UpdateChangedTextAndFont(Dictionary<string, GameObject> textDict, string language2Letter)
     {
         foreach (var go in textDict.Values)
         {
-            UpdateChangedTextAndFont(go, GetConvertedString(go.name), language2Letter);
+            await UpdateChangedTextAndFont(go, GetConvertedString(go.name), language2Letter);
         }
     }
     
-    public void UpdateChangedTextAndFont(GameObject go, string key, string language2Letter)
+    private async Task UpdateChangedTextAndFont(GameObject go, string key, string language2Letter)
     {
-        if (_localizationDict.Any() == false)
-        {
-            _localizationDict = Managers.Data.LocalizationDict;
-        }
+        var langDictionary = Managers.Data.LocalizationDict;
         
         // entryDictionary = "continue_button_text": { "en": { ... }, "ko": { ... } }
-        if (_localizationDict.TryGetValue(key, out var entryDictionary) == false) return;
+        if (langDictionary.TryGetValue(key, out var entryDictionary) == false) return;
         // entry = "en": { "text": "Continue", "font": Sen SDF", "fontSize": 20 }
         if (entryDictionary.TryGetValue(language2Letter, out var entry) == false) return;
         
         if (go.TryGetComponent(out TextMeshProUGUI tmpro))
         {
             tmpro.text = entry.Text;
-            tmpro.font = GetFont(entry.Font);
+            tmpro.font = await GetFont(entry.Font);
             if (entry.FontSize != 0)
             {
                 tmpro.fontSize = entry.FontSize;
@@ -226,17 +239,13 @@ public class LocalizationManager
         }
     }
 
-    public string BindLocalizedText(TextMeshProUGUI tmpro, string key, FontType fontType = FontType.None)
+    public async Task<string> BindLocalizedText(TextMeshProUGUI tmpro, string key, FontType fontType = FontType.None)
     {
-        if (_localizationDict.Any() == false)
-        {
-            _localizationDict = Managers.Data.LocalizationDict;
-        }
-
+        var langDictionary = Managers.Data.LocalizationDict;
         key = GetConvertedString(key);
-        if (_localizationDict.TryGetValue(key, out var entryDictionary) == false) return string.Empty;
+        if (langDictionary.TryGetValue(key, out var entryDictionary) == false) return string.Empty;
         if (entryDictionary.TryGetValue(Language2Letter, out var entry) == false) return string.Empty;
-        tmpro.font = fontType == FontType.None ? GetFont(entry.Font) : GetFontFromDictionary(fontType);
+        tmpro.font = fontType == FontType.None ? await GetFont(entry.Font) : await GetFontFromDictionary(fontType);
         tmpro.text = entry.Text;
         
         if (entry.FontSize != 0)
@@ -247,56 +256,63 @@ public class LocalizationManager
         return entry.Text;
     }
 
-    public void GetLocalizedSkillText(TextMeshProUGUI tmpro, Contents.SkillData skill, int unitId)
+    public async Task BindLocalizedSkillText(TextMeshProUGUI tmpro, Contents.SkillData skill, int unitId)
     {
-        if (_localizationDict.Any() == false)
+        if (Managers.Data.UnitDict.TryGetValue(unitId, out var unitData) == false)
         {
-            _localizationDict = Managers.Data.LocalizationDict;
+            // Hand over to Base Skill method
+            await BindLocalizedBaseSkillText(tmpro, skill.Id);
+            return;
         }
         
+        var langDictionary = Managers.Data.LocalizationDict;
         var skillKey = $"skill_id_text_{skill.Id}";
-        var unitName = ((UnitId)unitId).ToString();
-        var unitRegex = Regex.Replace(unitName, "([a-z])([A-Z])", "$1_$2").ToLower();
-        var unitKey = $"unit_name_{unitRegex}";
         
-        if (_localizationDict.TryGetValue(skillKey, out var entryDictionary) == false) return;
-        if (_localizationDict.TryGetValue(unitKey, out var unitEntryDictionary) == false) return;
+        if (langDictionary.TryGetValue(skillKey, out var entryDictionary) == false) return;
         if (entryDictionary.TryGetValue(Language2Letter, out var entry) == false) return;
-        if (unitEntryDictionary.TryGetValue(Language2Letter, out var unitEntry) == false) return;
-
-        var formattedUnitName = unitEntry.Text;
+        
         var placeholders = GetPlaceholders(entry.Text);
         var replaceDict = new Dictionary<string, object>();
-        var unitSkill = (int)(Managers.Data.UnitDict[unitId].Stat.Skill * skill.Coefficient);
+        var unitSkill = (int)(unitData.Stat.Skill * skill.Coefficient);
         
         switch (placeholders.Count)
         {
             case 1:
-                replaceDict.Add("name", formattedUnitName);
-                break;
-            
-            case 2:
                 if (placeholders.ContainsKey("skill"))
                 {
-                    replaceDict.Add("name", formattedUnitName);
                     replaceDict.Add("skill", unitSkill);
                 }
                 else
                 {
-                    replaceDict.Add("name", formattedUnitName);
                     replaceDict.Add("value", skill.Value);
                 }
                 break;
             
-            case 3:
-                replaceDict.Add("name", formattedUnitName);
+            case 2:
                 replaceDict.Add("skill", unitSkill);
                 replaceDict.Add("value", skill.Value);
                 break;
         }
         
         tmpro.text = FormatSkillText(entry.Text, replaceDict);
-        tmpro.font = GetFont(entry.Font);
+        tmpro.font = await GetFont(entry.Font);
+        
+        if (entry.FontSize != 0)
+        {
+            tmpro.fontSize = entry.FontSize;
+        }
+    }
+
+    public async Task BindLocalizedBaseSkillText(TextMeshProUGUI tmpro, int skillId)
+    {
+        var langDictionary = Managers.Data.LocalizationDict;
+        var skillKey = $"skill_id_text_{skillId}";
+        
+        if (langDictionary.TryGetValue(skillKey, out var entryDictionary) == false) return;
+        if (entryDictionary.TryGetValue(Language2Letter, out var entry) == false) return;
+        
+        tmpro.text = entry.Text;
+        tmpro.font = await GetFont(entry.Font);
         
         if (entry.FontSize != 0)
         {
@@ -307,17 +323,14 @@ public class LocalizationManager
     /// <summary>
     /// In Game Warning Popup
     /// </summary>
-    public void UpdateWarningPopupText(UI_WarningPopup popup, string messageKey)
+    public async Task UpdateWarningPopupText(UI_WarningPopup popup, string messageKey)
     {
-        if (_localizationDict.Any() == false)
-        {
-            _localizationDict = Managers.Data.LocalizationDict;
-        }
+        var langDictionary = Managers.Data.LocalizationDict;
 
-        if (_localizationDict[messageKey].TryGetValue(Language2Letter, out var entry))
+        if (langDictionary[messageKey].TryGetValue(Language2Letter, out var entry))
         {
             popup.Text = entry.Text;
-            popup.Font = GetFont(entry.Font);
+            popup.Font = await GetFont(entry.Font);
             popup.FontSize = entry.FontSize;
         }
         else
@@ -326,25 +339,22 @@ public class LocalizationManager
         }
     }
     
-    public void UpdateNotifyPopupText(UI_NotifyPopup popup, string titleKey, string messageKey)
+    public async Task UpdateNotifyPopupText(UI_NotifyPopup popup, string titleKey, string messageKey)
     {
-        if (_localizationDict.Any() == false)
-        {
-            _localizationDict = Managers.Data.LocalizationDict;
-        }
+        var langDictionary = Managers.Data.LocalizationDict;
         
-        if (_localizationDict[titleKey].TryGetValue(Language2Letter, out var titleEntry) &&
-            _localizationDict[messageKey].TryGetValue(Language2Letter, out var messageEntry) &&
-            _localizationDict["confirm_button_text"].TryGetValue(Language2Letter, out var buttonEntry))
+        if (langDictionary[titleKey].TryGetValue(Language2Letter, out var titleEntry) &&
+            langDictionary[messageKey].TryGetValue(Language2Letter, out var messageEntry) &&
+            langDictionary["confirm_button_text"].TryGetValue(Language2Letter, out var buttonEntry))
         {
             popup.TitleText = titleEntry.Text;
-            popup.TitleFont = GetFont(titleEntry.Font);
+            popup.TitleFont = await GetFont(titleEntry.Font);
             popup.TitleFontSize = titleEntry.FontSize;
             popup.MessageText = messageEntry.Text;
-            popup.MessageFont = GetFont(messageEntry.Font);
+            popup.MessageFont = await GetFont(messageEntry.Font);
             popup.MessageFontSize = messageEntry.FontSize;
             popup.ButtonText = buttonEntry.Text;
-            popup.ButtonFont = GetFont(buttonEntry.Font);
+            popup.ButtonFont = await GetFont(buttonEntry.Font);
             popup.ButtonFontSize = buttonEntry.FontSize;
         }
         else
@@ -354,21 +364,18 @@ public class LocalizationManager
         }
     }
 
-    public void UpdateNotifySelectPopupText(UI_NotifySelectPopup popup, string titleKey, string messageKey)
+    public async Task UpdateNotifySelectPopupText(UI_NotifySelectPopup popup, string titleKey, string messageKey)
     {
-        if (_localizationDict.Any() == false)
-        {
-            _localizationDict = Managers.Data.LocalizationDict;
-        }
+        var langDictionary = Managers.Data.LocalizationDict;
         
-        if (_localizationDict[titleKey].TryGetValue(Language2Letter, out var titleEntry) &&
-            _localizationDict[messageKey].TryGetValue(Language2Letter, out var messageEntry))
+        if (langDictionary[titleKey].TryGetValue(Language2Letter, out var titleEntry) &&
+            langDictionary[messageKey].TryGetValue(Language2Letter, out var messageEntry))
         {
             popup.TitleText = titleEntry.Text;
-            popup.TitleFont = GetFont(titleEntry.Font);
+            popup.TitleFont = await GetFont(titleEntry.Font);
             popup.TitleFontSize = titleEntry.FontSize;
             popup.MessageText = messageEntry.Text;
-            popup.MessageFont = GetFont(messageEntry.Font);
+            popup.MessageFont = await GetFont(messageEntry.Font);
             popup.MessageFontSize = messageEntry.FontSize;
         }
         else
@@ -377,19 +384,19 @@ public class LocalizationManager
         }
     }
 
-    public void UpdateInputFieldFont(TMP_InputField inputField, string fontName = null)
+    public async Task UpdateInputFieldFont(TMP_InputField inputField, string fontName = null)
     {
-        if (fontName == null)
+        if (fontName == null) 
         {
             _basicFontMap.TryGetValue(Language2Letter, out fontName);
         }
         
-        inputField.fontAsset = GetFont(fontName);
+        inputField.fontAsset = await GetFont(fontName);
     }
     
-    public TMP_FontAsset UpdateFont(TextMeshProUGUI text, FontType fontType = FontType.None, string fontName = null)
+    public async Task<TMP_FontAsset> UpdateFont(TextMeshProUGUI text, FontType fontType = FontType.None, string fontName = null)
     {
-        var font = fontName == null ? GetFontFromDictionary(fontType) : GetFont(fontName);
+        var font = fontName == null ? await GetFontFromDictionary(fontType) : await GetFont(fontName);
         text.font = font;
         return font;
     }
@@ -440,19 +447,16 @@ public class LocalizationManager
         return text;
     }
 
-    public void FormatLocalizedText(
+    public async Task FormatLocalizedText(
         TextMeshProUGUI tmpro,
         string key,
         List<string> placeholderKeys,
         List<string> replacers,
         FontType fontType = FontType.None)
     {
-        if (_localizationDict.Any() == false)
-        {
-            _localizationDict = Managers.Data.LocalizationDict;
-        }
+        var langDictionary = Managers.Data.LocalizationDict;
         
-        if (_localizationDict.TryGetValue(key, out var entryDictionary) == false) return;
+        if (langDictionary.TryGetValue(key, out var entryDictionary) == false) return;
         if (entryDictionary.TryGetValue(Language2Letter, out var entry) == false) return;
 
         var template = entry.Text;
@@ -465,6 +469,6 @@ public class LocalizationManager
         }
 
         tmpro.text = formattedText;
-        tmpro.font = fontType == FontType.None ? GetFont(entry.Font) : GetFontFromDictionary(fontType);
+        tmpro.font = fontType == FontType.None ? await GetFont(entry.Font) : await GetFontFromDictionary(fontType);
     }
 }

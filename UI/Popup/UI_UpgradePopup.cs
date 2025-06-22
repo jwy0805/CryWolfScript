@@ -61,10 +61,21 @@ public class UI_UpgradePopup : UI_Popup
         GetButton((int)Buttons.DenyButton).gameObject.BindEvent(OnDenyClicked);
     }
 
-    public void SetPopup(S_SetUpgradePopup packet)
+    public async void SetPopup(S_SetUpgradePopup packet)
     {
-        GetText((int)Texts.SkillInfoText).gameObject.GetComponent<TextMeshProUGUI>().text = packet.SkillInfo.Explanation;
-        GetText((int)Texts.CostText).gameObject.GetComponent<TextMeshProUGUI>().text = packet.SkillInfo.Cost.ToString();
+        try
+        {
+            var skillText = GetText((int)Texts.SkillInfoText);
+            var skillId = packet.SkillInfo.Id;
+            var skillData = Managers.Data.SkillDict[skillId];
+            var unitId = skillId / 10;
+            await Managers.Localization.BindLocalizedSkillText(skillText, skillData, unitId);
+            GetText((int)Texts.CostText).text = packet.SkillInfo.Cost.ToString();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     private void OnAcceptClicked(PointerEventData data)

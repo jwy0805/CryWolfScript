@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -23,7 +24,7 @@ public class UI_ReinforcePopup : UI_Popup
     private RectTransform _rect;
     private float _radius;
     private float _elapsedTime;
-    private readonly float _standbyTime = 2.5f;
+    private readonly int _standbyTime = 2500;
     private readonly float _emitterThreshold = 120f;
     private bool _showEffect;
     private UnitId? _newUnitId;
@@ -50,32 +51,46 @@ public class UI_ReinforcePopup : UI_Popup
         _craftingVm = craftingVm;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        _craftingVm.BindReinforceResult -= BindResult;
-        _craftingVm.BindReinforceResult += BindResult;
+            _craftingVm.BindReinforceResult -= BindResult;
+            _craftingVm.BindReinforceResult += BindResult;
         
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            BindObjects();
+            InitButtonEvents();
+            InitUI();
         
-        GetButton((int)Buttons.TextButton).gameObject.SetActive(false);
+            GetButton((int)Buttons.TextButton).gameObject.SetActive(false);
         
-        PlaceCardsInCircle(_craftingVm.ReinforceMaterialUnits);
-        StartCoroutine(ShowResult());
+            await PlaceCardsInCircle(_craftingVm.ReinforceMaterialUnits);
+            await ShowResult();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
-    private void Update()
+    private async void Update()
     {
-        if (_radius > 0)
+        try
         {
-            RotateCards();
+            if (_radius > 0)
+            {
+                await RotateCards();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
         }
     }
     
-    private void PlaceCardsInCircle(List<UnitInfo> materialUnits)
+    private async Task PlaceCardsInCircle(List<UnitInfo> materialUnits)
     {
         var unitCounts = materialUnits.Count;
         var parent = GetImage((int)Images.CardPanel).transform;
@@ -84,7 +99,7 @@ public class UI_ReinforcePopup : UI_Popup
         {
             float angle = i * Mathf.PI * 2 / unitCounts;
             Vector3 pos = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle)) * _radius;
-            var cardFrame = Managers.Resource.GetCardResources<UnitId>(materialUnits[i], parent);
+            var cardFrame = await Managers.Resource.GetCardResources<UnitId>(materialUnits[i], parent);
             var cardRect = cardFrame.GetComponent<RectTransform>();
             
             _cardRects.Add(cardRect);
@@ -95,7 +110,7 @@ public class UI_ReinforcePopup : UI_Popup
         }
     }
 
-    private void RotateCards()
+    private async Task RotateCards()
     {
         for (var i = 0; i < _cardRects.Count; i++)
         {
@@ -112,7 +127,7 @@ public class UI_ReinforcePopup : UI_Popup
                 if (_showEffect == false)
                 {
                     _showEffect = true;
-                    ShowEmitterEffect();
+                    await ShowEmitterEffect();
                 }
             }
             
@@ -130,29 +145,36 @@ public class UI_ReinforcePopup : UI_Popup
         }
     }
 
-    private void ShowEmitterEffect()
+    private async Task ShowEmitterEffect()
     {
         var effectPath = "UIEffects/UniformEmitter";
-        Managers.Resource.Instantiate(effectPath, _cardPanelRect);
+        await Managers.Resource.Instantiate(effectPath, _cardPanelRect);
     }
 
-    private IEnumerator ShowResult()
+    private async Task ShowResult()
     {
-        yield return new WaitForSeconds(_standbyTime);
-
-        while (_newUnitId == null)
+        await Task.Delay(_standbyTime);
+        if (_newUnitId == null)
         {
-            yield return new WaitForSeconds(0.1f);
+            Debug.LogWarning("New unit ID is null. Cannot show reinforce result.");
+            return;
         }
         
         Util.DestroyAllChildren(_cardPanelRect.transform);
-        
+
+        var newUnitId = _newUnitId.Value;
         var effectPath = "UIEffects/Puff";
-        var puffEffect = Managers.Resource.Instantiate(effectPath, _cardPanelRect);
+        var puffEffect = await Managers.Resource.Instantiate(effectPath, _cardPanelRect);
         puffEffect.transform.localScale = new Vector3(3f, 3f, 3f);
         
-        var newUnitInfo = Managers.Data.UnitInfoDict[(int)_newUnitId];
-        var cardFrame = Managers.Resource.GetCardResources<UnitId>(newUnitInfo, _cardPanelRect, ClosePopup);
+        Managers.Data.UnitInfoDict.TryGetValue((int)newUnitId, out UnitInfo newUnitInfo);
+        if (newUnitInfo == null)
+        {
+            Debug.LogWarning($"UnitInfo for UnitId {newUnitId} not found.");
+            return;
+        }
+        
+        var cardFrame = await Managers.Resource.GetCardResources<UnitId>(newUnitInfo, _cardPanelRect, ClosePopup);
         var cardFrameRect = cardFrame.GetComponent<RectTransform>();
         var textButton = GetButton((int)Buttons.TextButton).gameObject;
         
@@ -164,15 +186,17 @@ public class UI_ReinforcePopup : UI_Popup
             var path = $"Sprites/Portrait/{((UnitId)newUnitInfo.Id).ToString()}_gray";
             var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
             var successText = textButton.GetComponentInChildren<TextMeshProUGUI>();
-            cardUnit.GetComponent<Image>().sprite = Managers.Resource.Load<Sprite>(path);
-            successText.text = Managers.Localization.BindLocalizedText(successText, "reinforce_complete_text_fail");
+            var failKey = "reinforce_complete_text_fail";
+            cardUnit.GetComponent<Image>().sprite = await Managers.Resource.LoadAsync<Sprite>(path);
+            successText.text = await Managers.Localization.BindLocalizedText(successText, failKey);
         }
         else
         {
             var successEffectPath = (int)newUnitInfo.Class >= 5 ? "UIEffects/SuccessHigh" : "UIEffects/SuccessLow";
             var successText = textButton.GetComponentInChildren<TextMeshProUGUI>();
-            Managers.Resource.Instantiate(successEffectPath, _cardPanelRect);
-            successText.text = Managers.Localization.BindLocalizedText(successText, "reinforce_complete_text_success");
+            var successKey = "reinforce_complete_text_success";
+            await Managers.Resource.Instantiate(successEffectPath, _cardPanelRect);
+            successText.text = await Managers.Localization.BindLocalizedText(successText, successKey);
             cardFrameRect.SetAsLastSibling();
         }
         
@@ -191,7 +215,7 @@ public class UI_ReinforcePopup : UI_Popup
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
 
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        _ = Managers.Localization.UpdateTextAndFont(_textDict);
         
         _rect = GetComponent<RectTransform>();
         _radius = _rect.rect.width / 3;

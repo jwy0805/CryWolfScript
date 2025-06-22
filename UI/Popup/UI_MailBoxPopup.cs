@@ -69,7 +69,7 @@ public class UI_MailBoxPopup : UI_Popup
         Bind<Button>(typeof(Buttons));
         Bind<Image>(typeof(Images));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }
 
     protected override void InitButtonEvents()
@@ -96,17 +96,17 @@ public class UI_MailBoxPopup : UI_Popup
             {
                 foreach (var mail in mailList)
                 {
-                    SetMailFrameUI(mail, parent);
+                    await SetMailFrameUI(mail, parent);
                 }
             }
         }
         catch (Exception e)
         {
-            Managers.UI.ShowErrorPopup(e.ToString(), Managers.UI.CloseAllPopupUI);
+            await Managers.UI.ShowErrorPopup(e.ToString(), Managers.UI.CloseAllPopupUI);
         }
     }
 
-    private void SetMailFrameUI(MailInfo mail, Transform frameParent = null)
+    private async Task SetMailFrameUI(MailInfo mail, Transform frameParent = null)
     {
         var mailInfo = new MailInfo
         {
@@ -125,20 +125,20 @@ public class UI_MailBoxPopup : UI_Popup
         switch (mailInfo.Type)
         {
             case MailType.Notice:
-                mailFrame = Managers.Resource.Instantiate("UI/Deck/MailInfoNotification", frameParent);
+                mailFrame = await Managers.Resource.Instantiate("UI/Deck/MailInfoNotification", frameParent);
                 var mailInfoNotification = mailFrame.GetOrAddComponent<MailInfoNotification>();
                 mailInfoNotification.MailInfo = mailInfo;
                 break;
             case MailType.Invite:
-                mailFrame = Managers.Resource.Instantiate("UI/Deck/MailInfoInvitation", frameParent);
+                mailFrame = await Managers.Resource.Instantiate("UI/Deck/MailInfoInvitation", frameParent);
                 var mailInfoInvitation = mailFrame.GetOrAddComponent<MailInfoInvitation>();
                 mailInfoInvitation.MailInfo = mailInfo;
                 break;
             case MailType.Product:
-                mailFrame = Managers.Resource.GetProductMailFrame(mailInfo, frameParent);
+                mailFrame = await Managers.Resource.GetProductMailFrame(mailInfo, frameParent);
                 var mailInfoProduct = mailFrame.GetOrAddComponent<MailInfoProduct>();
                 mailInfoProduct.MailInfo = mailInfo;
-                SetMailIcon(mailFrame, mailInfo);
+                await SetMailIcon(mailFrame, mailInfo);
                 break;
             default: return;
         }
@@ -146,7 +146,7 @@ public class UI_MailBoxPopup : UI_Popup
         Util.InjectGameObject(mailFrame);
     }
 
-    private void SetMailIcon(GameObject mailFrame, MailInfo mailInfo)
+    private async Task SetMailIcon(GameObject mailFrame, MailInfo mailInfo)
     {
         var iconParent = Util.FindChild(mailFrame, "IconFrame", true).transform;
         string iconPath;
@@ -157,13 +157,13 @@ public class UI_MailBoxPopup : UI_Popup
             case ProductCategory.SpecialPackage:
             case ProductCategory.BeginnerPackage:
                 iconPath = $"UI/Shop/{(ProductId)mailInfo.ProductId}";
-                icon = Managers.Resource.Instantiate(iconPath, iconParent);
+                icon = await Managers.Resource.Instantiate(iconPath, iconParent);
                 iconRect = icon.GetComponent<RectTransform>();
                 break;
             
             case ProductCategory.ReservedSale:
                 iconPath = $"UI/Shop/NormalizedProducts/RainbowEgg";
-                icon = Managers.Resource.Instantiate(iconPath, iconParent);
+                icon = await Managers.Resource.Instantiate(iconPath, iconParent);
                 iconRect = icon.GetComponent<RectTransform>();
                 break;
             
@@ -176,7 +176,7 @@ public class UI_MailBoxPopup : UI_Popup
             case ProductCategory.Other:
             default:
                 iconPath = $"UI/Shop/NormalizedProducts/{(ProductId)mailInfo.ProductId}";
-                icon = Managers.Resource.Instantiate(iconPath, iconParent);
+                icon = await Managers.Resource.Instantiate(iconPath, iconParent);
                 iconRect = icon.GetComponent<RectTransform>();
                 break;
         }

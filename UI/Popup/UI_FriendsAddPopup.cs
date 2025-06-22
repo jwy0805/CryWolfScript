@@ -46,24 +46,31 @@ public class UI_FriendsAddPopup : UI_Popup
         _lobbyVm = lobbyViewModel;
     }
 
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            await BindObjectsAsync();
+            InitButtonEvents();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
-    protected override void BindObjects()
+    protected override async Task BindObjectsAsync()
     {
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         Bind<TMP_InputField>(typeof(TextInputs));
         Bind<Image>(typeof(Images));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
-        Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.UsernameInput));
+        await Managers.Localization.UpdateTextAndFont(_textDict);
+        await Managers.Localization.UpdateInputFieldFont(GetTextInput((int)TextInputs.UsernameInput));
     }
 
     protected override void InitButtonEvents()
@@ -73,17 +80,9 @@ public class UI_FriendsAddPopup : UI_Popup
         GetButton((int)Buttons.SearchButton).gameObject.BindEvent(OnSearchClicked);
     }
 
-    protected override async void InitUI()
+    protected override async Task InitUIAsync()
     {
-        try
-        {
-            await LoadPendingFriends();        
-
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning("Failed to load pending friends: " + e);
-        }
+        await LoadPendingFriends();        
     }
 
     private async Task LoadPendingFriends()
@@ -96,17 +95,17 @@ public class UI_FriendsAddPopup : UI_Popup
             _lobbyVm.OffFriendRequestNotification();
         }
         
-        BindFriendRequestPanel(_pendingFriends);
+        await BindFriendRequestPanel(_pendingFriends);
     }
 
-    private void BindFriendRequestPanel(List<FriendUserInfo> friendList)
+    private async Task BindFriendRequestPanel(List<FriendUserInfo> friendList)
     {
         var parent = GetImage((int)Images.FriendsRequestPanel).transform;
         Util.DestroyAllChildren(parent);
         
         foreach (var friendInfo in friendList)
         {
-            var frame = Managers.Resource.GetFriendRequestFrame(friendInfo, parent);
+            var frame = await Managers.Resource.GetFriendRequestFrame(friendInfo, parent);
             var acceptButton = Util.FindChild(frame, "AcceptButton", true).GetComponent<Button>();
             var denyButton = Util.FindChild(frame, "DenyButton", true).GetComponent<Button>();
             
@@ -115,14 +114,14 @@ public class UI_FriendsAddPopup : UI_Popup
         }
     }
     
-    private void BindSearchResult(List<FriendUserInfo> userInfoList)
+    private async Task BindSearchResult(List<FriendUserInfo> userInfoList)
     {
         var parent = GetImage((int)Images.SearchResultContent).transform;
         Util.DestroyAllChildren(parent);
         
         foreach (var friendInfo in userInfoList)
         {
-            var frame = Managers.Resource.GetFriendFrame(friendInfo, parent);
+            var frame = await Managers.Resource.GetFriendFrame(friendInfo, parent);
             BindFriendRequestButton(frame, friendInfo);
         }
     }
@@ -210,7 +209,7 @@ public class UI_FriendsAddPopup : UI_Popup
             if (username == string.Empty) return;
         
             var friendUserInfoList = await _lobbyVm.SearchUsername(username);
-            BindSearchResult(friendUserInfoList);
+            await BindSearchResult(friendUserInfoList);
         }
         catch (Exception e)
         {
@@ -227,7 +226,7 @@ public class UI_FriendsAddPopup : UI_Popup
         
             if (response.FriendRequestOk == false) return;
         
-            var popup = Managers.UI.ShowPopupUI<UI_WarningPopup>();
+            var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
             var newFriendInfo = new FriendUserInfo
             {
                 UserName = friendInfo.UserName,

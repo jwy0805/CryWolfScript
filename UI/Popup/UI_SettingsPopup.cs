@@ -79,7 +79,7 @@ public class UI_SettingsPopup : UI_Popup
         _musicSlider = Util.FindChild<Slider>(gameObject, "MusicSlider", true);
         _sfxSlider = Util.FindChild<Slider>(gameObject, "SfxSlider", true);
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }
 
     protected override void InitButtonEvents()
@@ -120,14 +120,14 @@ public class UI_SettingsPopup : UI_Popup
         var notificationFill = GetImage((int)Images.NotificationFill);
         notificationFill.fillAmount = PlayerPrefs.GetInt("notification", 1) == 1 ? 1 : 0;
         
-        UpdateFlag(Managers.Localization.Language2Letter);
+        _ = UpdateFlag(Managers.Localization.Language2Letter);
     }
     
-    public void UpdateFlag(string language2Letter)
+    public async Task UpdateFlag(string language2Letter)
     {
         var flagPath = $"Sprites/Icons/IconFlag/Small/icon_flag_{language2Letter}";
         var flagImage = GetImage((int)Images.FlagImage);
-        flagImage.sprite = Managers.Resource.Load<Sprite>(flagPath);
+        flagImage.sprite = await Managers.Resource.LoadAsync<Sprite>(flagPath);
     }
 
     private void UpdateMusicVolume(PointerEventData data, Slider slider)
@@ -165,26 +165,26 @@ public class UI_SettingsPopup : UI_Popup
         }
     }
     
-    private void OnLanguageClicked(PointerEventData data)
+    private async Task OnLanguageClicked(PointerEventData data)
     {
-        var popup = Managers.UI.ShowPopupUI<UI_LanguagePopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_LanguagePopup>();
         popup.SettingsPopup = this;
     }
 
-    private void OnAddReferrerClicked(PointerEventData data)
+    private async Task OnAddReferrerClicked(PointerEventData data)
     {
-        var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         const string titleKey = "empty_text";
         const string messageKey = "notify_preparing_message";
-        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
     }
     
-    private void OnLinkSocialClicked(PointerEventData data)
+    private async Task OnLinkSocialClicked(PointerEventData data)
     {
-        var popup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         const string titleKey = "empty_text";
         const string messageKey = "notify_preparing_message";
-        Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
     }
     
     private async Task OnLogoutClicked(PointerEventData data)
@@ -208,14 +208,14 @@ public class UI_SettingsPopup : UI_Popup
         }
     }
     
-    private void OnDeleteAccountClicked(PointerEventData data)
+    private async Task OnDeleteAccountClicked(PointerEventData data)
     {
-        var popup = Managers.UI.ShowPopupUI<UI_NotifySelectPopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_NotifySelectPopup>();
         const string titleKey = "notify_delete_account_title";
         const string messageKey = "notify_delete_account_message";
-        Managers.Localization.UpdateNotifySelectPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifySelectPopupText(popup, titleKey, messageKey);
         
-        popup.SetYesCallback(async () =>
+        popup.SetYesCallbackF(async () =>
         {
             var packet = new DeleteUserAccountPacketRequired
             {
@@ -236,10 +236,10 @@ public class UI_SettingsPopup : UI_Popup
             }
             else
             {
-                var notifyPopup = Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+                var notifyPopup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
                 const string title = "notify_network_error_title";
                 const string message = "notify_network_error_message";
-                Managers.Localization.UpdateNotifyPopupText(notifyPopup, title, message);
+                await Managers.Localization.UpdateNotifyPopupText(notifyPopup, title, message);
             }
         });
         
@@ -249,9 +249,9 @@ public class UI_SettingsPopup : UI_Popup
         });
     }
     
-    public void ChangeLanguage(string language2Letter)
+    public async Task ChangeLanguage(string language2Letter)
     {
-        Managers.Localization.UpdateChangedTextAndFont(_textDict, language2Letter);
+        await Managers.Localization.UpdateChangedTextAndFont(_textDict, language2Letter);
     }
     
     private void OnExitClicked(PointerEventData data)

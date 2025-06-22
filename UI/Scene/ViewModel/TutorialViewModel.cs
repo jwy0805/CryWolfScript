@@ -261,34 +261,48 @@ public class TutorialViewModel : IDisposable
         // Init method in popup implements step tutorial
         if (Util.Faction == Faction.Wolf)
         {
-            Managers.UI.ShowPopupUI<UI_TutorialBattleWolfPopup>();
+            await Managers.UI.ShowPopupUI<UI_TutorialBattleWolfPopup>();
         }
         else
         {
-            Managers.UI.ShowPopupUI<UI_TutorialBattleSheepPopup>();
+            await Managers.UI.ShowPopupUI<UI_TutorialBattleSheepPopup>();
         }
         
         ClearDictionary();
     }
 
-    private void ShowTutorialContinueNotifyPopupSheep()
+    private async void ShowTutorialContinueNotifyPopupSheep()
     {
-        const string titleKey = "notify_select_tutorial_continue_title";
-        const string messageKey = "notify_select_tutorial_wolf_continue_message";
+        try
+        {
+            const string titleKey = "notify_select_tutorial_continue_title";
+            const string messageKey = "notify_select_tutorial_wolf_continue_message";
         
-        Managers.UI.ShowNotifySelectPopup(titleKey, messageKey,
-            StartTutorialWolf, 
-            RejectFollowWolfTutorial);
+            await Managers.UI.ShowNotifySelectPopup(titleKey, messageKey,
+                StartTutorialWolf, 
+                RejectFollowWolfTutorial);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
-    private void ShowTutorialContinueNotifyPopupWolf()
+    private async void ShowTutorialContinueNotifyPopupWolf()
     {
-        const string titleKey = "notify_select_tutorial_continue_title";
-        const string messageKey = "notify_select_tutorial_sheep_continue_message";
+        try
+        {
+            const string titleKey = "notify_select_tutorial_continue_title";
+            const string messageKey = "notify_select_tutorial_sheep_continue_message";
         
-        Managers.UI.ShowNotifySelectPopup(titleKey, messageKey,
-            StartTutorialSheep, 
-            RejectFollowSheepTutorial);
+            await Managers.UI.ShowNotifySelectPopup(titleKey, messageKey,
+                StartTutorialSheep, 
+                RejectFollowSheepTutorial);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     private void StartTutorialSheep()
@@ -311,24 +325,38 @@ public class TutorialViewModel : IDisposable
         _ = Managers.Network.ConnectGameSession();
     }
 
-    private void RejectFollowSheepTutorial()
+    private async void RejectFollowSheepTutorial()
     {
-        const string titleKey = "notify_select_tutorial_omit_title";
-        const string messageKey = "notify_select_tutorial_omit_message";
+        try
+        {
+            const string titleKey = "notify_select_tutorial_omit_title";
+            const string messageKey = "notify_select_tutorial_omit_message";
         
-        Managers.UI.ShowNotifySelectPopup(titleKey, messageKey,
-            OnRejectTutorial,
-            ShowTutorialContinueNotifyPopupWolf);
+            await Managers.UI.ShowNotifySelectPopup(titleKey, messageKey,
+                OnRejectTutorial,
+                ShowTutorialContinueNotifyPopupWolf);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
-    private void RejectFollowWolfTutorial()
+    private async void RejectFollowWolfTutorial()
     {
-        const string titleKey = "notify_select_tutorial_omit_title";
-        const string messageKey = "notify_select_tutorial_omit_message";
+        try
+        {
+            const string titleKey = "notify_select_tutorial_omit_title";
+            const string messageKey = "notify_select_tutorial_omit_message";
         
-        Managers.UI.ShowNotifySelectPopup(titleKey, messageKey,
-            OnRejectTutorial,
-            ShowTutorialContinueNotifyPopupSheep);
+            await Managers.UI.ShowNotifySelectPopup(titleKey, messageKey,
+                OnRejectTutorial,
+                ShowTutorialContinueNotifyPopupSheep);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     private void OnRejectTutorial()
@@ -336,7 +364,7 @@ public class TutorialViewModel : IDisposable
         Managers.UI.CloseAllPopupUI();
     }
 
-    public void BattleTutorialEndHandler(Faction faction)
+    public async Task BattleTutorialEndHandler(Faction faction)
     {
         if (faction == Faction.Wolf)
         {
@@ -349,7 +377,7 @@ public class TutorialViewModel : IDisposable
             UpdateTutorialInfo(TutorialType.BattleSheep);
         }
         
-        var popup = Managers.UI.ShowPopupUI<UI_RewardPopup>();
+        var popup = await Managers.UI.ShowPopupUI<UI_RewardPopup>();
         popup.FromTutorial = true;
         popup.Rewards = new List<Reward>
         {

@@ -1,3 +1,4 @@
+using System;
 using Google.Protobuf.Protocol;
 using UnityEngine;
 
@@ -11,25 +12,32 @@ public class PortalController : CreatureController
     private GameObject _rune8;
     private GameObject _trails;
 
-    protected override void Init()
+    protected override async void Init()
     {
-        ObjectType = GameObjectType.Portal;
-        Managers.Resource.Instantiate("WorldObjects/HealthSlider", transform);
-        Util.GetOrAddComponent<UI_HealthBar>(gameObject);
+        try
+        {
+            ObjectType = GameObjectType.Portal;
+            await Managers.Resource.Instantiate("WorldObjects/HealthSlider", transform);
+            Util.GetOrAddComponent<UI_HealthBar>(gameObject);
         
-        _rune2 = transform.Find("Rune2").gameObject;
-        _rune3 = transform.Find("Rune3").gameObject;
-        _rune5 = transform.Find("Rune5").gameObject;
-        _rune6 = transform.Find("Rune6").gameObject;
-        _rune8 = transform.Find("Rune8").gameObject;
-        _trails = transform.Find("Trails").gameObject;
+            _rune2 = transform.Find("Rune2").gameObject;
+            _rune3 = transform.Find("Rune3").gameObject;
+            _rune5 = transform.Find("Rune5").gameObject;
+            _rune6 = transform.Find("Rune6").gameObject;
+            _rune8 = transform.Find("Rune8").gameObject;
+            _trails = transform.Find("Trails").gameObject;
         
-        _rune2.SetActive(false);
-        _rune3.SetActive(false);
-        _rune5.SetActive(false);
-        _rune6.SetActive(false);
-        _rune8.SetActive(false);
-        _trails.SetActive(false);
+            _rune2.SetActive(false);
+            _rune3.SetActive(false);
+            _rune5.SetActive(false);
+            _rune6.SetActive(false);
+            _rune8.SetActive(false);
+            _trails.SetActive(false);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     public void UpgradePortal(int level)

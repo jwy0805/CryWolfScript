@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using ModestTree;
 using TMPro;
@@ -55,28 +56,35 @@ public class UI_CardClickPopup : UI_Popup
         _craftingVm = craftingViewModel;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
-        
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
-
-        switch (SelectedCard.AssetType)
+        try
         {
-            case Asset.Unit:
-                SetCardInPopup<UnitId>();
-                break;
-            case Asset.Sheep:
-                SetCardInPopup<SheepId>();
-                break;
-            case Asset.Enchant:
-                SetCardInPopup<EnchantId>();
-                break;
-            case Asset.Character:
-                SetCardInPopup<CharacterId>();
-                break;
+            base.Init();
+        
+            BindObjects();
+            InitButtonEvents();
+            await InitUIAsync();
+
+            switch (SelectedCard.AssetType)
+            {
+                case Asset.Unit:
+                    await SetCardInPopup<UnitId>();
+                    break;
+                case Asset.Sheep:
+                    await SetCardInPopup<SheepId>();
+                    break;
+                case Asset.Enchant:
+                    await SetCardInPopup<EnchantId>();
+                    break;
+                case Asset.Character:
+                    await SetCardInPopup<CharacterId>();
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
         }
     }
 
@@ -86,7 +94,7 @@ public class UI_CardClickPopup : UI_Popup
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
         
-        Managers.Localization.UpdateTextAndFont(_textDict);
+        _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }
 
     protected override void InitButtonEvents()
@@ -97,7 +105,7 @@ public class UI_CardClickPopup : UI_Popup
         GetImage((int)Images.CardBackground).gameObject.BindEvent(ClosePopup);
     }
     
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         GetImage((int)Images.CardClickPanel).TryGetComponent(out RectTransform rt);
         rt.position = CardPosition;
@@ -106,7 +114,8 @@ public class UI_CardClickPopup : UI_Popup
         var cardParentName = SelectedCard.transform.parent.name;
         if (cardParentName is "Deck" or "BattleSettingPanel")
         {
-            Managers.Localization.UpdateTextAndFont(unitSelectText.gameObject, "card_click_unit_select_text_change");
+            var key = "card_click_unit_select_text_deck";
+            await Managers.Localization.UpdateTextAndFont(unitSelectText.gameObject, key);
         }
 
         ActiveUnitSelectButton();
@@ -144,31 +153,31 @@ public class UI_CardClickPopup : UI_Popup
         GetButton((int)Buttons.UnitSelectButton).interactable = interactable;
     }
     
-    private void SetCardInPopup<TEnum>() where TEnum : struct, Enum
+    private async Task SetCardInPopup<TEnum>() where TEnum : struct, Enum
     {
         var parent = GetImage((int)Images.CardPanel).transform;
-        var cardFrame = Managers.Resource.GetCardResources<TEnum>(SelectedCard, parent, ClosePopup, true);
+        var cardFrame = await Managers.Resource.GetCardResources<TEnum>(SelectedCard, parent, ClosePopup, true);
         var cardFrameRect = cardFrame.GetComponent<RectTransform>();
         cardFrameRect.sizeDelta = new Vector2(200, 320);
         cardFrameRect.anchorMin = new Vector2(0.5f, 0.5f);
         cardFrameRect.anchorMax = new Vector2(0.5f, 0.5f);
     }
     
-    private void OnInfoClicked(PointerEventData data)
+    private async Task OnInfoClicked(PointerEventData data)
     {
         if (SelectedCard.AssetType == Asset.Unit)
         {
-            var popup = Managers.UI.ShowPopupUI<UI_UnitInfoPopup>();
+            var popup = await Managers.UI.ShowPopupUI<UI_UnitInfoPopup>();
             popup.SelectedCard = SelectedCard;
         }
         else
         {
-            var popup = Managers.UI.ShowPopupUI<UI_AssetInfoPopup>();
+            var popup = await Managers.UI.ShowPopupUI<UI_AssetInfoPopup>();
             popup.SelectedCard = SelectedCard;
         }
     }
 
-    private void OnSelectClicked(PointerEventData data)
+    private async Task OnSelectClicked(PointerEventData data)
     {
         var deck = Util.Faction == Faction.Sheep 
             ? User.Instance.DeckSheep.UnitsOnDeck 
@@ -194,18 +203,18 @@ public class UI_CardClickPopup : UI_Popup
         {
             if (FromDeck)
             {
-                var popup = Managers.UI.ShowPopupUI<UI_DeckChangeScrollPopup>();
+                var popup = await Managers.UI.ShowPopupUI<UI_DeckChangeScrollPopup>();
                 popup.SelectedCard = SelectedCard;
             }
             else
             {
-                var popup = Managers.UI.ShowPopupUI<UI_DeckChangePopup>();
+                var popup = await Managers.UI.ShowPopupUI<UI_DeckChangePopup>();
                 popup.SelectedCard = SelectedCard;
             }
         }
         else
         {
-            var popup = Managers.UI.ShowPopupUI<UI_AssetChangeScrollPopup>();
+            var popup = await Managers.UI.ShowPopupUI<UI_AssetChangeScrollPopup>();
             Debug.Log("sss");
             popup.SelectedCard = SelectedCard;
         }

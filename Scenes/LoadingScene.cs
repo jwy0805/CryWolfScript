@@ -1,15 +1,24 @@
+using System;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class LoadingScene : BaseScene
 {
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        SceneType = Define.Scene.Loading;
-        Managers.UI.ShowSceneUI<UI_Loading>();
+            SceneType = Define.Scene.Loading;
+            await Managers.UI.ShowSceneUI<UI_Loading>();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
-
+    
     public override void Clear()
     {
         

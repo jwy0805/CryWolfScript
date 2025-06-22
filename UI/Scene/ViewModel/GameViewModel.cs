@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -21,7 +22,7 @@ public class GameViewModel : IDisposable
     // Events using in UI_GameSingleWay
     public event Func<UnitId, IPortrait> SetPortraitFromFieldUnitEvent;  
     public event Action<IPortrait, bool> OnPortraitClickedEvent;   // Show Portrait Select Effect
-    public event Action<int> TurnOnSelectRingCoroutineEvent;
+    public event Func<int, Task> TurnOnSelectRingCoroutineEvent;
     public event Action<int> TurnOffOneSelectRingEvent;
     public event Action TurnOffSelectRingEvent;
 
@@ -45,19 +46,12 @@ public class GameViewModel : IDisposable
 
     public GameViewModel()
     {
-        Managers.Event.StopListening("ShowRings", OnReceiveRanges);
         Managers.Event.StartListening("ShowRings", OnReceiveRanges);
-        Managers.Event.StopListening("ShowBounds", OnReceiveBounds);
         Managers.Event.StartListening("ShowBounds", OnReceiveBounds);
-        Managers.Event.StopListening("CanSpawn", OnCanSpawn);
         Managers.Event.StartListening("CanSpawn", OnCanSpawn);
-        Managers.Event.StopListening("UpdateUpgradeCost", UpdateUnitUpgradeCostResponse);
         Managers.Event.StartListening("UpdateUnitUpgradeCost", UpdateUnitUpgradeCostResponse);
-        Managers.Event.StopListening("UpdateUnitDeleteCost", UpdateUnitDeleteCostResponse);
         Managers.Event.StartListening("UpdateUnitDeleteCost", UpdateUnitDeleteCostResponse);
-        Managers.Event.StopListening("UpdateUnitRepairCost", UpdateUnitRepairCostResponse);
         Managers.Event.StartListening("UpdateUnitRepairCost", UpdateUnitRepairCostResponse);
-        Managers.Event.StopListening("SetBaseSkillCost", SetBaseSkillCostResponse);
         Managers.Event.StartListening("SetBaseSkillCost", SetBaseSkillCostResponse);
     }
     
@@ -69,9 +63,9 @@ public class GameViewModel : IDisposable
         return level;
     }
 
-    public void ShowUpgradePopup(string name = null)
+    public async Task ShowUpgradePopup(string name = null)
     {
-        Managers.UI.ShowPopupUiInGame<UI_UpgradePopup>();
+        await Managers.UI.ShowPopupUiInGame<UI_UpgradePopup>();
         var skillName = name ?? CurrentSelectedSkillButton.Name.Replace("Button", "");
         
         if (Enum.TryParse(skillName, out Skill skill))
@@ -80,9 +74,9 @@ public class GameViewModel : IDisposable
         }
     }
     
-    public void ShowUpgradePopupNoCost(string name = null)
+    public async Task ShowUpgradePopupNoCost(string name = null)
     {
-        Managers.UI.ShowPopupUiInGame<UI_UpgradePopupNoCost>();
+        await Managers.UI.ShowPopupUiInGame<UI_UpgradePopupNoCost>();
         var skillName = name ?? CurrentSelectedSkillButton.Name.Replace("Button", "");
         
         if (Enum.TryParse(skillName, out Skill skill))
@@ -123,7 +117,7 @@ public class GameViewModel : IDisposable
     {
         portrait.UnitId += 1;
         SkillWindow?.InitUpgradeButton();
-        SkillWindow?.InitUI(portrait.UnitId);
+        SkillWindow?.InitUIAsync(portrait.UnitId);
     }
 
     public void OnSkillUpgraded(Skill skill)
@@ -217,7 +211,7 @@ public class GameViewModel : IDisposable
         CurrentSelectedPortrait.CanSpawn = packet.CanSpawn;
     }
     
-    public void OnPortraitClicked(IPortrait portrait)
+    public async Task OnPortraitClicked(IPortrait portrait)
     {
         if (OnPortraitDrag) return;
         
@@ -225,7 +219,7 @@ public class GameViewModel : IDisposable
         Managers.UI.CloseAllPopupUI();
         
         CurrentSelectedPortrait = portrait;
-        Managers.UI.ShowPopupUiInGame<SkillWindow>();
+        await Managers.UI.ShowPopupUiInGame<SkillWindow>();
         OnPortraitClickedEvent?.Invoke(portrait, true);
     }
 
@@ -242,11 +236,11 @@ public class GameViewModel : IDisposable
         }
     }
     
-    public void OnSlotClicked(int index)
+    public async Task OnSlotClicked(int index)
     {
         if (OnSlotDrag) return;
         Managers.UI.CloseAllPopupUI();
-        var window = Managers.UI.ShowPopupUiInGame<UnitControlWindow>();
+        var window = await Managers.UI.ShowPopupUiInGame<UnitControlWindow>();
         var go = Managers.Object.FindById(SelectedObjectIds[index]);
         if (go == null) return;
         var id = go.GetComponent<CreatureController>().Id;
@@ -345,17 +339,24 @@ public class GameViewModel : IDisposable
         SelectedObjectIds.Clear();
     }
 
-    public void OnUnitSkillClicked()
+    public async Task OnUnitSkillClicked()
     {
         Managers.UI.CloseAllPopupUI();
-        Managers.UI.ShowPopupUiInGame<SkillWindow>();
+        await Managers.UI.ShowPopupUiInGame<SkillWindow>();
     }
 
-    public void WarningHandler(string warningMessageKey)
+    public async void WarningHandler(string warningMessageKey)
     {
-        if (UnitControlWindow != null && warningMessageKey == "warning_in_game_needs_to_evolve")
+        try
         {
-            OnUnitSkillClicked();
+            if (UnitControlWindow != null && warningMessageKey == "warning_in_game_needs_to_evolve")
+            {
+                await OnUnitSkillClicked();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
         }
     }
 
@@ -368,6 +369,15 @@ public class GameViewModel : IDisposable
     private void Dispose(bool disposing)
     {
         if (!disposing) return;
+        
+        Managers.Event.StopListening("ShowRings", OnReceiveRanges);
+        Managers.Event.StopListening("ShowBounds", OnReceiveBounds);
+        Managers.Event.StopListening("CanSpawn", OnCanSpawn);
+        Managers.Event.StopListening("UpdateUpgradeCost", UpdateUnitUpgradeCostResponse);
+        Managers.Event.StopListening("UpdateUnitDeleteCost", UpdateUnitDeleteCostResponse);
+        Managers.Event.StopListening("UpdateUnitRepairCost", UpdateUnitRepairCostResponse);
+        Managers.Event.StopListening("SetBaseSkillCost", SetBaseSkillCostResponse);
+        
         SelectedObjectIds = null;
         SkillsUpgraded = null;
         SkillWindow = null;

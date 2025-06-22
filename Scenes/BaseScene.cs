@@ -14,12 +14,20 @@ public abstract class BaseScene : MonoBehaviour
         Init();
     }
 
-    protected virtual void Init()
+    protected virtual async void Init()
     {
-        var obj = FindAnyObjectByType(typeof(EventSystem));
-        if (obj == null)
+        try
         {
-            Managers.Resource.Instantiate("UI/EventSystem").name = "@EventSystem";
+            var obj = FindAnyObjectByType(typeof(EventSystem));
+            if (obj == null)
+            {
+                var eventSystem = await Managers.Resource.Instantiate("EventSystem");
+                eventSystem.name = "@EventSystem";
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
         }
     }
 

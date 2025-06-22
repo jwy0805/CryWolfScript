@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -13,7 +14,7 @@ using Button = UnityEngine.UI.Button;
 
 public interface ISkillWindow
 {
-    void InitUI(UnitId unitId);
+    Task InitUIAsync(UnitId unitId);
     void InitUpgradeButton();
     void UpdateSkillButton();
     void UpdateUpgradeCost(int cost);
@@ -52,25 +53,32 @@ public class SkillWindow : UI_Popup, ISkillWindow
         _tutorialVm = tutorialViewModel;
     }
 
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
-        _gameVm.SkillWindow = this;
-        
-        BindObjects();
-        InitButtonEvents();
-        InitUpgradeButton();
-        InitUI(_gameVm.CurrentSelectedPortrait.UnitId);
-        
-        // Tutorial
-        if ((_tutorialVm.Step == 8 && Util.Faction == Faction.Wolf) ||
-            (_tutorialVm.Step == 10 && Util.Faction == Faction.Sheep))
+        try
         {
-            _tutorialVm.StepTutorialByClickingUI();
+            base.Init();
+            _gameVm.SkillWindow = this;
+        
+            BindObjects();
+            InitButtonEvents();
+            InitUpgradeButton();
+            await InitUIAsync(_gameVm.CurrentSelectedPortrait.UnitId);
+        
+            // Tutorial
+            if ((_tutorialVm.Step == 8 && Util.Faction == Faction.Wolf) ||
+                (_tutorialVm.Step == 10 && Util.Faction == Faction.Sheep))
+            {
+                _tutorialVm.StepTutorialByClickingUI();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
         }
     }
 
-    public void InitUI(UnitId unitId)
+    public async Task InitUIAsync(UnitId unitId)
     {
         // Destroy the previous skill panel
         if (_skillPanel != null)
@@ -83,7 +91,7 @@ public class SkillWindow : UI_Popup, ISkillWindow
         rect.anchoredPosition = new Vector2(0, 0);
         rect.sizeDelta = new Vector2(0, 0);
         
-        _skillPanel = Managers.Resource.Instantiate($"UI/InGame/SkillPanel/{unitId.ToString()}SkillPanel");
+        _skillPanel = await Managers.Resource.Instantiate($"UI/InGame/SkillPanel/{unitId.ToString()}SkillPanel");
         _skillPanel.transform.SetParent(Util.FindChild(gameObject, "SkillPanel", true).transform);
         var panelRect = _skillPanel.GetComponent<RectTransform>();
         panelRect.anchoredPosition = new Vector2(0, 0);
@@ -101,7 +109,7 @@ public class SkillWindow : UI_Popup, ISkillWindow
         
         // Set Current Unit Name
         var currentNameText = GetText((int)Texts.CurrentName);
-        currentNameText.text = Managers.Localization.BindLocalizedText(currentNameText, unitId.ToString());
+        currentNameText.text = await Managers.Localization.BindLocalizedText(currentNameText, unitId.ToString());
     }
     
     // Update skill button when a skill is upgraded
@@ -139,7 +147,7 @@ public class SkillWindow : UI_Popup, ISkillWindow
         _gameVm.OnUpgradeButtonClicked();
     }
 
-    private void OnSkillButtonClicked(PointerEventData data)
+    private async Task OnSkillButtonClicked(PointerEventData data)
     {
         Managers.UI.ClosePopupUI<UI_UpgradePopup>();
         foreach (var skillButton in _skillButtons)
@@ -153,7 +161,7 @@ public class SkillWindow : UI_Popup, ISkillWindow
         _gameVm.CurrentSelectedSkillButton = selectedSkillButton;
         Managers.Resource.GetFrameFromCardButton(_gameVm.CurrentSelectedSkillButton).color = Color.cyan;
         
-        _gameVm.ShowUpgradePopup();
+        await _gameVm.ShowUpgradePopup();
     }
 
     #endregion
