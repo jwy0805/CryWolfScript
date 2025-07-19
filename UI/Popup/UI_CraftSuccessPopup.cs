@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -36,15 +37,22 @@ public class UI_CraftSuccessPopup : UI_Popup
         _craftingVm = craftingVm;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            BindObjects();
+            InitButtonEvents();
+            await InitUIAsync();
         
-        _craftingVm.InitSetting();
+            _craftingVm.InitSetting();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
     protected override void BindObjects()

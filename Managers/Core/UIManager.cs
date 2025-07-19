@@ -97,6 +97,8 @@ public class UIManager
                 await Addressables.LoadAssetAsync<TMP_Settings>("Externals/TextMesh Pro/Resources/TMP Settings.asset").Task;
                 Managers.Resource.InitAddressables = true;
             }
+
+            Debug.Log("Show Scene UI Called, v43");
             
             await Managers.Data.InitAsync();
             var key = $"UI/Scene/{name}";

@@ -11,7 +11,6 @@ using Zenject;
 
 public class UI_FriendlyMatch : UI_Scene
 {
-    private IUserService _userService;
     private ISignalRClient _signalRClient;
     private FriendlyMatchViewModel _friendlyMatchVm;
     private MatchMakingViewModel _matchMakingVm;
@@ -52,13 +51,11 @@ public class UI_FriendlyMatch : UI_Scene
     
     [Inject]
     public void Construct(
-        IUserService userService,
         ISignalRClient signalRClient,
         FriendlyMatchViewModel friendlyMatchVm,
         MatchMakingViewModel matchMakingVm,
         DeckViewModel deckVm)
     {
-        _userService = userService;
         _signalRClient = signalRClient;
         _friendlyMatchVm = friendlyMatchVm;
         _matchMakingVm = matchMakingVm;
@@ -140,8 +137,8 @@ public class UI_FriendlyMatch : UI_Scene
         var userNameText = GetText((int)Texts.UserNameText);
         var rankPointText = GetText((int)Texts.RankPointText);
         
-        userNameText.text = _userService.UserInfo.UserName;
-        rankPointText.text = _userService.UserInfo.RankPoint.ToString();
+        userNameText.text = User.Instance.UserInfo.UserName;
+        rankPointText.text = User.Instance.UserInfo.RankPoint.ToString();
         
         foreach (var unit in deck.UnitsOnDeck)
         {

@@ -33,12 +33,12 @@ public class ShopViewModel
     
     public List<CompositionInfo> ReservedProductsToBeClaimed { get; } = new()
     {
-        new CompositionInfo { CompositionId = 60, Type = ProductType.None },
-        new CompositionInfo { CompositionId = 61, Type = ProductType.None },
-        new CompositionInfo { CompositionId = 4001, Type = ProductType.Gold },
-        new CompositionInfo { CompositionId = 4002, Type = ProductType.Spinel },
-        new CompositionInfo { CompositionId = 21, Type = ProductType.None },
-        new CompositionInfo { CompositionId = 53, Type = ProductType.None },
+        new CompositionInfo { CompositionId = 60, ProductType = ProductType.None },
+        new CompositionInfo { CompositionId = 61, ProductType = ProductType.None },
+        new CompositionInfo { CompositionId = 4001, ProductType = ProductType.Gold },
+        new CompositionInfo { CompositionId = 4002, ProductType = ProductType.Spinel },
+        new CompositionInfo { CompositionId = 21, ProductType = ProductType.None },
+        new CompositionInfo { CompositionId = 53, ProductType = ProductType.None },
     };
 
     public List<string> ReservedProductKeys { get; } = new()
@@ -72,18 +72,14 @@ public class ShopViewModel
             AccessToken = _tokenService.GetAccessToken()
         };
         
-        var productTask = _webService.SendWebRequestAsync<InitProductPacketResponse>(
+        var productResponse = await _webService.SendWebRequestAsync<InitProductPacketResponse>(
             "Payment/InitProducts", UnityWebRequest.kHttpVerbPOST, productPacket);
-
-        await productTask;
-        
-        var productResponse = productTask.Result;
         if (productResponse.GetProductOk == false) return;
         
         SpecialPackages = productResponse.SpecialPackages.OrderByDescending(pi => pi.Price).ToList();
         BeginnerPackages = productResponse.BeginnerPackages.OrderBy(pi => pi.Price).ToList();
         ReservedSales = productResponse.ReservedSales.OrderBy(pi => pi.Price).ToList();
-        GoldPackages = productResponse.GoldPackages.OrderBy(pi => pi.Id).ToList();
+        GoldPackages = productResponse.GoldPackages.OrderBy(pi => pi.ProductId).ToList();
         SpinelPackages = productResponse.SpinelPackages.OrderBy(pi => pi.Price).ToList();
         GoldItems = productResponse.GoldItems.OrderBy(pi => pi.Price).ToList();
         SpinelItems = productResponse.SpinelItems.OrderBy(pi => pi.Price).ToList();
@@ -105,7 +101,7 @@ public class ShopViewModel
             }
             else
             {
-                if (productInfo.Compositions.Exists(c => c.Type == ProductType.Spinel))
+                if (productInfo.Compositions.Exists(c => c.ProductType == ProductType.Spinel))
                 {
                     framePath = itemName switch
                     {
@@ -136,7 +132,7 @@ public class ShopViewModel
         return framePath;
     }
     
-    public void BuyProduct()
+    public async Task BuyProduct()
     {
         if (SelectedProduct == null) return;
         if (SelectedProduct.CurrencyType == CurrencyType.Cash)
@@ -145,7 +141,7 @@ public class ShopViewModel
         }
         else
         {
-            _paymentService.BuyProductAsync(SelectedProduct.ProductCode);
+            await _paymentService.BuyProductAsync(SelectedProduct.ProductCode);
         }
     }
 
@@ -177,16 +173,95 @@ public class ShopViewModel
             AccessToken = _tokenService.GetAccessToken(),
         };
         
-        var task = _webService.SendWebRequestAsync<RefreshDailyProductPacketResponse>(
+        var task = await _webService.SendWebRequestAsync<RefreshDailyProductPacketResponse>(
             "Payment/RefreshDailyProduct", UnityWebRequest.kHttpVerbPUT, packet);
-        await task;
         
-        if (task.Result.RefreshDailyProductOk)
+        if (task.RefreshDailyProductOk)
         {
-            DailyProducts = task.Result.DailyProducts.OrderBy(pi => pi.Slot).ToList();
+            DailyProducts = task.DailyProducts.OrderBy(pi => pi.Slot).ToList();
             LastDailyProductRefreshTime = DateTime.UtcNow;
         }
 
-        return task.Result.RefreshDailyProductOk;
+        return task.RefreshDailyProductOk;
+    }
+    
+    public async Task ClaimProductFromMailbox(bool claimAll, MailInfo mailInfo = null)
+    {
+        var packet = new ClaimProductPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            CurrentState = RewardPopupType.None,
+            ClaimAll = claimAll,
+            MailId = mailInfo?.MailId ?? 0
+        };
+        
+        var res = await _webService.SendWebRequestAsync<ClaimProductPacketResponse>(
+            "Payment/ClaimProduct", UnityWebRequest.kHttpVerbPUT, packet);
+
+        await HandleClaimPacketResponse(res);
+    }
+
+    public async Task CardSelected(CompositionInfo composition)
+    {
+        var packet = new SelectProductPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            SelectedCompositionInfo = composition,
+        };
+        
+        var res = await _webService.SendWebRequestAsync<ClaimProductPacketResponse>(
+            "Payment/SelectProduct", UnityWebRequest.kHttpVerbPUT, packet);
+
+        await HandleClaimPacketResponse(res);
+    }
+
+    public async Task ClaimFixedAndDisplay()
+    {
+        var packet = new DisplayClaimedProductPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+        };
+        
+        var res = await _webService.SendWebRequestAsync<ClaimProductPacketResponse>(
+            "Payment/DisplayClaimedProduct", UnityWebRequest.kHttpVerbPUT, packet);
+        
+        await HandleClaimPacketResponse(res);
+    }
+
+    private async Task HandleClaimPacketResponse(ClaimProductPacketResponse res)
+    {
+        if (res.ClaimOk)
+        {
+            Managers.UI.CloseAllPopupUI();
+
+            switch (res.RewardPopupType)
+            {
+                case RewardPopupType.None:
+                    break;
+                case RewardPopupType.Item:
+                    if (res.CompositionInfos.Count != 0)
+                    {
+                        var itemPopup = await Managers.UI.ShowPopupUI<UI_RewardItemPopup>();
+                        itemPopup.CompositionInfos = res.CompositionInfos;
+                    }
+                    break;
+                case RewardPopupType.Select:
+                    if (res.ProductInfos.Count != 0)
+                    {
+                        var selectPopup = await Managers.UI.ShowPopupUI<UI_RewardSelectPopup>();
+                        selectPopup.ProductInfo = res.ProductInfos.First();
+                        selectPopup.CompositionInfos = res.CompositionInfos;
+                    }                    
+                    break;
+                case RewardPopupType.Open:
+                    if (res.RandomProductInfos.Count != 0)
+                    {
+                        var openPopup = await Managers.UI.ShowPopupUI<UI_RewardOpenPopup>();
+                        openPopup.OriginalProductInfos = res.RandomProductInfos;
+                        openPopup.CompositionInfos = res.CompositionInfos;
+                    }
+                    break;
+            }
+        }
     }
 }

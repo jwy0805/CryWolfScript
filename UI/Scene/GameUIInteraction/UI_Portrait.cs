@@ -12,6 +12,8 @@ public interface IPortrait
     bool CanSpawn { get; set; }
     void ShowRing(float attackRange, float skillRange);
     void ShowSpawnableBounds(float minZ, float maxZ);
+    void HideRing();
+    void HideSpawnableBounds();
 }
 
 public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHandler, IEndDragHandler
@@ -155,7 +157,7 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         }
     }
     
-    private void HideRing()
+    public void HideRing()
     {
         if (_attackRangeRing != null)
         {
@@ -184,7 +186,7 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         }
     }
 
-    private void HideSpawnableBounds()
+    public void HideSpawnableBounds()
     {
         Managers.Resource.Destroy(_spawnableBounds);
         _spawnableBounds = null;

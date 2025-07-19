@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using UnityEngine;
+using UnityEngine.Networking;
 using Zenject;
 // ReSharper disable ClassNeverInstantiated.Global
 
@@ -27,15 +28,16 @@ public class MainLobbyViewModel : IDisposable
     public event Action OnFriendRequestNotificationOff;
     public event Action OnMailAlert;
     public event Action OffMailAlert;
+    public event Func<Task> OnResetUI;
     public event Action OnUpdateFriendList;
     public event Action OnUpdateUsername;
     public event Action<int> OnPageChanged;
     public event Action<int> OnChangeButtonFocus;
     public event Action<string> OnChangeLanguage;
     
-
+    public bool ChildScrolling { get; set; }
     public float[] ScrollPageValues { get; private set; }
-    public bool IsSwipeMode { get; set; } = false;
+    public bool IsSwipeMode { get; set; }
     public float SwipeTime => 0.2f;
     
     public int CurrentPage 
@@ -79,7 +81,7 @@ public class MainLobbyViewModel : IDisposable
             OnFriendRequestNotificationReceived?.Invoke();
         }
     }
-
+    
     public async Task ClaimMail(MailInfo mailInfo)
     {
         var packet = new ClaimMailPacketRequired()
@@ -88,7 +90,9 @@ public class MainLobbyViewModel : IDisposable
             MailId = mailInfo.MailId
         };
         
-        await _webService.SendWebRequestAsync<ClaimMailPacketResponse>("Mail/ClaimMail", "PUT", packet);
+        await _webService.SendWebRequestAsync<ClaimMailPacketResponse>(
+            "Mail/ClaimMail", UnityWebRequest.kHttpVerbPUT, packet);
+        OnResetUI?.Invoke();
         await InitMailAlert();
     }
     
@@ -98,10 +102,23 @@ public class MainLobbyViewModel : IDisposable
         {
             AccessToken = _tokenService.GetAccessToken(),
             Accept = accept,
-            InviteeName = User.Instance.UserName
+            InviteeName = User.Instance.UserInfo.UserName
         };
         
         await Task.WhenAll(ClaimMail(mailInfo), _signalRClient.SendAcceptInvitation(packet));
+    }
+    
+    public async Task DeleteReadMail()
+    {
+        var packet = new DeleteReadMailPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+        };
+        
+        await _webService.SendWebRequestAsync<DeleteReadMailPacketResponse>(
+            "Mail/DeleteReadMail", UnityWebRequest.kHttpVerbDELETE, packet);
+        
+        await InitMailAlert();
     }
     
     public async Task InitMailAlert()
@@ -261,7 +278,7 @@ public class MainLobbyViewModel : IDisposable
 
     public void UpdateUsername(string username)
     {
-        User.Instance.UserName = username;
+        User.Instance.UserInfo.UserName = username;
         OnUpdateUsername?.Invoke();
     }
     

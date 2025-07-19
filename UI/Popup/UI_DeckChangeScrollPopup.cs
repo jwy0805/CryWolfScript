@@ -193,7 +193,6 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
             _deckVm.UpdateDeck(SelectedCard, card);
             
             // Scroll Popup 내 UI 변경
-
             await Task.WhenAll(SetCollectionInPopup(), SetDeckInPopup());
             
             Changing = false;

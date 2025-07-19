@@ -10,82 +10,75 @@ using UnityEngine.Serialization;
 public class Contents
 {
     [Serializable]
-    [Preserve]
     public class UnitData
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public Faction Faction { get; set; }
-        public Role UnitRole { get; set; }
-        public UnitClass UnitClass { get; set; }
-        public Species UnitSpecies { get; set; }
-        public UnitRegion Region { get; set; }
-        public string RecommendedLocation { get; set; }
-        public StatInfo Stat { get; set; }
+        [Preserve] public int Id { get; set; }
+        [Preserve] public string Name { get; set; }
+        [Preserve] public Faction Faction { get; set; }
+        [Preserve] public Role UnitRole { get; set; }
+        [Preserve] public UnitClass UnitClass { get; set; }
+        [Preserve] public Species UnitSpecies { get; set; }
+        [Preserve] public UnitRegion Region { get; set; }
+        [Preserve] public string RecommendedLocation { get; set; }
+        [Preserve] public StatInfo Stat { get; set; }
     }
     
     [Serializable]
-    [Preserve]
     public class ObjectData
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public StatInfo Stat { get; set; }
+        [Preserve] public int Id { get; set; }
+        [Preserve] public string Name { get; set; }
+        [Preserve] public StatInfo Stat { get; set; }
     }
 
     [Serializable]
-    [Preserve]
     public class SkillData
     {
-        public int Id { get; set; }
-        public string Explanation { get; set; }
-        public int Value { get; set; }
-        public float Coefficient { get; set; }
-        public int Cost { get; set; }
+        [Preserve] public int Id { get; set; }
+        [Preserve] public string Explanation { get; set; }
+        [Preserve] public int Value { get; set; }
+        [Preserve] public float Coefficient { get; set; }
+        [Preserve] public int Cost { get; set; }
     }
 
     [Serializable]
-    [Preserve]
     public class TutorialData
     {
-        public TutorialType Type { get; set; }
-        public List<TutorialStep> Steps { get; set; }
+        [Preserve] public TutorialType Type { get; set; }
+        [Preserve] public List<TutorialStep> Steps { get; set; }
     }
 
     [Serializable]
-    [Preserve]
     public class TutorialStep
     {
-        public int Step { get; set; }
-        public string DialogKey { get; set; }
-        public string Speaker { get; set; }
-        public string BubblePosition { get; set; }
-        public List<string> Events { get; set; }
+        [Preserve] public int Step { get; set; }
+        [Preserve] public string DialogKey { get; set; }
+        [Preserve] public string Speaker { get; set; }
+        [Preserve] public string BubblePosition { get; set; }
+        [Preserve] public List<string> Events { get; set; }
     }
     
     [Serializable]
-    [Preserve]
     public class LocalizationEntry
     {
-        public string Text { get; set; }
-        public string Font { get; set; }
-        public int FontSize { get; set; }
+        [Preserve] public string Text { get; set; }
+        [Preserve] public string Font { get; set; }
+        [Preserve] public int FontSize { get; set; }
     }
 
     [Serializable]
-    [Preserve]
     public class LocalizationItem
     {
-        public string Key { get; set; }
-        public Dictionary<string, LocalizationEntry> Translations { get; set; }
+        [Preserve] public string Key { get; set; }
+        [Preserve] public Dictionary<string, LocalizationEntry> Translations { get; set; }
     }
     
     [Serializable]
-    [Preserve]
     public class UnitLoader : ILoader<int, UnitData>
     {
-        public List<UnitData> Units { get; set; } = new();
+        [Preserve] public List<UnitData> Units { get; set; } = new();
     
+        [Preserve]
         public Dictionary<int, UnitData> MakeDict()
         {
             return Units.ToDictionary(unit => unit.Id);
@@ -93,11 +86,11 @@ public class Contents
     }
 
     [Serializable]
-    [Preserve]
     public class ObjectLoader : ILoader<int, ObjectData>
     {
-        public List<ObjectData> Objects { get; set; } = new();
-    
+        [Preserve] public List<ObjectData> Objects { get; set; } = new();
+        
+        [Preserve]
         public Dictionary<int, ObjectData> MakeDict()
         {
             return Objects.ToDictionary(player => player.Id);
@@ -105,11 +98,11 @@ public class Contents
     }
 
     [Serializable]
-    [Preserve]
     public class SkillLoader : ILoader<int, SkillData>
     {
-        public List<SkillData> Skills { get; set; } = new();
+        [Preserve] public List<SkillData> Skills { get; set; } = new();
 
+        [Preserve]
         public Dictionary<int, SkillData> MakeDict()
         {
             return Skills.ToDictionary(skill => skill.Id);
@@ -117,11 +110,11 @@ public class Contents
     }
     
     [Serializable]
-    [Preserve]
     public class TutorialLoader : ILoader<TutorialType, TutorialData>
     {
-        public List<TutorialData> Tutorials { get; set; } = new();
+        [Preserve] public List<TutorialData> Tutorials { get; set; } = new();
         
+        [Preserve]
         public Dictionary<TutorialType, TutorialData> MakeDict()
         {
             return Tutorials.ToDictionary(tutorial => tutorial.Type);

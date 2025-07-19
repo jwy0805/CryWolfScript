@@ -106,6 +106,8 @@ public class DataManager
         if (UnitDict.Count > 0 || ObjectDict.Count > 0 || SkillDict.Count > 0 || TutorialDict.Count > 0 ||
             LocalizationDict.Count > 0) return;
         
+        Debug.Log($"Use Addressables : {Managers.Network.UseAddressables}");
+        
         var unitLoaderTask = LoadJsonAsync<Contents.UnitLoader>("UnitData");
         var objectLoaderTask = LoadJsonAsync<Contents.ObjectLoader>("ObjectData");
         var skillLoaderTask = LoadJsonAsync<Contents.SkillLoader>("SkillData");

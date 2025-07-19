@@ -60,6 +60,7 @@ public class ObjectManager
                         var followCam = GameObject.Find("FollowCam").GetComponent<CinemachineVirtualCamera>();
                         var cameraFocus = await Managers.Resource.Instantiate("CameraFocus");
                         cameraFocus.transform.position = new Vector3(pos.x, pos.y, pos.z < 0 ? pos.z + 10 : pos.z - 10);
+                        controller.CameraFocus = cameraFocus;
                         
                         var tf = cameraFocus.transform;
                         followCam.Follow = tf;
@@ -116,6 +117,7 @@ public class ObjectManager
                 
                 case GameObjectType.MonsterStatue:
                     go = await Managers.Game.Spawn($"Statues/{info.Name}");
+                    Managers.Network.Send(new C_BindStatueInfo { StatueId = info.ObjectId });
                     _objects.Add(info.ObjectId, go);
                     PositionInfo statuePos = info.PosInfo;
                     go.transform.position = new Vector3(statuePos.PosX, statuePos.PosY, statuePos.PosZ);
@@ -124,7 +126,6 @@ public class ObjectManager
                     msc.Id = info.ObjectId;
                     msc.PosInfo = info.PosInfo;
                     msc.Stat = info.StatInfo;
-                    
                     break;
                 
                 case GameObjectType.Fence:
@@ -193,9 +194,10 @@ public class ObjectManager
         {
             var parent = FindById(parentId);
             if (parent == null) return;
-            // var projectilePos = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
-            var go = await Managers.Game.Spawn($"Effects/{info.Name}");
-            go.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
+            var projectilePos = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
+            var go = await Managers.Game.Spawn($"Effects/{info.Name}", projectilePos);
+            // var go = await Managers.Game.Spawn($"Effects/{info.Name}");
+            // go.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
             _objects.Add(info.ObjectId, go);
             if (go.TryGetComponent(out ProjectileController prc) == false) return;
             prc.Id = info.ObjectId;

@@ -10,6 +10,7 @@ using UnityEngine.UI;
 public class UI_ResultVictoryPopup : UI_Popup
 {
     private readonly Dictionary<string, GameObject> _textDict = new();
+    private GameObject _rotateImage;
     
     public int RankPointValue { get; set; }
     public int RankPoint { get; set; }
@@ -17,6 +18,7 @@ public class UI_ResultVictoryPopup : UI_Popup
     
     private enum Images
     {
+        RotateImage,
         VictoryLabel,
     }
     
@@ -43,11 +45,18 @@ public class UI_ResultVictoryPopup : UI_Popup
         StopGame();
     }
 
+    private void Update()
+    {
+        _rotateImage.transform.Rotate(0f, 0f, Time.deltaTime * 10f);
+    }
+
     protected override void BindObjects()
     {
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
         Bind<TextMeshProUGUI>(typeof(Texts));
+        
+        _rotateImage = GetImage((int)Images.RotateImage).gameObject;
         
         _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }

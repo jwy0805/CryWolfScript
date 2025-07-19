@@ -12,6 +12,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.EventSystems;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 using Zenject;
@@ -535,5 +536,22 @@ public class ResourceManager
         expiresText.text = mailInfo.ExpiresAt.ToString(CultureInfo.CurrentCulture);
 
         return frame;
+    }
+    
+    public RenderTexture CreateRenderTexture(string textureName)
+    {  
+        var rt = new RenderTexture(256, 256, 0)
+        {
+            useMipMap = false,
+            autoGenerateMips = false,
+            antiAliasing = 1,
+            name = textureName,
+            graphicsFormat = GraphicsFormat.R8G8B8A8_SRGB,
+            depthStencilFormat = GraphicsFormat.D16_UNorm,
+        };
+        
+        rt.Create();
+        
+        return rt;
     }
 }

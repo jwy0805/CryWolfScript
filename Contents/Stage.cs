@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -31,10 +32,17 @@ public class Stage : MonoBehaviour
         Init();
     }
 
-    private void Init()
+    private async void Init()
     {
-        BindObjects();
-        _ = InitUI();
+        try
+        {
+            BindObjects();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
     private void BindObjects()
@@ -50,7 +58,7 @@ public class Stage : MonoBehaviour
         RewardInfo = _singlePlayVm.StageRewardInfos.FirstOrDefault(sri => sri.StageId == stageId)?.RewardProducts;
     }
 
-    private async Task InitUI()
+    private async Task InitUIAsync()
     {
         var starPanel = transform.Find("Star");
         if (UserStageInfo == null)

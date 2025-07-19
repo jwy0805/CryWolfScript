@@ -129,7 +129,7 @@ public class UI_PlayerProfilePopup : UI_Popup
         flag.sprite = await Managers.Resource.LoadAsync<Sprite>(flagPath);
         
         var pencilButton = GetButton((int)Buttons.PencilButton).gameObject;
-        if (User.Instance.NameInitialized)
+        if (User.Instance.UserInfo.NameInitialized)
         {
             pencilButton.SetActive(false);
         }
@@ -141,7 +141,7 @@ public class UI_PlayerProfilePopup : UI_Popup
 
     private void UpdateUsername()
     {
-        GetText((int)Texts.UsernameText).text = User.Instance.UserName;
+        GetText((int)Texts.UsernameText).text = User.Instance.UserInfo.UserName;
     }
     
     private async Task OnPencilClicked(PointerEventData data)

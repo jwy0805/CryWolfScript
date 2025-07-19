@@ -8,6 +8,7 @@ using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Networking;
 using UnityEngine.UI;
 using UnityEngine.Video;
@@ -25,6 +26,8 @@ public class UI_TutorialMainPopup : UI_Popup
     
     private TutorialNpcInfo _tutorialNpcInfo1;
     private TutorialNpcInfo _tutorialNpcInfo2;
+    private Camera _tutorialCamera1;
+    private Camera _tutorialCamera2;
     private GameObject _flowerFace;
     private GameObject _speaker1Panel;
     private GameObject _speaker1Bubble;
@@ -39,11 +42,20 @@ public class UI_TutorialMainPopup : UI_Popup
     private TextMeshProUGUI _factionText;
     private TextMeshProUGUI _factionInfoText;
     private VideoPlayer _videoPlayer;
-    private Dictionary<string, VideoClip> _videoClips = new();
+    private readonly Dictionary<string, VideoClip> _videoClips = new();
+    private RawImage _wolfRawImage;
+    private RawImage _sheepRawImage;
+    private RawImage _videoRawImage;
+    private RenderTexture _wolfRenderTexture;
+    private RenderTexture _sheepRenderTexture;
+    private RenderTexture _videoRenderTexture;
 
     private enum Images
     {
         ContinueButtonLine,
+        BackgroundLeft,
+        BackgroundRight,
+        SelectPanel,
     }
 
     private enum Buttons
@@ -75,10 +87,11 @@ public class UI_TutorialMainPopup : UI_Popup
         {
             base.Init();
         
-            await BindObjectsAsync ();
+            await BindObjectsAsync();
             BindActions();
             InitButtonEvents();
             await InitUIAsync();
+            InitCamera();
         }
         catch (Exception e)
         {
@@ -105,12 +118,42 @@ public class UI_TutorialMainPopup : UI_Popup
         _videoPlayer = Util.FindChild(_selectPanel, "VideoPlayer", true).GetComponent<VideoPlayer>();
         _masking = Util.FindChild(_selectPanel, "TutorialMainVideoMasking", true);
         
-        var wolfVideo = await Managers.Resource.LoadAsync<VideoClip>("VideoClips/TutorialWolf");
-        var sheepVideo = await Managers.Resource.LoadAsync<VideoClip>("VideoClips/TutorialSheep");
+        var wolfVideo = await Managers.Resource.LoadAsync<VideoClip>("VideoClips/TutorialWolf", "mov");
+        var sheepVideo = await Managers.Resource.LoadAsync<VideoClip>("VideoClips/TutorialSheep", "mov");
         _videoClips.Add("Wolf", wolfVideo);
         _videoClips.Add("Sheep", sheepVideo);
     }
 
+    private void InitCamera()
+    {
+        var backgroundLeft = GetImage((int)Images.BackgroundLeft);
+        var backgroundRight = GetImage((int)Images.BackgroundRight);
+        var selectPanel = GetImage((int)Images.SelectPanel);
+        
+        _wolfRawImage = backgroundLeft.GetComponentInChildren<RawImage>();
+        _sheepRawImage = backgroundRight.GetComponentInChildren<RawImage>();
+        _videoRawImage = selectPanel.GetComponentInChildren<RawImage>();
+        _wolfRenderTexture = Managers.Resource.CreateRenderTexture("wolfTexture");
+        _sheepRenderTexture = Managers.Resource.CreateRenderTexture("sheepTexture");
+        _videoRenderTexture = Managers.Resource.CreateRenderTexture("videoTexture");
+        _tutorialCamera1 = GameObject.Find("TutorialCamera1").GetComponent<Camera>();
+        _tutorialCamera2 = GameObject.Find("TutorialCamera2").GetComponent<Camera>();
+        
+        if (_tutorialCamera1 == null || _tutorialCamera2 == null)
+        {
+            Debug.LogError("Tutorial cameras not found in the scene.");
+            return;
+        }
+        
+        _wolfRawImage.texture = _wolfRenderTexture;
+        _sheepRawImage.texture = _sheepRenderTexture;
+        _videoRawImage.texture = _videoRenderTexture;
+
+        _tutorialCamera1.targetTexture = _wolfRenderTexture;
+        _tutorialCamera2.targetTexture = _sheepRenderTexture;
+        _videoPlayer.targetTexture = _videoRenderTexture;
+    }
+    
     private void BindActions()
     {
         _tutorialVm.OnShowSpeakerAfter3Sec += ShowSpeaker;
@@ -336,20 +379,11 @@ public class UI_TutorialMainPopup : UI_Popup
         text.color = Color.white;
     }
 
-    private async Task PlayFactionVideo(VideoClip clip)
+    private void PlayFactionVideo(VideoClip clip)
     {
         _videoPlayer.Stop();
         _videoPlayer.source = VideoSource.VideoClip;
         _videoPlayer.clip = clip;
-        _videoPlayer.time = 0;
-        _videoPlayer.timeReference = VideoTimeReference.ExternalTime;
-        _videoPlayer.Prepare();
-        
-        while (!_videoPlayer.isPrepared)
-        {
-            await Task.Delay(100);
-        }
-        
         _videoPlayer.Play();
     }
     
@@ -375,7 +409,7 @@ public class UI_TutorialMainPopup : UI_Popup
         _buttonSelectEffect.transform.position = GetButton((int)Buttons.WolfButton).transform.position;
         _buttonSelectEffect.GetComponent<ParticleImage>().Play();
 
-        await PlayFactionVideo(_videoClips["Wolf"]);
+        PlayFactionVideo(_videoClips["Wolf"]);
     }
     
     private async Task OnSheepClicked(PointerEventData data)
@@ -393,7 +427,7 @@ public class UI_TutorialMainPopup : UI_Popup
         _buttonSelectEffect.transform.position = GetButton((int)Buttons.SheepButton).transform.position;
         _buttonSelectEffect.GetComponent<ParticleImage>().Play();
         
-        await PlayFactionVideo(_videoClips["Sheep"]);
+        PlayFactionVideo(_videoClips["Sheep"]);
     }
 
     private void OnPlayClicked(PointerEventData data)
@@ -444,5 +478,23 @@ public class UI_TutorialMainPopup : UI_Popup
         _tutorialVm.OnChangeFaceCry -= ChangeFaceCry;
         _tutorialVm.OnChangeFaceHappy -= ChangeFaceHappy;
         _tutorialVm.OnChangeFaceNormal -= ChangeFaceNormal;
+
+        if (_wolfRenderTexture != null)
+        {
+            _wolfRenderTexture.Release();
+            Destroy(_wolfRenderTexture);
+        }
+
+        if (_sheepRenderTexture != null)
+        {
+            _sheepRenderTexture.Release();
+            Destroy(_sheepRenderTexture);
+        }
+
+        if (_videoRenderTexture != null)
+        {
+            _sheepRenderTexture.Release();
+            Destroy(_videoRenderTexture);
+        }
     }
 }

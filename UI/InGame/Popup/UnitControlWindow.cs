@@ -21,6 +21,36 @@ public interface IUnitControlWindow
 
 public class UnitControlWindow : UI_Popup, IUnitControlWindow
 {
+    private GameViewModel _gameVm;
+
+    private int _hp;
+    private int _maxHp;
+    private int _mp;
+    private int _maxMp;
+    private CreatureController _cc;
+    private GameObject _selectedUnit;
+    private TextMeshProUGUI _hpText;
+    private TextMeshProUGUI _mpText;
+    private Camera _portraitCamera;
+    private RawImage _portraitRawImage;
+    private RenderTexture _portraitRenderTexture;
+    
+    public GameObject SelectedUnit
+    {
+        get => _selectedUnit;
+        set
+        {
+            _selectedUnit = value;
+            _cc = _selectedUnit.GetComponent<CreatureController>();
+            
+            // set selected portrait 
+            if (_cc.UnitId != UnitId.UnknownUnit)
+            {
+                _gameVm.SetPortraitFromFieldUnit(_cc.UnitId);
+            }
+        }
+    }
+    
     #region Enums
 
     private enum Buttons
@@ -51,6 +81,8 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         UnitDeleteGoldPlusImage,
         UnitRepairGoldImage,
         UnitRepairAllGoldImage,
+        
+        UnitPortraitFrame,
     }
     
     private enum Texts
@@ -64,34 +96,6 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
     }
 
     #endregion
-    
-    private GameViewModel _gameVm;
-
-    private int _hp;
-    private int _maxHp;
-    private int _mp;
-    private int _maxMp;
-    private CreatureController _cc;
-    private GameObject _selectedUnit;
-    private TextMeshProUGUI _hpText;
-    private TextMeshProUGUI _mpText;
-    private Camera _portraitCamera;
-    
-    public GameObject SelectedUnit
-    {
-        get => _selectedUnit;
-        set
-        {
-            _selectedUnit = value;
-            _cc = _selectedUnit.GetComponent<CreatureController>();
-            
-            // set selected portrait 
-            if (_cc.UnitId != UnitId.UnknownUnit)
-            {
-                _gameVm.SetPortraitFromFieldUnit(_cc.UnitId);
-            }
-        }
-    }
     
     [Inject]
     public void Construct(GameViewModel gameViewModel)
@@ -141,10 +145,17 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         
         if (_portraitCamera != null && _cc != null)
         {
+            var unitPortraitFrame = GetImage((int)Images.UnitPortraitFrame);
+            _portraitRawImage = unitPortraitFrame.GetComponentInChildren<RawImage>();
+            _portraitRenderTexture = Managers.Resource.CreateRenderTexture("portraitTexture");
+            
+            _portraitRawImage.texture = _portraitRenderTexture;
+            _portraitCamera.targetTexture = _portraitRenderTexture;
+            
             var unitPos = _cc.transform.position;
             var offset = _cc.transform.forward * _cc.Stat.SizeX;
             _portraitCamera.transform.position = unitPos + offset + Vector3.up * _cc.Stat.SizeY;
-            _portraitCamera.transform.LookAt(unitPos);
+            _portraitCamera.transform.LookAt(unitPos + Vector3.up * _cc.Stat.SizeY);
         }
     }
     
@@ -341,5 +352,7 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
     private void OnDestroy()
     {
         _gameVm.UnitControlWindow = null;
+        // _portraitRenderTexture.Release();
+        // Destroy(_portraitRenderTexture);
     }
 }

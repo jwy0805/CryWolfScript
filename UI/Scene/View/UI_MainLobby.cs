@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DG.Tweening;
 using Google.Protobuf.Protocol;
+using NUnit.Framework.Internal;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -197,6 +198,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         DailyProductsRefreshButton,
         AdsRemover,
         RestorePurchaseButton,
+        
+        TestButton
     }
 
     private enum Texts
@@ -419,6 +422,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
 
     private void Update()
     {
+        if (_lobbyVm.ChildScrolling) return;
+        
         if (Input.GetMouseButtonDown(0))
         {
             _lobbyVm.StartTouch(Input.mousePosition.x);
@@ -437,7 +442,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
 
     private void UpdateUsername()
     {
-        GetText((int)Texts.UsernameText).text = User.Instance.UserName;
+        GetText((int)Texts.UsernameText).text = User.Instance.UserInfo.UserName;
     }
     
     private IEnumerator OnSwipeOneStep(int index)
@@ -688,7 +693,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     // Button Click Events
     #region ButtonEvent
 
-    private async Task OnFactionButtonClicked(PointerEventData data)
+    private async Task OnFactionClicked(PointerEventData data)
     {
         Util.Faction = Util.Faction == Faction.Sheep ? Faction.Wolf : Faction.Sheep;
         
@@ -702,7 +707,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     private async Task OnProfileClicked(PointerEventData data)
     {
         var popup = await Managers.UI.ShowPopupUI<UI_PlayerProfilePopup>();
-        popup.PlayerUserInfo = _userService.UserInfo;
+        popup.PlayerUserInfo = User.Instance.UserInfo;
     }
     
     private async Task OnSettingsClicked(PointerEventData data)
@@ -1040,7 +1045,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         if (go.TryGetComponent(out ProductPackage package) == false) return;
         if (package.IsDragging) return;
         var popup = await Managers.UI.ShowPopupUI<UI_ProductReservedInfoPopup>();
-        var info = Managers.Data.MaterialInfoDict[package.ProductInfo.Compositions[0].CompositionId];
+        var infoOrigin = Managers.Data.MaterialInfoDict[package.ProductInfo.Compositions[0].CompositionId];
+        var info = new MaterialInfo { Id = infoOrigin.Id, Class = infoOrigin.Class };
         var parent = Util.FindChild(popup.gameObject, "Frame", true).transform;
         var size = popup.GetComponent<RectTransform>().sizeDelta.x * 0.42f;
         
@@ -1067,14 +1073,16 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         
         await Managers.Localization.UpdateTextAndFont(_textDict);
         await Managers.Localization.UpdateFont(GetText((int)Texts.UsernameText));
-        Debug.Log("Localization updated");;
+        
         var deckButtonText = GetButton((int)Buttons.DeckTabButton).GetComponent<TextMeshProUGUI>();
         var collectionButtonText = GetButton((int)Buttons.CollectionTabButton).GetComponent<TextMeshProUGUI>();
         var craftingButtonText = GetButton((int)Buttons.CraftingTabButton).GetComponent<TextMeshProUGUI>();
+        
         await Managers.Localization.BindLocalizedText(deckButtonText, "deck_text");
         await Managers.Localization.BindLocalizedText(collectionButtonText, "collection_text");
         await Managers.Localization.BindLocalizedText(craftingButtonText, "crafting_text");
-        Debug.Log("Localization updated2");
+        await BindAssetHoldingLabelText(Util.Faction);
+        
         _expSlider = GetImage((int)Images.ExpSliderBackground).transform.parent.GetComponent<Slider>();
         _craftingScrollRect = GetImage((int)Images.CollectionScrollView).GetComponent<ScrollRect>();
         
@@ -1165,6 +1173,28 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         };
     }
 
+    private async Task BindAssetHoldingLabelText(Faction faction)
+    {
+        var holdText = GetText((int)Texts.AssetHoldingLabelText);
+        var notHoldText = GetText((int)Texts.AssetNotHoldingLabelText);
+        string holdKey;
+        string notHoldKey;   
+        
+        if (faction == Faction.Wolf)
+        {
+            holdKey = "asset_holding_label_text_wolf";
+            notHoldKey = "asset_not_holding_label_text_wolf";
+        }
+        else
+        {
+            holdKey = "asset_holding_label_text_sheep";
+            notHoldKey = "asset_not_holding_label_text_sheep";
+        }
+        
+        await Managers.Localization.BindLocalizedText(holdText, holdKey);
+        await Managers.Localization.BindLocalizedText(notHoldText, notHoldKey);
+    }
+    
     protected override void InitButtonEvents()
     {
         foreach (var gameModePanel in _modes)
@@ -1191,7 +1221,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         GetButton((int)Buttons.SettingsButton).gameObject.BindEvent(OnSettingsClicked);
         GetButton((int)Buttons.FriendsButton).gameObject.BindEvent(OnFriendsClicked);
         GetButton((int)Buttons.MailButton).gameObject.BindEvent(OnMailClicked);
-        GetButton((int)Buttons.FactionButton).gameObject.BindEvent(OnFactionButtonClicked);
+        GetButton((int)Buttons.FactionButton).gameObject.BindEvent(OnFactionClicked);
         GetButton((int)Buttons.PlayButton).gameObject.BindEvent(OnPlayButtonClicked);
         GetButton((int)Buttons.ModeSelectButtonLeft).gameObject
             .BindEvent(data => OnModeSelectButtonClicked(data, 1));
@@ -1219,10 +1249,25 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         
         GetButton((int)Buttons.RecyclingButton).gameObject.BindEvent(OnRecyclingClicked);
         GetButton((int)Buttons.RestorePurchaseButton).gameObject.BindEvent(OnRestorePurchaseClicked);
+        
+        GetButton((int)Buttons.TestButton).gameObject.BindEvent(TestLogic);
+    }
+    
+    private async Task TestLogic(PointerEventData data)
+    {
+        var popup = await Managers.UI.ShowPopupUI<UI_RewardPopup>();
+        var list = new List<Reward>
+        {
+            new() { ProductType = Google.Protobuf.Protocol.ProductType.Gold, Count = 1000 },
+            new() { ProductType = Google.Protobuf.Protocol.ProductType.Exp, Count = 10 },
+        };
+        popup.Rewards = list;
     }
     
     private async Task InitMainLobby()
     {
+        GetButton((int)Buttons.TestButton).gameObject.SetActive(false);
+        
         await SwitchLobbyUI(Util.Faction);
         GetImage((int)Images.FriendAlertIcon).gameObject.SetActive(false);
         GetImage((int)Images.MailAlertIcon).gameObject.SetActive(false);
@@ -1320,9 +1365,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         try
         {
             var tutorialInfo = _userService.TutorialInfo;
-        
-            Debug.Log($"{tutorialInfo.WolfTutorialDone} {tutorialInfo.SheepTutorialDone}");
-        
+            
             // Case 1: Both tutorials are completed
             if (tutorialInfo.WolfTutorialDone && tutorialInfo.SheepTutorialDone)
             {
@@ -1375,6 +1418,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
                 factionButtonIcon.sprite = await Managers.Resource.LoadAsync<Sprite>("Sprites/WolfButton");
                 break;
         }
+
+        await BindAssetHoldingLabelText(faction);
     }
 
     private void OnFriendAlert()

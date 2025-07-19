@@ -203,6 +203,12 @@ public class GameViewModel : IDisposable
         var packet = (S_GetSpawnableBounds)eventData;
         CurrentSelectedPortrait?.ShowSpawnableBounds(packet.MinZ, packet.MaxZ);
     }
+
+    public void HideMarker()
+    {
+        CurrentSelectedPortrait?.HideRing();
+        CurrentSelectedPortrait?.HideSpawnableBounds();
+    }
     
     private void OnCanSpawn(object eventData)
     {

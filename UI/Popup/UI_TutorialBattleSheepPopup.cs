@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
@@ -28,6 +29,9 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
     private Coroutine _dragCoroutine;
     private Vector2 _portraitAnchor;
     private Vector2 _skillButtonAnchor;
+    private Camera _tutorialCamera;
+    private RawImage _rawImage;
+    private RenderTexture _renderTexture;
     
     private enum Images
     {
@@ -35,6 +39,7 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         ContinueButtonLine,
         Blocker,
         Hand,
+        BackgroundLeft
     }
 
     private enum Buttons
@@ -64,6 +69,7 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
             BindActions();
             InitButtonEvents();
             await InitUIAsync();
+            InitCamera();
         }
         catch (Exception e)
         {
@@ -139,6 +145,30 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         
         StepTutorial();
         StartCoroutine(SmoothAlphaRoutine());
+    }
+
+    private void InitCamera()
+    {
+        _tutorialCamera = GameObject.FindGameObjectsWithTag("Camera")
+            .FirstOrDefault(obj => obj.name == "TutorialCamera")?.GetComponent<Camera>();
+
+        if (_tutorialCamera == null)
+        {
+            Debug.LogWarning("TutorialCamera not found!");
+            return;
+        }
+        
+        _rawImage = GetImage((int)Images.BackgroundLeft).GetComponentInChildren<RawImage>();
+        _renderTexture = Managers.Resource.CreateRenderTexture("TutorialRenderTexture");
+
+        if (_rawImage == null)
+        {
+            Debug.LogWarning("RawImage not found in BackgroundLeft!");
+            return;
+        }
+        
+        _rawImage.texture = _renderTexture;
+        _tutorialCamera.targetTexture = _renderTexture;
     }
     
     #region UI Effects
@@ -260,7 +290,7 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         Vector2 originMin = rect.anchorMin;
         Vector2 originMax = rect.anchorMax;
 
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 3; i++)
         {
             float elapsed = 0f;
             while (elapsed < moveDuration)
@@ -450,6 +480,8 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
     
     private void DragTankerUnitHandler()
     {
+        _uiBlocker.SetActive(true);
+        _uiBlocker.GetComponent<RectTransform>().anchorMin = new Vector2(0, 0.1f);
         StartCoroutine(nameof(DragTankerUnit));
     }
 
@@ -464,6 +496,9 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         
         yield return StartCoroutine(DragRectAnchor(_handRect, targetVector, 0.5f, 1f));
         OffHandImage();
+        
+        _uiBlocker.GetComponent<RectTransform>().anchorMin = new Vector2(0, 0);
+        _uiBlocker.SetActive(false);
     }
     
     private void DragRangerUnitHandler()
@@ -475,11 +510,16 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
     {
         var portraitIndex = _tutorialVm.GetRangerAnchorIndex();
         var targetVector = new Vector2(0.6f, 0.4f);
+        
         _portraitAnchor = new Vector2(GetAnchor(portraitIndex), 0.05f);
         _handRect.anchorMin = _portraitAnchor;
         _handRect.anchorMax = _portraitAnchor;
+        
         yield return StartCoroutine(DragRectAnchor(_handRect, targetVector, 0.5f, 1f));
         OffHandImage();
+        
+        _uiBlocker.GetComponent<RectTransform>().anchorMin = new Vector2(0, 0);
+        _uiBlocker.SetActive(false);
     }
     
     private void DragSceneHandler()
@@ -505,8 +545,8 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
 
     private IEnumerator PointToSkillButtonAndPortrait()
     {
-        _handRect.anchorMin = _skillButtonAnchor;
-        _handRect.anchorMax = _skillButtonAnchor;
+        _handRect.anchorMin = new Vector2(_skillButtonAnchor.x - 0.02f, _skillButtonAnchor.y);
+        _handRect.anchorMax = new Vector2(_skillButtonAnchor.x - 0.02f, _skillButtonAnchor.y);
         
         if (_handPokeRoutine != null)
         {
@@ -516,7 +556,7 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         var offset = new Vector2(-60, 60);
         var portraitIndex = _tutorialVm.GetTankerAnchorIndex();
         
-        _portraitAnchor = new Vector2(GetAnchor(portraitIndex), 0.05f);
+        _portraitAnchor = new Vector2(GetAnchor(portraitIndex), 0.0f);
         
         yield return StartCoroutine(HandPokeRoutine(offset, 0.5f, 0.1f, 0.2f, 2));
         yield return StartCoroutine(SmoothMoveRectAnchor(_handRect, _portraitAnchor, 0.5f));

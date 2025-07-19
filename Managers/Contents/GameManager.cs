@@ -10,6 +10,7 @@ using UnityEngine.UI;
 public class GameManager
 {
     public Action<int> OnSpawnEvent;
+    public Queue<RewardInfo> RewardQueue;
     public bool GameResult { get; set; }
     public bool IsTutorial { get; set; }
     

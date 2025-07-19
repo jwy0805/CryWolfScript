@@ -8,7 +8,7 @@ using Zenject;
 
 public class MailInfoProduct : UI_Base
 {
-    private MainLobbyViewModel _lobbyVm;
+    private ShopViewModel _shopVm;
     private readonly Dictionary<string, GameObject> _textDict = new();
     
     public MailInfo MailInfo { get; set; }
@@ -26,9 +26,9 @@ public class MailInfoProduct : UI_Base
     }
     
     [Inject]
-    public void Construct(MainLobbyViewModel lobbyVm)
+    public void Construct(ShopViewModel shopViewModel)
     {
-        _lobbyVm = lobbyVm;
+        _shopVm = shopViewModel;
     }
     
     protected override async void Init()
@@ -61,6 +61,8 @@ public class MailInfoProduct : UI_Base
 
     protected override async Task InitUIAsync()
     {
+        GetButton((int)Buttons.ClaimButton).interactable = !MailInfo.Claimed;
+        
         var infoText = GetText((int)Texts.InfoText);
         await Managers.Localization.UpdateFont(infoText);
         var productKey = ((ProductId)MailInfo.ProductId).ToString();
@@ -77,7 +79,8 @@ public class MailInfoProduct : UI_Base
     private async Task OnClaimClicked()
     {
         GetButton((int)Buttons.ClaimButton).interactable = false;
-        await _lobbyVm.ClaimMail(MailInfo);
+        await _shopVm.ClaimProductFromMailbox(false, MailInfo);
+        GetButton((int)Buttons.ClaimButton).interactable = true;
     }
 
     private void OnDestroy()

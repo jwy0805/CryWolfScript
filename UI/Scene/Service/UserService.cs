@@ -195,9 +195,8 @@ public class UserService : IUserService
         
         UserInfo = loadUserInfoResponse.UserInfo;
         TutorialInfo = loadUserInfoResponse.UserTutorialInfo;
-        
-        User.Instance.UserAccount = loadUserInfoResponse.UserInfo.UserAccount;
-        User.Instance.NameInitialized = loadUserInfoResponse.UserInfo.NameInitialized;
+        User.Instance.ExpTable = loadUserInfoResponse.ExpTable;
+        User.Instance.UserInfo = UserInfo;
         User.Instance.SubscribeAdsRemover = loadUserInfoResponse.UserInfo.Subscriptions
             .FirstOrDefault(si => si.SubscriptionType == SubscriptionType.AdsRemover) != null;
     }
@@ -212,6 +211,8 @@ public class UserService : IUserService
         
         UserInfo = task.Result.UserInfo;
         TutorialInfo = task.Result.UserTutorialInfo;
+        User.Instance.ExpTable = task.Result.ExpTable;
+        User.Instance.UserInfo = UserInfo;
         
         _tokenService.SaveAccessToken(task.Result.AccessToken);
         _tokenService.SaveRefreshToken(task.Result.RefreshToken);

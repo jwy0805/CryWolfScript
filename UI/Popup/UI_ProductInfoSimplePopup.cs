@@ -91,7 +91,7 @@ public class UI_ProductInfoSimplePopup : UI_Popup
         var iconPath = _productInfo.CurrencyType == CurrencyType.Spinel 
             ? "Sprites/ShopIcons/icon_spinel"
             : "Sprites/ShopIcons/icon_gold";
-        var composition = _productInfo.Compositions.FirstOrDefault(c => c.Id == _productInfo.Id);
+        var composition = _productInfo.Compositions.FirstOrDefault(c => c.ProductId == _productInfo.ProductId);
         var str = _productInfo.Category == ProductCategory.GoldPackage ? "" : "X";
         var frameRect = FrameObject.GetComponent<RectTransform>();
         

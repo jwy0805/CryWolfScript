@@ -19,7 +19,7 @@ public class CraftingViewModel
     
     private UnitInfo _newReinforceMaterialUnit;
 
-    public List<OwnedMaterialInfo> CraftingMaterials { get; set; } = new();
+    public List<OwnedMaterialInfo> CraftingMaterials { get; private set; } = new();
     // Only used for the crafting panel because the user can adjust 'the number of cards' to be crafted.
     public List<OwnedMaterialInfo> TotalCraftingMaterials { get; set; } = new();
     public List<UnitInfo> ReinforceMaterialUnits { get; set; } = new();
@@ -63,7 +63,7 @@ public class CraftingViewModel
     
     public void LoadMaterials(UnitId unitId)
     {
-        CraftingMaterials = Managers.Data.CraftingMaterialDict[(int)unitId].Materials;
+        CraftingMaterials = Managers.Data.CraftingMaterialDict[(int)unitId].Materials.ToList();
         SetMaterialsOnCraftPanel?.Invoke(CraftingMaterials, User.Instance.OwnedMaterialList);
     }
 
@@ -191,7 +191,6 @@ public class CraftingViewModel
                         Count = CraftingCount
                     });
                 }
-                
                 break;
             
             case Asset.Enchant:
@@ -209,7 +208,6 @@ public class CraftingViewModel
                         Count = CraftingCount
                     });
                 }
-
                 break;
                 
             case Asset.Sheep:
@@ -227,7 +225,6 @@ public class CraftingViewModel
                         Count = CraftingCount
                     });
                 }
-                
                 break;
             
             case Asset.Character:
@@ -245,8 +242,6 @@ public class CraftingViewModel
                         Count = CraftingCount
                     });
                 }
-                
-                
                 break;
         }
     }

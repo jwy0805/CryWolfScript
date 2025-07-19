@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class RoleIconSizeController : MonoBehaviour
 {
-    private readonly float _widthRatio = 0.22f;
+    public float WidthRatio { get; set; } = 0.22f;
     private readonly float _childWidthRatio = 0.6f;
     
     private void Start()
@@ -27,7 +27,7 @@ public class RoleIconSizeController : MonoBehaviour
         var childRect = Util.FindChild(gameObject, "RoleIcon").GetComponent<RectTransform>();
         var parentRectWidth = parentRect.rect.width;
         
-        rect.sizeDelta = new Vector2(parentRectWidth * _widthRatio, parentRectWidth * _widthRatio);
+        rect.sizeDelta = new Vector2(parentRectWidth * WidthRatio, parentRectWidth * WidthRatio);
         rect.anchoredPosition = new Vector2(parentRectWidth * 0.2f, -parentRectWidth * 0.2f);
         childRect.sizeDelta = new Vector2(rect.rect.width * _childWidthRatio, rect.rect.width * _childWidthRatio);
     }

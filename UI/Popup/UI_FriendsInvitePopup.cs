@@ -12,7 +12,6 @@ using Zenject;
 
 public class UI_FriendsInvitePopup : UI_Popup
 {
-    private IUserService _userService;
     private ITokenService _tokenService;
     private ISignalRClient _signalRClient;
     private MainLobbyViewModel _lobbyVm;
@@ -45,12 +44,10 @@ public class UI_FriendsInvitePopup : UI_Popup
     
     [Inject]
     public void Construct(
-        IUserService userService,
         ITokenService tokenService, 
         ISignalRClient signalRClient, 
         MainLobbyViewModel lobbyViewModel)
     {
-        _userService = userService;
         _tokenService = tokenService;
         _signalRClient = signalRClient;
         _lobbyVm = lobbyViewModel;
@@ -139,7 +136,7 @@ public class UI_FriendsInvitePopup : UI_Popup
         var packet = new InviteFriendlyMatchPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            InviterName = _userService.UserInfo.UserName,
+            InviterName = User.Instance.UserInfo.UserName,
             InviteeName = friendName,
         };
         

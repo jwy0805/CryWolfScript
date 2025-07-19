@@ -63,19 +63,20 @@ public class SubscriptionInfo
 
 public class ProductInfo
 {
-    public int Id { get; set; }
+    public int ProductId { get; set; }
     public List<CompositionInfo> Compositions { get; set; }
     public int Price { get; set; }
     public CurrencyType CurrencyType { get; set; }
+    public ProductType ProductType { get; set; }
     public ProductCategory Category { get; set; }
     public string ProductCode { get; set; }
 }
 
 public class CompositionInfo
 {
-    public int Id { get; set; }
+    public int ProductId { get; set; }
     public int CompositionId { get; set; }
-    public ProductType Type { get; set; }
+    public ProductType ProductType { get; set; }
     public int Count { get; set; }
     public int MinCount { get; set; }
     public int MaxCount { get; set; }
@@ -91,6 +92,12 @@ public class DailyProductInfo
     public bool Bought { get; set; }
     public bool AdsWatched { get; set; }
     public bool NeedAds { get; set; }
+}
+
+public class RandomProductInfo
+{
+    public ProductInfo ProductInfo { get; set; }
+    public int Count { get; set; }
 }
 
 public class UnitInfo : IAsset
@@ -426,6 +433,7 @@ public class LoadUserInfoPacketResponse
     public bool LoadUserInfoOk { get; set; }
     public UserInfo UserInfo { get; set; }
     public UserTutorialInfo UserTutorialInfo { get; set; }
+    public Dictionary<int, int> ExpTable { get; set; }
 }
 
 public class LoadTestUserPacketRequired
@@ -438,6 +446,7 @@ public class LoadTestUserPacketResponse
     public bool LoadTestUserOk { get; set; }
     public UserInfo UserInfo { get; set; }
     public UserTutorialInfo UserTutorialInfo { get; set; }
+    public Dictionary<int, int> ExpTable { get; set; }
     public string AccessToken { get; set; }
     public string RefreshToken { get; set; }
 }
@@ -785,6 +794,16 @@ public class AcceptInvitationPacketResponse
     public DeckInfo EnemyDeckWolf { get; set; }
 }
 
+public class DeleteReadMailPacketRequired
+{
+    public string AccessToken { get; set; }
+}
+
+public class DeleteReadMailPacketResponse
+{
+    public bool DeleteReadMailOk { get; set; }
+}
+
 public class VirtualPaymentPacketRequired
 {
     public string AccessToken { get; set; }
@@ -818,6 +837,34 @@ public class CashPaymentPacketRequired
 public class CashPaymentPacketResponse
 {
     public bool PaymentOk { get; set; }
+}
+
+public class ClaimProductPacketRequired
+{
+    public string AccessToken { get; set; }
+    public RewardPopupType CurrentState { get; set; }
+    public bool ClaimAll { get; set; }
+    public int MailId { get; set; }
+}
+
+public class SelectProductPacketRequired
+{
+    public string AccessToken { get; set; }
+    public CompositionInfo SelectedCompositionInfo { get; set; }
+}
+
+public class DisplayClaimedProductPacketRequired
+{
+    public string AccessToken { get; set; }
+}
+
+public class ClaimProductPacketResponse
+{
+    public bool ClaimOk { get; set; }
+    public List<ProductInfo> ProductInfos { get; set; }
+    public List<RandomProductInfo> RandomProductInfos { get; set; }
+    public List<CompositionInfo> CompositionInfos { get; set; }
+    public RewardPopupType RewardPopupType { get; set; }
 }
 
 public class LoadStageInfoPacketRequired

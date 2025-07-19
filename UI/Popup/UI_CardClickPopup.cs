@@ -117,16 +117,17 @@ public class UI_CardClickPopup : UI_Popup
             var key = "card_click_unit_select_text_deck";
             await Managers.Localization.UpdateTextAndFont(unitSelectText.gameObject, key);
         }
-
+        
         ActiveUnitSelectButton();
+        ActiveCraftingButton();
     }
 
     private void ActiveUnitSelectButton()
     {
-        User user = User.Instance;
-        Faction faction = Util.Faction;
-        bool isOwned = false;
-        bool interactable = false;
+        var user = User.Instance;
+        var faction = Util.Faction;
+        var isOwned = false;
+        var interactable = false;
         
         switch (SelectedCard.AssetType)
         {
@@ -151,6 +152,25 @@ public class UI_CardClickPopup : UI_Popup
         }
         
         GetButton((int)Buttons.UnitSelectButton).interactable = interactable;
+    }
+
+    private void ActiveCraftingButton()
+    {
+        var interactable = false;
+        
+        switch (SelectedCard.AssetType)
+        {
+            case Asset.Sheep:
+            case Asset.Enchant:
+            case Asset.Character:
+                interactable = false;
+                break;
+            case Asset.Unit:
+                interactable = true;
+                break;
+        }
+        
+        GetButton((int)Buttons.UnitCraftingButton).interactable = interactable;
     }
     
     private async Task SetCardInPopup<TEnum>() where TEnum : struct, Enum

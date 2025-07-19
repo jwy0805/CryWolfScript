@@ -414,6 +414,7 @@ public partial class UI_MainLobby
             var nameText = nameTextObject.GetComponent<TextMeshProUGUI>();
             var key = $"material_id_{material.MaterialInfo.Id}";
             var materialName = await Managers.Localization.BindLocalizedText(nameText, key);
+            
             if (materialName.Length > 11)
             {
                 materialName = materialName.Substring(0, 9) + "..";

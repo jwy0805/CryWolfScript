@@ -11,6 +11,9 @@ public class UI_ChangeFactionPopup : UI_Popup
 {
     private TutorialViewModel _tutorialVm;
 
+    private Camera _tutorialCamera;
+    private RawImage _rawImage;
+    private RenderTexture _renderTexture;
     private GameObject _tutorialNpc;
     private GameObject _continueButton;
     private GameObject _hand;
@@ -51,6 +54,7 @@ public class UI_ChangeFactionPopup : UI_Popup
             BindObjects();
             InitButtonEvents();
             await InitUIAsync();
+            InitCamera();
         }
         catch (Exception e)
         {
@@ -95,6 +99,24 @@ public class UI_ChangeFactionPopup : UI_Popup
         const string key = "tutorial_change_faction_popup_text";
         var textContent = await Managers.Localization.BindLocalizedText(_speechBubbleText, key);
         _speechBubbleText.text = textContent;
+    }
+
+    private void InitCamera()
+    {
+        var leftPanel = GetImage((int)Images.LeftPanel);
+        
+        _rawImage = leftPanel.GetComponent<RawImage>();
+        _renderTexture = Managers.Resource.CreateRenderTexture("texture");
+        _tutorialCamera = GameObject.Find("TutorialCamera1").GetComponent<Camera>();
+
+        if (_tutorialCamera == null)
+        {
+            Debug.LogError("Tutorial Camera not found in the scene.");
+            return;
+        }
+
+        _rawImage.texture = _renderTexture;
+        _tutorialCamera.targetTexture = _renderTexture;
     }
     
     #region UI Effects

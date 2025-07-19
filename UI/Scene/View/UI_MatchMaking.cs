@@ -11,7 +11,6 @@ using Zenject;
 
 public class UI_MatchMaking : UI_Scene
 {
-    private IUserService _userService;
     private MatchMakingViewModel _matchMakingVm;
     private DeckViewModel _deckVm;
     
@@ -48,12 +47,8 @@ public class UI_MatchMaking : UI_Scene
     }
     
     [Inject]
-    public void Construct(
-        IUserService userService,
-        MatchMakingViewModel matchMakingVm,
-        DeckViewModel deckVm)
+    public void Construct(MatchMakingViewModel matchMakingVm, DeckViewModel deckVm)
     {
-        _userService = userService;
         _matchMakingVm = matchMakingVm;
         _deckVm = deckVm;
     }
@@ -64,16 +59,23 @@ public class UI_MatchMaking : UI_Scene
         _matchMakingVm.OnRefreshQueueCounts += SetQueueInfo;
     }
 
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            BindObjects();
+            InitButtonEvents();
+            InitUI();
         
-        // Connect to the game session in advance
-        _matchMakingVm.ConnectSocketServer();
+            // Connect to the game session in advance
+            _matchMakingVm.ConnectSocketServer();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     protected void Update()
@@ -103,8 +105,8 @@ public class UI_MatchMaking : UI_Scene
         var rankPointText = GetText((int)Texts.RankPointText);
         
         await Managers.Localization.UpdateFont(userNameText);
-        userNameText.text = _userService.UserInfo.UserName;
-        rankPointText.text = _userService.UserInfo.RankPoint.ToString();
+        userNameText.text = User.Instance.UserInfo.UserName;
+        rankPointText.text = User.Instance.UserInfo.RankPoint.ToString();
         
         foreach (var unit in deck.UnitsOnDeck)
         {

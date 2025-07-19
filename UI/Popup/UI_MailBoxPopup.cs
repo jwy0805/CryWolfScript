@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 using Zenject;
 
@@ -18,6 +19,8 @@ public class UI_MailBoxPopup : UI_Popup
     private ShopViewModel _shopVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
+    
+    private bool _allClaimClicked = false;
     
     private enum Images
     {
@@ -54,13 +57,21 @@ public class UI_MailBoxPopup : UI_Popup
         _shopVm = shopViewModel;
     }
 
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            BindObjects();
+            InitEvents();
+            InitButtonEvents();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     protected override void BindObjects()
@@ -72,37 +83,49 @@ public class UI_MailBoxPopup : UI_Popup
         _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }
 
+    private void InitEvents()
+    {
+        _lobbyVm.OnResetUI += ResetUI;
+    }
+    
     protected override void InitButtonEvents()
     {
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(ClosePopup);
+        GetButton((int)Buttons.DeleteReadButton).gameObject.BindEvent(OnDeleteReadClicked);
+        GetButton((int)Buttons.ClaimAllButton).onClick.AddListener(() => _ = ClaimAllClicked());
     }
 
-    protected override async void InitUI()
+    protected override async Task InitUIAsync()
     {
         try
         {
-            GetImage((int)Images.NoMailBackground).gameObject.SetActive(false);
-
-            var mailTask = await _lobbyVm.GetMailList();
-            var mailList = mailTask.OrderBy(mail => mail.Type).ToList();
-            var parent = Util.FindChild(gameObject, "Content", true).transform;
-            Util.DestroyAllChildren(parent);
-
-            if (mailList.Count == 0)
-            {
-                GetImage((int)Images.NoMailBackground).gameObject.SetActive(true);
-            }
-            else
-            {
-                foreach (var mail in mailList)
-                {
-                    await SetMailFrameUI(mail, parent);
-                }
-            }
+            await ResetUI();
         }
         catch (Exception e)
         {
             await Managers.UI.ShowErrorPopup(e.ToString(), Managers.UI.CloseAllPopupUI);
+        }
+    }
+
+    private async Task ResetUI()
+    {
+        GetImage((int)Images.NoMailBackground).gameObject.SetActive(false);
+
+        var mailTask = await _lobbyVm.GetMailList();
+        var mailList = mailTask.OrderBy(mail => mail.Type).ToList();
+        var parent = Util.FindChild(gameObject, "Content", true).transform;
+        Util.DestroyAllChildren(parent);
+
+        if (mailList.Count == 0)
+        {
+            GetImage((int)Images.NoMailBackground).gameObject.SetActive(true);
+        }
+        else
+        {
+            foreach (var mail in mailList)
+            {
+                await SetMailFrameUI(mail, parent);
+            }
         }
     }
 
@@ -189,18 +212,17 @@ public class UI_MailBoxPopup : UI_Popup
         var scaleParam = parentWidth / iconRect.rect.width;
         iconRect.localScale = new Vector3(scaleParam, scaleParam, 1);
     }
-    
-    private async void OnProductClaim(PointerEventData data)
+
+    private async Task OnDeleteReadClicked(PointerEventData data)
     {
-        try
-        {
-            await ClaimMail(data.pointerPress);
-            // Showing Item Popup
-        }
-        catch (Exception e)
-        {
-            Debug.LogException(e);
-        }
+        await _lobbyVm.DeleteReadMail();
+    }
+
+    private async Task ClaimAllClicked()
+    {
+        GetButton((int)Buttons.ClaimAllButton).interactable = false;
+        await _shopVm.ClaimProductFromMailbox(true);
+        GetButton((int)Buttons.ClaimAllButton).interactable = true;
     }
     
     private void ClosePopup(PointerEventData data)
@@ -208,19 +230,8 @@ public class UI_MailBoxPopup : UI_Popup
         Managers.UI.CloseAllPopupUI();
     }
 
-    private async Task ClaimMail(GameObject mailObject)
+    private void OnDestroy()
     {
-        mailObject.TryGetComponent(out Button claimButton);
-        if (claimButton.interactable == false) return;
-        claimButton.interactable = false;
-        
-        var packet = new ClaimMailPacketRequired
-        {
-            AccessToken = _tokenService.GetAccessToken(),
-            // MailId = mailObject.GetComponent<Mail>().MailId,
-        };
-        
-        await _webService.SendWebRequestAsync<ClaimMailPacketResponse>("Mail/ClaimMail", "PUT", packet);
-        _ =  _lobbyVm.InitMailAlert();
+        _lobbyVm.OnResetUI -= ResetUI;
     }
 }

@@ -74,7 +74,7 @@ public class AdsManager
     public void FetchIdfa()
     {
         var adIdentifier = Device.advertisingIdentifier;
-        _idfa = string.IsNullOrEmpty(adIdentifier) ? User.Instance.UserAccount : adIdentifier;
+        _idfa = string.IsNullOrEmpty(adIdentifier) ? User.Instance.UserInfo.UserAccount : adIdentifier;
         Debug.Log($"[Ads] IDFA = {_idfa}");
     }
     
@@ -86,7 +86,7 @@ public class AdsManager
         if (string.IsNullOrEmpty(gaid))
         {
             Debug.Log($"[Ads] gaid is null or empty");
-            gaid = User.Instance.UserAccount;
+            gaid = User.Instance.UserInfo.UserAccount;
         }
         _idfa = gaid;
         Debug.Log($"[Ads] IDFA = {_idfa}");
@@ -116,7 +116,7 @@ public class AdsManager
         if (_levelPlayInitialized) return;
         
         ApplyRegulationFlags();
-        var userIdfa = string.IsNullOrEmpty(_idfa) ? User.Instance.UserAccount : _idfa;
+        var userIdfa = string.IsNullOrEmpty(_idfa) ? User.Instance.UserInfo.UserAccount : _idfa;
         var adFormats = new[] { com.unity3d.mediation.LevelPlayAdFormat.REWARDED };
         string appKey =
 #if UNITY_ANDROID
@@ -137,6 +137,7 @@ public class AdsManager
 
     private void SetUpEvents()
     {
+        TearDownEvents();
         IronSourceEvents.onSdkInitializationCompletedEvent += OnLevelPlaySdkReady;
         
         LevelPlay.OnInitSuccess += OnLevelPlayInitialized;

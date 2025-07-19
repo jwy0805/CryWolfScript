@@ -33,8 +33,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SStepTutorial, PacketHandler.S_StepTutorialHandler);		
 		_onRecv.Add((ushort)MessageId.SSpawn, MakePacket<S_Spawn>);
 		_handler.Add((ushort)MessageId.SSpawn, PacketHandler.S_SpawnHandler);		
-		_onRecv.Add((ushort)MessageId.SSpawnStatue, MakePacket<S_SpawnStatue>);
-		_handler.Add((ushort)MessageId.SSpawnStatue, PacketHandler.S_SpawnStatueHandler);		
+		_onRecv.Add((ushort)MessageId.SBindStatueInfo, MakePacket<S_BindStatueInfo>);
+		_handler.Add((ushort)MessageId.SBindStatueInfo, PacketHandler.S_BindStatueInfoHandler);		
 		_onRecv.Add((ushort)MessageId.SSpawnProjectile, MakePacket<S_SpawnProjectile>);
 		_handler.Add((ushort)MessageId.SSpawnProjectile, PacketHandler.S_SpawnProjectileHandler);		
 		_onRecv.Add((ushort)MessageId.SSpawnEffect, MakePacket<S_SpawnEffect>);

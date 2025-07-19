@@ -29,9 +29,9 @@ public class MyPlayerController : PlayerController
     private bool _isDragging;
     private Vector3 _lastMousePos;
     private GameObject _lastClickedObject;
-    private GameObject _cameraObject;
-    private bool _cameraFound;
-    
+
+    public GameObject CameraFocus { get; set; }
+
     [Inject]
     public void Construct(GameViewModel gameViewModel, TutorialViewModel tutorialViewModel)
     {
@@ -44,7 +44,6 @@ public class MyPlayerController : PlayerController
         base.Init();
         ObjectType = GameObjectType.Player;
         Managers.Input.MouseAction += OnMouseEvent;
-        _cameraObject = GameObject.FindWithTag("CameraFocus");
 
         // Test - Unit Spawn
         // TestUnitSpawn();
@@ -52,166 +51,40 @@ public class MyPlayerController : PlayerController
 
     private void TestUnitSpawn()
     {
+        C_Spawn sp0 = new()
+        {
+            Type = GameObjectType.Monster,
+            Num = (int)UnitId.Werewolf,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 11, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(sp0);
+        
         C_Spawn spawnPacket1 = new()
         {
             Type = GameObjectType.MonsterStatue,
             Num = (int)UnitId.Werewolf,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = -3.5f, PosY = 6, PosZ = 12, Dir = 180 },
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 12, Dir = 180 },
             Way = SpawnWay.North
         };
         Managers.Network.Send(spawnPacket1);
         
-        C_Spawn spawnPacket2 = new()
-        {
-            Type = GameObjectType.MonsterStatue,
-            Num = (int)UnitId.Horror,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 0f, PosY = 6, PosZ = 12, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(spawnPacket2); 
-        
-        C_Spawn spawnPacket3 = new()
-        {
-            Type = GameObjectType.MonsterStatue,
-            Num = (int)UnitId.Cactus,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 4f, PosY = 6, PosZ = 12, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(spawnPacket3); 
-        
-        C_Spawn spawnPacket4 = new()
-        {
-            Type = GameObjectType.MonsterStatue,
-            Num = (int)UnitId.MoleRat,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 3f, PosY = 6, PosZ = 14, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(spawnPacket4); 
-        
-        C_Spawn spawnPacket5 = new()
-        {
-            Type = GameObjectType.MonsterStatue,
-            Num = (int)UnitId.SnakeNaga,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = -2.5f, PosY = 6, PosZ = 14, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(spawnPacket5); 
-        
-        C_Spawn spawnPacket6 = new()
-        {
-            Type = GameObjectType.MonsterStatue,
-            Num = (int)UnitId.SkeletonGiant,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 0.5f, PosY = 6, PosZ = 16, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(spawnPacket6);
-        
-        C_Spawn spawnPacket7 = new()
-        {
-            Type = GameObjectType.MonsterStatue,
-            Num = (int)UnitId.Snake,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = -1, PosY = 6, PosZ = 16, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(spawnPacket7);
-        
         C_Spawn spawnPacket8 = new()
         {
             Type = GameObjectType.Tower,
-            Num = (int)UnitId.Hermit,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = -3f, PosY = 6, PosZ = -6f, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(spawnPacket8);
-        
-        C_Spawn spawnPacket9 = new()
-        {
-            Type = GameObjectType.Tower,
-            Num = (int)UnitId.Hermit,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 3f, PosY = 6, PosZ = -6f, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(spawnPacket9);
-        
-        C_Spawn spawnPacket10 = new()
-        {
-            Type = GameObjectType.Tower,
-            Num = (int)UnitId.TrainingDummy,
+            Num = (int)UnitId.SoulMage,
             PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = -6f, Dir = 180 },
             Way = SpawnWay.North
         };
-        Managers.Network.Send(spawnPacket10);
-        
-        C_Spawn spawnPacket11 = new()
-        {
-            Type = GameObjectType.Tower,
-            Num = (int)UnitId.FlowerPot,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = -10f, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(spawnPacket11);
-        
-        C_Spawn spawnPacket12 = new()
-        {
-            Type = GameObjectType.Tower,
-            Num = (int)UnitId.Blossom,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = -2, PosY = 6, PosZ = -10f, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(spawnPacket12);
-        
-        C_Spawn spawnPacket13 = new()
-        {
-            Type = GameObjectType.Tower,
-            Num = (int)UnitId.Blossom,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = -4, PosY = 6, PosZ = -10f, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(spawnPacket13);
-        
-        C_Spawn spawnPacket14 = new()
-        {
-            Type = GameObjectType.Tower,
-            Num = (int)UnitId.SoulMage,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 2.5f, PosY = 6, PosZ = -10f, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(spawnPacket14);
+        Managers.Network.Send(spawnPacket8);
     }
     
     private async void OnMouseEvent(Define.MouseEvent evt)
     {
         try
         {
-            if (_cameraObject == null && _cameraFound == false)
-            {
-                _cameraObject = GameObject.FindWithTag("CameraFocus");
-                if (_cameraObject != null)
-                {
-                    _cameraFound = true;
-                }
-                else
-                {
-                    Debug.LogWarning("CameraFocus object not found. Please ensure it exists in the scene.");
-                    return;
-                }
-            }
-            
             var ray = Camera.main!.ScreenPointToRay(Input.mousePosition);
             bool raycastHit = Physics.Raycast(ray, out var hit, 100.0f);
-
-            Debug.Log($"Mouse Event: {evt}, Raycast Hit: {raycastHit}, Position: {Input.mousePosition}");
-            Debug.Log($"CameraObject Position: {_cameraObject.transform.position}");
-            if (_cameraObject == null)
-            {
-                Debug.LogWarning("CameraObject is null. Please ensure it is assigned.");
-                return;
-            }
-
-            if (_gameVm == null)
-            {
-                Debug.LogWarning("gameVm is null. Please ensure it is assigned.");
-            }
             
             switch (evt)
             {
@@ -238,27 +111,27 @@ public class MyPlayerController : PlayerController
 
                         if (Faction == Faction.Sheep)
                         {
-                            switch (_cameraObject.transform.position.z)
+                            switch (CameraFocus.transform.position.z)
                             {
                                 case < -12.1f when moveZ < 0:
                                 case > 12.1f when moveZ > 0:
                                     return;
                                 default:
-                                    _cameraObject.transform.Translate(0, 0, moveZ);
+                                    CameraFocus.transform.Translate(0, 0, moveZ);
                                     break;
                             }
                         }
 
                         if (Faction == Faction.Wolf)
                         {
-                            switch (_cameraObject.transform.position.z)
+                            switch (CameraFocus.transform.position.z)
                             {
                                 case < -12.1f when moveZ > 0:
                                     return;
                                 case > 12.1f when moveZ < 0:
                                     return;
                                 default:
-                                    _cameraObject.transform.Translate(0, 0, moveZ);
+                                    CameraFocus.transform.Translate(0, 0, moveZ);
                                     break;
                             }
                         }
@@ -311,6 +184,7 @@ public class MyPlayerController : PlayerController
             case var _ when layer == LayerMask.NameToLayer("Ground"):
                 Managers.UI.CloseAllPopupUI();
                 _gameVm.TurnOffSelectRing();
+                _gameVm.HideMarker();
                 break;
                     
             case var _ when layer == LayerMask.NameToLayer("Tower"):
@@ -445,6 +319,16 @@ public class MyPlayerController : PlayerController
         }
         else
         {
+            if (go == null)
+            {
+                Debug.Log("Go null");
+            }
+
+            if (cc == null)
+            {
+                Debug.Log("cc null");
+            }
+            
             _gameVm.TurnOffSelectRing();
             _gameVm.TurnOnSelectRing(cc.Id);
             window = await Managers.UI.ShowPopupUiInGame<T>();

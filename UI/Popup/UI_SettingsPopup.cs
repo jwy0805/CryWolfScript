@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TMPro;
@@ -60,17 +61,24 @@ public class UI_SettingsPopup : UI_Popup
         _tokenService = tokenService;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitButtonEvents();
-        InitSliderCallbacks();
-        InitUI();
+            await BindObjectsAsync();
+            InitButtonEvents();
+            InitSliderCallbacks();
+            InitUI();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
-    protected override void BindObjects()
+    protected override async Task BindObjectsAsync()
     {
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
@@ -79,7 +87,7 @@ public class UI_SettingsPopup : UI_Popup
         _musicSlider = Util.FindChild<Slider>(gameObject, "MusicSlider", true);
         _sfxSlider = Util.FindChild<Slider>(gameObject, "SfxSlider", true);
         
-        _ = Managers.Localization.UpdateTextAndFont(_textDict);
+        await Managers.Localization.UpdateTextAndFont(_textDict);
     }
 
     protected override void InitButtonEvents()

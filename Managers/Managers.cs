@@ -102,9 +102,4 @@ public class Managers : MonoBehaviour
         Object.Clear();
         UI.Clear();
     }
-
-    public void OnDestroy()
-    {
-        Ads.TearDownEvents();
-    }
 }

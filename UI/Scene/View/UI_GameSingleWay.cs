@@ -115,8 +115,6 @@ public class UI_GameSingleWay : UI_Game
     
     protected override void InitUI()
     {
-        GetText((int)Texts.ResourceText).text = "0";
-
         if (_isTutorial)
         {
             _ = SetTutorialUI();
@@ -136,13 +134,22 @@ public class UI_GameSingleWay : UI_Game
             var level = deck.UnitsOnDeck[i].Level;
             var initPortraitId = deck.UnitsOnDeck[i].Id - (level - 1);
             var portrait = prefab.GetComponent<UI_Portrait>();
-
+            
             portrait.UnitId = (UnitId)initPortraitId;
             costText.GetComponent<TextMeshProUGUI>().text =
                 Managers.Data.UnitDict[initPortraitId].Stat.RequiredResources.ToString();
             prefab.GetComponent<Image>().sprite = 
                 await Managers.Resource.LoadAsync<Sprite>($"Sprites/Portrait/{portrait.UnitId}");
             prefab.BindEvent(OnPortraitClicked);
+            
+            var unitRole = Managers.Data.UnitDict[initPortraitId].UnitRole;
+            var rolePath = $"Sprites/Icons/icon_role_{unitRole.ToString().ToLower()}";
+            var roleIcon = Util.FindChild(prefab, "RoleIcon", true);
+            
+            roleIcon.GetComponent<Image>().sprite = await Managers.Resource.LoadAsync<Sprite>(rolePath);
+            roleIcon.transform.parent.GetComponent<RectTransform>().anchorMin = new Vector2(0, 1);
+            roleIcon.transform.parent.GetComponent<RectTransform>().anchorMax = new Vector2(0, 1);
+            roleIcon.transform.parent.GetComponent<RoleIconSizeController>().WidthRatio = 0.3f;
         }
         
         return _dictPortrait["UnitPanel0"].transform.parent.gameObject;

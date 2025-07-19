@@ -234,19 +234,6 @@ public class UI_UnitInfoPopup : UI_Popup
             Region = unitData.Region
         };
     }
-
-    private void GetAssetInfo(int id)
-    {
-        Managers.Data.SheepInfoDict.TryGetValue(id, out var sheepInfo);
-        if (sheepInfo == null)
-        {
-            Managers.Data.EnchantInfoDict.TryGetValue(id, out var enchantInfo);
-            if (enchantInfo == null)
-            {
-                Managers.Data.CharacterInfoDict.TryGetValue(id, out var characterInfo);
-            }
-        }
-    }
     
     private async Task SetLevelButton(UnitInfo unitInfo)
     {
@@ -281,10 +268,10 @@ public class UI_UnitInfoPopup : UI_Popup
 
     private async Task SetStatus()
     {
-        var classPath = $"Sprites/Icons/icon_class_{_unitInfo.Class.ToString()}";
-        var regionPath = $"Sprites/Icons/icon_region_{_unitInfo.Region.ToString()}";
-        var rolePath = $"Sprites/Icons/icon_role_{_unitInfo.Role.ToString()}";
-        var locationPath = $"Sprites/Icons/icon_location_{_unitData.RecommendedLocation}";
+        var classPath = $"Sprites/Icons/icon_class_{_unitInfo.Class.ToString().ToLower()}";
+        var regionPath = $"Sprites/Icons/icon_region_{_unitInfo.Region.ToString().ToLower()}";
+        var rolePath = $"Sprites/Icons/icon_role_{_unitInfo.Role.ToString().ToLower()}";
+        var locationPath = $"Sprites/Icons/icon_location_{_unitData.RecommendedLocation.ToLower()}";
 
         var type = _unitData.Stat.UnitType == 0 ? "ground" : "air";
         var attackType = _unitData.Stat.AttackType switch
@@ -295,8 +282,8 @@ public class UI_UnitInfoPopup : UI_Popup
             _ => throw new ArgumentOutOfRangeException()
         };
         
-        var typePath = $"Sprites/Icons/icon_type_{type}";
-        var attackTypePath = $"Sprites/Icons/icon_attack_{attackType}";
+        var typePath = $"Sprites/Icons/icon_type_{type.ToLower()}";
+        var attackTypePath = $"Sprites/Icons/icon_attack_{attackType.ToLower()}";
         var unitNameText = GetText((int)Texts.UnitInfoNameText);
         var key = string.Concat("unit_name_", Managers.Localization.GetConvertedString(_unitData.Name));
         await Managers.Localization.BindLocalizedText(unitNameText, key, FontType.BlackLined);

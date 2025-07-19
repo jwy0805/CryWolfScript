@@ -36,13 +36,15 @@ public partial class UI_MainLobby
             InitPackages(_shopVm.SpinelPackages, _spinelStorePanel),
             InitGoldItems(),
             InitSpinelItems());
+
+        InitDailyPanelObjects();
     }
 
     private async Task InitSpecialPackage()
     {
         foreach (var productInfo in _shopVm.SpecialPackages)
         {
-            var itemName = ((ProductId)productInfo.Id).ToString();
+            var itemName = ((ProductId)productInfo.ProductId).ToString();
             var item = itemName == ((ProductId)1).ToString()
                 ? await InitiateProduct(itemName, productInfo, _specialPackagePanel.GetChild(0))
                 : await InitiateProduct(itemName, productInfo, _specialPackagePanel.GetChild(1));
@@ -57,7 +59,7 @@ public partial class UI_MainLobby
     {
         foreach (var productInfo in _shopVm.BeginnerPackages)
         {
-            var itemName = ((ProductId)productInfo.Id).ToString();
+            var itemName = ((ProductId)productInfo.ProductId).ToString();
             var item = await InitiateProduct(itemName, productInfo, _beginnerPackagePanel);
             var priceText = Util.FindChild(item, "TextPrice", true, true);
             
@@ -70,7 +72,7 @@ public partial class UI_MainLobby
     {
         foreach (var productInfo in _shopVm.ReservedSales)
         {
-            var itemName = ((ProductId)productInfo.Id).ToString();
+            var itemName = ((ProductId)productInfo.ProductId).ToString();
             var item = await InitiateProduct(itemName, productInfo, _reservedSalePanel);
             var priceText = Util.FindChild(item, "TextPrice", true, true);
             // var frameObject = Util.FindChild(item, "ItemIcon", true, true);
@@ -84,7 +86,7 @@ public partial class UI_MainLobby
     {
         foreach (var productInfo in packages)
         {
-            var itemName = ((ProductId)productInfo.Id).ToString();
+            var itemName = ((ProductId)productInfo.ProductId).ToString();
             var item = await InitiateProduct(itemName, productInfo, panel);
             var priceText = Util.FindChild(item, "TextPrice", true, true);
             // var frameObject = Util.FindChild(item, "ItemIcon", true, true);
@@ -98,14 +100,14 @@ public partial class UI_MainLobby
     {
         foreach (var productInfo in _shopVm.GoldItems)
         {
-            var itemName = ((ProductId)productInfo.Id).ToString();
+            var itemName = ((ProductId)productInfo.ProductId).ToString();
             var item = await InitiateProduct(itemName, productInfo, _goldPackagePanel);
             var countText = Util.FindChild(item, "TextNum", true, true);
             var priceText = Util.FindChild(item, "TextPrice", true, true);
             // var frameObject = Util.FindChild(item, "ItemIcon", true, true);
 
             countText.GetComponent<TextMeshProUGUI>().text = productInfo.Compositions
-                .FirstOrDefault(c => c.Id == productInfo.Id)?
+                .FirstOrDefault(c => c.ProductId == productInfo.ProductId)?
                 .Count.ToString();
             priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
             item.BindEvent(OnProductClicked);
@@ -116,13 +118,13 @@ public partial class UI_MainLobby
     {
         foreach (var productInfo in _shopVm.SpinelItems)
         {
-            var itemName = ((ProductId)productInfo.Id).ToString();
+            var itemName = ((ProductId)productInfo.ProductId).ToString();
             var item = await InitiateProduct(itemName, productInfo, _spinelPackagePanel);
             var countText = Util.FindChild(item, "TextNum", true, true);
             var priceText = Util.FindChild(item, "TextPrice", true, true);
             
             countText.GetComponent<TextMeshProUGUI>().text = productInfo.Compositions
-                .FirstOrDefault(c => c.Id == productInfo.Id)?
+                .FirstOrDefault(c => c.ProductId == productInfo.ProductId)?
                 .Count.ToString();
             priceText.GetComponent<TextMeshProUGUI>().text = "KRW " + productInfo.Price.ToString("N0");
             item.BindEvent(OnProductClicked);
@@ -135,12 +137,12 @@ public partial class UI_MainLobby
         {
             var productInfo = dailyProductInfo.ProductInfo;
             var composition = productInfo.Compositions;
-            var itemName = ((ProductId)productInfo.Id).ToString();
+            var itemName = ((ProductId)productInfo.ProductId).ToString();
             var item = await InitiateDailyProduct(itemName, dailyProductInfo, _dailyProductPanel);
             var countText = Util.FindChild(item, "TextNum", true, true);
             var priceText = Util.FindChild(item, "TextPrice", true, true);
 
-            if (composition.Count == 1 && composition.First().Type == ProductType.Unit && composition.First().Count > 1)
+            if (composition.Count == 1 && composition.First().ProductType == ProductType.Unit && composition.First().Count > 1)
             {
                 if (dailyProductInfo.NeedAds)
                 {
@@ -226,7 +228,7 @@ public partial class UI_MainLobby
         }
         else
         {
-            if (productInfo.Compositions.Count == 1 && productInfo.Compositions.First().Type == ProductType.Unit)
+            if (productInfo.Compositions.Count == 1 && productInfo.Compositions.First().ProductType == ProductType.Unit)
             {
                 var unitId = productInfo.Compositions.First().CompositionId;
                 var unit = Managers.Data.UnitInfoDict[unitId];
@@ -269,9 +271,9 @@ public partial class UI_MainLobby
             }
             
             var productInfo = dailyProduct.ProductInfo;
-            var itemName = ((ProductId)productInfo.Id).ToString();
+            var itemName = ((ProductId)productInfo.ProductId).ToString();
             
-            if (productInfo.Compositions.Count == 1 && productInfo.Compositions.First().Type == ProductType.Unit)
+            if (productInfo.Compositions.Count == 1 && productInfo.Compositions.First().ProductType == ProductType.Unit)
             {
                 var unitId = productInfo.Compositions.First().CompositionId;
                 var unit = Managers.Data.UnitInfoDict[unitId];

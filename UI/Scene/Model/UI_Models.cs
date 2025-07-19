@@ -11,8 +11,7 @@ public interface IAsset
 public class User
 {
     public static User Instance { get; } = new();
-    public string UserAccount { get; set; } = "";
-    public string UserName { get; set; } = "";
+    public UserInfo UserInfo { get; set; } = new();
     public List<OwnedUnitInfo> OwnedUnitList { get; set; } = new();
     public List<UnitInfo> NotOwnedUnitList { get; set; } = new();
     public List<OwnedSheepInfo> OwnedSheepList { get; set; } = new();
@@ -27,12 +26,11 @@ public class User
     public List<OwnedMaterialInfo> OwnedMaterialList { get; set; } = new();
     public Deck DeckSheep { get; set; } = new();
     public Deck DeckWolf { get; set; } = new();
-    public bool NameInitialized { get; set; } = false;
     public bool SubscribeAdsRemover { get; set; }
     public bool IsGuest { get; set; } = false;
+    public Dictionary<int, int> ExpTable { get; set; } = new();
     public void Clear()
     {
-        UserAccount = "";
         OwnedUnitList.Clear();
         NotOwnedUnitList.Clear();
         OwnedSheepList.Clear();

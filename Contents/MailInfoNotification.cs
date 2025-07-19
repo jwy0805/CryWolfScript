@@ -32,11 +32,18 @@ public class MailInfoNotification : UI_Base
         _lobbyVm = lobbyVm;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+        try
+        {
+            BindObjects();
+            InitButtonEvents();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     protected override void BindObjects()

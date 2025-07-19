@@ -125,9 +125,9 @@ public class UI_ProductInfoPopup : UI_Popup
         var panelRect = contentsPanel.GetComponent<RectTransform>();
         panelRect.pivot = _productInfo.Compositions.Count > 4 ? new Vector2(0, 0.5f) : new Vector2(0.5f, 0.5f);
         
-        var sortedCompositions = _productInfo.Compositions.All(ci => ci.Type == ProductType.Material)
+        var sortedCompositions = _productInfo.Compositions.All(ci => ci.ProductType == ProductType.Material)
             ? _productInfo.Compositions
-                .OrderBy(ci => Managers.Data.MaterialInfoDict.TryGetValue(ci.Id, out var materialInfo) 
+                .OrderBy(ci => Managers.Data.MaterialInfoDict.TryGetValue(ci.ProductId, out var materialInfo) 
                     ? (int)materialInfo.Class : int.MaxValue).ToList()
             : _productInfo.Compositions;
         
@@ -149,7 +149,7 @@ public class UI_ProductInfoPopup : UI_Popup
             string productName;
             string path;
             GameObject product;
-            switch (composition.Type)
+            switch (composition.ProductType)
             {
                 case ProductType.None:
                     productName = ((ProductId)composition.CompositionId).ToString();

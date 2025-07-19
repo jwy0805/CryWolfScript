@@ -102,7 +102,7 @@ public class UI_ProductReservedInfoPopup : UI_Popup
             var layoutElement = productFrame.GetOrAddComponent<LayoutElement>();
             layoutElement.preferredHeight = Screen.height * 0.08f;
 
-            var path = composition.Type switch
+            var path = composition.ProductType switch
             {
                 ProductType.None => $"UI/Shop/NormalizedProducts/{((ProductId)composition.CompositionId).ToString()}",
                 ProductType.Spinel => "UI/Shop/NormalizedProducts/SpinelChest",
@@ -123,7 +123,7 @@ public class UI_ProductReservedInfoPopup : UI_Popup
 
     private async Task SetInfoText()
     {
-        var composition = _productInfo.Compositions.FirstOrDefault(c => c.Id == _productInfo.Id);
+        var composition = _productInfo.Compositions.FirstOrDefault(c => c.ProductId == _productInfo.ProductId);
         var str = _productInfo.Category == ProductCategory.GoldPackage ? "" : "X";
         var productText = GetText((int)Texts.TextName);
         productText.text = await Managers.Localization.BindLocalizedText(productText, _productInfo.ProductCode);

@@ -179,10 +179,8 @@ public class TutorialViewModel : IDisposable
         
         var apiTask = _webService.SendWebRequestAsync<ChangeActPacketResponse>(
             "Match/ChangeActByTutorial", UnityWebRequest.kHttpVerbPUT, changePacket);
-        Debug.Log("Tutorial ViewModel StartTutorial");
 
         await apiTask;
-        Debug.Log($"Tutorial ViewModel StartTutorial-2 {apiTask.Result.ChangeOk}");
         
         if (apiTask.Result.ChangeOk)
         {
@@ -418,6 +416,8 @@ public class TutorialViewModel : IDisposable
         
         _ = _webService.SendWebRequestAsync<UpdateTutorialResponse>(
             "UserAccount/UpdateTutorial", UnityWebRequest.kHttpVerbPUT, packet);
+
+        Debug.Log($"User {User.Instance.UserInfo.UserName} completed tutorial: {tutorialType}");
     }
 
     public void SetTutorialReward(UnitId rewardUnitId)

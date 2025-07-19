@@ -36,8 +36,8 @@ public class UI_HealthBar : MonoBehaviour
                 break;
             case GameObjectType.Portal:
                 var boxCollider = gameObject.GetComponent<BoxCollider>();
-                _sliderRect.localScale = new Vector3(0.02f * boxCollider.size.x, 0.01f, 0.01f);
-                _sliderRect.transform.position += Vector3.up * boxCollider.size.y * 0.6f;
+                _sliderRect.localScale = new Vector3(0.03f * boxCollider.size.x, 0.01f, 0.01f);
+                _sliderRect.transform.position += Vector3.up * boxCollider.size.y * 0.8f;
                 break;
             default:
                 var unitCollider = gameObject.GetComponent<CapsuleCollider>();

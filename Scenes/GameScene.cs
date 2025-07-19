@@ -9,7 +9,6 @@ public class GameScene : BaseScene
         try
         {
             base.Init();
-            Debug.Log($"ShadowDist={QualitySettings.shadowDistance}, Casc={QualitySettings.shadowCascades}");
             QualitySettings.shadowDistance  = 80f;
             QualitySettings.shadowCascades  = 2;
             SceneType = Define.Scene.Game;

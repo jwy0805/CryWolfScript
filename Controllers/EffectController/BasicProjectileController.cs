@@ -20,9 +20,10 @@ public class BasicProjectileController : ProjectileController
     
     protected override async void Init()
     {
-        #region Effect
         try
         {
+            #region Effect
+        
             _rb = GetComponent<Rigidbody>();
 
             flash = await Managers.Resource.LoadAsync<GameObject>($"Prefabs/Effects/Flashes/{gameObject.name}Flash", "prefab");
@@ -44,12 +45,13 @@ public class BasicProjectileController : ProjectileController
                     Managers.Resource.Destroy(flashInstance, flashPsParts.main.duration);
                 }
             }
+            
+            #endregion
         }
         catch (Exception e)
         {
             Debug.LogWarning(e);
         }
-        #endregion
     }
     
     protected override void FixedUpdate()

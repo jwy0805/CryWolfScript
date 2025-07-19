@@ -86,13 +86,13 @@ public class PacketHandler
         }
     }
 
-    public static void S_SpawnStatueHandler(PacketSession session, IMessage packet)
+    public static void S_BindStatueInfoHandler(PacketSession session, IMessage packet)
     {
-        var spawnPacket = (S_SpawnStatue)packet;
-        var gameObject = Managers.Object.FindById(spawnPacket.StatueId);
+        var bindPacket = (S_BindStatueInfo)packet;
+        var gameObject = Managers.Object.FindById(bindPacket.StatueId);
         var cc = gameObject?.GetComponent<CreatureController>();
         if (cc == null) return;
-        cc.UnitId = spawnPacket.UnitId;
+        cc.UnitId = bindPacket.UnitId;
     }
     
     public static void S_SpawnProjectileHandler(PacketSession session, IMessage packet)
@@ -254,10 +254,6 @@ public class PacketHandler
         var uiObject = GameObject.FindWithTag("UI");
         if (uiObject.TryGetComponent(out UI_GameSingleWay ui) == false) return;
         ui.UpgradeSkill(upgradePacket.Skill);
-        
-        // var skillButton = Util.FindChild(ui.gameObject,
-        //     string.Concat(upgradePacket.Skill.ToString(), "Button"), true);
-        // Util.SetAlpha(skillButton.GetComponent<Image>(), 1.0f);
     }
     
     public static void S_SkillUpdateHandler(PacketSession session, IMessage packet)
@@ -585,7 +581,7 @@ public class PacketHandler
                 popup.Star = resultPacket.Star;
                 popup.Reward = resultPacket.SingleRewards.Select(sr => new Reward
                 {
-                    ItemId = sr.ItemId, Count = sr.Count
+                    ItemId = sr.ItemId, ProductType = sr.ProductType, Count = sr.Count
                 }).ToList();
             }
             else

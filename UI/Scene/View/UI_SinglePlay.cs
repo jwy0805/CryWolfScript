@@ -11,7 +11,6 @@ using Zenject;
 
 public class UI_SinglePlay : UI_Scene
 {
-    private IUserService _userService;
     private SinglePlayViewModel _singlePlayVm;
     private DeckViewModel _deckVm;
 
@@ -48,9 +47,8 @@ public class UI_SinglePlay : UI_Scene
     }
     
     [Inject]
-    public void Construct(IUserService userService, SinglePlayViewModel singlePlayVm, DeckViewModel deckVm)
+    public void Construct(SinglePlayViewModel singlePlayVm, DeckViewModel deckVm)
     {
-        _userService = userService;
         _singlePlayVm = singlePlayVm;
         _deckVm = deckVm;
     }
@@ -83,7 +81,7 @@ public class UI_SinglePlay : UI_Scene
     
     protected override void InitButtonEvents()
     {
-        GetButton((int)Buttons.BackButton).gameObject.BindEvent(OnBackClicked);
+        GetButton((int)Buttons.BackButton).onClick.AddListener(OnBackClicked);
         GetButton((int)Buttons.InfoButton).gameObject.BindEvent(OnInfoClicked);
         GetButton((int)Buttons.StartButton).gameObject.BindEvent(OnStartClicked);
     }
@@ -103,9 +101,10 @@ public class UI_SinglePlay : UI_Scene
         var deckImage = GetImage((int)Images.Deck).transform;
         var userNameText = GetText((int)Texts.UserNameText);
         var rankPointText = GetText((int)Texts.RankPointText);
-        
-        userNameText.text = _userService.UserInfo.UserName;
-        rankPointText.text = _userService.UserInfo.RankPoint.ToString();
+
+        userNameText.text = User.Instance.UserInfo.UserName;
+        rankPointText.text = User.Instance.UserInfo.RankPoint.ToString();
+        await Managers.Localization.UpdateFont(userNameText);
         
         foreach (var unit in deck.UnitsOnDeck)
         {
@@ -116,9 +115,10 @@ public class UI_SinglePlay : UI_Scene
     public void StartSinglePlay(int sessionId)
     {
         _ = _singlePlayVm.StartSinglePlay(sessionId);
+        Debug.Log("start single play");
     }
     
-    private void OnBackClicked(PointerEventData data)
+    private void OnBackClicked()
     {
         Managers.Scene.LoadScene(Define.Scene.MainLobby);
     }

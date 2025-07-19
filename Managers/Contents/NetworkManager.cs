@@ -9,6 +9,7 @@ using Docker.DotNet.Models;
 using Google.Protobuf;
 using Google.Protobuf.Protocol;
 using Microsoft.AspNetCore.SignalR.Client;
+using ModestTree;
 using UnityEngine;
 using Zenject;
 
@@ -24,9 +25,9 @@ public class NetworkManager
     private bool _noInternetPopupShowing = false;
     public Action OnInternetRestored;
 
-    public Env Environment => Env.Dev;
-    public readonly bool ActualUser = true;
-    public readonly bool UseAddressables = true;
+    public Env Environment => Env.Local;
+    public readonly bool ActualUser = false;
+    public readonly bool UseAddressables = false;
     public bool IsFriendlyMatchHost { get; set; }
 
     public int SessionId
@@ -39,7 +40,13 @@ public class NetworkManager
             if (_sessionId == -1) return;
             
             var sceneContext = UnityEngine.Object.FindAnyObjectByType<SceneContext>();
-            if (sceneContext == null) return;
+            if (sceneContext == null)
+            {
+                Debug.LogWarning("SceneContext not found. Cannot set SessionId.");
+                return;
+            }
+            
+            Debug.Log("Getting SessionId: " + _sessionId);
             
             var tutorialVm = sceneContext.Container.TryResolve<TutorialViewModel>();
             if (tutorialVm == null)
@@ -52,6 +59,7 @@ public class NetworkManager
             
                 if (GameObject.FindWithTag("UI").TryGetComponent(out UI_SinglePlay uiSinglePlay))
                 {
+                    Debug.Log("Starting Single Play");;
                     uiSinglePlay.StartSinglePlay(_sessionId);
                     return;
                 }
@@ -135,6 +143,10 @@ public class NetworkManager
                 port = 7777;
                 ipHost = await Dns.GetHostEntryAsync(host);
                 ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.ToString().Contains("172."));
+                foreach (var address in ipHost.AddressList)
+                {
+                    // Debug.Log(address);
+                }
                 break;
             
             case Env.Dev:
@@ -152,7 +164,7 @@ public class NetworkManager
         }
         
         if (ipAddress == null) return;
-        Debug.Log(ipAddress);
+        Debug.Log($"Connecting to {ipAddress} with SessionId: {_sessionId}");
         var endPointLocal = new IPEndPoint(ipAddress, port);
         _session = new ServerSession();
         new Connector().Connect(endPointLocal, () => _session, test);

@@ -49,8 +49,8 @@ public class LoginViewModel : IInitializable, IDisposable
     
     public string UserAccount
     {
-        get => User.Instance.UserAccount;
-        set => User.Instance.UserAccount = value;
+        get => User.Instance.UserInfo.UserAccount;
+        set => User.Instance.UserInfo.UserAccount = value;
     }
     public string Password { get; set; }
     public bool RememberMe { get; set; }

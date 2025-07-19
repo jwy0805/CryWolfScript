@@ -15,7 +15,7 @@ public class UI_Loading : UI_Scene
     
     private readonly List<object> _fastFollowLabels = new()
     {
-        "LoadPool"
+        "LoadPoolLobby"
     };
     
     private enum Texts
