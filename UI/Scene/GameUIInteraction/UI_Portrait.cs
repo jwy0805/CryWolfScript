@@ -88,7 +88,6 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         // Send packet to show the range rings, spawnable bounds
         Managers.Network.Send(new C_GetRanges { UnitId = (int)_gameVm.CurrentSelectedPortrait.UnitId });
         Managers.Network.Send(new C_GetSpawnableBounds { Faction = Util.Faction });
-        
         // Tutorial
         _tutorialVm.PortraitDragStartHandler();
     }
