@@ -15,6 +15,7 @@ public class UI_FriendsInvitePopup : UI_Popup
     private ITokenService _tokenService;
     private ISignalRClient _signalRClient;
     private MainLobbyViewModel _lobbyVm;
+    private FriendlyMatchViewModel _friendVm;
 
     private readonly Dictionary<string, GameObject> _textDict = new();
     
@@ -46,11 +47,13 @@ public class UI_FriendsInvitePopup : UI_Popup
     public void Construct(
         ITokenService tokenService, 
         ISignalRClient signalRClient, 
-        MainLobbyViewModel lobbyViewModel)
+        MainLobbyViewModel lobbyViewModel,
+        FriendlyMatchViewModel friendViewModel)
     {
         _tokenService = tokenService;
         _signalRClient = signalRClient;
         _lobbyVm = lobbyViewModel;
+        _friendVm = friendViewModel;
     }
     
     protected override async void Init()
@@ -93,38 +96,41 @@ public class UI_FriendsInvitePopup : UI_Popup
     
     private async Task LoadFriends()
     {
-        var friendList = await _lobbyVm.GetFriendList();
-        await BindFriendsListPanel(friendList);
+        var packet = new LoadInvitableFriendPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            Username = User.Instance.UserInfo.UserName,
+        };
+        
+        var response = await _signalRClient.LoadFriends(packet);
+        await BindFriendsListPanel(response.InvitableFriends, response.Others);
     }
-
-    private async Task BindFriendsListPanel(List<FriendUserInfo> friendList)
+    
+    private async Task BindFriendsListPanel(List<FriendUserInfo> invitable, List<FriendUserInfo> others)
     {
         var parent = GetImage((int)Images.FriendsListPanel).transform;
         Util.DestroyAllChildren(parent);
-        foreach (var friend in friendList)
+
+        foreach (var friend in invitable)
         {
-            var friendUserInfo = new FriendUserInfo
-            {
-                UserName = friend.UserName,
-                Level = friend.Level,
-                RankPoint = friend.RankPoint
-            };
-            
-            var friendFrame = await Managers.Resource.GetFriendInviteFrame(friendUserInfo, parent);
-            BindFriendInviteButton(friendFrame, friendUserInfo);
+            var friendFrame = await Managers.Resource.GetFriendInviteFrame(friend, parent);
+            BindFriendInviteButton(friendFrame, friend, true);
+        }
+        
+        foreach (var friend in others)
+        {
+            var friendFrame = await Managers.Resource.GetFriendInviteFrame(friend, parent);
+            BindFriendInviteButton(friendFrame, friend, false);
         }
     }
 
-    private void BindFriendInviteButton(GameObject friendFrame, FriendUserInfo friendInfo)
+    private void BindFriendInviteButton(GameObject friendFrame, FriendUserInfo friendInfo, bool interactable)
     {
         var inviteButton = Util.FindChild(friendFrame, "InviteButton", true).GetComponent<Button>();
         var friendName = friendFrame.GetComponent<Friend>().FriendName;
+        inviteButton.interactable = interactable;
         
-        if (friendInfo.Act != UserAct.InLobby)
-        {
-            inviteButton.interactable = false;
-        }
-        else
+        if (interactable)
         {
             inviteButton.gameObject.BindEvent(data => OnInviteClicked(data, friendName));
         }

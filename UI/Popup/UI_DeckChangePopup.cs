@@ -96,7 +96,7 @@ public class UI_DeckChangePopup : UI_Popup
             {
                 // 실제 덱이 수정되고, DeckChangeScrollPopup으로 넘어감
                 if (data.pointerPress.TryGetComponent(out Card card) == false) return;
-                _deckVm.UpdateDeck(card, SelectedCard);
+                await _deckVm.UpdateDeck(card, SelectedCard);
                 await Managers.UI.ShowPopupUI<UI_DeckChangeScrollPopup>();
             });
         }

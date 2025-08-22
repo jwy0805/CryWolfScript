@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -8,7 +9,7 @@ using Zenject;
 
 public class MailInfoProduct : UI_Base
 {
-    private ShopViewModel _shopVm;
+    private MainLobbyViewModel _lobbyVm;
     private readonly Dictionary<string, GameObject> _textDict = new();
     
     public MailInfo MailInfo { get; set; }
@@ -26,9 +27,9 @@ public class MailInfoProduct : UI_Base
     }
     
     [Inject]
-    public void Construct(ShopViewModel shopViewModel)
+    public void Construct(MainLobbyViewModel lobbyViewModel)
     {
-        _shopVm = shopViewModel;
+        _lobbyVm = lobbyViewModel;
     }
     
     protected override async void Init()
@@ -53,7 +54,7 @@ public class MailInfoProduct : UI_Base
         var claimText = GetText((int)Texts.ClaimText);
         _ = Managers.Localization.BindLocalizedText(claimText, "claim_text");
     }
-
+    
     protected override void InitButtonEvents()
     {
         GetButton((int)Buttons.ClaimButton).onClick.AddListener( () => _ =  OnClaimClicked());
@@ -75,11 +76,11 @@ public class MailInfoProduct : UI_Base
         var replacers = new List<string> { Mathf.Max(expiresAt, 0).ToString() };
         await Managers.Localization.FormatLocalizedText(expiresText, key, placeholderKeys, replacers);
     }
-
+    
     private async Task OnClaimClicked()
     {
         GetButton((int)Buttons.ClaimButton).interactable = false;
-        await _shopVm.ClaimProductFromMailbox(false, MailInfo);
+        await _lobbyVm.ClaimProductFromMailbox(false, MailInfo);
         GetButton((int)Buttons.ClaimButton).interactable = true;
     }
 

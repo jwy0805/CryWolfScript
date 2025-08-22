@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DG.Tweening;
+using Docker.DotNet.Models;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -16,7 +17,6 @@ using Random = System.Random;
 public class UI_RewardPopup : UI_Popup
 {
     private Transform _levelPanel;
-    private Transform _rewardPanel;
     private RectTransform _rewardTitle;
     private Slider _expSlider;
     private TextMeshProUGUI _expPlusText;
@@ -30,8 +30,9 @@ public class UI_RewardPopup : UI_Popup
     private int _gainedExp;
     private bool _willLevelUp;
     private Sequence _sequence;
-    
-    private readonly Random _random = new Random();
+
+    private GameObject _rewardScrollView;
+    private readonly Random _random = new();
     private readonly Dictionary<string, GameObject> _textDict = new();
 
     public List<Reward> Rewards { get; set; } = new();
@@ -43,7 +44,6 @@ public class UI_RewardPopup : UI_Popup
     private enum Images
     {
         LevelPanel,
-        RewardPanel,
         ExpPanel,
         UpImage,
         LightImage,
@@ -52,6 +52,7 @@ public class UI_RewardPopup : UI_Popup
         StarImage2,
         LeftTitleLine,
         RightTitleLine,
+        RewardScrollView,
     }
     
     private enum Buttons
@@ -104,7 +105,6 @@ public class UI_RewardPopup : UI_Popup
         var expPanel = GetImage((int)Images.ExpPanel);
         
         _levelPanel = GetImage((int)Images.LevelPanel).transform;
-        _rewardPanel = GetImage((int)Images.RewardPanel).transform;
         _rewardTitle = Util.FindChild<RectTransform>(gameObject, "RewardTitle", true);
         _expSlider = Util.FindChild<Slider>(expPanel.gameObject, "ExpSlider", true, true);
         _expPlusText = GetText((int)Texts.ExpPlusText);
@@ -117,6 +117,8 @@ public class UI_RewardPopup : UI_Popup
         _currentLevel = User.Instance.UserInfo.Level;
         _currentExp = User.Instance.UserInfo.Exp;
         _currentMaxExp = User.Instance.ExpTable[_currentLevel];
+        
+        _rewardScrollView = GetImage((int)Images.RewardScrollView).gameObject;
         
         _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }
@@ -131,8 +133,10 @@ public class UI_RewardPopup : UI_Popup
     {
         _levelPanel.gameObject.SetActive(false);
         _rewardTitle.gameObject.SetActive(false);
-        _rewardPanel.gameObject.SetActive(false);
+        _rewardScrollView.gameObject.SetActive(false);
     }
+
+    #region Exp Anim
 
     private void PlayGainExp()
     {
@@ -235,7 +239,7 @@ public class UI_RewardPopup : UI_Popup
             PlayLevelPanelAnim();
         }
         
-        _rewardPanel.gameObject.SetActive(true);
+        _rewardScrollView.gameObject.SetActive(true);
         _rewardTitle.gameObject.SetActive(true);
         PlayRewardPanelAnim();
     }
@@ -280,70 +284,123 @@ public class UI_RewardPopup : UI_Popup
         rightTitleLine.localScale = Vector3.zero;
         rightTitleLine.DOScale(Vector3.one, 0.5f).SetEase(Ease.InOutSine);
         
-        _rewardPanel.localScale = new Vector3(0, 1, 1);
-        _rewardPanel.DOScale(Vector3.one, 0.5f).SetEase(Ease.InOutSine);
+        _rewardScrollView.transform.localScale = new Vector3(0, 1, 1);
+        _rewardScrollView.transform.DOScale(Vector3.one, 0.5f).SetEase(Ease.InOutSine);
     }
     
-    private async Task BindRewards()
-    {
-        _rewardPanel.gameObject.SetActive(true);
-        
-        foreach (var reward in Rewards)
-        {
-            switch (reward.ProductType)
-            {
-                case Google.Protobuf.Protocol.ProductType.Exp:
-                {
-                    GetText((int)Texts.ExpPlusText).text = $"+{reward.Count.ToString()}";
-                    break;
-                }
-                case Google.Protobuf.Protocol.ProductType.Material:
-                {
-                    Managers.Data.MaterialInfoDict.TryGetValue(reward.ItemId, out var materialInfo);
-                    if (materialInfo == null) continue;
-                    var itemObject = await Managers.Resource.GetMaterialResources(materialInfo, _rewardPanel);
-                    break;
-                }
-                case Google.Protobuf.Protocol.ProductType.Unit:
-                {
-                    Managers.Data.UnitInfoDict.TryGetValue(reward.ItemId, out var unitInfo);
-                    if (unitInfo == null) continue;
-                    var itemObject = await Managers.Resource.GetCardResources<UnitId>(unitInfo, _rewardPanel);
-                    break;
-                }
-                case Google.Protobuf.Protocol.ProductType.Gold:
-                {
-                    var itemObject = await Managers.Resource.Instantiate("UI/Deck/ItemFrameGold", _rewardPanel);
-                    var countText = Util.FindChild(itemObject, "CountText", true, true);
-                    countText.GetComponent<TextMeshProUGUI>().text = reward.Count.ToString();
-                    break;
-                }
-                case Google.Protobuf.Protocol.ProductType.Spinel:
-                {
-                    var itemObject = await Managers.Resource.Instantiate("UI/Deck/ItemFrameSpinel", _rewardPanel);
-                    var countText = Util.FindChild(itemObject, "CountText", true, true);
-                    countText.GetComponent<TextMeshProUGUI>().text = reward.Count.ToString();
-                    break;
-                }
-                case Google.Protobuf.Protocol.ProductType.None:
-                default:
-                {
-                    var rewardName = ((ProductId)reward.ItemId).ToString();
-                    var path = $"UI/Shop/NormalizedProducts/{rewardName}";
-                    var itemObject = await Managers.Resource.Instantiate(path, _rewardPanel);
-                    var countText = Util.FindChild(itemObject, "CountText", true, true);
-                    countText.GetComponent<TextMeshProUGUI>().text = reward.Count.ToString();
-                    break;
-                }
-            }
-        }
-    }
-
     private void SkipAnimation()
     {
         if (_sequence == null || _sequence.IsActive() == false) return;
         _sequence.Complete(true);
         _sequence = null;
+    }
+    
+    #endregion
+    
+    private async Task BindRewards()
+    {
+        _rewardTitle.gameObject.SetActive(true);
+        _rewardScrollView.gameObject.SetActive(true);
+        
+        var content = Util.FindChild(_rewardScrollView, "Content", true);
+
+        foreach (var reward in Rewards)
+        {
+            await BindRewardUI(content.transform, reward);
+        }
+    }
+    
+    private async Task BindRewardUI(Transform parent, Reward reward)
+    {
+        GameObject card = null;
+        switch (reward.ProductType)
+        {
+            case Google.Protobuf.Protocol.ProductType.Unit:
+                if (Managers.Data.UnitInfoDict.TryGetValue(reward.ItemId, out var unitInfo))
+                {
+                    card = await Managers.Resource.GetCardResources<UnitId>(unitInfo, parent);
+                }
+                break;
+            case Google.Protobuf.Protocol.ProductType.Enchant:
+                if (Managers.Data.EnchantInfoDict.TryGetValue(reward.ItemId, out var enchantInfo))
+                {
+                    card = await Managers.Resource.GetCardResources<EnchantId>(enchantInfo, parent);
+                }
+                break;
+            case Google.Protobuf.Protocol.ProductType.Sheep:
+                if (Managers.Data.SheepInfoDict.TryGetValue(reward.ItemId, out var sheepInfo))
+                {
+                    card = await Managers.Resource.GetCardResources<SheepId>(sheepInfo, parent);
+                }
+                break;
+            case Google.Protobuf.Protocol.ProductType.Character:
+                if (Managers.Data.CharacterInfoDict.TryGetValue(reward.ItemId, out var characterInfo))
+                {
+                    card = await Managers.Resource.GetCardResources<CharacterId>(characterInfo, parent);
+                }
+                break;
+            case Google.Protobuf.Protocol.ProductType.Material:
+                if (Managers.Data.MaterialInfoDict.TryGetValue(reward.ItemId, out var materialInfo))
+                {
+                    card = await Managers.Resource.GetMaterialResources(materialInfo, parent);
+                }
+                break;
+            case Google.Protobuf.Protocol.ProductType.Gold:
+                card = await Managers.Resource.GetItemFrameGold(reward.Count, parent);
+                break;
+            case Google.Protobuf.Protocol.ProductType.Spinel:
+                card = await Managers.Resource.GetItemFrameSpinel(reward.Count, parent);
+                break;
+            case Google.Protobuf.Protocol.ProductType.None:
+            default:
+                var rewardName = ((ProductId)reward.ItemId).ToString();
+                var path = $"UI/Shop/NormalizedProducts/{rewardName}";
+                card = await Managers.Resource.Instantiate(path, parent);
+                break;
+        }
+
+        var layoutElement = card.GetOrAddComponent<LayoutElement>();
+        
+        switch (reward.ProductType)
+        {
+            case Google.Protobuf.Protocol.ProductType.Unit:
+            case Google.Protobuf.Protocol.ProductType.Enchant:
+            case Google.Protobuf.Protocol.ProductType.Sheep:
+            case Google.Protobuf.Protocol.ProductType.Character:
+                layoutElement.preferredWidth = 200;
+                layoutElement.preferredHeight = 320;
+                break;
+            case Google.Protobuf.Protocol.ProductType.Material:
+                layoutElement.preferredWidth = 200;
+                layoutElement.preferredHeight = 200;
+                break;
+            case Google.Protobuf.Protocol.ProductType.Gold:
+            case Google.Protobuf.Protocol.ProductType.Spinel:
+            case Google.Protobuf.Protocol.ProductType.None:
+                if (card != null)
+                {
+                    if (card.transform.GetChild(0).TryGetComponent(out RectTransform childRect))
+                    {
+                        if (Mathf.Approximately(childRect.anchorMin.x, 0.19f))
+                        {
+                            layoutElement.preferredWidth = 320;
+                            layoutElement.preferredHeight = 320;
+                        }
+                        else
+                        {
+                            layoutElement.preferredWidth = 200;
+                            layoutElement.preferredHeight = 200;
+                        }
+                    }
+                }
+                break;
+        }        
+        
+        var countText = Util.FindChild(card, "CountText", true);
+        if (countText != null)
+        {
+            countText.GetComponent<TextMeshProUGUI>().text = reward.Count.ToString();
+        }
     }
 
     private void CheckRewards()

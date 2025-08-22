@@ -21,6 +21,7 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
     private GameViewModel _gameVm;
     private TutorialViewModel _tutorialVm;
     
+    private UnitId _unitId;
     private readonly float _sendTick = 0.15f;
     private bool _canSpawn = true;
     private Vector3 _originalPos;
@@ -31,7 +32,22 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
     private GameObject _skillRangeRing;
     private GameObject _spawnableBounds;
 
-    public UnitId UnitId { get; set; }
+    public UnitId UnitId
+    {
+        get => _unitId;
+        set
+        {
+            _unitId = value;
+            var starPanel = transform.Find("StarPanel");
+            var level = _gameVm.GetLevelFromUiObject(_unitId);
+            if (starPanel == null) return;
+            for (var i = 0; i < starPanel.childCount; i++)
+            {
+                var star = starPanel.GetChild(i);
+                star.GetComponent<Image>().color = i < level ? Color.white : Color.black;
+            }
+        }
+    }
 
     public bool CanSpawn
     {

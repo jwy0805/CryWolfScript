@@ -4,9 +4,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using AssetKits.ParticleImage;
 using Febucci.UI;
+using Febucci.UI.Core;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Networking;
@@ -49,7 +51,8 @@ public class UI_TutorialMainPopup : UI_Popup
     private RenderTexture _wolfRenderTexture;
     private RenderTexture _sheepRenderTexture;
     private RenderTexture _videoRenderTexture;
-
+    private bool _typing;
+    
     private enum Images
     {
         ContinueButtonLine,
@@ -391,7 +394,15 @@ public class UI_TutorialMainPopup : UI_Popup
     
     private async Task OnContinueClicked(PointerEventData data)
     {
-        await StepTutorial();
+        if (_typing)
+        {
+            _speechBubbleText.GetComponent<TypewriterByCharacter>().SkipTypewriter();
+            _typing = false;
+        }
+        else
+        {
+            await StepTutorial();
+        }
     }
 
     private async Task OnWolfClicked(PointerEventData data)
@@ -447,8 +458,8 @@ public class UI_TutorialMainPopup : UI_Popup
         var popup = await Managers.UI.ShowPopupUI<UI_NotifySelectPopup>();
         
         await Managers.Localization.UpdateNotifySelectPopupText(popup,
-            "notify_select_tutorial_exit_title", 
-            "notify_select_tutorial_exit_message");
+            "notify_select_tutorial_exit_message",
+            "notify_select_tutorial_exit_title");
         popup.SetYesCallbackF(async () =>
         {
             var packet = new UpdateTutorialRequired
@@ -466,6 +477,16 @@ public class UI_TutorialMainPopup : UI_Popup
     }
     
     #endregion
+
+    public void OnTypeStarted()
+    {
+        _typing = true;
+    }
+
+    public void OnTextShowed()
+    {
+        _typing = false;
+    }
 
     private void OnDestroy()
     {

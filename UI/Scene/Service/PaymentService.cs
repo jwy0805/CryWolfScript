@@ -96,7 +96,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
             var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
             var titleKey = "notify_payment_success_title";
             var messageKey = "notify_payment_success_message";
-            await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+            await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
             OnPaymentSuccess?.Invoke();
         }
         else
@@ -104,7 +104,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
             var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
             var titleKey = "notify_payment_failed_title";
             var messageKey = "notify_payment_failed_message";
-            await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+            await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
         }
     }
 
@@ -122,7 +122,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         var titleKey = "notify_payment_success_title";
         var messageKey = "notify_payment_success_message";
-        await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
 
         if (task.PaymentOk)
         {
@@ -220,7 +220,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         const string titleKey = "notify_payment_success_title";
         const string messageKey = "notify_payment_success_message";
-        await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
     }
     
     private async Task ShowPurchaseFailedPopup()
@@ -228,7 +228,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         const string titleKey = "notify_payment_failed_title";
         const string messageKey = "notify_payment_failed_message";
-        await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
     }
     
     public async void OnPurchaseFailed(Product product, PurchaseFailureReason failureReason)

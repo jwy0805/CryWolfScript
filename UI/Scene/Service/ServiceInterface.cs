@@ -43,15 +43,28 @@ public interface ITokenService
 
 public interface ISignalRClient
 {
-    [CanBeNull] Action OnInvitationSent { get; set; }
-    [CanBeNull] Action<AcceptInvitationPacketResponse> OnInvitationSuccess { get; set; }
-    [CanBeNull] Action<FriendRequestPacketResponse> OnFriendRequestNotificationReceived { get; set; }
+    [CanBeNull] event Action OnInvitationSent;
+    [CanBeNull] event Func<DeckInfo, Task> OnEnemyDeckSwitched;
+    [CanBeNull] event Func<DeckInfo, DeckInfo, Task> OnFactionSwitched;
+    [CanBeNull] event Action<AcceptInvitationPacketResponse> OnInvitationSuccess;
+    [CanBeNull] event Action<AcceptInvitationPacketResponse> OnEnterFriendlyMatch;
+    [CanBeNull] event Action<FriendRequestPacketResponse> OnFriendRequestNotificationReceived;
+    [CanBeNull] event Action OnGuestLeft;
+    [CanBeNull] event Func<Task> OnStartFriendlyMatch;
     Task Connect(string username);
-    Task JoinLobby();
+    Task JoinLobby(string token);
     Task LeaveLobby();
-    Task<InviteFriendlyMatchPacketRequired> SendInvitation(InviteFriendlyMatchPacketRequired required);
+    Task JoinGame(string token);
+    Task LeaveGame();
+    Task SwitchFactionOnFriendlyMatch(Faction faction);
+    Task SwitchDeckOnFriendlyMatch(string token, Faction faction);
+    Task<LoadInvitableFriendPacketResponse> LoadFriends(LoadInvitableFriendPacketRequired required);
+    Task<InviteFriendlyMatchPacketResponse> SendInvitation(InviteFriendlyMatchPacketRequired required);
     Task<AcceptInvitationPacketResponse> SendAcceptInvitation(AcceptInvitationPacketRequired required);
     Task<FriendRequestPacketResponse> SendFriendRequest(FriendRequestPacketRequired required);
+    Task StartFriendlyMatch(string username);
+    Task SendSessionId(int sessionId);
+    Task<Tuple<bool, AcceptInvitationPacketResponse>> ReEntryFriendlyMatch(string username);
     Task Disconnect();
 }
 

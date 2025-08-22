@@ -150,7 +150,7 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
                 var oldCard = Changing 
                     ? SelectedCard 
                     : _assetPanel.GetComponentInChildren<Card>();
-                _deckVm.UpdateBattleSetting(oldCard, card);
+                await _deckVm.UpdateBattleSetting(oldCard, card);
                 SelectedCard = card;
                 Changing = false;
                 

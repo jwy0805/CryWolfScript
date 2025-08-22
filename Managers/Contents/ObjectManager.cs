@@ -138,6 +138,7 @@ public class ObjectManager
                     fc.Id = info.ObjectId;
                     fc.PosInfo = info.PosInfo;
                     fc.Stat = info.StatInfo;
+                    fc.Tutorial();
                     break;
                 
                 case GameObjectType.Sheep:
@@ -188,7 +189,7 @@ public class ObjectManager
         }
     }
     
-    public async void AddProjectile(ObjectInfo info, int parentId, DestVector destVector, float speed)
+    public async void AddProjectile(ObjectInfo info, int parentId, DestVector destVector, float speed, bool sound)
     {
         try
         {
@@ -204,6 +205,7 @@ public class ObjectManager
             // prc.transform.position = new Vector3(info.PosInfo.PosX, info.PosInfo.PosY, info.PosInfo.PosZ);
             prc.DestPos = new Vector3(destVector.X, destVector.Y, destVector.Z);
             prc.Speed = speed;
+            prc.Sound = sound;
         }
         catch (Exception e)
         {

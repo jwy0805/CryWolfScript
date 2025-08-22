@@ -380,6 +380,46 @@ public class ResourceManager
         
         return itemFrame;
     }
+
+    public async Task<GameObject> GetItemFrameGold(int count, Transform parent)
+    {
+        var itemFrame = await Instantiate("UI/Deck/ItemFrameGold", parent);
+        var goldImage = Util.FindChild<Image>(itemFrame, "ItemIcon", true);
+        var countText = Util.FindChild<TextMeshProUGUI>(itemFrame, "CountText", true);
+        var path = count switch
+        {
+            >= 50000 => "Sprites/ShopIcons/icon_gold_vault",
+            >= 25000 => "Sprites/ShopIcons/icon_gold_basket",
+            >= 2500 => "Sprites/ShopIcons/icon_gold_pouch",
+            _ => "Sprites/ShopIcons/icon_gold_pile"
+        };
+        
+        goldImage.sprite = await LoadAsync<Sprite>(path);
+        countText.text = count.ToString();
+        
+        return itemFrame;
+    }
+
+    public async Task<GameObject> GetItemFrameSpinel(int count, Transform parent)
+    {
+        var itemFrame = await Instantiate("UI/Deck/ItemFrameSpinel", parent);
+        var spinelImage = Util.FindChild<Image>(itemFrame, "ItemIcon", true);
+        var countText = Util.FindChild<TextMeshProUGUI>(itemFrame, "CountText", true);
+        var path = count switch
+        {
+            >= 7000 => "Sprites/ShopIcons/icon_spinel_vault",
+            >= 5000 => "Sprites/ShopIcons/icon_spinel_chest",
+            >= 3000 => "Sprites/ShopIcons/icon_spinel_basket",
+            >= 1000 => "Sprites/ShopIcons/icon_spinel_pouch",
+            >= 50 => "Sprites/ShopIcons/icon_spinel_fistful",
+            _ => "Sprites/ShopIcons/icon_spinel_pile"
+        };
+        
+        spinelImage.sprite = await LoadAsync<Sprite>(path);
+        countText.text = count.ToString();
+        
+        return itemFrame;
+    }
     
     private void BindUnitCardColor(UnitClass unitClass, Image background, Image gradient, Image glow)
     {

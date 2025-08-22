@@ -41,10 +41,11 @@ public class UI_GameSingleWay : UI_Game
     
     private GameViewModel _gameVm;
     private TutorialViewModel _tutorialVm;
+    private SignalRClient _signalRClient;
     
     private Camera _tutorialCamera;
     private GameObject _log;
-    private bool _isTutorial;
+    // private bool _isTutorial;
     private readonly List<GameObject> _selectedObjects = new();
     private readonly Dictionary<string, GameObject> _dictPortrait = new();
     
@@ -52,10 +53,11 @@ public class UI_GameSingleWay : UI_Game
     public Faction Faction { get; set; }
     
     [Inject]
-    public void Construct(GameViewModel gameViewModel, TutorialViewModel tutorialViewModel)
+    public void Construct(GameViewModel gameViewModel, TutorialViewModel tutorialViewModel, SignalRClient signalRClient)
     {
         _gameVm = gameViewModel;
         _tutorialVm = tutorialViewModel;
+        _signalRClient = signalRClient;
     }
 
     private void Awake()
@@ -75,12 +77,6 @@ public class UI_GameSingleWay : UI_Game
     {
         base.Init();
         Faction = Util.Faction;
-        
-        if (Managers.Game.IsTutorial)
-        {
-            _isTutorial = true;
-            Managers.Game.IsTutorial = false;
-        }
         
         BindObjects();
         InitButtonEvents();
@@ -115,7 +111,7 @@ public class UI_GameSingleWay : UI_Game
     
     protected override void InitUI()
     {
-        if (_isTutorial)
+        if (Managers.Game.IsTutorial)
         {
             _ = SetTutorialUI();
         }
@@ -150,6 +146,17 @@ public class UI_GameSingleWay : UI_Game
             roleIcon.transform.parent.GetComponent<RectTransform>().anchorMin = new Vector2(0, 1);
             roleIcon.transform.parent.GetComponent<RectTransform>().anchorMax = new Vector2(0, 1);
             roleIcon.transform.parent.GetComponent<RoleIconSizeController>().WidthRatio = 0.3f;
+            
+            var starPanel = Util.FindChild(prefab, "StarPanel", true);
+            for (var j = 0; j < starPanel.transform.childCount; j++)
+            {
+                var star = starPanel.transform.GetChild(j).GetComponent<Image>();
+                
+                if (j > level - 1)
+                {
+                    star.gameObject.SetActive(false);
+                }
+            }
         }
         
         return _dictPortrait["UnitPanel0"].transform.parent.gameObject;
@@ -415,6 +422,8 @@ public class UI_GameSingleWay : UI_Game
     
     private void OnDestroy()
     {
+        Managers.Game.IsTutorial = false;
+        
         _gameVm.OnPortraitClickedEvent -= ShowPortraitSelectEffect;
         _gameVm.TurnOnSelectRingCoroutineEvent -= SelectRingAsync;
         _gameVm.TurnOffOneSelectRingEvent -= TurnOffOneSelectRing;

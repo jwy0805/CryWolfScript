@@ -45,7 +45,9 @@ public class BasicProjectileController : ProjectileController
                     Managers.Resource.Destroy(flashInstance, flashPsParts.main.duration);
                 }
             }
-            
+
+            _ = PlaySfx();
+
             #endregion
         }
         catch (Exception e)
@@ -112,7 +114,9 @@ public class BasicProjectileController : ProjectileController
                 Managers.Resource.Destroy(hitInstance, hitPsParts.main.duration);
             }
         }
-        
+
+        _ = PlayHitSfx();
+
         //Removing trail from the projectile on collision enter or smooth removing. Detached elements must have "AutoDestroying script"
         foreach (var detachedPrefab in detached)
         {
@@ -127,5 +131,47 @@ public class BasicProjectileController : ProjectileController
         Managers.Resource.Destroy(gameObject);
 
         #endregion
+    }
+
+    private async Task PlaySfx()
+    {
+        if (Sound)
+        {
+            switch (gameObject.name)
+            {
+                case "BasicProjectile":
+                    await Managers.Sound.PlaySfx3D("InGame/basic_projectile_1", transform.position);
+                    break;
+                default:
+                    await Managers.Sound.PlaySfx3D($"InGame/{Util.ToSnakeCase(gameObject.name)}", transform.position);
+                    break;
+            }
+        }
+    }
+    
+    private async Task PlayHitSfx()
+    {
+        switch (gameObject.name)
+        {
+            case "BigPoison":
+            case "FungiProjectile":
+            case "MosquitoPesterProjectile":
+            case "MosquitoStingerProjectile":
+            case "MothCelestialPoison":
+            case "ToadstoolProjectile":
+            case "SmallPoison": 
+                await Managers.Sound.PlaySfx3D("InGame/poison_projectile_hit", transform.position);
+                break;
+            case "HauntFire":
+            case "SnakeFire":
+            case "SnakeNagaFire": 
+            case "Sprout3HitFire": 
+            case "SproutFire":
+                await Managers.Sound.PlaySfx3D("InGame/fire_projectile_hit", transform.position);
+                break;
+            default:
+                await Managers.Sound.PlaySfx3D("InGame/projectile_hit", transform.position);
+                break;
+        }
     }
 }

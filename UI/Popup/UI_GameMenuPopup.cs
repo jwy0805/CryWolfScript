@@ -17,14 +17,14 @@ public class UI_GameMenuPopup : UI_Popup
     {
         ExitButton,
         SurrenderButton,
-        OptionButton
+        SettingsButton
     }
 
     private enum Texts
     {
         GameMenuTitleText,
         GameMenuSurrenderText,
-        GameMenuOptionText
+        GameMenuSettingsText
     }
     
     [Inject]
@@ -42,7 +42,7 @@ public class UI_GameMenuPopup : UI_Popup
         
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(ClosePopup);
         GetButton((int)Buttons.SurrenderButton).gameObject.BindEvent(OnSurrenderClicked);
-        GetButton((int)Buttons.OptionButton).gameObject.BindEvent(OnOptionClicked);
+        GetButton((int)Buttons.SettingsButton).gameObject.BindEvent(OnSettingsClicked);
     }
 
     protected override void BindObjects()
@@ -57,7 +57,7 @@ public class UI_GameMenuPopup : UI_Popup
         _webService.SendWebRequestAsync<SurrenderPacketResponse>("Match/Surrender", "PUT", packet);
     }
     
-    private void OnOptionClicked(PointerEventData data)
+    private void OnSettingsClicked(PointerEventData data)
     {
         
     }

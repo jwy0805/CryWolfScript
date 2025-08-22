@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
-using ModestTree;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -55,28 +54,73 @@ public class MyPlayerController : PlayerController
         {
             Type = GameObjectType.Monster,
             Num = (int)UnitId.Werewolf,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 11, Dir = 180 },
+            PosInfo = new PositionInfo { State = State.Idle, PosX = -4, PosY = 6, PosZ = 12, Dir = 180 },
             Way = SpawnWay.North
         };
         Managers.Network.Send(sp0);
         
-        C_Spawn spawnPacket1 = new()
+        C_Spawn sp1 = new()
         {
-            Type = GameObjectType.MonsterStatue,
+            Type = GameObjectType.Monster,
+            Num = (int)UnitId.Werewolf,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = -2, PosY = 6, PosZ = 12, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(sp1);
+        
+        C_Spawn sp2 = new()
+        {
+            Type = GameObjectType.Monster,
             Num = (int)UnitId.Werewolf,
             PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = 12, Dir = 180 },
             Way = SpawnWay.North
         };
-        Managers.Network.Send(spawnPacket1);
+        Managers.Network.Send(sp2);
         
-        C_Spawn spawnPacket8 = new()
+        C_Spawn sp3 = new()
+        {
+            Type = GameObjectType.Monster,
+            Num = (int)UnitId.Werewolf,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 2, PosY = 6, PosZ = 12, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(sp3);
+        
+        C_Spawn sp4 = new()
+        {
+            Type = GameObjectType.Monster,
+            Num = (int)UnitId.Werewolf,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 4, PosY = 6, PosZ = 12, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(sp4);
+        
+        C_Spawn sp6 = new()
         {
             Type = GameObjectType.Tower,
-            Num = (int)UnitId.SoulMage,
+            Num = (int)UnitId.TargetDummy,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = -1.5f, PosY = 6, PosZ = -6f, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(sp6);
+        
+        C_Spawn sp7 = new()
+        {
+            Type = GameObjectType.Tower,
+            Num = (int)UnitId.TargetDummy,
             PosInfo = new PositionInfo { State = State.Idle, PosX = 0, PosY = 6, PosZ = -6f, Dir = 180 },
             Way = SpawnWay.North
         };
-        Managers.Network.Send(spawnPacket8);
+        Managers.Network.Send(sp7);
+        
+        C_Spawn sp8 = new()
+        {
+            Type = GameObjectType.Tower,
+            Num = (int)UnitId.TargetDummy,
+            PosInfo = new PositionInfo { State = State.Idle, PosX = 1.5f, PosY = 6, PosZ = -6f, Dir = 180 },
+            Way = SpawnWay.North
+        };
+        Managers.Network.Send(sp8);
     }
     
     private async void OnMouseEvent(Define.MouseEvent evt)

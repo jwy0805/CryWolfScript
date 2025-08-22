@@ -26,8 +26,8 @@ public class NetworkManager
     public Action OnInternetRestored;
 
     public Env Environment => Env.Local;
-    public readonly bool ActualUser = false;
-    public readonly bool UseAddressables = false;
+    public readonly bool ActualUser = true;
+    public readonly bool UseAddressables = true;
     public bool IsFriendlyMatchHost { get; set; }
 
     public int SessionId
@@ -53,13 +53,13 @@ public class NetworkManager
             {
                 if (GameObject.FindWithTag("UI").TryGetComponent(out UI_MatchMaking uiMatchMaking))
                 {
+                    Debug.Log("ui matchmaking");
                     uiMatchMaking.StartMatchMaking(_sessionId);
                     return;
                 }
             
                 if (GameObject.FindWithTag("UI").TryGetComponent(out UI_SinglePlay uiSinglePlay))
                 {
-                    Debug.Log("Starting Single Play");;
                     uiSinglePlay.StartSinglePlay(_sessionId);
                     return;
                 }
@@ -70,6 +70,13 @@ public class NetworkManager
                 {
                     _ = tutorialVm.StartTutorial(tutorialVm.TutorialFaction, _sessionId);
                 }
+            }
+            
+            var friendlyMatchVm = sceneContext.Container.TryResolve<FriendlyMatchViewModel>();
+            if (friendlyMatchVm != null)
+            {
+                Debug.Log("Setting SessionId for FriendlyMatchViewModel: " + _sessionId);
+                _ = friendlyMatchVm.SendSessionId(_sessionId);
             }
         }
     }

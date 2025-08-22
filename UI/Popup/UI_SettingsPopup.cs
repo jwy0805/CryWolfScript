@@ -184,7 +184,7 @@ public class UI_SettingsPopup : UI_Popup
         var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         const string titleKey = "empty_text";
         const string messageKey = "notify_preparing_message";
-        await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
     }
     
     private async Task OnLinkSocialClicked(PointerEventData data)
@@ -192,7 +192,7 @@ public class UI_SettingsPopup : UI_Popup
         var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         const string titleKey = "empty_text";
         const string messageKey = "notify_preparing_message";
-        await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
     }
     
     private async Task OnLogoutClicked(PointerEventData data)
@@ -221,7 +221,7 @@ public class UI_SettingsPopup : UI_Popup
         var popup = await Managers.UI.ShowPopupUI<UI_NotifySelectPopup>();
         const string titleKey = "notify_delete_account_title";
         const string messageKey = "notify_delete_account_message";
-        await Managers.Localization.UpdateNotifySelectPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifySelectPopupText(popup, messageKey, titleKey);
         
         popup.SetYesCallbackF(async () =>
         {
@@ -247,7 +247,7 @@ public class UI_SettingsPopup : UI_Popup
                 var notifyPopup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
                 const string title = "notify_network_error_title";
                 const string message = "notify_network_error_message";
-                await Managers.Localization.UpdateNotifyPopupText(notifyPopup, title, message);
+                await Managers.Localization.UpdateNotifyPopupText(notifyPopup, message, title);
             }
         });
         

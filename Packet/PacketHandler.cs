@@ -86,6 +86,29 @@ public class PacketHandler
         }
     }
 
+    public static void S_PlaySoundHandler(PacketSession session, IMessage packet)
+    {
+        var soundPacket = (S_PlaySound)packet;
+        if (soundPacket.Sound == Sounds.NoSound) return;
+
+        var path = $"InGame/{Util.ToSnakeCase(soundPacket.Sound.ToString())}";
+        switch (soundPacket.SoundType)
+        {
+            case SoundType.D3:
+                var go = Managers.Object.FindById(soundPacket.ObjectId);
+                if (go == null) break;
+                _ = Managers.Sound.PlaySfx3D(path, go.transform.position);
+                break;
+            case SoundType.D2:
+                _ = Managers.Sound.PlaySfx2D(path);
+                break;
+            case SoundType.Loop:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+    
     public static void S_BindStatueInfoHandler(PacketSession session, IMessage packet)
     {
         var bindPacket = (S_BindStatueInfo)packet;
@@ -99,7 +122,7 @@ public class PacketHandler
     {
         var spawnPacket = (S_SpawnProjectile)packet;
         Managers.Object.AddProjectile(
-            spawnPacket.Object, spawnPacket.ParentId, spawnPacket.DestPos, spawnPacket.MoveSpeed);
+            spawnPacket.Object, spawnPacket.ParentId, spawnPacket.DestPos, spawnPacket.MoveSpeed, spawnPacket.Sound);
     }
     
     public static void S_SpawnEffectHandler(PacketSession session, IMessage packet)
@@ -149,6 +172,7 @@ public class PacketHandler
         if (go.TryGetComponent(out BaseController bc) == false) return;
 
         bc.transform.position = new Vector3(movePacket.Dest.X, movePacket.Dest.Y, movePacket.Dest.Z);
+        bc.HelpSheepTutorial();
     }
     
     public static void S_StateHandler(PacketSession session, IMessage packet)
@@ -309,6 +333,9 @@ public class PacketHandler
                     break;
                 case Damage.True:
                     text.color = new Color32(255, 255, 186, 255);
+                    break;
+                case Damage.Heal:
+                    text.color = Color.green;
                     break;
                 case Damage.None:
                 case Damage.Fire:
@@ -567,6 +594,29 @@ public class PacketHandler
         }
     }
 
+    public static async void S_ShowFriendlyResultPopupHandler(PacketSession session, IMessage packet)
+    {
+        try
+        {
+            var resultPacket = (S_ShowFriendlyResultPopup)packet;
+            Managers.UI.CloseAllPopupUI();
+            Managers.Game.GameResult = resultPacket.Win;
+            
+            if (resultPacket.Win)
+            {
+                await Managers.UI.ShowPopupUI<UI_ResultFriendlyVictoryPopup>();
+            }
+            else
+            {
+                await Managers.UI.ShowPopupUI<UI_ResultFriendlyDefeatPopup>();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
+    }
+    
     public static async void S_ShowSingleResultPopupHandler(PacketSession session, IMessage packet)
     {
         try
@@ -616,8 +666,10 @@ public class PacketHandler
         try
         {
             var matchMakingPacket = (S_MatchMakingSuccess)packet;
-            var ui = GameObject.FindWithTag("UI").GetComponent<UI_MatchMaking>();
-            await ui.SetEnemyUserInfo(matchMakingPacket);
+            if (GameObject.FindWithTag("UI").TryGetComponent(out UI_MatchMaking ui))
+            {
+                await ui.SetEnemyUserInfo(matchMakingPacket);
+            }
         }
         catch (Exception e)
         {

@@ -16,7 +16,6 @@ public class UI_MailBoxPopup : UI_Popup
     private IWebService _webService;
     private ITokenService _tokenService;
     private MainLobbyViewModel _lobbyVm;
-    private ShopViewModel _shopVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
     
@@ -47,14 +46,12 @@ public class UI_MailBoxPopup : UI_Popup
         IUserService userService,
         IWebService webService, 
         ITokenService tokenService, 
-        MainLobbyViewModel lobbyViewModel, 
-        ShopViewModel shopViewModel)
+        MainLobbyViewModel lobbyViewModel)
     {
         _userService = userService;
         _webService = webService;
         _tokenService = tokenService;
         _lobbyVm = lobbyViewModel;
-        _shopVm = shopViewModel;
     }
 
     protected override async void Init()
@@ -221,7 +218,7 @@ public class UI_MailBoxPopup : UI_Popup
     private async Task ClaimAllClicked()
     {
         GetButton((int)Buttons.ClaimAllButton).interactable = false;
-        await _shopVm.ClaimProductFromMailbox(true);
+        await _lobbyVm.ClaimProductFromMailbox(true);
         GetButton((int)Buttons.ClaimAllButton).interactable = true;
     }
     

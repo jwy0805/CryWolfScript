@@ -98,7 +98,7 @@ public class UIManager
                 Managers.Resource.InitAddressables = true;
             }
 
-            Debug.Log("Show Scene UI Called, v43");
+            Debug.Log("Show Scene UI Called, v44");
             
             await Managers.Data.InitAsync();
             var key = $"UI/Scene/{name}";
@@ -171,7 +171,7 @@ public class UIManager
     public async Task ShowNotifyPopup(string titleKey, string messageKey, Action callback = null)
     {
         var popup = await ShowPopupUI<UI_NotifyPopup>();
-        await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
         if (callback != null)
         {
             popup.SetYesCallback(callback);
@@ -181,7 +181,7 @@ public class UIManager
     public async Task ShowNotifySelectPopup(string titleKey, string messageKey, Action yesCallback, Action noCallback)
     {
         var popup = await ShowPopupUI<UI_NotifySelectPopup>();
-        await Managers.Localization.UpdateNotifySelectPopupText(popup, titleKey, messageKey);
+        await Managers.Localization.UpdateNotifySelectPopupText(popup, messageKey, titleKey);
         popup.SetYesCallback(yesCallback);
         popup.SetNoCallBack(noCallback);
     }

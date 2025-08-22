@@ -208,8 +208,8 @@ public class UI_SignUpPopup : UI_Popup
             {
                 var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
                 await Managers.Localization.UpdateNotifyPopupText(popup, 
-                    "notify_network_error_title", 
-                    "notify_network_error_message");
+                    "notify_network_error_message",
+                    "notify_network_error_title");
             }
             
             var response = await task;
@@ -218,8 +218,8 @@ public class UI_SignUpPopup : UI_Popup
             {
                 var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
                 await Managers.Localization.UpdateNotifyPopupText(popup, 
-                    "notify_validation_email_sent_title", 
-                    "notify_validation_email_sent_message");
+                    "notify_validation_email_sent_message",
+                    "notify_validation_email_sent_title");
             }
             else
             {
@@ -231,13 +231,13 @@ public class UI_SignUpPopup : UI_Popup
                         break;
                     case 1:
                         await Managers.Localization.UpdateNotifyPopupText(popup,
-                            "notify_sign_up_error_title", 
-                            "notify_sign_up_error_message_email_in_use");
+                            "notify_sign_up_error_message_email_in_use",
+                            "notify_sign_up_error_title");
                         break;
                     case 2:
                         await Managers.Localization.UpdateNotifyPopupText(popup,
-                            "notify_sign_up_error_title", 
-                            "notify_sign_up_error_message_invalid_password");
+                            "notify_sign_up_error_message_invalid_password",
+                            "notify_sign_up_error_title");
                         break;
                     default:
                         break;
@@ -247,9 +247,9 @@ public class UI_SignUpPopup : UI_Popup
         catch (Exception)
         {
             var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-            await Managers.Localization.UpdateNotifyPopupText(popup, 
-                "notify_sign_up_unexpected_error_title", 
-                "notify_sign_up_unexpected_error_message");
+            await Managers.Localization.UpdateNotifyPopupText(popup,
+                "notify_sign_up_unexpected_error_message",
+                "notify_sign_up_unexpected_error_title");
         }
     }
 }

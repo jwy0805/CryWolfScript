@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using UnityEngine;
+using UnityEngine.Networking;
 using Zenject;
 
 public class DeckViewModel
@@ -63,7 +64,7 @@ public class DeckViewModel
         OnDeckSwitched?.Invoke(faction);
     }
 
-    public void UpdateBattleSetting(Card oldCard, Card newCard)
+    public async Task UpdateBattleSetting(Card oldCard, Card newCard)
     {
         var battleSetting = User.Instance.BattleSetting;
         var type = oldCard.AssetType;
@@ -90,8 +91,8 @@ public class DeckViewModel
             BattleSettingInfo = battleSetting
         };
         
-        _webService.SendWebRequest<UpdateBattleSettingPacketResponse>(
-            "Collection/UpdateBattleSetting", "PUT", updatePacket, _ => { });
+        await _webService.SendWebRequestAsync<UpdateBattleSettingPacketResponse>(
+            "Collection/UpdateBattleSetting", UnityWebRequest.kHttpVerbPUT, updatePacket);
     }
     
     public Deck GetDeck(Faction faction)
@@ -99,7 +100,7 @@ public class DeckViewModel
         return faction == Faction.Sheep ? User.Instance.DeckSheep : User.Instance.DeckWolf;
     }
     
-    public void UpdateDeck(Card oldCard, Card newCard)
+    public async Task UpdateDeck(Card oldCard, Card newCard)
     {
         var deck = GetDeck(Util.Faction);
         var index = Array.FindIndex(deck.UnitsOnDeck, unitInfo => unitInfo.Id == oldCard.Id);
@@ -130,11 +131,11 @@ public class DeckViewModel
             UnitIdToBeUpdated = (UnitId)unitIdToBeUpdated
         };
         
-        _webService.SendWebRequest<UpdateDeckPacketResponse>(
-            "Collection/UpdateDeck", "PUT", updateDeckPacket, _ => { });
+       await _webService.SendWebRequestAsync<UpdateDeckPacketResponse>(
+            "Collection/UpdateDeck", UnityWebRequest.kHttpVerbPUT, updateDeckPacket);
     }
 
-    public void SelectDeck(int buttonNum, Faction faction)
+    public async Task SelectDeck(int buttonNum, Faction faction)
     {
         var deckList = Util.Faction == Faction.Sheep ? User.Instance.AllDeckSheep : User.Instance.AllDeckWolf;
         var deck = deckList.First(deck => deck.DeckNumber == buttonNum);
@@ -149,8 +150,8 @@ public class DeckViewModel
             LastPickedInfo = packetDict
         };
         
-        _webService.SendWebRequest<UpdateLastDeckPacketResponse>(
-            "Collection/UpdateLastDeck", "PUT", updateLastDeckPacket, _ => { });
+        await _webService.SendWebRequestAsync<UpdateLastDeckPacketResponse>(
+            "Collection/UpdateLastDeck", UnityWebRequest.kHttpVerbPUT, updateLastDeckPacket);
         
         if (Util.Faction == Faction.Sheep)
         {

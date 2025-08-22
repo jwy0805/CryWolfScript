@@ -13,6 +13,7 @@ public class UI_FriendsAddPopup : UI_Popup
     private MainLobbyViewModel _lobbyVm;
     
     private List<FriendUserInfo> _pendingFriends;
+    private List<FriendUserInfo> _sendingFriends;
     private readonly Dictionary<string, GameObject> _textDict = new();
 
     private enum Images
@@ -87,29 +88,43 @@ public class UI_FriendsAddPopup : UI_Popup
 
     private async Task LoadPendingFriends()
     {
-        var friendList = await _lobbyVm.LoadPendingFriends();
-        _pendingFriends = friendList;
+        var friendTask = await _lobbyVm.LoadPendingFriends();
+        _pendingFriends = friendTask.Item1;
+        _sendingFriends = friendTask.Item2;
         
         if (_pendingFriends.Count == 0)
         {
             _lobbyVm.OffFriendRequestNotification();
         }
         
-        await BindFriendRequestPanel(_pendingFriends);
+        await BindFriendRequestPanel(_pendingFriends, _sendingFriends);
     }
 
-    private async Task BindFriendRequestPanel(List<FriendUserInfo> friendList)
+    private async Task BindFriendRequestPanel(List<FriendUserInfo> pendingList, List<FriendUserInfo> sendingList)
     {
         var parent = GetImage((int)Images.FriendsRequestPanel).transform;
         Util.DestroyAllChildren(parent);
         
-        foreach (var friendInfo in friendList)
+        foreach (var friendInfo in sendingList)
         {
             var frame = await Managers.Resource.GetFriendRequestFrame(friendInfo, parent);
+            var layoutElement = frame.GetOrAddComponent<LayoutElement>();
+            layoutElement.preferredHeight = 200f;
+            
             var acceptButton = Util.FindChild(frame, "AcceptButton", true).GetComponent<Button>();
             var denyButton = Util.FindChild(frame, "DenyButton", true).GetComponent<Button>();
-            
             acceptButton.gameObject.BindEvent(OnAcceptFriendRequest);
+            denyButton.gameObject.BindEvent(OnDenyFriendRequest);
+        }
+
+        foreach (var friendInfo in pendingList)
+        {
+            var frame = await Managers.Resource.GetFriendRequestFrame(friendInfo, parent);
+            var layoutElement = frame.GetOrAddComponent<LayoutElement>();
+            layoutElement.preferredHeight = 200f;
+            Util.FindChild(frame, "AcceptButton", true).SetActive(false);
+            
+            var denyButton = Util.FindChild(frame, "DenyButton", true).GetComponent<Button>();
             denyButton.gameObject.BindEvent(OnDenyFriendRequest);
         }
     }
@@ -128,12 +143,12 @@ public class UI_FriendsAddPopup : UI_Popup
 
     private void BindFriendRequestButton(GameObject friendFrame, FriendUserInfo friendInfo)
     {
-        var requestButton = Util.FindChild(friendFrame, "RequestButton", true).GetComponent<Button>();
-        var alreadyFriendButton = Util.FindChild(friendFrame, "AlreadyFriendButton", true).GetComponent<Button>();
-        var pendingButton = Util.FindChild(friendFrame, "PendingButton", true).GetComponent<Button>();
-        var blockedButton = Util.FindChild(friendFrame, "BlockedButton", true).GetComponent<Button>();
-        var blockButton = Util.FindChild(friendFrame, "BlockButton", true).GetComponent<Button>();
-        var deleteButton = Util.FindChild(friendFrame, "DeleteButton", true).GetComponent<Button>();
+        var requestButton = Util.FindChild(friendFrame, "RequestButton", true, true).GetComponent<Button>();
+        var alreadyFriendButton = Util.FindChild(friendFrame, "AlreadyFriendButton", true, true).GetComponent<Button>();
+        var pendingButton = Util.FindChild(friendFrame, "PendingButton", true, true).GetComponent<Button>();
+        var blockedButton = Util.FindChild(friendFrame, "BlockedButton", true, true).GetComponent<Button>();
+        var blockButton = Util.FindChild(friendFrame, "BlockButton", true, true).GetComponent<Button>();
+        var deleteButton = Util.FindChild(friendFrame, "DeleteButton", true, true).GetComponent<Button>();
         
         Util.FindChild(friendFrame, "BlockDeletePanel", true, true).SetActive(false);
         

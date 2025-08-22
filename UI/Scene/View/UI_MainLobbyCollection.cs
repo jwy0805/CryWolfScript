@@ -34,8 +34,8 @@ public partial class UI_MainLobby
         await _collectionVm.Initialize();
         await _deckVm.Initialize();
         
-        Debug.Log("Set Cards");
         InitCollectionUI();
+        Debug.Log("Set Cards");
     }
     
     private async Task SetDeckUI(Faction faction)

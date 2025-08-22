@@ -33,6 +33,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SStepTutorial, PacketHandler.S_StepTutorialHandler);		
 		_onRecv.Add((ushort)MessageId.SSpawn, MakePacket<S_Spawn>);
 		_handler.Add((ushort)MessageId.SSpawn, PacketHandler.S_SpawnHandler);		
+		_onRecv.Add((ushort)MessageId.SPlaySound, MakePacket<S_PlaySound>);
+		_handler.Add((ushort)MessageId.SPlaySound, PacketHandler.S_PlaySoundHandler);		
 		_onRecv.Add((ushort)MessageId.SBindStatueInfo, MakePacket<S_BindStatueInfo>);
 		_handler.Add((ushort)MessageId.SBindStatueInfo, PacketHandler.S_BindStatueInfoHandler);		
 		_onRecv.Add((ushort)MessageId.SSpawnProjectile, MakePacket<S_SpawnProjectile>);
@@ -117,6 +119,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SSendWarningInGame, PacketHandler.S_SendWarningInGameHandler);		
 		_onRecv.Add((ushort)MessageId.SShowRankResultPopup, MakePacket<S_ShowRankResultPopup>);
 		_handler.Add((ushort)MessageId.SShowRankResultPopup, PacketHandler.S_ShowRankResultPopupHandler);		
+		_onRecv.Add((ushort)MessageId.SShowFriendlyResultPopup, MakePacket<S_ShowFriendlyResultPopup>);
+		_handler.Add((ushort)MessageId.SShowFriendlyResultPopup, PacketHandler.S_ShowFriendlyResultPopupHandler);		
 		_onRecv.Add((ushort)MessageId.SShowSingleResultPopup, MakePacket<S_ShowSingleResultPopup>);
 		_handler.Add((ushort)MessageId.SShowSingleResultPopup, PacketHandler.S_ShowSingleResultPopupHandler);		
 		_onRecv.Add((ushort)MessageId.SSendTutorialReward, MakePacket<S_SendTutorialReward>);

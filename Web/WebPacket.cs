@@ -727,8 +727,8 @@ public class LoadPendingFriendPacketResponse
 {
     public bool LoadPendingFriendOk { get; set; }
     public List<FriendUserInfo> PendingFriendList { get; set; }
+    public List<FriendUserInfo> SendingFriendList { get; set; }
 }
-
 public class AcceptFriendPacketRequired
 {
     public string AccessToken { get; set; }
@@ -764,6 +764,19 @@ public class ClaimMailPacketResponse
     public bool ClaimMailOk { get; set; }
 }
 
+public class LoadInvitableFriendPacketRequired
+{
+    public string AccessToken { get; set; }
+    public string Username { get; set; }
+}
+
+public class LoadInvitableFriendPacketResponse
+{
+    public bool LoadInvitableFriendOk { get; set; }
+    public List<FriendUserInfo> InvitableFriends { get; set; }
+    public List<FriendUserInfo> Others { get; set; }
+}
+
 public class InviteFriendlyMatchPacketRequired
 {
     public string AccessToken { get; set; }
@@ -782,7 +795,7 @@ public class AcceptInvitationPacketRequired
 {
     public string AccessToken { get; set; }
     public bool Accept { get; set; }
-    public string InviteeName { get; set; }
+    public int MailId { get; set; }
 }
 
 public class AcceptInvitationPacketResponse

@@ -27,4 +27,20 @@ public class FenceController : CreatureController
     {
         transform.position += Vector3.down * (_destroySpeed * Time.deltaTime);
     }
+    
+    public override void OnDead(float time = 2f)
+    {
+        StartCoroutine(Despawn(gameObject, time));
+        _ = Managers.Sound.PlaySfx3D("InGame/fence_down", transform.position);
+    }
+
+    public void Tutorial()
+    {
+        if (!Managers.Game.IsTutorial || Util.Faction != Faction.Sheep) return;
+        Debug.Log($"{transform.position}");
+        if (transform.position.z > 10)
+        {
+            Managers.Game.HelpSheepTutorial();
+        }
+    }
 }

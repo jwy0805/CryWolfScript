@@ -38,6 +38,8 @@ public partial class UI_MainLobby
             InitSpinelItems());
 
         InitDailyPanelObjects();
+        
+        Debug.Log("Shop initialized successfully.");
     }
 
     private async Task InitSpecialPackage()

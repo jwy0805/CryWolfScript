@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Threading.Tasks;
+using Febucci.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -20,6 +21,7 @@ public class UI_ChangeFactionPopup : UI_Popup
     private GameObject _speakerPanel;
     private RectTransform _handRect;
     private TextMeshProUGUI _speechBubbleText;
+    private bool _typing;
 
     private enum Images
     {
@@ -105,7 +107,7 @@ public class UI_ChangeFactionPopup : UI_Popup
     {
         var leftPanel = GetImage((int)Images.LeftPanel);
         
-        _rawImage = leftPanel.GetComponent<RawImage>();
+        _rawImage = leftPanel.GetComponentInChildren<RawImage>();
         _renderTexture = Managers.Resource.CreateRenderTexture("texture");
         _tutorialCamera = GameObject.Find("TutorialCamera1").GetComponent<Camera>();
 
@@ -229,12 +231,30 @@ public class UI_ChangeFactionPopup : UI_Popup
     
     private void OnContinueClicked(PointerEventData data)
     {
-        _tutorialVm.ChangeFactionTutorialEndHandler();
-        Managers.UI.CloseAllPopupUI();
+        if (_typing)
+        {
+            _speechBubbleText.GetComponent<TypewriterByCharacter>().SkipTypewriter();
+            _typing = false;            
+        }
+        else
+        {
+            _tutorialVm.ChangeFactionTutorialEndHandler();
+            Managers.UI.CloseAllPopupUI();
+        }
     }
     
     private void OnExitClicked(PointerEventData data)
     {
         Managers.UI.CloseAllPopupUI();
+    }
+    
+    public void OnTypeStarted()
+    {
+        _typing = true;
+    }
+
+    public void OnTextShowed()
+    {
+        _typing = false;
     }
 }

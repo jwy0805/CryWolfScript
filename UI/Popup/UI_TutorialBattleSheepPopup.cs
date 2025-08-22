@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Threading.Tasks;
+using Febucci.UI;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -32,6 +33,7 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
     private Camera _tutorialCamera;
     private RawImage _rawImage;
     private RenderTexture _renderTexture;
+    private bool _typing;
     
     private enum Images
     {
@@ -580,6 +582,7 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
     private void ShowSimpleTooltip()
     {
         _infoBubble.SetActive(true);
+        StartCoroutine(TempBlocking());
     }
     
     private void AdjustUiBlockerSize()
@@ -600,6 +603,7 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
     {
         _tutorialNpc = GameObject.FindGameObjectWithTag("Npc");
         _flowerFace = Util.FindChild(_tutorialNpc, "+ Head", true);
+        Util.DestroyAllChildren(_flowerFace.transform);
         _ = Managers.Resource.Instantiate("Npc/Face Happy", _flowerFace.transform);
     }
     
@@ -620,13 +624,38 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
     
     private async Task OnContinueClicked(PointerEventData data)
     {
-        if (_tutorialVm.Step == 23)
+        if (_typing)
         {
-            await _tutorialVm.BattleTutorialEndHandler(Faction.Sheep);
-            return;
+            _speechBubbleText.GetComponent<TypewriterByCharacter>().SkipTypewriter();
+            _typing = false;
         }
+        else
+        {
+            if (_tutorialVm.Step == 23)
+            {
+                await _tutorialVm.BattleTutorialEndHandler(Faction.Sheep);
+                return;
+            }
         
-        StepTutorial();
+            StepTutorial();
+        }
+    }
+
+    private IEnumerator TempBlocking()
+    {
+        _uiBlocker.SetActive(true);
+        yield return new WaitForSeconds(0.3f);
+        _uiBlocker.SetActive(false);
+    }
+    
+    public void OnTypeStarted()
+    {
+        _typing = true;
+    }
+
+    public void OnTextShowed()
+    {
+        _typing = false;
     }
     
     private void OnDestroy()

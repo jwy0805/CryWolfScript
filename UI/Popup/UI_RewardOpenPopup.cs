@@ -11,7 +11,7 @@ using Zenject;
 
 public class UI_RewardOpenPopup : UI_Popup
 {
-    private ShopViewModel _shopVm;
+    private MainLobbyViewModel _lobbyVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
 
@@ -38,9 +38,9 @@ public class UI_RewardOpenPopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(ShopViewModel shopViewModel)
+    public void Construct(MainLobbyViewModel lobbyViewModel)
     {
-        _shopVm = shopViewModel;
+        _lobbyVm = lobbyViewModel;
     }
     
     protected override async void Init()
@@ -223,8 +223,8 @@ public class UI_RewardOpenPopup : UI_Popup
             
             if (Mathf.Approximately(childRect.anchorMin.x, 0.19f))
             {
-                layoutElement.preferredWidth = 300;
-                layoutElement.preferredHeight = 300;
+                layoutElement.preferredWidth = 320;
+                layoutElement.preferredHeight = 320;
             }
             else
             {
@@ -247,7 +247,7 @@ public class UI_RewardOpenPopup : UI_Popup
         try
         {
             GetText((int)Texts.TapToContinueText).GetComponent<CanvasGroup>().blocksRaycasts = false;
-            await _shopVm.ClaimFixedAndDisplay();
+            await _lobbyVm.ClaimFixedAndDisplay();
         }
         catch (Exception)
         {

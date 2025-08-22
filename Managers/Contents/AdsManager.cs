@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Unity.Services.LevelPlay;
 using Unity.VisualScripting;
 using LevelPlayConfiguration = Unity.Services.LevelPlay.LevelPlayConfiguration;
@@ -23,6 +24,7 @@ public class AdsManager
 
     private string _idfa = string.Empty;
     private bool _levelPlayInitialized;
+    private bool _attRequested;
 
     public event Func<DailyProductInfo, Task> OnRewardedRevealDailyProduct;
     public event Func<Task> OnRewardedRefreshDailyProducts;
@@ -31,43 +33,59 @@ public class AdsManager
     public DailyProductInfo RevealedDailyProduct { get; set; }
     
 #if UNITY_IOS
-    public Task RequestAttAsync()
+    public async Task RequestAttAsync()
     {
-        // Return if ATT status is already determined
-        var current = ATTrackingStatusBinding.GetAuthorizationTrackingStatus();
-        if (current != ATTrackingStatusBinding.AuthorizationTrackingStatus.NOT_DETERMINED)
+        if (_attRequested)
         {
-            if (Managers.Policy.GetAttConsent() == null)
-            {
-                Managers.Policy.SetAttConsent(current == ATTrackingStatusBinding.AuthorizationTrackingStatus.AUTHORIZED);
-            }
-            else
-            {
-                Managers.Policy.SetAttConsent(current == ATTrackingStatusBinding.AuthorizationTrackingStatus.AUTHORIZED);
-            }
-            
-            return Task.CompletedTask;
+            Debug.LogWarning("[Ads] ATT request already made.");
+            return;
         }
+        _attRequested = true;
 
-        var tcs = new TaskCompletionSource<bool>();
-        CoroutineRunner.instance.StartCoroutine(WaitForAtt());
-        return tcs.Task;
-
-        IEnumerator WaitForAtt()
+        try
         {
-            ATTrackingStatusBinding.RequestAuthorizationTracking();
-            // Wait until the user has made a choice
-            while (ATTrackingStatusBinding.GetAuthorizationTrackingStatus()
-                   == ATTrackingStatusBinding.AuthorizationTrackingStatus.NOT_DETERMINED)
+            // Return if ATT status is already determined
+            var current = ATTrackingStatusBinding.GetAuthorizationTrackingStatus();
+            if (current != ATTrackingStatusBinding.AuthorizationTrackingStatus.NOT_DETERMINED)
             {
-                yield return null;
+                if (Managers.Policy.GetAttConsent() == null)
+                {
+                    var result = current == ATTrackingStatusBinding.AuthorizationTrackingStatus.AUTHORIZED;
+                    Managers.Policy.SetAttConsent(result);
+                    return;
+                }
+
+                var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                void Request()
+                {
+                    ATTrackingStatusBinding.RequestAuthorizationTracking(result =>
+                    {
+                        var resultStatus =
+                            result == (int)ATTrackingStatusBinding.AuthorizationTrackingStatus.AUTHORIZED;
+                        Managers.Policy.SetAttConsent(resultStatus);
+                        tcs.TrySetResult(true);
+                    });
+                }
+
+                Request();
+
+                // Time out
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var completed = await Task
+                    .WhenAny(tcs.Task, Task.Delay(Timeout.Infinite, cts.Token)) == tcs.Task;
+
+                if (!completed)
+                {
+                    var fallback = ATTrackingStatusBinding.GetAuthorizationTrackingStatus();
+                    var result = fallback == ATTrackingStatusBinding.AuthorizationTrackingStatus.AUTHORIZED;
+                    Managers.Policy.SetAttConsent(result);
+                }
             }
-
-            // Save status to PlayerPrefs
-            var status = ATTrackingStatusBinding.GetAuthorizationTrackingStatus();
-            Managers.Policy.SetAttConsent(status == ATTrackingStatusBinding.AuthorizationTrackingStatus.AUTHORIZED);
-
-            tcs.TrySetResult(true);
+        }
+        finally
+        {
+            _attRequested = false;
         }
     }
 
@@ -78,7 +96,8 @@ public class AdsManager
         Debug.Log($"[Ads] IDFA = {_idfa}");
     }
     
-#elif UNITY_ANDROID && !UNITY_EDITOR
+// #elif UNITY_ANDROID && !UNITY_EDITOR
+#elif UNITY_ANDROID
     public Task RequestAttAsync() => Task.CompletedTask;
     public void FetchIdfa() 
     {

@@ -5,19 +5,19 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Zenject;
 
 public class UI_Login : UI_Scene
 {
-    private LoginViewModel _viewModel;
+    private LoginViewModel _loginViewModel;
 
     private readonly Dictionary<string, GameObject> _textDict = new();
 
     private enum Buttons
     {
+        TestLoginButton,
         SignUpButton,
         AppleButton,
         GoogleButton,
@@ -38,9 +38,9 @@ public class UI_Login : UI_Scene
     }
 
     [Inject] // Initialize ViewModel
-    public void Construct(LoginViewModel viewModel)
+    public void Construct(LoginViewModel loginViewModel)
     {
-        _viewModel = viewModel;
+        _loginViewModel = loginViewModel;
     }
 
     protected override async void Init()
@@ -61,7 +61,7 @@ public class UI_Login : UI_Scene
     private void Update()
     {
 #if UNITY_IOS && !UNITY_EDITOR
-        _viewModel.UpdateAppleAuthManager();
+        _loginViewModel.UpdateAppleAuthManager();
 #endif
     }
 
@@ -78,6 +78,9 @@ public class UI_Login : UI_Scene
     
     protected override void InitButtonEvents()
     {
+#if UNITY_EDITOR
+        GetButton((int)Buttons.TestLoginButton).gameObject.BindEvent(OnTestLoginClicked);
+#endif
         GetButton((int)Buttons.SignUpButton).gameObject.BindEvent(OnSignUpClicked);
         GetButton((int)Buttons.AppleButton).gameObject.BindEvent(OnAppleClicked);
         GetButton((int)Buttons.GoogleButton).gameObject.BindEvent(OnGoogleClicked);
@@ -86,26 +89,33 @@ public class UI_Login : UI_Scene
 
     private void InitEvents()
     {
-        _viewModel.OnRestoreButton += RestoreButton;
+        _loginViewModel.OnRestoreButton += RestoreButton;
     }
     
     #endregion
+
+    private void OnTestLoginClicked(PointerEventData data)
+    {
+        _loginViewModel.UserAccount = "admin";
+        _loginViewModel.Password = "1234";
+        _loginViewModel.TryDirectLogin();
+    }
     
     private async Task OnSignUpClicked(PointerEventData data)
     {
-        await _viewModel.SignIn();
+        await _loginViewModel.SignIn();
     }
 
     private void OnGuestLoginClicked(PointerEventData data)
     {
-        _viewModel.TryGuestLogin();
+        _loginViewModel.TryGuestLogin();
     }
     
     private void OnGoogleClicked(PointerEventData data)
     {
-        if (_viewModel.ProcessingLogin) return;
-        _viewModel.ProcessingLogin = true;
-        _viewModel.RequestGoogleLogin();
+        if (_loginViewModel.ProcessingLogin) return;
+        _loginViewModel.ProcessingLogin = true;
+        _loginViewModel.RequestGoogleLogin();
         data.pointerPress.gameObject.GetComponent<Button>().interactable = false;
     }
 
@@ -118,9 +128,9 @@ public class UI_Login : UI_Scene
         await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
         return;
 #endif
-        if (_viewModel.ProcessingLogin) return;
-        _viewModel.ProcessingLogin = true;
-        _viewModel.RequestAppleLogin();
+        if (_loginViewModel.ProcessingLogin) return;
+        _loginViewModel.ProcessingLogin = true;
+        _loginViewModel.RequestAppleLogin();
         data.pointerPress.gameObject.GetComponent<Button>().interactable = false;
         await Task.Delay(100);
     }
@@ -133,6 +143,6 @@ public class UI_Login : UI_Scene
     
     private void OnDestroy()
     {
-        _viewModel.OnRestoreButton -= RestoreButton;
+        _loginViewModel.OnRestoreButton -= RestoreButton;
     }
 }

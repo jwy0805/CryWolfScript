@@ -27,6 +27,8 @@ public class ShopViewModel
     public List<ProductInfo> SpinelItems;
     public List<DailyProductInfo> DailyProducts;
     
+    public event Func<Task> OnResetUI;
+    
     public ProductInfo AdsRemover { get; set; }
     public ProductInfo SelectedProduct { get; set; }
     public DateTime LastDailyProductRefreshTime { get; set; }
@@ -183,85 +185,5 @@ public class ShopViewModel
         }
 
         return task.RefreshDailyProductOk;
-    }
-    
-    public async Task ClaimProductFromMailbox(bool claimAll, MailInfo mailInfo = null)
-    {
-        var packet = new ClaimProductPacketRequired
-        {
-            AccessToken = _tokenService.GetAccessToken(),
-            CurrentState = RewardPopupType.None,
-            ClaimAll = claimAll,
-            MailId = mailInfo?.MailId ?? 0
-        };
-        
-        var res = await _webService.SendWebRequestAsync<ClaimProductPacketResponse>(
-            "Payment/ClaimProduct", UnityWebRequest.kHttpVerbPUT, packet);
-
-        await HandleClaimPacketResponse(res);
-    }
-
-    public async Task CardSelected(CompositionInfo composition)
-    {
-        var packet = new SelectProductPacketRequired
-        {
-            AccessToken = _tokenService.GetAccessToken(),
-            SelectedCompositionInfo = composition,
-        };
-        
-        var res = await _webService.SendWebRequestAsync<ClaimProductPacketResponse>(
-            "Payment/SelectProduct", UnityWebRequest.kHttpVerbPUT, packet);
-
-        await HandleClaimPacketResponse(res);
-    }
-
-    public async Task ClaimFixedAndDisplay()
-    {
-        var packet = new DisplayClaimedProductPacketRequired
-        {
-            AccessToken = _tokenService.GetAccessToken(),
-        };
-        
-        var res = await _webService.SendWebRequestAsync<ClaimProductPacketResponse>(
-            "Payment/DisplayClaimedProduct", UnityWebRequest.kHttpVerbPUT, packet);
-        
-        await HandleClaimPacketResponse(res);
-    }
-
-    private async Task HandleClaimPacketResponse(ClaimProductPacketResponse res)
-    {
-        if (res.ClaimOk)
-        {
-            Managers.UI.CloseAllPopupUI();
-
-            switch (res.RewardPopupType)
-            {
-                case RewardPopupType.None:
-                    break;
-                case RewardPopupType.Item:
-                    if (res.CompositionInfos.Count != 0)
-                    {
-                        var itemPopup = await Managers.UI.ShowPopupUI<UI_RewardItemPopup>();
-                        itemPopup.CompositionInfos = res.CompositionInfos;
-                    }
-                    break;
-                case RewardPopupType.Select:
-                    if (res.ProductInfos.Count != 0)
-                    {
-                        var selectPopup = await Managers.UI.ShowPopupUI<UI_RewardSelectPopup>();
-                        selectPopup.ProductInfo = res.ProductInfos.First();
-                        selectPopup.CompositionInfos = res.CompositionInfos;
-                    }                    
-                    break;
-                case RewardPopupType.Open:
-                    if (res.RandomProductInfos.Count != 0)
-                    {
-                        var openPopup = await Managers.UI.ShowPopupUI<UI_RewardOpenPopup>();
-                        openPopup.OriginalProductInfos = res.RandomProductInfos;
-                        openPopup.CompositionInfos = res.CompositionInfos;
-                    }
-                    break;
-            }
-        }
     }
 }

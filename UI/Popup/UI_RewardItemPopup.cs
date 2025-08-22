@@ -164,6 +164,12 @@ public class UI_RewardItemPopup : UI_Popup
                     countText.GetComponent<TextMeshProUGUI>().text = info.Count.ToString();
                 }
                 break;
+            case ProductType.Gold:
+                cardObject = await Managers.Resource.GetItemFrameGold(info.Count, parent);
+                break;
+            case ProductType.Spinel:
+                cardObject = await Managers.Resource.GetItemFrameSpinel(info.Count, parent);
+                break;
             default: return;
         }
 
@@ -185,6 +191,8 @@ public class UI_RewardItemPopup : UI_Popup
                     parentLayoutElement.preferredHeight = 400;
                     break;
                 case ProductType.Material:
+                case ProductType.Gold:
+                case ProductType.Spinel:
                     layoutElement.preferredWidth = 200;
                     layoutElement.preferredHeight = 200;
                     parentLayoutElement.preferredHeight = 200;

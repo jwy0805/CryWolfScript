@@ -94,10 +94,12 @@ public class UI_PlayerProfilePopup : UI_Popup
             GetText((int)Texts.LevelText).text = PlayerUserInfo.Level.ToString();
             GetText((int)Texts.RankPointText).text = PlayerUserInfo.RankPoint.ToString();
 
-            // GetText((int)Texts.HighestRankText).text = PlayerUserInfo.HighestRankPoint.ToString();
             GetText((int)Texts.RankingText).text = "100";
             GetText((int)Texts.VictoriesText).text = PlayerUserInfo.Victories.ToString();
             GetText((int)Texts.WinRateText).text = PlayerUserInfo.WinRate.ToString();
+            
+            var pencilButton = GetButton((int)Buttons.PencilButton).gameObject;
+            pencilButton.SetActive(User.Instance.IsGuest == false);
         }
         catch (Exception e)
         {

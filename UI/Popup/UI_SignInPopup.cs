@@ -90,6 +90,7 @@ public class UI_SignInPopup : UI_Popup
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(OnExitClicked);
         
         var rememberToggle = GetToggle((int)Toggles.RememberToggle);
+        
         rememberToggle.isOn = _loginViewModel.RememberMe;
         rememberToggle.onValueChanged.AddListener(value => _loginViewModel.RememberMe = value);
     }

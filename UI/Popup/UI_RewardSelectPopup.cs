@@ -15,7 +15,7 @@ using Zenject;
 
 public class UI_RewardSelectPopup : UI_Popup
 {
-    private ShopViewModel _shopVm;
+    private MainLobbyViewModel _lobbyVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
 
@@ -39,9 +39,9 @@ public class UI_RewardSelectPopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(ShopViewModel shopViewModel)
+    public void Construct(MainLobbyViewModel lobbyViewModel)
     {
-        _shopVm = shopViewModel;
+        _lobbyVm = lobbyViewModel;
     }
     
     protected override async void Init()
@@ -73,8 +73,7 @@ public class UI_RewardSelectPopup : UI_Popup
     
     protected override void InitButtonEvents()
     {
-        GetImage((int)Images.RewardPanel).gameObject.BindEvent(ClosePopup);
-        GetText((int)Texts.TapToContinueText).gameObject.BindEvent(ClosePopup);
+        
     }
     
     protected override async Task InitUIAsync()
@@ -143,12 +142,7 @@ public class UI_RewardSelectPopup : UI_Popup
         var compositionInfo = CompositionInfos.FirstOrDefault(ci => ci.CompositionId == compositionId);
         if (compositionInfo != null)
         {
-            await _shopVm.CardSelected(compositionInfo);
+            await _lobbyVm.CardSelected(compositionInfo);
         }
-    }
-    
-    private void ClosePopup(PointerEventData data)
-    {
-        Managers.UI.ClosePopupUI();
     }
 }

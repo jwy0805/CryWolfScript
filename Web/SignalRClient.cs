@@ -17,10 +17,15 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
     private string _username;
     
     private const float HeartbeatInterval = 60f;
-    
-    public Action OnInvitationSent { get; set; }
-    public Action<AcceptInvitationPacketResponse> OnInvitationSuccess { get; set; }
-    public Action<FriendRequestPacketResponse> OnFriendRequestNotificationReceived { get; set; }
+
+    public event Action OnInvitationSent;
+    public event Func<DeckInfo, Task> OnEnemyDeckSwitched;
+    public event Func<DeckInfo, DeckInfo, Task> OnFactionSwitched;
+    public event Action<AcceptInvitationPacketResponse> OnInvitationSuccess;
+    public event Action<AcceptInvitationPacketResponse> OnEnterFriendlyMatch;
+    public event Action<FriendRequestPacketResponse> OnFriendRequestNotificationReceived;
+    public event Action OnGuestLeft;
+    public event Func<Task> OnStartFriendlyMatch;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void PreserveProtocol()
@@ -31,27 +36,14 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
     
     public async Task Connect(string username)
     {
-        if (_connection is { State: HubConnectionState.Connected }) return;
-        
         var url = Managers.Network.BaseUrl + "/signalRHub";
-        Debug.Log(url);
 
-        _connection = new HubConnectionBuilder()
-            .WithUrl(url)
-            .AddNewtonsoftJsonProtocol()
-            .Build();
-        
+        _connection = new HubConnectionBuilder().WithUrl(url).AddNewtonsoftJsonProtocol().Build();
         Register();
-
-        try
-        {
-            await _connection.StartAsync();
-            _username = username; 
-        }
-        catch (Exception e)
-        {
-            Debug.Log($"Signal R Hub Connection Error: {e.Message}");
-        }
+        await _connection.StartAsync();
+        
+        _username = username;
+        Debug.Log($"{_username} {_connection.State} at {url}");
     }
 
     public void Tick()
@@ -60,37 +52,31 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
         if (_elapsedTime >= HeartbeatInterval)
         {
             _elapsedTime = 0;
-            HeartBeat();
+            _ = HeartBeat();
         }
     }
 
-    private async void HeartBeat()
+    private async Task HeartBeat()
     {
         if (_connection is { State: HubConnectionState.Connected })
         {
-            try
-            {
-                await _connection.InvokeAsync("HeartBeat", _username);
-            }
-            catch (Exception e)
-            {
-                Debug.Log($"Error: {e.Message}");
-            }
+            await _connection.InvokeAsync("HeartBeat", _username);
         }
     }
     
-    public async Task JoinLobby()
+    public async Task JoinLobby(string token)
     {
         if (_connection is { State: HubConnectionState.Connected })
         {
-            try
-            {
-                await _connection.InvokeAsync("JoinLobby", _username);
-            }
-            catch (Exception e)
-            {
-                Debug.Log($"Error: {e.Message}");
-            }
+            await _connection.InvokeAsync("JoinLobby", token);
+        }
+    }
+
+    public async Task JoinGame(string token)
+    {
+        if (_connection is { State: HubConnectionState.Connected })
+        {
+            await _connection.InvokeAsync("JoinGame", token, Util.Faction);
         }
     }
     
@@ -98,55 +84,141 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
     {
         if (_connection is { State: HubConnectionState.Connected })
         {
-            try
-            {
-                await _connection.InvokeAsync("LeaveLobby");
-            }
-            catch (Exception e)
-            {
-                Debug.Log($"Error: {e.Message}");
-            }
+            await _connection.InvokeAsync("LeaveLobby");
+        }
+    }
+
+    public async Task LeaveGame()
+    {
+        if (_connection is { State: HubConnectionState.Connected })
+        {
+            await _connection.InvokeAsync("LeaveGame");
         }
     }
     
     private void Register()
     {
-        _connection.On("RefreshMailAlert", OnRefreshMailAlert);
-        _connection.On("ToastNotification", OnToastNotification);
-        _connection.On<AcceptInvitationPacketResponse>("GameRoomJoined", OnGameRoomJoined);
-        _connection.On<AcceptInvitationPacketResponse>("RejectInvitation", OnRejectInvitation);
-        _connection.On<FriendRequestPacketResponse>("FriendRequestNotification", OnFriendRequestNotification);
+        _connection.On("RefreshMailAlert", () =>
+        {
+            Managers.Dispatcher.Enqueue( () => OnInvitationSent?.Invoke());
+        });
+        
+        _connection.On("ToastNotification", () =>
+        {
+            Managers.Dispatcher.Enqueue(() => _ = OnToastNotification());
+        });
+
+        _connection.On<DeckInfo>("SwitchDeck", deckInfo =>
+        {
+            Managers.Dispatcher.Enqueue(() => OnEnemyDeckSwitched?.Invoke(deckInfo));
+        });
+
+        _connection.On<DeckInfo, DeckInfo>("SwitchFaction", (myDeckInfo , enemyDeckInfo) =>
+        {
+            Managers.Dispatcher.Enqueue(() => OnFactionSwitched?.Invoke(myDeckInfo, enemyDeckInfo));
+        });
+
+        _connection.On<AcceptInvitationPacketResponse>("GameRoomJoined", response =>
+        {
+            Managers.Dispatcher.Enqueue(() => OnInvitationSuccess?.Invoke(response));
+        });
+
+        _connection.On<AcceptInvitationPacketResponse>("JoinGameRoom", response =>
+        {
+            Managers.Dispatcher.Enqueue(() => OnEnterFriendlyMatch?.Invoke(response));
+        });
+
+        _connection.On<AcceptInvitationPacketResponse>("RejectInvitation", response =>
+        {
+            Managers.Dispatcher.Enqueue(() => _ = OnRejectInvitation());
+        });
+
+        _connection.On<FriendRequestPacketResponse>("FriendRequestNotification", response =>
+        {
+            Managers.Dispatcher.Enqueue(() => OnFriendRequestNotification(response));
+        });
+        
+        _connection.On("GameRoomClosedByHost",() =>
+        {
+            Managers.Dispatcher.Enqueue(() => _ = OnGameRoomClosedByHost());
+        });
+        
+        _connection.On("GameRoomClosed", () =>
+        {
+            Managers.Dispatcher.Enqueue(() => Managers.Scene.LoadScene(Define.Scene.MainLobby));
+        });
+        
+        _connection.On("GuestLeftGameRoom", () =>
+        {
+            Managers.Dispatcher.Enqueue(() => OnGuestLeft?.Invoke());
+        });
+        
+        _connection.On("LeftGameRoom", () =>
+        {
+            Managers.Dispatcher.Enqueue(() => Managers.Scene.LoadScene(Define.Scene.MainLobby));
+        });
+        
+        _connection.On("StartSession", () =>
+        {
+            Managers.Dispatcher.Enqueue(() => { OnStartFriendlyMatch?.Invoke(); });
+        });
+        
+        _connection.On("MatchFailed", () =>
+        {
+            Managers.Dispatcher.Enqueue(() => _ = MatchFailed());
+        });
     }
 
-    public async Task<InviteFriendlyMatchPacketRequired> SendInvitation(InviteFriendlyMatchPacketRequired required)
+    public async Task SwitchDeckOnFriendlyMatch(string token, Faction faction)
     {
         if (_connection is { State: HubConnectionState.Connected })
         {
-            try
-            {
-                return await _connection
-                    .InvokeAsync<InviteFriendlyMatchPacketRequired>("HandleInviteFriendlyMatch", required);
-            }
-            catch (Exception e)
-            {
-                Debug.Log($"Error: {e.Message}");
-            }
+            await _connection.InvokeAsync("SwitchDeckOnFriendlyMatch", token, faction);
+        }
+    }
+    
+    public async Task SwitchFactionOnFriendlyMatch(Faction faction)
+    {
+        if (_connection is { State: HubConnectionState.Connected })
+        {
+            var switchedFaction = faction == Faction.Sheep ? Faction.Wolf : Faction.Sheep;
+            Util.Faction = switchedFaction;
+            
+            const string methodName = "SwitchFactionOnFriendlyMatch";
+            await _connection.InvokeAsync(methodName, switchedFaction);
+        }
+    }
+    
+    public async Task<LoadInvitableFriendPacketResponse> LoadFriends(LoadInvitableFriendPacketRequired required)
+    {
+        if (_connection is { State: HubConnectionState.Connected })
+        {
+            const string methodName = "LoadFriends";
+            return await _connection.InvokeAsync<LoadInvitableFriendPacketResponse>(methodName, required);
+        }
+
+        Debug.Log("Connection is not established.");
+        return new LoadInvitableFriendPacketResponse();
+    }
+
+    public async Task<InviteFriendlyMatchPacketResponse> SendInvitation(InviteFriendlyMatchPacketRequired required)
+    {
+        if (_connection is { State: HubConnectionState.Connected })
+        {
+            const string methodName = "HandleInviteFriendlyMatch";
+            return await _connection.InvokeAsync<InviteFriendlyMatchPacketResponse>(methodName, required);
         }
         
         Debug.Log("Connection is not established.");
-        return new InviteFriendlyMatchPacketRequired();
+        return new InviteFriendlyMatchPacketResponse();
     }
     
     public async Task<AcceptInvitationPacketResponse> SendAcceptInvitation(AcceptInvitationPacketRequired required)
     {
-        try
+        if (_connection is { State: HubConnectionState.Connected })
         {
-            await _connection
-                .InvokeAsync<AcceptInvitationPacketResponse>("HandleAcceptInvitation", required);
-        }
-        catch (Exception e)
-        {
-            Debug.Log($"Error: {e.Message}");
+            const string methodName = "HandleAcceptInvitation";
+            return await _connection.InvokeAsync<AcceptInvitationPacketResponse>(methodName, required);
         }
         
         Debug.Log("Connection is not established.");
@@ -157,46 +229,72 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
     {
         if (_connection is { State: HubConnectionState.Connected })
         {
-            try
-            {
-                return await _connection
-                    .InvokeAsync<FriendRequestPacketResponse>("HandleFriendRequest", required);
-            }
-            catch (Exception e)
-            {
-                Debug.Log($"Error: {e.Message}");
-            }
+            const string methodName = "HandleFriendRequest";
+            return await _connection.InvokeAsync<FriendRequestPacketResponse>(methodName, required);
         }
         
         Debug.Log("Connection is not established.");
         return new FriendRequestPacketResponse();
     }
 
-    private void OnRefreshMailAlert()
-    {
-        OnInvitationSent?.Invoke();
-    }
-    
     private async Task OnToastNotification()
     {
         var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
         await Managers.Localization.UpdateWarningPopupText(popup, "warning_invitation_sent");
     }
     
-    private void OnGameRoomJoined(AcceptInvitationPacketResponse response)
+    private async Task OnRejectInvitation()
     {
-        OnInvitationSuccess?.Invoke(response);
-    }
-    
-    private async Task OnRejectInvitation(AcceptInvitationPacketResponse response)
-    {
-        var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
-        await Managers.Localization.UpdateWarningPopupText(popup, "warning_invitation_rejected");
+        var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        await Managers.Localization.UpdateNotifyPopupText(popup, "notify_invitation_rejected");
     }
     
     private void OnFriendRequestNotification(FriendRequestPacketResponse response)
     {
         OnFriendRequestNotificationReceived?.Invoke(response);
+    }
+
+    private async Task OnGameRoomClosedByHost()
+    {
+        var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        await Managers.Localization.UpdateNotifyPopupText(popup, "notify_game_room_closed_by_host");
+        popup.SetYesCallback(() => Managers.Scene.LoadScene(Define.Scene.MainLobby));
+    }
+
+    public async Task StartFriendlyMatch(string username)
+    {
+        if (_connection is { State: HubConnectionState.Connected })
+        {
+            await _connection.InvokeAsync("StartFriendlyMatch", username);
+        }
+    }
+
+    public async Task SendSessionId(int sessionId)
+    {
+        if (_connection is { State: HubConnectionState.Connected })
+        {
+            await _connection.InvokeAsync("GetSessionId", sessionId);
+        }
+    }
+
+    private async Task MatchFailed()
+    {
+        var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        await Managers.Localization.UpdateNotifyPopupText(popup, "notify_friendly_match_failed");
+        popup.SetYesCallback(() => Managers.Scene.LoadScene(Define.Scene.MainLobby));
+    }
+    
+    public async Task<Tuple<bool, AcceptInvitationPacketResponse>> ReEntryFriendlyMatch(string username)
+    {
+        if (_connection is { State: HubConnectionState.Connected })
+        {
+            return await _connection
+                .InvokeAsync<Tuple<bool, AcceptInvitationPacketResponse>>("ReEntryFriendlyMatch", username);
+        }       
+        
+        Debug.LogWarning("Connection is not established. Cannot re-enter friendly match.");
+        Managers.Scene.LoadScene(Define.Scene.MainLobby);
+        return new Tuple<bool, AcceptInvitationPacketResponse>(false, new AcceptInvitationPacketResponse());
     }
     
     public async Task Disconnect()

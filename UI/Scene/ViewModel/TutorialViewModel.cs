@@ -359,6 +359,16 @@ public class TutorialViewModel : IDisposable
 
     private void OnRejectTutorial()
     {
+        var packet = new UpdateTutorialRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            TutorialTypes = new[] { TutorialType.BattleWolf, TutorialType.BattleSheep, TutorialType.ChangeFaction },
+            Done = true,
+        };
+        
+        _ = _webService.SendWebRequestAsync<UpdateTutorialResponse>(
+            "UserAccount/UpdateTutorial", UnityWebRequest.kHttpVerbPUT, packet);
+
         Managers.UI.CloseAllPopupUI();
     }
 
@@ -423,7 +433,6 @@ public class TutorialViewModel : IDisposable
     public void SetTutorialReward(UnitId rewardUnitId)
     {
         RewardUnitId = rewardUnitId;
-        Debug.Log(rewardUnitId);
     }
     
     public void Dispose()

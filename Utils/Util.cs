@@ -19,7 +19,7 @@ using Object = UnityEngine.Object;
 
 public class Util
 {
-    public static Faction Faction = Faction.Sheep;
+    public static Faction Faction { get; set; } = Faction.Sheep;
     
     public static Color ThemeColor => Faction == Faction.Sheep
         ? new Color(39 / 255f, 107 / 255f, 214 / 255f)
@@ -124,6 +124,14 @@ public class Util
     {
         int idx = path.LastIndexOf('/');
         return idx >= 0 ? path[(idx + 1)..] : path;
+    }
+    
+    public static string ToSnakeCase(string str)
+    {
+        var s = Regex.Replace(str,
+            @"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Za-z])(?=\d)|(?<=\d)(?=[A-Za-z])",
+            "_");
+        return s.ToLowerInvariant();
     }
     
     public static void DestroyAllChildren(Transform parent)

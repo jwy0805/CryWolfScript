@@ -55,7 +55,6 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         WarningPanel,
         Deck,
         SelectTextPanel,
-        CollectionPanel,
     }
     
     private enum Buttons
@@ -160,7 +159,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
 
     private async Task SetCollectionInPopup()
     {
-        var parent = GetImage((int)Images.CollectionPanel).transform;
+        var parent = Util.FindChild(gameObject, "Content", true).transform;
         foreach (Transform child in parent) Destroy(child.gameObject);
         
         var collection = User.Instance.OwnedUnitList
@@ -177,7 +176,9 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
             rectTransform.anchorMax = Vector2.one;
             rectTransform.anchorMin = Vector2.zero;
             
-            cardFrame.BindEvent(OnCollectionCardClicked);
+            var layoutElement = cardFrame.GetOrAddComponent<LayoutElement>();    
+            layoutElement.preferredWidth = 200;
+            layoutElement.preferredHeight = 320;
         }
     }
     
@@ -190,7 +191,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         if (Changing)
         {
             // 실제 덱 정보 변경
-            _deckVm.UpdateDeck(SelectedCard, card);
+            await _deckVm.UpdateDeck(SelectedCard, card);
             
             // Scroll Popup 내 UI 변경
             await Task.WhenAll(SetCollectionInPopup(), SetDeckInPopup());
@@ -234,9 +235,9 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         // TODO: Set Size By Various Resolution
     }
 
-    private void OnDeckButtonClicked(PointerEventData data)
+    private async Task OnDeckButtonClicked(PointerEventData data)
     {
         var buttonNumber = data.pointerPress.GetComponent<DeckButtonInfo>().DeckIndex;
-        _deckVm.SelectDeck(buttonNumber, Util.Faction);
+        await _deckVm.SelectDeck(buttonNumber, Util.Faction);
     }
 }

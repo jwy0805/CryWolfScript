@@ -339,7 +339,7 @@ public class LocalizationManager
         }
     }
     
-    public async Task UpdateNotifyPopupText(UI_NotifyPopup popup, string titleKey, string messageKey)
+    public async Task UpdateNotifyPopupText(UI_NotifyPopup popup, string messageKey, string titleKey = "empty_text")
     {
         var langDictionary = Managers.Data.LocalizationDict;
         
@@ -364,7 +364,7 @@ public class LocalizationManager
         }
     }
 
-    public async Task UpdateNotifySelectPopupText(UI_NotifySelectPopup popup, string titleKey, string messageKey)
+    public async Task UpdateNotifySelectPopupText(UI_NotifySelectPopup popup, string messageKey, string titleKey = "empty_text")
     {
         var langDictionary = Managers.Data.LocalizationDict;
         
@@ -390,8 +390,10 @@ public class LocalizationManager
         {
             _basicFontMap.TryGetValue(Language2Letter, out fontName);
         }
+
+        var font = await GetFont(fontName);
         
-        inputField.fontAsset = await GetFont(fontName);
+        inputField.fontAsset = font;
     }
     
     public async Task<TMP_FontAsset> UpdateFont(TextMeshProUGUI text, FontType fontType = FontType.None, string fontName = null)

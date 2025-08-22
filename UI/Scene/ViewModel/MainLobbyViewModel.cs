@@ -21,7 +21,7 @@ public class MainLobbyViewModel : IDisposable
     private Tuple<float, int> _startTouchX;
     private Tuple<float, int> _endTouchX;
     // 페이지 스와이프를 위해 움직여야 하는 최소 거리
-    private readonly float _swipeDistance = 150f;           
+    private readonly float _swipeDistance = Screen.width * 0.45f;           
     private int _currentPage;
 
     public event Action OnFriendRequestNotificationReceived;
@@ -62,21 +62,25 @@ public class MainLobbyViewModel : IDisposable
     
     private void BindEvents()
     {
-        _signalRClient.OnInvitationSent -= RefreshMailAlert;
         _signalRClient.OnInvitationSent += RefreshMailAlert;
-        _signalRClient.OnFriendRequestNotificationReceived -= FriendRequestNotificationReceived;
         _signalRClient.OnFriendRequestNotificationReceived += FriendRequestNotificationReceived;
+        _signalRClient.OnEnterFriendlyMatch += response =>
+        {
+            Managers.Scene.LoadScene(Define.Scene.FriendlyMatch);
+            Managers.Game.FriendlyMatchResponse = response;
+        };
     }
 
     public async Task ConnectSignalR(string username)
     {
         await _signalRClient.Connect(username);
+        Debug.Log($"Connected to SignalR as {username}");
     }
     
     public async Task InitFriendAlert()
     {
-        var friendTask = await LoadPendingFriends();
-        if (friendTask.Count > 0)
+        var friendTuple = await LoadPendingFriends();
+        if (friendTuple.Item1.Count > 0)
         {
             OnFriendRequestNotificationReceived?.Invoke();
         }
@@ -96,13 +100,95 @@ public class MainLobbyViewModel : IDisposable
         await InitMailAlert();
     }
     
+    public async Task ClaimProductFromMailbox(bool claimAll, MailInfo mailInfo = null)
+    {
+        var packet = new ClaimProductPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            CurrentState = RewardPopupType.None,
+            ClaimAll = claimAll,
+            MailId = mailInfo?.MailId ?? 0
+        };
+        
+        var res = await _webService.SendWebRequestAsync<ClaimProductPacketResponse>(
+            "Payment/ClaimProduct", UnityWebRequest.kHttpVerbPUT, packet);
+
+        OnResetUI?.Invoke();
+        await HandleClaimPacketResponse(res);
+        await InitMailAlert();
+    }
+    
+        public async Task CardSelected(CompositionInfo composition)
+    {
+        var packet = new SelectProductPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            SelectedCompositionInfo = composition,
+        };
+        
+        var res = await _webService.SendWebRequestAsync<ClaimProductPacketResponse>(
+            "Payment/SelectProduct", UnityWebRequest.kHttpVerbPUT, packet);
+
+        await HandleClaimPacketResponse(res);
+    }
+
+    public async Task ClaimFixedAndDisplay()
+    {
+        var packet = new DisplayClaimedProductPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+        };
+        
+        var res = await _webService.SendWebRequestAsync<ClaimProductPacketResponse>(
+            "Payment/DisplayClaimedProduct", UnityWebRequest.kHttpVerbPUT, packet);
+        
+        await HandleClaimPacketResponse(res);
+    }
+
+    private async Task HandleClaimPacketResponse(ClaimProductPacketResponse res)
+    {
+        if (res.ClaimOk)
+        {
+            Managers.UI.CloseAllPopupUI();
+
+            switch (res.RewardPopupType)
+            {
+                case RewardPopupType.None:
+                    break;
+                case RewardPopupType.Item:
+                    if (res.CompositionInfos.Count != 0)
+                    {
+                        var itemPopup = await Managers.UI.ShowPopupUI<UI_RewardItemPopup>();
+                        itemPopup.CompositionInfos = res.CompositionInfos;
+                    }
+                    break;
+                case RewardPopupType.Select:
+                    if (res.ProductInfos.Count != 0)
+                    {
+                        var selectPopup = await Managers.UI.ShowPopupUI<UI_RewardSelectPopup>();
+                        selectPopup.ProductInfo = res.ProductInfos.First();
+                        selectPopup.CompositionInfos = res.CompositionInfos;
+                    }                    
+                    break;
+                case RewardPopupType.Open:
+                    if (res.RandomProductInfos.Count != 0)
+                    {
+                        var openPopup = await Managers.UI.ShowPopupUI<UI_RewardOpenPopup>();
+                        openPopup.OriginalProductInfos = res.RandomProductInfos;
+                        openPopup.CompositionInfos = res.CompositionInfos;
+                    }
+                    break;
+            }
+        }
+    }
+    
     public async Task AcceptInvitation(MailInfo mailInfo, bool accept)
     {
         var packet = new AcceptInvitationPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
             Accept = accept,
-            InviteeName = User.Instance.UserInfo.UserName
+            MailId = mailInfo.MailId
         };
         
         await Task.WhenAll(ClaimMail(mailInfo), _signalRClient.SendAcceptInvitation(packet));
@@ -118,6 +204,7 @@ public class MainLobbyViewModel : IDisposable
         await _webService.SendWebRequestAsync<DeleteReadMailPacketResponse>(
             "Mail/DeleteReadMail", UnityWebRequest.kHttpVerbDELETE, packet);
         
+        OnResetUI?.Invoke();
         await InitMailAlert();
     }
     
@@ -164,26 +251,24 @@ public class MainLobbyViewModel : IDisposable
         {
             AccessToken = _tokenService.GetAccessToken()
         };
-        var task = _webService
+        
+        var task = await _webService
             .SendWebRequestAsync<FriendListPacketResponse>("Relation/GetFriendList", "POST", packet);
-
-        await task;
-
-        return task.Result.FriendList.OrderBy(friendInfo => GetFriendOrderPriority(friendInfo.Act)).ToList();
+        
+        return task.FriendList.OrderBy(friendInfo => GetFriendOrderPriority(friendInfo.Act)).ToList();
     }
     
-    public async Task<List<FriendUserInfo>> LoadPendingFriends()
+    public async Task<Tuple<List<FriendUserInfo>, List<FriendUserInfo>>> LoadPendingFriends()
     {
         var packet = new LoadPendingFriendPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken()
         };
-        var task = _webService
+        
+        var task = await _webService
             .SendWebRequestAsync<LoadPendingFriendPacketResponse>("Relation/LoadPendingFriends", "POST", packet);
-
-        await task;
-
-        return task.Result.PendingFriendList;
+        
+        return new Tuple<List<FriendUserInfo>, List<FriendUserInfo>>(task.PendingFriendList, task.SendingFriendList);
     }
 
     public async Task<List<MailInfo>> GetMailList()
@@ -212,12 +297,10 @@ public class MainLobbyViewModel : IDisposable
             AccessToken = _tokenService.GetAccessToken(),
             Username = username
         };
-        var task = _webService
+        var task = await _webService
             .SendWebRequestAsync<SearchUsernamePacketResponse>("Relation/SearchUsername", "POST", packet);
-
-        await task;
-
-        return task.Result.FriendUserInfos;
+        
+        return task.FriendUserInfos;
     }
 
     public async Task<FriendRequestPacketResponse> SendFriendRequest(FriendUserInfo friendInfo)
@@ -304,7 +387,7 @@ public class MainLobbyViewModel : IDisposable
     
     public async Task JoinLobby()
     {
-        await _signalRClient.JoinLobby();
+        await _signalRClient.JoinLobby(_tokenService.GetAccessToken());
     }
     
     public async Task LeaveLobby()

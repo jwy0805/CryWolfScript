@@ -199,7 +199,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         AdsRemover,
         RestorePurchaseButton,
         
-        TestButton
+        // TestButton
     }
 
     private enum Texts
@@ -788,10 +788,10 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         GetImage((int)Images.DeckScrollView).gameObject.SetActive(true);
     }
 
-    private void OnDeckButtonClicked(PointerEventData data)
+    private async Task OnDeckButtonClicked(PointerEventData data)
     {
         var buttonNumber = data.pointerPress.GetComponent<DeckButtonInfo>().DeckIndex;
-        _deckVm.SelectDeck(buttonNumber, Util.Faction);
+        await _deckVm.SelectDeck(buttonNumber, Util.Faction);
     }
 
     private void OnCollectionTabClicked(PointerEventData data)
@@ -1250,7 +1250,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         GetButton((int)Buttons.RecyclingButton).gameObject.BindEvent(OnRecyclingClicked);
         GetButton((int)Buttons.RestorePurchaseButton).gameObject.BindEvent(OnRestorePurchaseClicked);
         
-        GetButton((int)Buttons.TestButton).gameObject.BindEvent(TestLogic);
+        // GetButton((int)Buttons.TestButton).gameObject.BindEvent(TestLogic);
     }
     
     private async Task TestLogic(PointerEventData data)
@@ -1266,7 +1266,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     
     private async Task InitMainLobby()
     {
-        GetButton((int)Buttons.TestButton).gameObject.SetActive(false);
+        // GetButton((int)Buttons.TestButton).gameObject.SetActive(false);
         
         await SwitchLobbyUI(Util.Faction);
         GetImage((int)Images.FriendAlertIcon).gameObject.SetActive(false);
@@ -1301,7 +1301,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             InitShop(),
             _lobbyVm.InitFriendAlert(),
             _lobbyVm.InitMailAlert(),
-            _lobbyVm.ConnectSignalR(_userService.UserInfo.UserName));
+            _lobbyVm.ConnectSignalR(_userService.UserInfo.UserName)
+            );
 
         BindUserInfo();
         
@@ -1322,7 +1323,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
             const string titleKey = "warning_text";
             const string messageKey = "notify_warning_guest_account_message";
-            await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+            await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
             
             var tcs = new TaskCompletionSource<bool>();
             popup.SetYesCallback(() =>

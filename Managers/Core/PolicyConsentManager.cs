@@ -49,18 +49,18 @@ public class PolicyConsentManager
 
     public async Task RequestConsents(bool policyFinished, bool attFinished)
     {
-        Debug.Log("[Manager] Requesting consents...");
         if (policyFinished == false)
         {
             await ShowPolicyPopupAsync();
         }
-        Debug.Log("[Manager] Requesting consents2...");
+        Debug.Log("[Manager] Requesting consents...");
 
 #if UNITY_IOS
         if (attFinished == false)
         {
             await Managers.Ads.RequestAttAsync();
         }
+        Debug.Log("[Manager] Requesting att...");
 #endif
     }
 

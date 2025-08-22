@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -24,6 +25,7 @@ public class EffectController : MonoBehaviour
     {
         StartTime = Time.time;
         if (TrailingMaster && Master != null) DiffY = transform.position.y - Master.transform.position.y;
+        _ = PlaySfx();
     }
     
     protected virtual void Update()
@@ -42,6 +44,20 @@ public class EffectController : MonoBehaviour
             }
             
             transform.position = Master.transform.position + new Vector3(0, DiffY, 0);
+        }
+    }
+    
+    private async Task PlaySfx()
+    {
+        switch (gameObject.name)
+        {
+            case "WerewolfMagicalEffect":
+            case "WolfMagicalEffect":
+                break;
+            default:
+                var path = $"InGame/{Util.ToSnakeCase(gameObject.name)}";
+                await Managers.Sound.PlaySfx3D(path, transform.position);  
+                break;
         }
     }
 }

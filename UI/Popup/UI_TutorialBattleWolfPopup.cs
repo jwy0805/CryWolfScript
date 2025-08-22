@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Febucci.UI;
 using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
@@ -31,6 +32,7 @@ public class UI_TutorialBattleWolfPopup : UI_Popup
     private Camera _tutorialCamera;
     private RawImage _rawImage;
     private RenderTexture _renderTexture;
+    private bool _typing;
     
     private enum Images
     {
@@ -610,13 +612,31 @@ public class UI_TutorialBattleWolfPopup : UI_Popup
     
     private async Task OnContinueClicked(PointerEventData data)
     {
-        if (_tutorialVm.Step == 19)
+        if (_typing)
         {
-            await _tutorialVm.BattleTutorialEndHandler(Faction.Wolf);
-            return;
+            _speechBubbleText.GetComponent<TypewriterByCharacter>().SkipTypewriter();
+            _typing = false;
         }
+        else
+        {
+            if (_tutorialVm.Step == 19)
+            {
+                await _tutorialVm.BattleTutorialEndHandler(Faction.Wolf);
+                return;
+            }
         
-        StepTutorial();
+            StepTutorial();
+        }
+    }
+    
+    public void OnTypeStarted()
+    {
+        _typing = true;
+    }
+
+    public void OnTextShowed()
+    {
+        _typing = false;
     }
     
     private void OnDestroy()

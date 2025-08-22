@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -36,6 +37,7 @@ public class Managers : MonoBehaviour
     private readonly DataManager _data = new();
     private readonly InputManager _input = new();
     private readonly LocalizationManager _localization = new();
+    private readonly MainThreadDispatcher _dispatcher = new();
     private readonly PoolManager _pool = new();
     private readonly ResourceManager _resource = new();
     private readonly SoundManager _sound = new();
@@ -45,6 +47,7 @@ public class Managers : MonoBehaviour
     public static DataManager Data => Instance._data;
     public static InputManager Input => Instance._input;
     public static LocalizationManager Localization => Instance._localization;
+    public static MainThreadDispatcher Dispatcher => Instance._dispatcher;
     public static PoolManager Pool => Instance._pool;
     public static ResourceManager Resource => Instance._resource;
     public static SoundManager Sound => Instance._sound;
@@ -53,14 +56,6 @@ public class Managers : MonoBehaviour
 
     #endregion
 
-    // private void Awake()
-    // {
-    //     if (Instance != null)
-    //     {
-    //         Destroy(gameObject);
-    //     }
-    // }
-    
     private void Start()
     {
         QualitySettings.vSyncCount = 0;
@@ -73,6 +68,7 @@ public class Managers : MonoBehaviour
         _input.OnUpdate();
         _sound.OnUpdate();
         _network.Update();
+        _dispatcher.Update();
     }
     
     private static void Init()

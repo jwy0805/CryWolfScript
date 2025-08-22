@@ -44,6 +44,7 @@ public class PortalController : CreatureController
     {
         if (level == 2)
         {
+            _ = Managers.Sound.PlaySfx3D("InGame/upgrade_level_2_portal", transform.position);
             _rune2.SetActive(true);
             _rune3.SetActive(true);
             _rune5.SetActive(true);
@@ -52,6 +53,7 @@ public class PortalController : CreatureController
         }
         else if (level == 3)
         {
+            _ = Managers.Sound.PlaySfx3D("InGame/upgrade_level_3_portal", transform.position);
             _trails.SetActive(true);
         }
     }
@@ -59,5 +61,11 @@ public class PortalController : CreatureController
     protected override void UpdateDie()
     {
         transform.position += Vector3.down * (_destroySpeed * Time.deltaTime);
+    }
+    
+    public override void OnDead(float time = 2f)
+    {
+        StartCoroutine(Despawn(gameObject, time));
+        _ = Managers.Sound.PlaySfx3D("InGame/portal_down", transform.position);
     }
 }

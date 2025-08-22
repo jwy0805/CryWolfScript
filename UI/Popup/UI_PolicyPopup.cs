@@ -150,7 +150,7 @@ public class UI_PolicyPopup : UI_Popup
                 var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
                 var titleKey = "notify_network_error_title";
                 var messageKey = "notify_network_error_message";
-                await Managers.Localization.UpdateNotifyPopupText(popup, titleKey, messageKey);
+                await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
             }
         }
         catch (Exception e)

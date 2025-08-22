@@ -15,6 +15,11 @@ public class BombSkillController : ProjectileController
 
     private string[] _effects;
     
+    protected override void Init()
+    {
+        _ = PlaySfx();
+    }
+    
     protected override void FixedUpdate ()
     {
         Vector3 dir = DestPos - transform.position;
@@ -75,5 +80,19 @@ public class BombSkillController : ProjectileController
                 Managers.Resource.Destroy(gameObject);
 
                 #endregion
+    }
+    
+    private async Task PlaySfx()
+    {
+        if (Sound)
+        {
+            var path = $"InGame/bomb_skill";
+            await Managers.Sound.PlaySfx3D(path, transform.position);   
+        }
+    }
+
+    private async Task PlayHitSfx()
+    {
+        await Managers.Sound.PlaySfx3D("InGame/projectile_hit", transform.position);
     }
 }
