@@ -46,10 +46,7 @@ public class GameViewModel : IDisposable
 
     public GameViewModel()
     {
-        Managers.Event.StartListening("ShowRings", OnReceiveRanges);
         Managers.Event.StartListening("ShowBounds", OnReceiveBounds);
-        Managers.Event.StartListening("CanSpawn", OnCanSpawn);
-        Managers.Event.StartListening("UpdateUnitUpgradeCost", UpdateUnitUpgradeCostResponse);
         Managers.Event.StartListening("UpdateUnitDeleteCost", UpdateUnitDeleteCostResponse);
         Managers.Event.StartListening("UpdateUnitRepairCost", UpdateUnitRepairCostResponse);
         Managers.Event.StartListening("SetBaseSkillCost", SetBaseSkillCostResponse);
@@ -128,26 +125,12 @@ public class GameViewModel : IDisposable
 
     public void UpdateUpgradeCostRequired()
     {
-        Managers.Network.Send(new C_SetUpgradeButtonCost { UnitId = (int)CurrentSelectedPortrait.UnitId });
+        Managers.Network.Send(new C_SetUpgradeCost { UnitId = (int)CurrentSelectedPortrait.UnitId });
     }
 
     public void UpdateUpgradeCostResponse(int cost)
     {
         SkillWindow?.UpdateUpgradeCost(cost);
-    }
-
-    public void UpdateUnitUpgradeCostRequired(int[] objectIds)
-    {
-        var packet = new C_SetUnitUpgradeCost();
-        packet.ObjectIds.AddRange(objectIds);
-        Managers.Network.Send(packet);
-    }
-    
-    private void UpdateUnitUpgradeCostResponse(object eventData)
-    {
-        var packet = (S_SetUnitUpgradeCost)eventData;
-        CapacityWindow?.UpdateUpgradeCostText(packet.Cost);
-        UnitControlWindow?.UpdateUpgradeCostText(packet.Cost);
     }
     
     public void UpdateUnitDeleteCostRequired(int[] objectIds)
@@ -166,8 +149,10 @@ public class GameViewModel : IDisposable
     
     public void UpdateUnitRepairCostRequired(int[] objectIds)
     {
-        var packet = new C_SetUnitRepairCost();
-        packet.Faction = Util.Faction;
+        var packet = new C_SetUnitRepairCost
+        {
+            Faction = Util.Faction
+        };
         packet.ObjectIds.AddRange(objectIds);
         Managers.Network.Send(packet);
     }
@@ -191,12 +176,6 @@ public class GameViewModel : IDisposable
         var packet = (S_SetBaseSkillCost)eventData;
         BaseSkillWindow?.UpdateBaseSkillCost(packet);
     }
-    
-    private void OnReceiveRanges(object eventData)
-    {
-        var packet = (S_GetRanges)eventData;
-        CurrentSelectedPortrait?.ShowRing(packet.AttackRange, packet.SkillRange);
-    }
 
     private void OnReceiveBounds(object eventData)
     {
@@ -208,13 +187,6 @@ public class GameViewModel : IDisposable
     {
         CurrentSelectedPortrait?.HideRing();
         CurrentSelectedPortrait?.HideSpawnableBounds();
-    }
-    
-    private void OnCanSpawn(object eventData)
-    {
-        var packet = (S_UnitSpawnPos)eventData;
-        if (CurrentSelectedPortrait == null) return;
-        CurrentSelectedPortrait.CanSpawn = packet.CanSpawn;
     }
     
     public async Task OnPortraitClicked(IPortrait portrait)
@@ -298,21 +270,12 @@ public class GameViewModel : IDisposable
         return CapacityWindow.GetButtonIndex(button);
     }
     
-    // Upgrade button on skill panel clicked
-    public void OnUpgradeButtonClicked()
+    // Upgrade button on unit control panel
+    public void OnUnitUpgradeClicked()
     {
         var level = GetLevelFromUiObject(CurrentSelectedPortrait.UnitId);
         if (level >= 3) return;
-        Managers.Network.Send(new C_PortraitUpgrade { UnitId = CurrentSelectedPortrait.UnitId });
-    }
-    
-    // Upgrade button on unit control panel
-    public void OnUnitUpgradeClicked(IEnumerable<int> ids)
-    {
-        var packet = new C_UnitUpgrade();
-        packet.ObjectId.AddRange(ids);
-        Managers.Network.Send(packet);
-        ClearSelectedObjects();
+        Managers.Network.Send(new C_UnitUpgrade { UnitId = CurrentSelectedPortrait.UnitId });
     }
 
     public void OnUnitDeleteClicked(IEnumerable<int> ids)
@@ -376,10 +339,7 @@ public class GameViewModel : IDisposable
     {
         if (!disposing) return;
         
-        Managers.Event.StopListening("ShowRings", OnReceiveRanges);
         Managers.Event.StopListening("ShowBounds", OnReceiveBounds);
-        Managers.Event.StopListening("CanSpawn", OnCanSpawn);
-        Managers.Event.StopListening("UpdateUpgradeCost", UpdateUnitUpgradeCostResponse);
         Managers.Event.StopListening("UpdateUnitDeleteCost", UpdateUnitDeleteCostResponse);
         Managers.Event.StopListening("UpdateUnitRepairCost", UpdateUnitRepairCostResponse);
         Managers.Event.StopListening("SetBaseSkillCost", SetBaseSkillCostResponse);

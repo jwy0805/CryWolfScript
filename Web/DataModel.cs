@@ -217,13 +217,15 @@ public enum ProductId
 public enum ProductType
 {
     None = 0, // Other Product
-    Unit,
-    Material,
-    Enchant,
-    Sheep,
-    Character,
-    Gold,
-    Spinel,
+    Unit = 1,
+    Material = 2,
+    Enchant = 3,
+    Sheep = 4,
+    Character = 5,
+    Gold = 6,
+    Spinel = 7,
+    Exp = 8,
+    Subscription = 9,
 }
 
 public enum TutorialType
@@ -233,7 +235,8 @@ public enum TutorialType
     BattleSheep = 2,
     ChangeFaction = 3,
     Collection = 4,
-    Crafting = 5
+    Crafting = 5,
+    InGameTooltip = 6,
 }
 
 public enum ProductCategory
@@ -346,6 +349,7 @@ public enum ConsentStatus
 public enum FontType
 {
     None,
+    Bold,
     BlackLined,
     BlueLined,
     RedLined,

@@ -15,7 +15,7 @@ public class DeckViewModel
     private readonly ITokenService _tokenService;
 
     public event Func<Faction, Task> OnDeckInitialized;
-    public event Action<Faction> OnDeckSwitched;
+    public event Func<Faction, Task> OnDeckSwitched;
     
     [Inject]
     public DeckViewModel(IUserService userService, IWebService webService, ITokenService tokenService)

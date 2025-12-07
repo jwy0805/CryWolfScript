@@ -35,9 +35,9 @@ public partial class UI_MainLobby
             InitPackages(_shopVm.GoldPackages, _goldStorePanel),
             InitPackages(_shopVm.SpinelPackages, _spinelStorePanel),
             InitGoldItems(),
-            InitSpinelItems());
-
-        InitDailyPanelObjects();
+            InitSpinelItems(),
+            InitDailyPanelObjects(),
+            InitSubscriptionObjects());
         
         Debug.Log("Shop initialized successfully.");
     }
@@ -143,22 +143,27 @@ public partial class UI_MainLobby
             var item = await InitiateDailyProduct(itemName, dailyProductInfo, _dailyProductPanel);
             var countText = Util.FindChild(item, "TextNum", true, true);
             var priceText = Util.FindChild(item, "TextPrice", true, true);
-
-            if (composition.Count == 1 && composition.First().ProductType == ProductType.Unit && composition.First().Count > 1)
+            
+            if (dailyProductInfo.NeedAds)
             {
-                if (dailyProductInfo.NeedAds)
-                {
-                    countText.SetActive(false);
-                }
-                else
+                countText.SetActive(false);
+            }
+            else
+            {
+                if (composition.Count == 1 && composition.First().ProductType == ProductType.Unit && composition.First().Count > 1)
                 {
                     // If the product is a unit and has a count greater than 1
                     countText.GetComponent<TextMeshProUGUI>().text = $"x{composition.First().Count.ToString()}";
                 }
-            }
-            else
-            {
-                countText.SetActive(false);
+                else if (productInfo.Compositions.First().ProductType == ProductType.Gold || 
+                         productInfo.Compositions.First().ProductType == ProductType.Spinel)       
+                {
+                    countText.GetComponent<TextMeshProUGUI>().text = $"x{composition.First().Count.ToString()}";
+                }
+                else
+                {
+                    countText.SetActive(false);
+                }
             }
 
             if (productInfo.Price != 0)
@@ -178,22 +183,50 @@ public partial class UI_MainLobby
     }
 
     // Ads remover 같이 구독형 상품인 경우는 기존 상품과 다른 방식으로 처리
-    private void InitDailyPanelObjects()
+    private async Task InitDailyPanelObjects()
+    {
+        await SetRefreshTimer();
+    }
+
+    private async Task InitSubscriptionObjects()
+    {
+        await Task.WhenAll(InitAdsRemover());
+    }
+
+    private async Task InitAdsRemover()
+    {
+        var adsRemoverObj = GetButton((int)Buttons.AdsRemover).gameObject;
+        var product = adsRemoverObj.GetOrAddComponent<ProductSimple>();
+        var adsRemover = adsRemoverObj.GetOrAddComponent<AdsRemover>();
+        var priceText = Util.FindChild(adsRemoverObj, "TextPrice", true, true);
+        
+        adsRemover.Applied = User.Instance.SubscribeAdsRemover;
+        priceText.GetComponent<TextMeshProUGUI>().text = _shopVm.AdsRemover.Price.ToString();
+        product.ProductInfo = _shopVm.AdsRemover;
+        product.Init();
+        
+        adsRemoverObj.BindEvent(OnAdsRemoverClicked);
+    }
+
+    private void OnActiveAdsRemover()
+    {
+        User.Instance.SubscribeAdsRemover = true;
+        
+        var adsRemover = GetButton((int)Buttons.AdsRemover).gameObject;
+        var flag = Util.FindChild(adsRemover, "AppliedFlag", true, true);
+        flag.SetActive(true);
+    }
+    
+    private async Task SetRefreshTimer()
     {
         var refreshButton = GetButton((int)Buttons.DailyProductsRefreshButton).gameObject;
         refreshButton.BindEvent(OnRefreshDailyProductsClicked);
         
         var timer = refreshButton.GetOrAddComponent<TimerSeconds>();
         timer.TimerText = GetText((int)Texts.DailyProductsRefreshButtonTimeText);
+        
+        await _shopVm.InitDailyProductRefreshTime();
         timer.LastRefreshTime = _shopVm.LastDailyProductRefreshTime;
-        
-        var adsRemover = GetButton((int)Buttons.AdsRemover).gameObject;
-        var product = adsRemover.GetOrAddComponent<ProductSimple>();
-        adsRemover.GetOrAddComponent<AdsRemover>();
-        product.ProductInfo = _shopVm.AdsRemover;
-        product.Init();
-        
-        adsRemover.BindEvent(OnAdsRemoverClicked);
     }
 
     private async Task<GameObject> InitiateProduct(string prefabPath, ProductInfo productInfo, Transform parent)
@@ -236,10 +269,16 @@ public partial class UI_MainLobby
                 var unit = Managers.Data.UnitInfoDict[unitId];
                 var iconObject = await Managers.Resource.GetCardResources<UnitId>(unit, frame.transform);
                 var iconRect = iconObject.GetComponent<RectTransform>();
+                iconRect.sizeDelta = new Vector2(135, 216);
                 iconRect.anchorMin = new Vector2(0.5f, 0.6f);
                 iconRect.anchorMax = new Vector2(0.5f, 0.6f);
-                iconRect.sizeDelta = new Vector2(135, 216);
                 iconObject.transform.SetSiblingIndex(3);
+            }
+            else if (productInfo.Compositions.First().ProductType == ProductType.Gold || 
+                     productInfo.Compositions.First().ProductType == ProductType.Spinel)
+            {
+                var textNum = Util.FindChild(frame, "TextNum", true);
+                textNum.SetActive(true);
             }
             else
             {
@@ -274,27 +313,43 @@ public partial class UI_MainLobby
             
             var productInfo = dailyProduct.ProductInfo;
             var itemName = ((ProductId)productInfo.ProductId).ToString();
-            
+
+            GameObject iconObject;
+            RectTransform iconRect;
             if (productInfo.Compositions.Count == 1 && productInfo.Compositions.First().ProductType == ProductType.Unit)
             {
                 var unitId = productInfo.Compositions.First().CompositionId;
                 var unit = Managers.Data.UnitInfoDict[unitId];
-                var iconObject = await Managers.Resource.GetCardResources<UnitId>(unit, revealedProduct);
-                var iconRect = iconObject.GetComponent<RectTransform>();
-                iconRect.anchorMin = new Vector2(0.5f, 0.6f);
-                iconRect.anchorMax = new Vector2(0.5f, 0.6f);
+                iconObject = await Managers.Resource.GetCardResources<UnitId>(unit, revealedProduct);
+                iconRect = iconObject.GetComponent<RectTransform>();
                 iconRect.sizeDelta = new Vector2(135, 216);
-                iconObject.transform.SetSiblingIndex(3);
+            }
+            else if (productInfo.Compositions.First().ProductType == ProductType.Gold || 
+                     productInfo.Compositions.First().ProductType == ProductType.Spinel)
+            {
+                var textNum = Util.FindChild(revealedProduct.gameObject, "TextNum", true, true);
+                var iconPath = productInfo.Compositions.First().ProductType switch
+                {
+                    ProductType.Gold => Managers.Resource.GetGoldPrefabPath(productInfo.Compositions.First().Count),
+                    _ => Managers.Resource.GetSpinelPrefabPath(productInfo.Compositions.First().Count),
+                };
+                
+                textNum.SetActive(true);
+                textNum.GetComponent<TextMeshProUGUI>().text = $"x{productInfo.Compositions.First().Count.ToString()}";
+                iconObject = await Managers.Resource.Instantiate(iconPath, revealedProduct);
+                iconRect = iconObject.GetComponent<RectTransform>();
+                iconRect.sizeDelta = new Vector2(250, 250);
             }
             else
             {
                 var iconPath = $"UI/Shop/NormalizedProducts/{itemName}";
-                var iconObject = await Managers.Resource.Instantiate(iconPath, revealedProduct);
-                var iconRect = iconObject.GetComponent<RectTransform>();
-                iconRect.anchorMin = new Vector2(0.5f, 0.6f);
-                iconRect.anchorMax = new Vector2(0.5f, 0.6f);
-                iconObject.transform.SetSiblingIndex(3);
+                iconObject = await Managers.Resource.Instantiate(iconPath, revealedProduct);
+                iconRect = iconObject.GetComponent<RectTransform>();
             }
+            
+            iconRect.anchorMin = new Vector2(0.5f, 0.6f);
+            iconRect.anchorMax = new Vector2(0.5f, 0.6f);
+            iconObject.transform.SetSiblingIndex(3);
         }
     }
 
@@ -308,16 +363,12 @@ public partial class UI_MainLobby
         }
         else
         {
-            var refreshButton = GetButton((int)Buttons.DailyProductsRefreshButton).gameObject;
-            var timer = refreshButton.GetComponent<TimerSeconds>();
-            var existingProducts = _dailyProductPanel.GetComponentsInChildren<GameProduct>();
-            foreach (var product in existingProducts)
+            foreach (Transform child in _dailyProductPanel)
             {
-                Managers.Resource.Destroy(product.gameObject);
+                Managers.Resource.Destroy(child.gameObject);
             }
             
-            Util.FindChild(refreshButton, "DailyProductsRefreshButtonTimeText", true).SetActive(true);
-            timer.LastRefreshTime = _shopVm.LastDailyProductRefreshTime;
+            await SetRefreshTimer();
             await InitDailyProducts();
         }
     }

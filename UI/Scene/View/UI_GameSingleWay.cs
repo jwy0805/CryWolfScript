@@ -45,7 +45,6 @@ public class UI_GameSingleWay : UI_Game
     
     private Camera _tutorialCamera;
     private GameObject _log;
-    // private bool _isTutorial;
     private readonly List<GameObject> _selectedObjects = new();
     private readonly Dictionary<string, GameObject> _dictPortrait = new();
     
@@ -235,11 +234,10 @@ public class UI_GameSingleWay : UI_Game
         
         costText.GetComponent<TextMeshProUGUI>().text = unit.Stat.RequiredResources.ToString();
         
-        // Tutorial
-        if ((_tutorialVm.Step == 9 && Util.Faction == Faction.Wolf) ||
-            (_tutorialVm.Step == 11 && Util.Faction == Faction.Sheep))
+        // Only Tutorial
+        if (_tutorialVm.CurrentTag.Contains("CheckUpgrade"))
         {
-            StepTutorial();
+            StepTutorial(_tutorialVm.NextTag);
             _tutorialVm.SendHoldPacket(true);
         }
     }
@@ -337,9 +335,9 @@ public class UI_GameSingleWay : UI_Game
     #endregion
 
     #region tutorial
-    private void StepTutorial()
+    private void StepTutorial(string tutorialTag)
     {
-        _tutorialVm.StepTutorial();
+        _tutorialVm.RunTutorialTag(tutorialTag);
     }
     
     private async Task SetTutorialUI()
@@ -400,7 +398,7 @@ public class UI_GameSingleWay : UI_Game
         {
             if (Managers.Data.UnitInfoDict.TryGetValue((int)portrait.UnitId, out var unitInfo))
             {
-                if (unitInfo.Role is Role.Ranger or Role.Mage)
+                if (unitInfo.Role is Role.Ranger)
                 {
                     var parent = portrait.transform.parent;
                     for (var i = 0; i < 6; i++)

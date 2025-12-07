@@ -90,7 +90,7 @@ public class UI_PlayerProfilePopup : UI_Popup
             var expMax = PlayerUserInfo.ExpToLevelUp;
             GetText((int)Texts.ExpText).text = $"{exp.ToString()} / {expMax.ToString()}";
         
-            GetText((int)Texts.UsernameText).text = PlayerUserInfo.UserName;
+            GetText((int)Texts.UsernameText).text = $"{PlayerUserInfo.UserName} #{PlayerUserInfo.UserTag}";
             GetText((int)Texts.LevelText).text = PlayerUserInfo.Level.ToString();
             GetText((int)Texts.RankPointText).text = PlayerUserInfo.RankPoint.ToString();
 
@@ -143,7 +143,9 @@ public class UI_PlayerProfilePopup : UI_Popup
 
     private void UpdateUsername()
     {
-        GetText((int)Texts.UsernameText).text = User.Instance.UserInfo.UserName;
+        var userName = User.Instance.UserInfo.UserName;
+        var userTag = User.Instance.UserInfo.UserTag;
+        GetText((int)Texts.UsernameText).text = $"{userName} #{userTag}";
     }
     
     private async Task OnPencilClicked(PointerEventData data)

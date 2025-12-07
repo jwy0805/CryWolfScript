@@ -66,8 +66,7 @@ public class SkillWindow : UI_Popup, ISkillWindow
             await InitUIAsync(_gameVm.CurrentSelectedPortrait.UnitId);
         
             // Tutorial
-            if ((_tutorialVm.Step == 8 && Util.Faction == Faction.Wolf) ||
-                (_tutorialVm.Step == 10 && Util.Faction == Faction.Sheep))
+            if (_tutorialVm.CurrentTag.Contains("CheckSkillTree")) 
             {
                 _tutorialVm.StepTutorialByClickingUI();
             }
@@ -137,14 +136,12 @@ public class SkillWindow : UI_Popup, ISkillWindow
 
     private void OnUpgradeClicked(PointerEventData data)
     {
-        // Tutorial
-        if ((_tutorialVm.Step == 9 && Util.Faction == Faction.Wolf) ||
-            (_tutorialVm.Step == 11 && Util.Faction == Faction.Sheep))
+        if (_tutorialVm.CurrentTag.Contains("CheckUpgrade"))
         {
             _tutorialVm.SendHoldPacket(false);
         }
         
-        _gameVm.OnUpgradeButtonClicked();
+        _gameVm.OnUnitUpgradeClicked();
     }
 
     private async Task OnSkillButtonClicked(PointerEventData data)

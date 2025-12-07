@@ -231,7 +231,7 @@ public class ResourceManager
         Func<PointerEventData, Task> action = null, 
         bool activateText = false) where TEnum : struct, Enum
     {
-        var cardFrame = await Instantiate("UI/Deck/CardFrame", parent);
+        var cardFrame = await Instantiate("UI/Lobby/Deck/CardFrame", parent);
         var card = cardFrame.GetOrAddComponent<Card>();
         
         card.Id = asset.Id;
@@ -260,7 +260,7 @@ public class ResourceManager
         Action<PointerEventData> action = null, 
         bool activateText = false) where TEnum : struct, Enum
     {
-        var cardFrame = await Instantiate("UI/Deck/CardFrame", parent);
+        var cardFrame = await Instantiate("UI/Lobby/Deck/CardFrame", parent);
         var card = cardFrame.GetOrAddComponent<Card>();
         
         card.Id = asset.Id;
@@ -359,7 +359,7 @@ public class ResourceManager
     
     public async Task<GameObject> GetMaterialResources(IAsset asset, Transform parent, Action<PointerEventData> action = null)
     {
-        var itemFrame = await Instantiate("UI/Deck/ItemFrame", parent);
+        var itemFrame = await Instantiate("UI/Lobby/Deck/ItemFrame", parent);
         var materialInFrame = Util.FindChild(itemFrame, "ItemImage", true, true);
         var material = itemFrame.GetOrAddComponent<MaterialItem>();
         
@@ -383,43 +383,65 @@ public class ResourceManager
 
     public async Task<GameObject> GetItemFrameGold(int count, Transform parent)
     {
-        var itemFrame = await Instantiate("UI/Deck/ItemFrameGold", parent);
+        var itemFrame = await Instantiate("UI/Lobby/Deck/ItemFrameGold", parent);
         var goldImage = Util.FindChild<Image>(itemFrame, "ItemIcon", true);
         var countText = Util.FindChild<TextMeshProUGUI>(itemFrame, "CountText", true);
-        var path = count switch
-        {
-            >= 50000 => "Sprites/ShopIcons/icon_gold_vault",
-            >= 25000 => "Sprites/ShopIcons/icon_gold_basket",
-            >= 2500 => "Sprites/ShopIcons/icon_gold_pouch",
-            _ => "Sprites/ShopIcons/icon_gold_pile"
-        };
+        var path = GetGoldSpritePath(count);
         
         goldImage.sprite = await LoadAsync<Sprite>(path);
         countText.text = count.ToString();
         
         return itemFrame;
     }
+    
+    public string GetGoldSpritePath(int count) => count switch
+    {
+        >= 50000 => "Sprites/ShopIcons/icon_gold_vault",
+        >= 25000 => "Sprites/ShopIcons/icon_gold_basket",
+        >= 2500 => "Sprites/ShopIcons/icon_gold_pouch",
+        _ => "Sprites/ShopIcons/icon_gold_pile"
+    };
+    
+    public string GetGoldPrefabPath(int count) => count switch
+    {
+        >= 50000 => "UI/Shop/NormalizedProducts/GoldVault",
+        >= 25000 => "UI/Shop/NormalizedProducts/GoldBasket",
+        >= 2500 => "UI/Shop/NormalizedProducts/GoldPouch",
+        _ => "UI/Shop/NormalizedProducts/GoldPile"
+    };
 
     public async Task<GameObject> GetItemFrameSpinel(int count, Transform parent)
     {
-        var itemFrame = await Instantiate("UI/Deck/ItemFrameSpinel", parent);
+        var itemFrame = await Instantiate("UI/Lobby/Deck/ItemFrameSpinel", parent);
         var spinelImage = Util.FindChild<Image>(itemFrame, "ItemIcon", true);
         var countText = Util.FindChild<TextMeshProUGUI>(itemFrame, "CountText", true);
-        var path = count switch
-        {
-            >= 7000 => "Sprites/ShopIcons/icon_spinel_vault",
-            >= 5000 => "Sprites/ShopIcons/icon_spinel_chest",
-            >= 3000 => "Sprites/ShopIcons/icon_spinel_basket",
-            >= 1000 => "Sprites/ShopIcons/icon_spinel_pouch",
-            >= 50 => "Sprites/ShopIcons/icon_spinel_fistful",
-            _ => "Sprites/ShopIcons/icon_spinel_pile"
-        };
+        var path = GetSpinelSpritePath(count);
         
         spinelImage.sprite = await LoadAsync<Sprite>(path);
         countText.text = count.ToString();
         
         return itemFrame;
     }
+    
+    public string GetSpinelSpritePath(int count) => count switch
+    {
+        >= 7000 => "Sprites/ShopIcons/icon_spinel_vault",
+        >= 5000 => "Sprites/ShopIcons/icon_spinel_chest",
+        >= 3000 => "Sprites/ShopIcons/icon_spinel_basket",
+        >= 1000 => "Sprites/ShopIcons/icon_spinel_pouch",
+        >= 50 => "Sprites/ShopIcons/icon_spinel_fistful",
+        _ => "Sprites/ShopIcons/icon_spinel_pile"
+    };
+    
+    public string GetSpinelPrefabPath(int count) => count switch
+    {
+        >= 7000 => "UI/Shop/NormalizedProducts/SpinelVault",
+        >= 5000 => "UI/Shop/NormalizedProducts/SpinelChest",
+        >= 3000 => "UI/Shop/NormalizedProducts/SpinelBasket",
+        >= 1000 => "UI/Shop/NormalizedProducts/SpinelPouch",
+        >= 50 => "UI/Shop/NormalizedProducts/SpinelFistful",
+        _ => "UI/Shop/NormalizedProducts/SpinelPile"
+    };
     
     private void BindUnitCardColor(UnitClass unitClass, Image background, Image gradient, Image glow)
     {
@@ -512,15 +534,15 @@ public class ResourceManager
 
     public async Task<GameObject> GetFriendFrame(FriendUserInfo friendInfo, Transform parent, Action<PointerEventData> action = null)
     {
-        var frame = await Instantiate("UI/Deck/FriendInfo", parent);
+        var frame = await Instantiate("UI/Lobby/Friend/FriendInfo", parent);
         var nameText = Util.FindChild(frame, "NameText", true).GetComponent<TextMeshProUGUI>();
         var rankText = Util.FindChild(frame, "RankText", true).GetComponent<TextMeshProUGUI>();
         var actText = Util.FindChild(frame, "UserActText", true).GetComponent<TextMeshProUGUI>();
         
-        nameText.text = friendInfo.UserName;
+        nameText.text = $"{friendInfo.UserName} #{friendInfo.UserTag}";
         rankText.text = friendInfo.RankPoint.ToString();
         actText.text = friendInfo.Act.ToString();
-        frame.GetOrAddComponent<Friend>().FriendName = friendInfo.UserName;
+        frame.GetOrAddComponent<Friend>().FriendTag = friendInfo.UserTag;
         frame.BindEvent(action);
         
         return frame;
@@ -531,15 +553,15 @@ public class ResourceManager
         Transform parent,
         Action<PointerEventData> action = null)
     {
-        var frame = await Instantiate("UI/Deck/FriendInviteFrame", parent);
+        var frame = await Instantiate("UI/Lobby/Friend/FriendInviteFrame", parent);
         var nameText = Util.FindChild(frame, "NameText", true).GetComponent<TextMeshProUGUI>();
         var rankText = Util.FindChild(frame, "RankText", true).GetComponent<TextMeshProUGUI>();
         var actText = Util.FindChild(frame, "UserActText", true).GetComponent<TextMeshProUGUI>();
         
-        nameText.text = friendInfo.UserName;
+        nameText.text = $"{friendInfo.UserName} #{friendInfo.UserTag}";
         rankText.text = friendInfo.RankPoint.ToString();
         actText.text = friendInfo.Act.ToString();
-        frame.GetOrAddComponent<Friend>().FriendName = friendInfo.UserName;
+        frame.GetOrAddComponent<Friend>().FriendTag = friendInfo.UserTag;
         frame.BindEvent(action);
         
         return frame;
@@ -550,13 +572,13 @@ public class ResourceManager
         Transform parent, 
         Action<PointerEventData> action = null)
     {
-        var frame = await Instantiate("UI/Deck/FriendRequestInfo", parent);
+        var frame = await Instantiate("UI/Lobby/Friend/FriendRequestInfo", parent);
         var nameText = Util.FindChild(frame, "NameText", true).GetComponent<TextMeshProUGUI>();
         var rankText = Util.FindChild(frame, "RankText", true).GetComponent<TextMeshProUGUI>();
         
-        nameText.text = friendInfo.UserName;
+        nameText.text = $"{friendInfo.UserName} #{friendInfo.UserTag}";
         rankText.text = friendInfo.RankPoint.ToString();
-        frame.GetOrAddComponent<Friend>().FriendName = friendInfo.UserName;
+        frame.GetOrAddComponent<Friend>().FriendTag = friendInfo.UserTag;
         frame.BindEvent(action);
         
         return frame;
@@ -564,7 +586,7 @@ public class ResourceManager
 
     public async Task<GameObject> GetProductMailFrame(MailInfo mailInfo, Transform parent)
     {
-        var frame = await Instantiate("UI/Deck/MailInfoProduct", parent);
+        var frame = await Instantiate("UI/Lobby/Mail/MailInfoProduct", parent);
         var claimButton = Util.FindChild(frame, "ClaimButton", true);
         var countText = Util.FindChild(frame, "CountText", true).GetComponent<TextMeshProUGUI>();
         var infoText = Util.FindChild(frame, "InfoText", true).GetComponent<TextMeshProUGUI>();
@@ -574,6 +596,32 @@ public class ResourceManager
         countText.gameObject.SetActive(false);
         infoText.text = mailInfo.Message;
         expiresText.text = mailInfo.ExpiresAt.ToString(CultureInfo.CurrentCulture);
+
+        return frame;
+    }
+
+    public async Task<GameObject> GetNoticeFrame(NoticeInfo noticeInfo, Transform parent)
+    {
+        var frame = await Instantiate("UI/Lobby/Notice/NoticeFrame", parent);
+        var titleText = Util.FindChild(frame, "NoticeTitleText", true).GetComponent<TextMeshProUGUI>();
+        var infoText = Util.FindChild(frame, "NoticeContentText", true).GetComponent<TextMeshProUGUI>();
+
+        frame.GetOrAddComponent<NoticeFrame>().NoticeInfo = noticeInfo;
+        titleText.text = noticeInfo.Title;
+        infoText.text = noticeInfo.Content;
+
+        return frame;
+    }
+    
+    public async Task<GameObject> GetEventFrame(EventInfo eventInfo, Transform parent)
+    {
+        var frame = await Instantiate("UI/Lobby/Notice/EventFrame", parent);
+        var titleText = Util.FindChild(frame, "EventTitleText", true).GetComponent<TextMeshProUGUI>();
+        var infoText = Util.FindChild(frame, "EventContentText", true).GetComponent<TextMeshProUGUI>();
+
+        frame.GetOrAddComponent<EventFrame>().EventInfo = eventInfo;
+        titleText.text = eventInfo.NoticeInfo.Title;
+        infoText.text = eventInfo.NoticeInfo.Content;
 
         return frame;
     }

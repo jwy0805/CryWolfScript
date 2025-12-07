@@ -29,8 +29,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SConnectSession, PacketHandler.S_ConnectSessionHandler);		
 		_onRecv.Add((ushort)MessageId.SLeaveGame, MakePacket<S_LeaveGame>);
 		_handler.Add((ushort)MessageId.SLeaveGame, PacketHandler.S_LeaveGameHandler);		
-		_onRecv.Add((ushort)MessageId.SStepTutorial, MakePacket<S_StepTutorial>);
-		_handler.Add((ushort)MessageId.SStepTutorial, PacketHandler.S_StepTutorialHandler);		
+		_onRecv.Add((ushort)MessageId.SRunTutorialTag, MakePacket<S_RunTutorialTag>);
+		_handler.Add((ushort)MessageId.SRunTutorialTag, PacketHandler.S_RunTutorialTagHandler);		
 		_onRecv.Add((ushort)MessageId.SSpawn, MakePacket<S_Spawn>);
 		_handler.Add((ushort)MessageId.SSpawn, PacketHandler.S_SpawnHandler);		
 		_onRecv.Add((ushort)MessageId.SPlaySound, MakePacket<S_PlaySound>);
@@ -71,8 +71,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SSkillUpgrade, PacketHandler.S_SkillUpgradeHandler);		
 		_onRecv.Add((ushort)MessageId.SSkillUpdate, MakePacket<S_SkillUpdate>);
 		_handler.Add((ushort)MessageId.SSkillUpdate, PacketHandler.S_SkillUpdateHandler);		
-		_onRecv.Add((ushort)MessageId.SPortraitUpgrade, MakePacket<S_PortraitUpgrade>);
-		_handler.Add((ushort)MessageId.SPortraitUpgrade, PacketHandler.S_PortraitUpgradeHandler);		
+		_onRecv.Add((ushort)MessageId.SUnitUpgrade, MakePacket<S_UnitUpgrade>);
+		_handler.Add((ushort)MessageId.SUnitUpgrade, PacketHandler.S_UnitUpgradeHandler);		
 		_onRecv.Add((ushort)MessageId.SGetDamage, MakePacket<S_GetDamage>);
 		_handler.Add((ushort)MessageId.SGetDamage, PacketHandler.S_GetDamageHandler);		
 		_onRecv.Add((ushort)MessageId.SChangeHp, MakePacket<S_ChangeHp>);
@@ -87,10 +87,6 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SDie, PacketHandler.S_DieHandler);		
 		_onRecv.Add((ushort)MessageId.SConnected, MakePacket<S_Connected>);
 		_handler.Add((ushort)MessageId.SConnected, PacketHandler.S_ConnectedHandler);		
-		_onRecv.Add((ushort)MessageId.SUnitSpawnPos, MakePacket<S_UnitSpawnPos>);
-		_handler.Add((ushort)MessageId.SUnitSpawnPos, PacketHandler.S_UnitSpawnPosHandler);		
-		_onRecv.Add((ushort)MessageId.SGetRanges, MakePacket<S_GetRanges>);
-		_handler.Add((ushort)MessageId.SGetRanges, PacketHandler.S_GetRangesHandler);		
 		_onRecv.Add((ushort)MessageId.SGetSpawnableBounds, MakePacket<S_GetSpawnableBounds>);
 		_handler.Add((ushort)MessageId.SGetSpawnableBounds, PacketHandler.S_GetSpawnableBoundsHandler);		
 		_onRecv.Add((ushort)MessageId.STime, MakePacket<S_Time>);
@@ -105,10 +101,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SUpgradeSlot, PacketHandler.S_UpgradeSlotHandler);		
 		_onRecv.Add((ushort)MessageId.SSetUpgradePopup, MakePacket<S_SetUpgradePopup>);
 		_handler.Add((ushort)MessageId.SSetUpgradePopup, PacketHandler.S_SetUpgradePopupHandler);		
-		_onRecv.Add((ushort)MessageId.SSetUpgradeButtonCost, MakePacket<S_SetUpgradeButtonCost>);
-		_handler.Add((ushort)MessageId.SSetUpgradeButtonCost, PacketHandler.S_SetUpgradeButtonCostHandler);		
-		_onRecv.Add((ushort)MessageId.SSetUnitUpgradeCost, MakePacket<S_SetUnitUpgradeCost>);
-		_handler.Add((ushort)MessageId.SSetUnitUpgradeCost, PacketHandler.S_SetUnitUpgradeCostHandler);		
+		_onRecv.Add((ushort)MessageId.SSetUpgradeCost, MakePacket<S_SetUpgradeCost>);
+		_handler.Add((ushort)MessageId.SSetUpgradeCost, PacketHandler.S_SetUpgradeCostHandler);		
 		_onRecv.Add((ushort)MessageId.SSetUnitDeleteCost, MakePacket<S_SetUnitDeleteCost>);
 		_handler.Add((ushort)MessageId.SSetUnitDeleteCost, PacketHandler.S_SetUnitDeleteCostHandler);		
 		_onRecv.Add((ushort)MessageId.SSetUnitRepairCost, MakePacket<S_SetUnitRepairCost>);

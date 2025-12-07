@@ -99,7 +99,6 @@ public class UI_FriendsInvitePopup : UI_Popup
         var packet = new LoadInvitableFriendPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            Username = User.Instance.UserInfo.UserName,
         };
         
         var response = await _signalRClient.LoadFriends(packet);
@@ -127,23 +126,22 @@ public class UI_FriendsInvitePopup : UI_Popup
     private void BindFriendInviteButton(GameObject friendFrame, FriendUserInfo friendInfo, bool interactable)
     {
         var inviteButton = Util.FindChild(friendFrame, "InviteButton", true).GetComponent<Button>();
-        var friendName = friendFrame.GetComponent<Friend>().FriendName;
+        var friendTag = friendInfo.UserTag;
         inviteButton.interactable = interactable;
         
         if (interactable)
         {
-            inviteButton.gameObject.BindEvent(data => OnInviteClicked(data, friendName));
+            inviteButton.gameObject.BindEvent(data => OnInviteClicked(data, friendTag));
         }
     }
     
     // Button Events
-    private void OnInviteClicked(PointerEventData data, string friendName)
+    private void OnInviteClicked(PointerEventData data, string friendTag)
     {
         var packet = new InviteFriendlyMatchPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            InviterName = User.Instance.UserInfo.UserName,
-            InviteeName = friendName,
+            InviteeTag = friendTag,
         };
         
         _signalRClient.SendInvitation(packet);

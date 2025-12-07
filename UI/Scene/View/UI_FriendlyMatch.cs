@@ -141,7 +141,6 @@ public class UI_FriendlyMatch : UI_Scene
             GetButton((int)Buttons.SwitchButton).interactable = false;
         }
         
-        
         if (Managers.Game.ReEntry)
         {
             await SetEnemyInfo(Managers.Game.ReEntryResponse);
@@ -157,10 +156,10 @@ public class UI_FriendlyMatch : UI_Scene
         }
         
         GetImage((int)Images.BackgroundPanel).color = Util.ThemeColor;
-        SetUserInfo();
+        await SetUserInfo();
     }
     
-    private void SetUserInfo()
+    private async Task SetUserInfo()
     {
         var faction = Util.Faction;
         var userNameText = GetText((int)Texts.UserNameText);
@@ -169,21 +168,21 @@ public class UI_FriendlyMatch : UI_Scene
         userNameText.text = User.Instance.UserInfo.UserName;
         rankPointText.text = User.Instance.UserInfo.RankPoint.ToString();
         
-        SetDeckUI(faction);
+        await SetDeckUI(faction);
     }
 
-    private async void SetDeckUI(Faction faction)
+    private async Task SetDeckUI(Faction faction)
     {
         try
         {
-            Util.DestroyAllChildren(GetImage((int)Images.Deck).transform);
-        
             var deck = _deckVm.GetDeck(faction);
             var deckImage = GetImage((int)Images.Deck).transform;
             var deckNumber = faction == Faction.Sheep 
                 ? User.Instance.DeckSheep.DeckNumber 
                 : User.Instance.DeckWolf.DeckNumber;
         
+            Util.DestroyAllChildren(deckImage.transform);
+
             foreach (var unit in deck.UnitsOnDeck)
             {
                 await Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform);
@@ -208,6 +207,7 @@ public class UI_FriendlyMatch : UI_Scene
         try
         {
             await SetEnemyInfo(response);
+            GetButton((int)Buttons.StartButton).gameObject.SetActive(true);
             GetButton((int)Buttons.StartButton).interactable = true;
         }
         catch (Exception e)
@@ -240,8 +240,13 @@ public class UI_FriendlyMatch : UI_Scene
         }
     }
     
-    private async Task OnFactionSwitched(DeckInfo myDeckInfo, DeckInfo enemyDeckInfo)
+    private async Task OnFactionSwitched(DeckInfo myDeckInfo, DeckInfo enemyDeckInfo, bool isGuest)
     {
+        if (isGuest) // Host 는 호출시 이미 팩션 바뀜
+        {
+            Util.Faction = Util.Faction == Faction.Sheep ? Faction.Wolf : Faction.Sheep;
+        }
+        
         var deck = new Deck
         {
             DeckId = myDeckInfo.DeckId,
@@ -277,7 +282,7 @@ public class UI_FriendlyMatch : UI_Scene
 
     private void OnGuestLeft()
     {
-        Util.DestroyAllChildren( GetImage((int)Images.Deck).transform);
+        Util.DestroyAllChildren( GetImage((int)Images.EnemyDeck).transform);
         GetButton((int)Buttons.InviteButton).gameObject.SetActive(true);       
     }
     
@@ -286,6 +291,9 @@ public class UI_FriendlyMatch : UI_Scene
     {
         GetButton((int)Buttons.BackButton).interactable = false;
         Managers.Scene.LoadScene(Define.Scene.MainLobby);
+        Managers.Network.IsFriendlyMatchHost = false;
+        Managers.Game.ReEntry = false;
+        Managers.Game.ReEntryResponse = null;
         _signalRClient.LeaveGame();
         GetButton((int)Buttons.BackButton).interactable = true;
     }
@@ -315,7 +323,7 @@ public class UI_FriendlyMatch : UI_Scene
     private async Task OnStartClicked()
     {
         GetButton((int)Buttons.StartButton).interactable = false;
-        await _signalRClient.StartFriendlyMatch(User.Instance.UserInfo.UserName);
+        await _signalRClient.StartFriendlyMatch(User.Instance.UserInfo.UserTag);
         GetButton((int)Buttons.StartButton).interactable = true;
     }
 
@@ -345,10 +353,6 @@ public class UI_FriendlyMatch : UI_Scene
     
     private void OnDestroy()
     {
-        Managers.Network.IsFriendlyMatchHost = false;
-        Managers.Game.ReEntry = false;
-        Managers.Game.ReEntryResponse = null;
-        
         _signalRClient.OnInvitationSuccess -= OnInvitationSuccess;
         _signalRClient.OnFactionSwitched -= OnFactionSwitched;
         _signalRClient.OnGuestLeft -= OnGuestLeft;

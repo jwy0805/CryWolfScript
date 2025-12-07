@@ -145,7 +145,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
     private async Task SetDeckInPopup()
     {
         var parent = GetImage((int)Images.Deck).transform;
-        foreach (Transform child in parent) Destroy(child.gameObject);
+        foreach (Transform child in parent) Managers.Resource.Destroy(child.gameObject);
         
         var deck = _deckVm.GetDeck(Util.Faction).UnitsOnDeck;
         foreach (var unit in deck)
@@ -160,7 +160,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
     private async Task SetCollectionInPopup()
     {
         var parent = Util.FindChild(gameObject, "Content", true).transform;
-        foreach (Transform child in parent) Destroy(child.gameObject);
+        foreach (Transform child in parent) Managers.Resource.Destroy(child.gameObject);
         
         var collection = User.Instance.OwnedUnitList
             .Where(info => info.UnitInfo.Faction == Util.Faction).ToList();

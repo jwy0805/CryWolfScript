@@ -53,6 +53,9 @@ public class EffectController : MonoBehaviour
         {
             case "WerewolfMagicalEffect":
             case "WolfMagicalEffect":
+            case "CactusBossBreathEffect":
+            case "Meteor":
+            case "SkeletonAdditionalEffect":
                 break;
             default:
                 var path = $"InGame/{Util.ToSnakeCase(gameObject.name)}";

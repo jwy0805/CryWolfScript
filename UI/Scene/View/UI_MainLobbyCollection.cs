@@ -44,7 +44,10 @@ public partial class UI_MainLobby
         var deck = _deckVm.GetDeck(faction);
         var deckImage = GetImage((int)Images.Deck);
         var lobbyDeckImage = GetImage((int)Images.LobbyDeck);
-            
+
+        Util.DestroyAllChildren(deckImage.transform);
+        Util.DestroyAllChildren(lobbyDeckImage.transform);
+        
         foreach (var unit in deck.UnitsOnDeck)
         {
             await Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform, OnCardClicked);
@@ -183,8 +186,14 @@ public partial class UI_MainLobby
         
         LayoutRebuilder.ForceRebuildLayoutImmediate(verticalContent);
     }
+
+    private Task HandleSetDeckButtonUI(Faction faction)
+    {
+        SetDeckButtonUI(faction);
+        return Task.CompletedTask;
+    }
     
-     private void SetDeckButtonUI(Faction faction)
+    private void SetDeckButtonUI(Faction faction)
     {
         var deckButtons = _deckButtonDict.Values.ToList();
         var lobbyDeckButtons = _lobbyDeckButtonDict.Values.ToList();
@@ -264,7 +273,7 @@ public partial class UI_MainLobby
 
     private async Task GetInDeckText(Transform parent, float rate = 0.7f)
     {
-        var inDeckTextPanel = await Managers.Resource.Instantiate("UI/Deck/DeckMarkPanel", parent);
+        var inDeckTextPanel = await Managers.Resource.Instantiate("UI/Lobby/Deck/DeckMarkPanel", parent);
         var gridLayout = parent.transform.parent.GetComponent<GridLayoutGroup>();
         var inDeckTextRect = inDeckTextPanel.GetComponent<RectTransform>();
         inDeckTextRect.sizeDelta = new Vector2(gridLayout.cellSize.x * rate, inDeckTextRect.sizeDelta.y);
@@ -405,7 +414,7 @@ public partial class UI_MainLobby
 
         foreach (var material in craftingMaterials)
         {
-            var craftingFrame = await Managers.Resource.Instantiate("UI/Deck/CraftingMaterialFrame", parent);
+            var craftingFrame = await Managers.Resource.Instantiate("UI/Lobby/Deck/CraftingMaterialFrame", parent);
             var itemPanel =  await Managers.Resource.GetMaterialResources(material.MaterialInfo, craftingFrame.transform);
             var itemPanelRect = itemPanel.GetComponent<RectTransform>();
             var countTextObject = Util.FindChild(craftingFrame, "CountText", true);

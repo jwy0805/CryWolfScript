@@ -20,7 +20,7 @@ using Zenject;
  * Version : 1.02
  */
 
-public class UI_TutorialMainPopup : UI_Popup
+public class UI_TutorialMainPopup : UI_Popup, ITutorialHelper
 {
     private IWebService _webService;
     private ITokenService _tokenService;
@@ -159,7 +159,7 @@ public class UI_TutorialMainPopup : UI_Popup
     
     private void BindActions()
     {
-        _tutorialVm.OnShowSpeakerAfter3Sec += ShowSpeaker;
+        _tutorialVm.OnShowSpeaker += ShowSpeaker;
         _tutorialVm.OnShowNewSpeaker += ShowNewSpeaker;
         _tutorialVm.OnChangeSpeaker += ChangeSpeaker;
         _tutorialVm.OnShowFactionSelectPopup += ShowFactionSelectPopup;
@@ -200,7 +200,7 @@ public class UI_TutorialMainPopup : UI_Popup
         var camera2Pos = _tutorialNpcInfo2.CameraPosition;
         _tutorialVm.InitTutorialMain(npc1Pos, camera1Pos, npc2Pos, camera2Pos);
         
-        await StepTutorial();
+        await RunTutorialTag("Main.Intro1");
         StartCoroutine(nameof(SmoothAlphaRoutine));
     }
     
@@ -264,19 +264,22 @@ public class UI_TutorialMainPopup : UI_Popup
     
     # endregion
 
-    private async Task StepTutorial()
+    public async Task RunTutorialTag(string tutorialTag)
     {
-        _tutorialVm.Step++;
-        Managers.Data.TutorialDict.TryGetValue(TutorialType.Main, out var tutorialData);
-        var step = tutorialData?.Steps.Find(s => s.Step == _tutorialVm.Step);
-        if (step == null) return;
-        foreach (var eventString in step.Events)
-        {
-            _tutorialVm.MainEventDict[eventString]?.Invoke();
-        }
+        if (!Managers.Data.TutorialDict.TryGetValue(TutorialType.Main, out var tutorialData)) return;
+        if (!tutorialData.StepsDict.TryGetValue(tutorialTag, out var step)) return;
+        _tutorialVm.CurrentTag = tutorialTag;
+        _tutorialVm.NextTag = step.Next;
         
-        var textContent = await Managers.Localization.BindLocalizedText(_speechBubbleText, step.DialogKey);
-        _speechBubbleText.text = textContent;
+        foreach (var actionKey in step.Actions)
+        {
+            _tutorialVm.ActionDict[actionKey]?.Invoke();
+        }
+
+        if (!string.IsNullOrEmpty(step.DialogKey))
+        {
+            await Managers.Localization.BindLocalizedText(_speechBubbleText, step.DialogKey);
+        }
     }
 
     private void ShowSpeaker()
@@ -401,7 +404,7 @@ public class UI_TutorialMainPopup : UI_Popup
         }
         else
         {
-            await StepTutorial();
+            await RunTutorialTag(_tutorialVm.NextTag);
         }
     }
 
@@ -450,6 +453,9 @@ public class UI_TutorialMainPopup : UI_Popup
         }
 
         _tutorialVm.ProcessTutorial = true;
+        _tutorialVm.InitTag();
+        Debug.Log("Selected Faction: " + _tutorialVm.TutorialFaction);;
+        
         _ = Managers.Network.ConnectGameSession();
     }
     
@@ -492,7 +498,7 @@ public class UI_TutorialMainPopup : UI_Popup
     {
         _tutorialVm.ProcessTutorial = false;
         
-        _tutorialVm.OnShowSpeakerAfter3Sec -= ShowSpeaker;
+        _tutorialVm.OnShowSpeaker -= ShowSpeaker;
         _tutorialVm.OnShowNewSpeaker -= ShowNewSpeaker;
         _tutorialVm.OnChangeSpeaker -= ChangeSpeaker;
         _tutorialVm.OnShowFactionSelectPopup -= ShowFactionSelectPopup;

@@ -107,7 +107,7 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
     private async Task SetSelectedCardInPopup<TEnum>() where TEnum : struct, Enum
     {
         var parent = _assetPanel.transform;
-        foreach (Transform child in parent) Destroy(child.gameObject);
+        foreach (Transform child in parent) Managers.Resource.Destroy(child.gameObject);
         
         var cardFrame = await Managers.Resource.GetCardResources<TEnum>(SelectedCard, parent, data =>
         {
@@ -125,7 +125,7 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
     private async Task SetCardInPopup<TEnum>() where TEnum : struct, Enum
     {
         var parent = GetImage((int)Images.CollectionPanel).transform;
-        foreach (Transform child in parent) Destroy(child.gameObject);
+        foreach (Transform child in parent) Managers.Resource.Destroy(child.gameObject);
 
         var assets = typeof(TEnum).ToString() switch
         {

@@ -191,7 +191,7 @@ public class UI_FriendsAddPopup : UI_Popup
         {
             if (data.pointerPress.transform.parent.TryGetComponent(out Friend friend) == false) return;
 
-            await _lobbyVm.AcceptFriend(friend.FriendName, true);
+            await _lobbyVm.AcceptFriend(friend.FriendTag, true);
             await LoadPendingFriends();
             _lobbyVm.UpdateFriendList();
         }
@@ -207,7 +207,7 @@ public class UI_FriendsAddPopup : UI_Popup
         {
             if (data.pointerPress.transform.parent.TryGetComponent(out Friend friend) == false) return;
 
-            await _lobbyVm.AcceptFriend(friend.FriendName, false);
+            await _lobbyVm.AcceptFriend(friend.FriendTag, false);
             await LoadPendingFriends();
         }
         catch (Exception e)
@@ -245,6 +245,7 @@ public class UI_FriendsAddPopup : UI_Popup
             var newFriendInfo = new FriendUserInfo
             {
                 UserName = friendInfo.UserName,
+                UserTag = friendInfo.UserTag,
                 Level = friendInfo.Level,
                 RankPoint = friendInfo.RankPoint,
                 FriendStatus = response.FriendStatus

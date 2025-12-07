@@ -242,6 +242,16 @@ public class ObjectManager
             Managers.Resource.Destroy(storage);
             var newStorage = await Managers.Game.Spawn($"Storages/StorageLv{level}");
             newStorage.transform.position = new Vector3(0, 6, posZ);
+
+            switch (level)
+            {
+                case 2:
+                    await Managers.Sound.PlaySfx3D("InGame/upgrade_level_2_storage", newStorage.transform.position);
+                    break;
+                case 3:
+                    await Managers.Sound.PlaySfx3D("InGame/upgrade_level_3_storage", newStorage.transform.position);
+                    break;
+            }
         }
         catch (Exception e)
         {

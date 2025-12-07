@@ -1,13 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using UnityEngine;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Unity.Services.LevelPlay;
 using Unity.VisualScripting;
-using LevelPlayConfiguration = Unity.Services.LevelPlay.LevelPlayConfiguration;
+using Unity.Services.LevelPlay;
+using UnityEditor;
 
 #if UNITY_IOS
 using UnityEngine.iOS;
@@ -16,12 +17,14 @@ using Unity.Advertisement.IosSupport;
 
 public class AdsManager
 {
-#if UNITY_ANDROID
+    private static bool _sInitEventsWired;
+    
     private const string AndroidAppKey = "21ca06945";
-#elif UNITY_IOS
     private const string IOSAppKey = "21ca02fbd";
-#endif
+    private const string RewardedAdUnitId = "venr949joqp63z47";
 
+    private LevelPlayRewardedAd _rewardedAd;
+    
     private string _idfa = string.Empty;
     private bool _levelPlayInitialized;
     private bool _attRequested;
@@ -31,6 +34,23 @@ public class AdsManager
     public event Action OnAdFailed;
 
     public DailyProductInfo RevealedDailyProduct { get; set; }
+    
+#if UNITY_EDITOR
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticFlagsOnDomainReload()
+    {
+        _sInitEventsWired = false;
+    }
+#endif
+
+#if UNITY_EDITOR
+    private void OnPlayModeStateChanged(PlayModeStateChange state)
+    {
+        // 편집→플레이 전환/종료 시 안전하게 해제
+        if (state == PlayModeStateChange.ExitingPlayMode || state == PlayModeStateChange.ExitingEditMode)
+            TearDownInitEvents();
+    }
+#endif
     
 #if UNITY_IOS
     public async Task RequestAttAsync()
@@ -96,18 +116,12 @@ public class AdsManager
         Debug.Log($"[Ads] IDFA = {_idfa}");
     }
     
-// #elif UNITY_ANDROID && !UNITY_EDITOR
-#elif UNITY_ANDROID
+#else
     public Task RequestAttAsync() => Task.CompletedTask;
     public void FetchIdfa() 
     {
-        var gaid = IronSource.Agent.getAdvertiserId();
-        if (string.IsNullOrEmpty(gaid))
-        {
-            Debug.Log($"[Ads] gaid is null or empty");
-            gaid = User.Instance.UserInfo.UserAccount;
-        }
-        _idfa = gaid;
+        var userId = User.Instance.UserInfo.UserAccount;
+        _idfa = string.IsNullOrEmpty(userId) ? SystemInfo.deviceUniqueIdentifier : userId;
         Debug.Log($"[Ads] IDFA = {_idfa}");
     }
 #endif
@@ -126,144 +140,191 @@ public class AdsManager
         if (coppaConsent != null)
         {
             var coppa = coppaConsent.Value;
-            IronSource.Agent.setMetaData("is_child_directed", coppa ? "true": "false");
+            LevelPlay.SetMetaData("is_child_directed", coppa ? "true": "false");
         }
     }
-    
+
     public void InitLevelPlay()
     {
-        if (_levelPlayInitialized) return;
-        
-        ApplyRegulationFlags();
-        var userIdfa = string.IsNullOrEmpty(_idfa) ? User.Instance.UserInfo.UserAccount : _idfa;
-        var adFormats = new[] { com.unity3d.mediation.LevelPlayAdFormat.REWARDED };
-        string appKey =
-#if UNITY_ANDROID
-            AndroidAppKey;
-#else
-            IOSAppKey;
-#endif
-        
-        // AdsTest
-        IronSource.Agent.setConsent(true);
-        IronSource.Agent.setMetaData("is_test_suite", "enable");
-        // AdsTest
-        
-        SetUpEvents();
-        
-        LevelPlay.Init(appKey, userIdfa, adFormats);
-    }
-
-    private void SetUpEvents()
-    {
-        TearDownEvents();
-        IronSourceEvents.onSdkInitializationCompletedEvent += OnLevelPlaySdkReady;
-        
-        LevelPlay.OnInitSuccess += OnLevelPlayInitialized;
-        
-        IronSourceRewardedVideoEvents.onAdReadyEvent += OnRewardVideoReady;
-        IronSourceRewardedVideoEvents.onAdOpenedEvent += RewardedVideoOnAdOpenedEvent;
-        IronSourceRewardedVideoEvents.onAdClosedEvent += RewardedVideoOnAdClosedEvent;
-        IronSourceRewardedVideoEvents.onAdAvailableEvent += RewardedVideoOnAdAvailable;
-        IronSourceRewardedVideoEvents.onAdUnavailableEvent += RewardedVideoOnAdUnavailable;
-        IronSourceRewardedVideoEvents.onAdShowFailedEvent += RewardedVideoOnAdShowFailedEvent;
-        IronSourceRewardedVideoEvents.onAdRewardedEvent += RewardedVideoOnAdRewardedEvent;
-        IronSourceRewardedVideoEvents.onAdClickedEvent += RewardedVideoOnAdClickedEvent;
-    }
-
-    public void ShowRewardVideo(string placementName)
-    {
-        Debug.Log("[Ads] ShowRewardVideo");
-
-        var placement = IronSource.Agent.getPlacementInfo(placementName);
-        if (placement != null)
-        {
-            if (IronSource.Agent.isRewardedVideoAvailable())
-            {
-                Debug.Log($"[Ads] Placement: {placementName}");
-                IronSource.Agent.showRewardedVideo(placementName);
-            }
-            else
-            {
-                Debug.Log("[Ads] Reward video ad is not available.");
-            }
-        }
+//         if (_levelPlayInitialized) return;
+//         
+//         ApplyRegulationFlags();
+//         var userIdfa = string.IsNullOrEmpty(_idfa) ? User.Instance.UserInfo.UserAccount : _idfa;
+//         string appKey =
+// #if UNITY_ANDROID
+//             AndroidAppKey;
+// #elif UNITY_IOS
+//             IOSAppKey;
+// #elif UNITY_EDITOR
+//             Application.platform switch
+//             {
+//                 RuntimePlatform.WindowsEditor => AndroidAppKey,
+//                 RuntimePlatform.OSXEditor => IOSAppKey,
+//                 _ => throw new NotSupportedException("Unsupported platform for AdsManager in Editor.")
+//             };
+// #endif
+//         
+//         // AdsTest
+//         LevelPlay.SetMetaData("is_test_suite", "enable");
+//         // AdsTest
+//
+//         WireInitEventsOnce();
+//         
+//         LevelPlay.Init(appKey, userIdfa);
     }
     
-    private void OnLevelPlaySdkReady()
+    private void WireInitEventsOnce()
     {
-        Debug.Log("SDK Initialization Completed.");
-        // AdsTest
-        IronSource.Agent.launchTestSuite();
-        // AdsTest
+        if (_sInitEventsWired) return;
+
+        LevelPlay.OnInitSuccess += OnLevelPlayInitialized;
+        LevelPlay.OnInitFailed  += OnLevelPlayInitFailed;
+
+        _sInitEventsWired = true;
+    }
+    
+    
+    private void TearDownInitEvents()
+    {
+        if (!_sInitEventsWired) return;
+
+        LevelPlay.OnInitSuccess -= OnLevelPlayInitialized;
+        LevelPlay.OnInitFailed  -= OnLevelPlayInitFailed;
+
+        _sInitEventsWired = false;
     }
 
     private void OnLevelPlayInitialized(LevelPlayConfiguration configuration)
     {
         Debug.Log("LevelPlay Initialization Completed.");
         _levelPlayInitialized = true;
-    }
-    
-    private void OnRewardVideoReady(IronSourceAdInfo info)
-    {
         
-    }
-    
-    
-    /// <summary>
-    /// The Rewarded Video ad view has opened. Your activity will loose focus.
-    /// </summary>
-    private void RewardedVideoOnAdOpenedEvent(IronSourceAdInfo info)
-    {
+        CreateAndWireRewarded();
+        _rewardedAd.LoadAd();
         
+        LevelPlay.LaunchTestSuite();
     }
     
-    /// <summary>
-    /// The Rewarded Video ad view is about to be closed. Your activity will regain its focus.
-    /// </summary>
-    private void RewardedVideoOnAdClosedEvent(IronSourceAdInfo info)
+    private void OnLevelPlayInitFailed(LevelPlayInitError error)
     {
-        
-    }
-    
-    /// <summary>
-    /// Indicates that there’s an available ad.
-    /// The adInfo object includes information about the ad that was loaded successfully.
-    /// This replaces the RewardedVideoAvailabilityChangedEvent(true) event
-    /// </summary>
-    private void RewardedVideoOnAdAvailable(IronSourceAdInfo info)
-    {
-        
-    }
-    
-    /// <summary>
-    /// Indicates that no ads are available to be displayed.
-    /// This replaces the RewardedVideoAvailabilityChangedEvent(false) event
-    /// </summary>
-    private void RewardedVideoOnAdUnavailable()
-    {
-        
-    }
-    
-    /// <summary>
-    /// The rewarded video ad was failed to show.
-    /// </summary>
-    private void RewardedVideoOnAdShowFailedEvent(IronSourceError error, IronSourceAdInfo info)
-    {
-        Debug.Log($"[Ads] Reward video ad show failed: {error}");
+        Debug.LogError($"[Ads] LevelPlay Initialization Failed: {error}");
         OnAdFailed?.Invoke();
     }
-    
-    /// <summary>
-    /// The user completed to watch the video, and should be rewarded.
-    /// The placement parameter will include the reward data.
-    /// When using server-to-server callbacks, you may ignore this event and wait for the ironSource server callback.
-    /// </summary>
-    private void RewardedVideoOnAdRewardedEvent(IronSourcePlacement placement, IronSourceAdInfo info)
-    {
-        Debug.Log($"[Ads] Reward video ad rewarded: {placement}");
 
-        switch (placement.ToString())
+    private void CreateAndWireRewarded()
+    {
+        if (string.IsNullOrEmpty(RewardedAdUnitId) || RewardedAdUnitId.Contains("PUT_"))
+        {
+            Debug.LogError("[Ads] RewardedAdUnitId is missing.");
+            return;
+        }
+
+        _rewardedAd = new LevelPlayRewardedAd(RewardedAdUnitId);
+        _rewardedAd.OnAdLoaded += OnRewardedLoaded;
+        _rewardedAd.OnAdLoadFailed += OnRewardedLoadFailed;
+        _rewardedAd.OnAdDisplayed += OnRewardedDisplayed;
+        _rewardedAd.OnAdDisplayFailed += OnRewardedDisplayFailed;
+        _rewardedAd.OnAdRewarded += OnRewardedRewarded;
+        _rewardedAd.OnAdClosed += OnRewardedClosed;
+        _rewardedAd.OnAdClicked += OnRewardedClicked;
+        _rewardedAd.OnAdInfoChanged += OnRewardedInfoChanged;
+    }
+    
+    public void ShowRewardVideo(string placementName)
+    {
+#if UNITY_EDITOR
+        // Editor에서는 바로 보상 지급
+        switch (placementName)
+        {
+            case "Check_Daily_Product":
+                Debug.Log("[Ads] Editor simulated rewarded ad for Check_Daily_Product.");;
+                OnRewardedRevealDailyProduct?.Invoke(RevealedDailyProduct);
+                break;
+            case "Refresh_Daily_Products":
+                Debug.Log("[Ads] Editor simulated rewarded ad for Refresh_Daily_Products.");
+                OnRewardedRefreshDailyProducts?.Invoke();
+                break;
+            default:
+                Debug.Log("[Ads] Editor simulated rewarded ad with no specific placement.");
+                break;
+        }
+#endif
+        
+        if (_rewardedAd == null)
+        {
+            Debug.LogWarning("[Ads] Rewarded ad is not initialized.");
+            return;
+        }
+
+        if (_rewardedAd.IsAdReady() &&
+            (string.IsNullOrEmpty(placementName) || !LevelPlayRewardedAd.IsPlacementCapped(placementName)))
+        {
+            if (string.IsNullOrEmpty(placementName))
+            {
+                _rewardedAd.ShowAd();
+            }
+            else
+            {
+                _rewardedAd.ShowAd(placementName);
+            }
+        }
+        else
+        {
+            Debug.Log("[Ads] Reward video ad is not ready, loading ad...");
+            _rewardedAd.LoadAd();
+        }
+    }
+
+    private void OnRewardedLoaded(LevelPlayAdInfo adInfo)
+    {
+        
+    }
+
+    private void OnRewardedLoadFailed(LevelPlayAdError adError)
+    {
+        Debug.LogError($"[Ads] Rewarded ad failed to load: {adError}");
+        Managers.Instance.StartCoroutine(RetryLoadAdCoroutine(5f));
+    }
+
+    private IEnumerator RetryLoadAdCoroutine(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        _rewardedAd?.LoadAd();
+    }
+
+    private void OnRewardedDisplayed(LevelPlayAdInfo adInfo)
+    {
+        
+    }
+    
+    private void OnRewardedDisplayFailed(LevelPlayAdInfo adInfo, LevelPlayAdError adError)
+    {
+        Debug.LogError($"[Ads] Rewarded ad failed to display: {adError}");
+        OnAdFailed?.Invoke();
+        _rewardedAd.LoadAd();
+    }
+
+    private void OnRewardedClosed(LevelPlayAdInfo adInfo)
+    {
+        // 광고가 닫힌 후 다음 노출 대비 로드
+        _rewardedAd.LoadAd();
+    }
+
+    private void OnRewardedClicked(LevelPlayAdInfo adInfo)
+    {
+        
+    }
+
+    private void OnRewardedInfoChanged(LevelPlayAdInfo adInfo)
+    {
+        
+    }
+
+    private void OnRewardedRewarded(LevelPlayAdInfo adInfo, LevelPlayReward reward)
+    {
+        Debug.Log($"[Ads] Rewarded: placement={adInfo.PlacementName}, reward={reward?.Name}:{reward?.Amount}");
+
+        switch (adInfo.PlacementName)
         {
             case "Check_Daily_Product":
                 OnRewardedRevealDailyProduct?.Invoke(RevealedDailyProduct);
@@ -271,34 +332,23 @@ public class AdsManager
             case "Refresh_Daily_Products":
                 OnRewardedRefreshDailyProducts?.Invoke();
                 break;
-            default:
-                break;
         }
     }
     
-    /// <summary>
-    /// Invoked when the video ad was clicked.
-    /// This callback is not supported by all networks, and we recommend using it only if
-    /// it’s supported by all networks you included in your build.
-    /// </summary>
-    private void RewardedVideoOnAdClickedEvent(IronSourcePlacement placement, IronSourceAdInfo info)
-    {
-        Debug.Log($"[Ads] Reward video ad clicked: {placement}");
-    }
-
     public void TearDownEvents()
     {
-        IronSourceEvents.onSdkInitializationCompletedEvent -= OnLevelPlaySdkReady;
+        TearDownInitEvents();
 
-        LevelPlay.OnInitSuccess -= OnLevelPlayInitialized;
-
-        IronSourceRewardedVideoEvents.onAdReadyEvent -= OnRewardVideoReady;
-        IronSourceRewardedVideoEvents.onAdOpenedEvent -= RewardedVideoOnAdOpenedEvent;
-        IronSourceRewardedVideoEvents.onAdClosedEvent -= RewardedVideoOnAdClosedEvent;
-        IronSourceRewardedVideoEvents.onAdAvailableEvent -= RewardedVideoOnAdAvailable;
-        IronSourceRewardedVideoEvents.onAdUnavailableEvent -= RewardedVideoOnAdUnavailable;
-        IronSourceRewardedVideoEvents.onAdShowFailedEvent -= RewardedVideoOnAdShowFailedEvent;
-        IronSourceRewardedVideoEvents.onAdRewardedEvent -= RewardedVideoOnAdRewardedEvent;
-        IronSourceRewardedVideoEvents.onAdClickedEvent -= RewardedVideoOnAdClickedEvent;
+        if (_rewardedAd != null)
+        {
+            _rewardedAd.OnAdLoaded -= OnRewardedLoaded;
+            _rewardedAd.OnAdLoadFailed -= OnRewardedLoadFailed;
+            _rewardedAd.OnAdDisplayed -= OnRewardedDisplayed;
+            _rewardedAd.OnAdDisplayFailed -= OnRewardedDisplayFailed;
+            _rewardedAd.OnAdRewarded -= OnRewardedRewarded;
+            _rewardedAd.OnAdClosed -= OnRewardedClosed;
+            _rewardedAd.OnAdClicked -= OnRewardedClicked;
+            _rewardedAd.OnAdInfoChanged -= OnRewardedInfoChanged;
+        }
     }
 }

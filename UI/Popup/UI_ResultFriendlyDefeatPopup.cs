@@ -69,8 +69,8 @@ public class UI_ResultFriendlyDefeatPopup : UI_Popup
     private async Task StopGame()
     {
         Managers.Network.Disconnect();
-        var tuple = await _signalRClient.ReEntryFriendlyMatch(User.Instance.UserInfo.UserName);
-        Managers.Network.IsFriendlyMatchHost = tuple.Item1;
+        var tuple = await _signalRClient.ReEntryFriendlyMatch(User.Instance.UserInfo.UserTag);
+        // Managers.Network.IsFriendlyMatchHost = tuple.Item1;
         Managers.Game.ReEntryResponse = tuple.Item2;
         Managers.Game.ReEntry = true;
     }

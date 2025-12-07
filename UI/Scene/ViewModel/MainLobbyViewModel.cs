@@ -14,6 +14,10 @@ public class MainLobbyViewModel : IDisposable
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
     private readonly ISignalRClient _signalRClient;
+    
+    // Caching
+    private List<NoticeInfo> _noticeCache = new();
+    private List<EventInfo> _eventCache = new();
 
     // 각 페이지 사이의 거리
     private float _valueDistance;                        
@@ -31,7 +35,7 @@ public class MainLobbyViewModel : IDisposable
     public event Func<Task> OnResetUI;
     public event Action OnUpdateFriendList;
     public event Action OnUpdateUsername;
-    public event Action<int> OnPageChanged;
+    public event Func<int, Task> OnPageChanged;
     public event Action<int> OnChangeButtonFocus;
     public event Action<string> OnChangeLanguage;
     
@@ -88,7 +92,7 @@ public class MainLobbyViewModel : IDisposable
     
     public async Task ClaimMail(MailInfo mailInfo)
     {
-        var packet = new ClaimMailPacketRequired()
+        var packet = new ClaimMailPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
             MailId = mailInfo.MailId
@@ -308,7 +312,7 @@ public class MainLobbyViewModel : IDisposable
         var packet = new FriendRequestPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            FriendUsername = friendInfo.UserName,
+            FriendUserTag = friendInfo.UserTag,
             CurrentFriendStatus = friendInfo.FriendStatus
         };
         
@@ -320,7 +324,7 @@ public class MainLobbyViewModel : IDisposable
         var packet = new AcceptFriendPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            FriendUsername = username,
+            FriendUserTag = username,
             Accept = accept
         };
 
@@ -332,7 +336,7 @@ public class MainLobbyViewModel : IDisposable
         var packet = new FriendRequestPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            FriendUsername = friendInfo.UserName,
+            FriendUserTag = friendInfo.UserTag,
             CurrentFriendStatus = isBlock ? FriendStatus.Blocked : FriendStatus.None
         };
         var task =  _webService
@@ -395,6 +399,38 @@ public class MainLobbyViewModel : IDisposable
         await _signalRClient.LeaveLobby();
     }
     
+    public async Task<Tuple<List<NoticeInfo>, List<EventInfo>>> GetEventNoticeList()
+    {
+        var packet = new ListEventNoticeRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            LanguageCode = Managers.Localization.Language2Letter
+        };
+        
+        var res = await _webService.SendWebRequestAsync<ListEventNoticeResponse>(
+            "Event/ListEventNotice", UnityWebRequest.kHttpVerbPOST, packet);
+        
+        if (res == null || res.ListNoticeOk == false || res.NoticeInfos == null)
+        {
+            Debug.LogWarning("GetNoticeList failed or empty.");
+            _noticeCache = new List<NoticeInfo>();
+            _eventCache = new List<EventInfo>();
+            return new Tuple<List<NoticeInfo>, List<EventInfo>>(_noticeCache, _eventCache);
+        }
+        
+        _noticeCache = res.NoticeInfos
+            .OrderByDescending(n => n.IsPinned)
+            .ThenByDescending(n => n.CreatedAt)
+            .ToList();
+        
+        _eventCache = res.EventInfos
+            .OrderByDescending(e => e.NoticeInfo.IsPinned)
+            .ThenByDescending(e => e.NoticeInfo.CreatedAt)
+            .ToList();
+        
+        return new Tuple<List<NoticeInfo>, List<EventInfo>>(_noticeCache, _eventCache);
+    }
+    
     public void ChangeLanguage(string language2Letter)
     {
         OnChangeLanguage?.Invoke(language2Letter);
@@ -426,26 +462,29 @@ public class MainLobbyViewModel : IDisposable
         _endTouchX = new Tuple<float, int>(endX, Managers.UI.PopupList.Count);
 
         if (IsSwipeMode || Managers.UI.PopupList.Count > 0) return;
+        // 터치 시작/끝 시점에 팝업 개수가 달라졌으면(다른 UI 개입) 무시
         if (_startTouchX.Item2 != _endTouchX.Item2) return;
-        if (Math.Abs(_startTouchX.Item1 - _endTouchX.Item1) < _swipeDistance)
-        {
-            OnPageChanged?.Invoke(CurrentPage);
-            return;
-        }
-        
+
+        var delta = _startTouchX.Item1 - _endTouchX.Item1;
+
+        // 스와이프 길이가 짧으면 "페이지 유지"만
+        if (Math.Abs(delta) < _swipeDistance) return;
+
         bool isLeft = _startTouchX.Item1 < _endTouchX.Item1;
+        var targetPage = CurrentPage;
+
         if (isLeft)
         {
-            if (CurrentPage == 0) return;
-            CurrentPage--;
+            if (CurrentPage > 0)
+                targetPage = CurrentPage - 1;
         }
         else
         {
-            if (CurrentPage == _maxPage - 1) return;
-            CurrentPage++;
+            if (CurrentPage < _maxPage - 1)
+                targetPage = CurrentPage + 1;
         }
-        
-        OnPageChanged?.Invoke(CurrentPage);
+
+        SetCurrentPage(targetPage);
     }
     
     public float GetScrollPageValue(int index)

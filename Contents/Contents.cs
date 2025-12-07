@@ -36,7 +36,7 @@ public class Contents
     {
         [Preserve] public int Id { get; set; }
         [Preserve] public string Explanation { get; set; }
-        [Preserve] public int Value { get; set; }
+        [Preserve] public float Value { get; set; }
         [Preserve] public float Coefficient { get; set; }
         [Preserve] public int Cost { get; set; }
     }
@@ -46,16 +46,23 @@ public class Contents
     {
         [Preserve] public TutorialType Type { get; set; }
         [Preserve] public List<TutorialStep> Steps { get; set; }
+        [NonSerialized] public Dictionary<string, TutorialStep> StepsDict;
+        
+        // StepDict 초기화
+        public void Initialize()
+        {
+            StepsDict = Steps.ToDictionary(step => step.Tag);
+        }
     }
 
     [Serializable]
     public class TutorialStep
     {
-        [Preserve] public int Step { get; set; }
+        [Preserve] public string Tag { get; set; }
         [Preserve] public string DialogKey { get; set; }
         [Preserve] public string Speaker { get; set; }
-        [Preserve] public string BubblePosition { get; set; }
-        [Preserve] public List<string> Events { get; set; }
+        [Preserve] public List<string> Actions { get; set; }
+        [Preserve] public string Next { get; set; }
     }
     
     [Serializable]
@@ -117,7 +124,14 @@ public class Contents
         [Preserve]
         public Dictionary<TutorialType, TutorialData> MakeDict()
         {
-            return Tutorials.ToDictionary(tutorial => tutorial.Type);
+            var dict = new Dictionary<TutorialType, TutorialData>();
+            foreach (var tutorial in Tutorials)
+            {
+                tutorial.Initialize();
+                dict[tutorial.Type] = tutorial;
+            }
+
+            return dict;
         }
     }
 }

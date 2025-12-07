@@ -34,6 +34,13 @@ public class UI_TutorialBattleWolfPopup : UI_Popup
     private RenderTexture _renderTexture;
     private bool _typing;
     
+    // upkeep 팝업처럼 튜토리얼 순서에 상관없이 특정 상황에 뜨는 팝업 = true
+    public bool IsInterrupted { get; set; } 
+    public string InterruptTag { get; set; }
+    
+    public void OnTypeStarted() => _typing = true;
+    public void OnTextShowed() => _typing = false;
+    
     private enum Images
     {
         Dim,
@@ -97,7 +104,7 @@ public class UI_TutorialBattleWolfPopup : UI_Popup
     
     private void BindActions()
     {
-        _tutorialVm.OnStepTutorial += StepTutorial;
+        _tutorialVm.OnRunTutorialTag += RunTutorialTag;
         _tutorialVm.OnUiBlocker += OnUiBlocker;
         _tutorialVm.OffUiBlocker += OffUiBlocker;
         _tutorialVm.OnHandImage += OnHandImage;
@@ -141,7 +148,11 @@ public class UI_TutorialBattleWolfPopup : UI_Popup
         _tutorialVm.InitTutorialBattleWolf(npcPos, cameraPos);
         ClearScene();
 
-        StepTutorial();
+        // 첫 튜토리얼 태그 실행 or popup이 꺼졌다가 이어서 실행
+        var tutorialTag = string.IsNullOrEmpty(_tutorialVm.CurrentTag)
+            ? "BattleWolf.InfoRound"
+            : _tutorialVm.NextTag;
+        await RunTutorialTag(IsInterrupted ? InterruptTag : tutorialTag);
         StartCoroutine(SmoothAlphaRoutine());
     }
 
@@ -312,39 +323,37 @@ public class UI_TutorialBattleWolfPopup : UI_Popup
     
     # endregion
     
-    private async void StepTutorial()
+    private async Task RunTutorialTag(string tutorialTag)
     {
-        try
+        if (!Managers.Data.TutorialDict.TryGetValue(TutorialType.BattleWolf, out var tutorialData)) return;
+        if (!tutorialData.StepsDict.TryGetValue(tutorialTag, out var step)) return;
+        if (IsInterrupted == false)
         {
-            _tutorialVm.Step++;
-            Managers.Data.TutorialDict.TryGetValue(TutorialType.BattleWolf, out var tutorialData);
-            var step = tutorialData?.Steps.Find(s => s.Step == _tutorialVm.Step);
-            Debug.Log($"tutorial step : {_tutorialVm.Step}");
-            if (step == null) return;
-            foreach (var eventString in step.Events)
-            {
-                _tutorialVm.BattleWolfEventDict[eventString]?.Invoke();
-            }
-
-            switch (step.Speaker)
-            {
-                case "Werewolf":
-                {
-                    var textContent = await Managers.Localization.BindLocalizedText(_speechBubbleText, step.DialogKey);
-                    _speechBubbleText.text = textContent;
-                    break;
-                }
-                case "Echo":
-                {
-                    var textContent = await Managers.Localization.BindLocalizedText(_infoBubbleText, step.DialogKey);
-                    _infoBubbleText.text = textContent;
-                    break;
-                }
-            }
+            _tutorialVm.CurrentTag = tutorialTag;
+            _tutorialVm.NextTag = step.Next;   
         }
-        catch (Exception e)
+        
+        Debug.Log($"{_tutorialVm.CurrentTag} / {_tutorialVm.NextTag}");
+        
+        foreach (var actionKey in step.Actions)
         {
-            Debug.LogWarning(e);
+            _tutorialVm.ActionDict[actionKey]?.Invoke();
+        }
+
+        switch (step.Speaker)
+        {
+            case "Werewolf":
+            {
+                var textContent = await Managers.Localization.BindLocalizedText(_speechBubbleText, step.DialogKey);
+                _speechBubbleText.text = textContent;
+                break;
+            }
+            case "Echo":
+            {
+                var textContent = await Managers.Localization.BindLocalizedText(_infoBubbleText, step.DialogKey);
+                _infoBubbleText.text = textContent;
+                break;
+            }
         }
     }
 
@@ -388,7 +397,6 @@ public class UI_TutorialBattleWolfPopup : UI_Popup
         yield return new WaitForSeconds(3f);
         _tutorialVm.SendHoldPacket(true);
         ShowSpeakerPanel();
-        _uiBlocker.SetActive(false);
     }
 
     private void ShowSpeaker()
@@ -619,29 +627,43 @@ public class UI_TutorialBattleWolfPopup : UI_Popup
         }
         else
         {
-            if (_tutorialVm.Step == 19)
+            if (_tutorialVm.NextTag == "BattleWolf.End")
             {
                 await _tutorialVm.BattleTutorialEndHandler(Faction.Wolf);
                 return;
             }
-        
-            StepTutorial();
+
+            if (IsInterrupted)
+            {
+                if (!Managers.Data.TutorialDict.TryGetValue(TutorialType.BattleSheep, out var tutorialData)) return;
+                if (!tutorialData.StepsDict.TryGetValue(InterruptTag, out var step)) return;
+                if (step.Next.Contains("Close"))
+                {
+                    ResumeGame();
+                    ClosePopup();
+                    return;
+                }
+            }
+            
+            if (_tutorialVm.NextTag.Contains("Close"))
+            {
+                ResumeGame();
+                ClosePopup();
+                return;
+            }
+
+            await RunTutorialTag(_tutorialVm.NextTag);
         }
     }
-    
-    public void OnTypeStarted()
-    {
-        _typing = true;
-    }
 
-    public void OnTextShowed()
+    private void ClosePopup()
     {
-        _typing = false;
-    }
+        Managers.UI.ClosePopupUI();
+    } 
     
     private void OnDestroy()
     {
-        _tutorialVm.OnStepTutorial -= StepTutorial;
+        _tutorialVm.OnRunTutorialTag -= RunTutorialTag;
         _tutorialVm.OnUiBlocker -= OnUiBlocker;
         _tutorialVm.OffUiBlocker -= OffUiBlocker;
         _tutorialVm.OnHandImage -= OnHandImage;

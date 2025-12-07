@@ -42,9 +42,8 @@ public class PolicyConsentManager
     {
 #if UNITY_IOS
         return GetAttConsent() != null;
-#elif UNITY_ANDROID
-        return true;
 #endif
+        return true;
     }
 
     public async Task RequestConsents(bool policyFinished, bool attFinished)

@@ -89,6 +89,22 @@ public class ShopViewModel
         AdsRemover = productResponse.AdsRemover;
     }
 
+    public async Task InitDailyProductRefreshTime()
+    {
+        var packet = new GetDailyProductRefreshTimePacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+        };
+        
+        var task = await _webService.SendWebRequestAsync<GetDailyProductRefreshTimePacketResponse>(
+            "Ads/GetDailyProductRefreshTime", UnityWebRequest.kHttpVerbPOST, packet);
+        
+        if (task.GetRefreshTimeOk)
+        {
+            LastDailyProductRefreshTime = task.RefreshAt;
+        }
+    }
+
     public string GetDailyProductFramePath(string itemName, DailyProductInfo dailyProductInfo)
     {
         string framePath;
@@ -108,6 +124,8 @@ public class ShopViewModel
                     framePath = itemName switch
                     {
                         "Spinel50" => "UI/Shop/DailyProducts/Spinel50",
+                        "Spinel30" => "UI/Shop/DailyProducts/Spinel30",
+                        "Spinel20" => "UI/Shop/DailyProducts/Spinel20",
                         _ => "UI/Shop/DailyProducts/Spinel10"
                     };
                 }
@@ -116,6 +134,8 @@ public class ShopViewModel
                     framePath = itemName switch
                     {
                         "Gold1000" => "UI/Shop/DailyProducts/Gold1000",
+                        "Gold500" => "UI/Shop/DailyProducts/Gold500",
+                        "Gold200" => "UI/Shop/DailyProducts/Gold200",
                         _ => "UI/Shop/DailyProducts/Gold100"
                     };
                 }
@@ -162,7 +182,7 @@ public class ShopViewModel
         };
         
         var task = _webService.SendWebRequestAsync<RevealDailyProductPacketResponse>(
-            "Payment/RevealDailyProduct", UnityWebRequest.kHttpVerbPUT, packet);
+            "Ads/RevealDailyProduct", UnityWebRequest.kHttpVerbPUT, packet);
         await task;
 
         return task.Result.RevealDailyProductOk;
@@ -176,7 +196,7 @@ public class ShopViewModel
         };
         
         var task = await _webService.SendWebRequestAsync<RefreshDailyProductPacketResponse>(
-            "Payment/RefreshDailyProduct", UnityWebRequest.kHttpVerbPUT, packet);
+            "Ads/RefreshDailyProduct", UnityWebRequest.kHttpVerbPUT, packet);
         
         if (task.RefreshDailyProductOk)
         {

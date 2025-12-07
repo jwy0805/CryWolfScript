@@ -45,7 +45,8 @@ public class BombSkillController : ProjectileController
                 Vector3 point = transform.position;
                 Quaternion rot = Quaternion.FromToRotation(Vector3.up, point.normalized);
                 Vector3 pos = point + point.normalized * hitOffset;
-         
+
+                _ = PlayHitSfx();
                 //Spawn hit effect on collision
                 hit = await Managers.Resource.LoadAsync<GameObject>($"Prefabs/Effects/Hits/{gameObject.name}Hit", "prefab");
                 if (hit != null)

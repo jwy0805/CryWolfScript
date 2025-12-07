@@ -50,31 +50,16 @@ public class PacketHandler
         }
     }
     
-    public static void S_StepTutorialHandler(PacketSession session, IMessage packet)
+    public static void S_RunTutorialTagHandler(PacketSession session, IMessage packet)
     {
-        var stepPacket = (S_StepTutorial)packet;
+        var stepPacket = (S_RunTutorialTag)packet;
         var sceneContext = UnityEngine.Object.FindAnyObjectByType<SceneContext>();
         if (sceneContext == null) return;
         
         var tutorialVm = sceneContext.Container.Resolve<TutorialViewModel>();
         if (tutorialVm == null) return;
         
-        if (stepPacket.Step != 0)
-        {
-            tutorialVm.Step = stepPacket.Step;
-        }
-            
-        if (stepPacket.Process == false)
-        {
-            // Show new window
-            _ = tutorialVm.ShowTutorialPopup();
-            // ui.SetTutorialUI();
-        }
-        else
-        {
-            // Just step tutorial
-            tutorialVm.StepTutorial();
-        }
+        _ = tutorialVm.ShowTutorialPopup(stepPacket.IsInterrupted, stepPacket.TutorialTag);
     }
     
     public static void S_SpawnHandler(PacketSession session, IMessage packet)
@@ -85,7 +70,7 @@ public class PacketHandler
             Managers.Object.Add(obj);
         }
     }
-
+    
     public static void S_PlaySoundHandler(PacketSession session, IMessage packet)
     {
         var soundPacket = (S_PlaySound)packet;
@@ -290,11 +275,11 @@ public class PacketHandler
             updatePacket.ObjectEnumId, updatePacket.ObjectType, updatePacket.SkillType, updatePacket.Step);
     }
 
-    public static async void S_PortraitUpgradeHandler(PacketSession session, IMessage packet)
+    public static async void S_UnitUpgradeHandler(PacketSession session, IMessage packet)
     {
         try
         {
-            var upgradePacket = (S_PortraitUpgrade)packet;
+            var upgradePacket = (S_UnitUpgrade)packet;
             var ui = GameObject.FindWithTag("UI").GetComponent<UI_GameSingleWay>();
             await ui.UpgradePortrait(upgradePacket.UnitId.ToString());
         }
@@ -303,7 +288,7 @@ public class PacketHandler
             Debug.LogWarning(e);
         }
     }
-
+    
     public static async void S_GetDamageHandler(PacketSession session, IMessage packet)
     {
         try
@@ -415,16 +400,6 @@ public class PacketHandler
         
     }
 
-    public static void S_UnitSpawnPosHandler(PacketSession session, IMessage packet)
-    {
-        Managers.Event.TriggerEvent("CanSpawn", packet);
-    }
-    
-    public static void S_GetRangesHandler(PacketSession session, IMessage packet)
-    {
-        Managers.Event.TriggerEvent("ShowRings", packet);
-    }
-    
     public static void S_GetSpawnableBoundsHandler(PacketSession session, IMessage packet)
     {
         Managers.Event.TriggerEvent("ShowBounds", packet);
@@ -520,16 +495,11 @@ public class PacketHandler
         }
     }
 
-    public static void S_SetUpgradeButtonCostHandler(PacketSession session, IMessage packet)
+    public static void S_SetUpgradeCostHandler(PacketSession session, IMessage packet)
     {
-        var upgradePacket = (S_SetUpgradeButtonCost)packet;
+        var upgradePacket = (S_SetUpgradeCost)packet;
         var ui = GameObject.FindWithTag("UI").GetComponent<UI_GameSingleWay>();
         ui.UpdateUpgradeCost(upgradePacket.Cost);
-    }
-    
-    public static void S_SetUnitUpgradeCostHandler(PacketSession session, IMessage packet)
-    {
-        Managers.Event.TriggerEvent("UpdateUnitUpgradeCost", packet);
     }
     
     public static void S_SetUnitDeleteCostHandler(PacketSession session, IMessage packet)
@@ -655,10 +625,9 @@ public class PacketHandler
         var tutorialVm = sceneContext.Container.Resolve<TutorialViewModel>();
         if (tutorialVm == null) return;
 
-        tutorialVm.Step = Util.Faction == Faction.Wolf ? 18 : 22;
+        var tag = Util.Faction == Faction.Wolf ? "BattleWolf.ClosingStatement" : "BattleSheep.ClosingStatement";
         tutorialVm.SetTutorialReward(rewardPacket.RewardUnitId);
-        
-        _ = tutorialVm.ShowTutorialPopup();
+        _ = tutorialVm.ShowTutorialPopup(false, tag);
     }
     
     public static async void S_MatchMakingSuccessHandler(PacketSession session, IMessage packet)

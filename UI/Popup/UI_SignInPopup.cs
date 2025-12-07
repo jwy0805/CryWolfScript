@@ -51,8 +51,9 @@ public class UI_SignInPopup : UI_Popup
         _webService = webService;
         _loginViewModel = loginViewModel;
         
-        _loginViewModel.OnDirectLoginFailed += ClearPasswordText;
-        _loginViewModel.OnDirectLoginFailed += ShowLoginErrorMessage;
+        _loginViewModel.OnDirectLoginAuthFailed += ClearPasswordText;
+        _loginViewModel.OnDirectLoginAuthFailed += ShowPasswordErrorMessage;
+        _loginViewModel.OnDirectLoginNetworkFailed += ShowNetworkErrorMessage;
     }
     
     protected override async void Init()
@@ -95,11 +96,11 @@ public class UI_SignInPopup : UI_Popup
         rememberToggle.onValueChanged.AddListener(value => _loginViewModel.RememberMe = value);
     }
     
-    private void OnLoginClicked(PointerEventData data)
+    private async Task OnLoginClicked(PointerEventData data)
     {
         _loginViewModel.UserAccount = GetTextInput((int)TextInputs.EmailInput).text;
         _loginViewModel.Password = GetTextInput((int)TextInputs.PasswordInput).text;
-        _loginViewModel.TryDirectLogin();
+        await _loginViewModel.TryDirectLogin();
     }   
     
     private async Task SignUpClicked(PointerEventData data)
@@ -117,19 +118,28 @@ public class UI_SignInPopup : UI_Popup
         Managers.UI.ClosePopupUI();
     }
 
-    private void ShowLoginErrorMessage()
+    private async Task ShowPasswordErrorMessage()
     {
-        // Managers.UI.ShowPopupUI<>();
+        var message = await Managers.Localization.GetLocalizedText("notify_sign_up_error_message_invalid_password");
+        await Managers.UI.ShowErrorPopup(message);
     }
     
-    private void ClearPasswordText()
+    private async Task ShowNetworkErrorMessage()
+    {
+        var message = await Managers.Localization.GetLocalizedText("notify_sign_up_unexpected_error_message");
+        await Managers.UI.ShowErrorPopup(message);
+    }
+    
+    private Task ClearPasswordText()
     {
         GetTextInput((int)TextInputs.PasswordInput).text = "";
+        return Task.CompletedTask;
     }
 
     private void OnDestroy()
     {
-        _loginViewModel.OnDirectLoginFailed -= ClearPasswordText;
-        _loginViewModel.OnDirectLoginFailed -= ShowLoginErrorMessage;
+        _loginViewModel.OnDirectLoginAuthFailed -= ClearPasswordText;
+        _loginViewModel.OnDirectLoginAuthFailed -= ShowPasswordErrorMessage;
+        _loginViewModel.OnDirectLoginNetworkFailed -= ShowNetworkErrorMessage;
     }
 }

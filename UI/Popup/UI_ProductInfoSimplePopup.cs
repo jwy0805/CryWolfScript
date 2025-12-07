@@ -96,6 +96,9 @@ public class UI_ProductInfoSimplePopup : UI_Popup
         var frameRect = FrameObject.GetComponent<RectTransform>();
         
         _icon.sprite = await Managers.Resource.LoadAsync<Sprite>(iconPath);
+        var iconRect = _icon.GetComponent<RectTransform>();
+        iconRect.sizeDelta = new Vector2(iconRect.sizeDelta.x, _productInfo.CurrencyType == CurrencyType.Spinel ? 59 : 70);
+        
         FrameObject.transform.SetParent(_frame.transform);
         frameRect.anchoredPosition = Vector2.zero;
         frameRect.sizeDelta = FrameSize;
@@ -117,15 +120,22 @@ public class UI_ProductInfoSimplePopup : UI_Popup
         _productInfo = _shopVm.SelectedProduct;
     }
     
-    private void OnBuyButtonClicked(PointerEventData data)
+    private async void OnBuyButtonClicked(PointerEventData data)
     {
-        if (IsDailyProduct)
+        try
         {
-            _shopVm.BuyDailyProduct();
+            if (IsDailyProduct)
+            {
+                _shopVm.BuyDailyProduct();
+            }
+            else
+            {
+                await _shopVm.BuyProduct();
+            }
         }
-        else
+        catch (Exception e)
         {
-            _shopVm.BuyProduct();
+            Console.WriteLine(e);
         }
     }
     

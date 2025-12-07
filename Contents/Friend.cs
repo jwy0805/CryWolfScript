@@ -4,5 +4,5 @@ using UnityEngine;
 
 public class Friend : MonoBehaviour
 {
-    public string FriendName { get; set; }
+    public string FriendTag { get; set; }
 }

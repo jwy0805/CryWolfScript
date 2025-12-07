@@ -133,7 +133,7 @@ public class UI_ProductInfoPopup : UI_Popup
         
         foreach (var composition in sortedCompositions)
         {
-            var framePath = $"UI/Deck/ProductInfo";
+            var framePath = $"UI/Lobby/Deck/ProductInfo";
             var productFrame = await Managers.Resource.Instantiate(framePath, contentsPanel.transform);
             var countText = Util.FindChild(productFrame, "TextNum", true);
             var layoutElement = productFrame.AddComponent<LayoutElement>();
@@ -152,6 +152,7 @@ public class UI_ProductInfoPopup : UI_Popup
             switch (composition.ProductType)
             {
                 case ProductType.None:
+                case ProductType.Subscription:
                     productName = ((ProductId)composition.CompositionId).ToString();
                     path = $"UI/Shop/NormalizedProducts/{productName}";
                     product = await Managers.Resource.Instantiate(path, productFrame.transform);
@@ -170,7 +171,7 @@ public class UI_ProductInfoPopup : UI_Popup
                     Managers.Data.MaterialInfoDict.TryGetValue(composition.CompositionId, out var material);
                     product = await Managers.Resource.GetMaterialResources(material, productFrame.transform);                  
                     break;
-                
+                    
                 case ProductType.Enchant:
                 case ProductType.Sheep:
                 case ProductType.Character:
@@ -205,9 +206,16 @@ public class UI_ProductInfoPopup : UI_Popup
         await Managers.Localization.BindLocalizedText(infoText, $"product_info_{_productInfo.ProductCode}");
     }
     
-    private void OnBuyButtonClicked(PointerEventData data)
+    private async void OnBuyButtonClicked(PointerEventData data)
     {
-        _shopVm.BuyProduct();
+        try
+        {
+            await _shopVm.BuyProduct();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
     }
     
     private void ClosePopup(PointerEventData data)

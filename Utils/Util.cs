@@ -120,6 +120,31 @@ public class Util
         return str;
     }
 
+    public static string ConvertProductCodeToProductName(string productCode)
+    {
+        // com.hamon.crywolf.consumable.over_power -> over_power
+        var lastPart = productCode.Split('.').Last();
+
+        // "over_power" → ["over", "power"] → "OverPower"
+        var words = lastPart.Split('_');
+        var pascal = string.Concat(words.Select(w => 
+            char.ToUpper(w[0]) + w[1..]
+        ));
+
+        return pascal;
+    }
+
+    public static string ExtractUserTag(string username)
+    {
+        if (string.IsNullOrWhiteSpace(username)) return string.Empty;
+        username = username.Trim();
+        
+        var hashIndex = username.LastIndexOf('#');
+        if (hashIndex < 0 || hashIndex == username.Length - 1) return string.Empty;
+        
+        return username[(hashIndex + 1)..].Trim();
+    }
+    
     public static string ExtractName(string path)
     {
         int idx = path.LastIndexOf('/');

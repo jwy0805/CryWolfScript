@@ -10,6 +10,8 @@ public class UserInfo
 {
     public string UserAccount { get; set; }
     public string UserName { get; set; }
+    public string UserTag { get; set; }
+    public UserRole UserRole { get; set; }
     public int Level { get; set; }
     public int Exp { get; set; }
     public int ExpToLevelUp { get; set; }
@@ -35,6 +37,7 @@ public class UserTutorialInfo
 public class FriendUserInfo
 {
     public string UserName { get; set; }
+    public string UserTag { get; set; }
     public int Level { get; set; }
     public int RankPoint { get; set; }
     public UserAct Act { get; set; }
@@ -229,6 +232,29 @@ public class RewardInfo
     public int ItemId { get; set; }
     public ProductType ProductType { get; set; }
     public int Count { get; set; }
+}
+
+public class NoticeInfo
+{
+    public int EventNoticeId { get; set; }
+    public NoticeType NoticeType { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public bool IsPinned { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class EventNoticeLocalizationInfo
+{
+    public string Lang { get; set; } = "en";
+    public string Title { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+}
+
+public class EventInfo
+{
+    public NoticeInfo NoticeInfo { get; set; }
+    public List<RewardInfo> Rewards { get; set; }
 }
 
 public class ValidateNewAccountPacketRequired
@@ -474,6 +500,19 @@ public class UpdateTutorialResponse
     public bool UpdateTutorialOk { get; set; }
 }
 
+public class ListEventNoticeRequired
+{
+    public string AccessToken { get; set; }
+    public string LanguageCode { get; set; }
+}
+
+public class ListEventNoticeResponse
+{
+    public bool ListNoticeOk { get; set; }
+    public List<NoticeInfo> NoticeInfos { get; set; }
+    public List<EventInfo> EventInfos { get; set; }
+}
+
 public class RefreshTokenRequired
 {
     public string RefreshToken { get; set; }
@@ -708,7 +747,7 @@ public class SearchUsernamePacketResponse
 public class FriendRequestPacketRequired
 {
     public string AccessToken { get; set; }
-    public string FriendUsername { get; set; }
+    public string FriendUserTag { get; set; }
     public FriendStatus CurrentFriendStatus { get; set; }
 }
 
@@ -732,7 +771,7 @@ public class LoadPendingFriendPacketResponse
 public class AcceptFriendPacketRequired
 {
     public string AccessToken { get; set; }
-    public string FriendUsername { get; set; }
+    public string FriendUserTag { get; set; }
     public bool Accept { get; set; }
 }
 
@@ -767,7 +806,6 @@ public class ClaimMailPacketResponse
 public class LoadInvitableFriendPacketRequired
 {
     public string AccessToken { get; set; }
-    public string Username { get; set; }
 }
 
 public class LoadInvitableFriendPacketResponse
@@ -780,10 +818,7 @@ public class LoadInvitableFriendPacketResponse
 public class InviteFriendlyMatchPacketRequired
 {
     public string AccessToken { get; set; }
-    public string InviterName { get; set; }
-    public string InviteeName { get; set; }
-    public Faction InviterFaction { get; set; }
-    public Faction InviteeFaction { get; set; }
+    public string InviteeTag { get; set; }
 }
 
 public class InviteFriendlyMatchPacketResponse
@@ -826,6 +861,7 @@ public class VirtualPaymentPacketRequired
 public class VirtualPaymentPacketResponse
 {
     public bool PaymentOk { get; set; }
+    public VirtualPaymentCode PaymentCode { get; set; }
 }
 
 public class DailyPaymentPacketRequired
@@ -850,6 +886,7 @@ public class CashPaymentPacketRequired
 public class CashPaymentPacketResponse
 {
     public bool PaymentOk { get; set; }
+    public CashPaymentErrorCode ErrorCode { get; set; }
 }
 
 public class ClaimProductPacketRequired
@@ -891,6 +928,17 @@ public class LoadStageInfoPacketResponse
     public List<UserStageInfo> UserStageInfos { get; set; }
     public List<StageEnemyInfo> StageEnemyInfos { get; set; }
     public List<StageRewardInfo> StageRewardInfos { get; set; }
+}
+
+public class GetDailyProductRefreshTimePacketRequired
+{
+    public string AccessToken { get; set; }
+}
+
+public class GetDailyProductRefreshTimePacketResponse
+{
+    public bool GetRefreshTimeOk { get; set; }
+    public DateTime RefreshAt { get; set; }
 }
 
 public class RevealDailyProductPacketRequired

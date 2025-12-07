@@ -473,13 +473,6 @@ public class UI_UnitInfoPopup : UI_Popup
         skillDescriptionGoldText.text = skillData.Cost.ToString();
     }
     
-    private void OnDetailButtonClicked(PointerEventData data)
-    {
-        ShowDetails = !ShowDetails;
-    }
-    
-    private void CloseAllPopup(PointerEventData data)
-    {
-        Managers.UI.CloseAllPopupUI();
-    }
+    private void OnDetailButtonClicked(PointerEventData data) => ShowDetails = !ShowDetails;
+    private void CloseAllPopup(PointerEventData data) => Managers.UI.CloseAllPopupUI();
 }

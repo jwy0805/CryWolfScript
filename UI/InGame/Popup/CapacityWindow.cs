@@ -18,7 +18,6 @@ public interface ICapacityWindow
 {
     Task InitSlotAsync(int index);
     void DeleteAllSlots();
-    void UpdateUpgradeCostText(int cost);
     void UpdateDeleteCostText(int cost);
     void UpdateRepairCostText(int cost);
     int GetButtonIndex(GameObject button);
@@ -33,7 +32,6 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
     
     private enum Buttons
     {
-        UnitUpgradeButton,
         UnitDeleteButton,
         UnitRepairButton,
         
@@ -53,15 +51,12 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
 
     private enum Images
     {
-        UnitUpgradePanel,
         UnitDeletePanel,
         UnitRepairPanel,
         
-        UnitUpgradeButtonPanel,
         UnitDeleteButtonPanel,
         UnitRepairButtonPanel,
         
-        UnitUpgradeGoldImage,
         UnitDeleteGoldImage,
         UnitDeleteGoldPlusImage,
         UnitRepairGoldImage,
@@ -84,9 +79,6 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
     
     private enum Texts
     {
-        UnitUpgradeText,
-        
-        UnitUpgradeGoldText,
         UnitDeleteGoldText,
         UnitRepairGoldText,
     }
@@ -133,13 +125,6 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
             InitButtonEvents();
             await InitSlotAsync(0);
             InitEvents();
-        
-            // Tutorial
-            if ((_tutorialVm.Step == 16 && Util.Faction == Faction.Wolf) ||
-                (_tutorialVm.Step == 21 && Util.Faction == Faction.Sheep))
-            {
-                _ = _tutorialVm.ShowTutorialPopup();
-            }
         }
         catch (Exception e)
         {
@@ -168,35 +153,27 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         switch (ObjectType)
         {
             case GameObjectType.Tower:
-                images.AddRange(new[] { Images.UnitUpgradePanel, Images.UnitDeletePanel });
+                images.AddRange(new[] { Images.UnitDeletePanel });
                 break;
             case GameObjectType.Fence:
                 images.AddRange(new[] { Images.UnitRepairPanel });
                 break;
             case GameObjectType.MonsterStatue:
-                images.AddRange(new[] 
-                    { Images.UnitUpgradePanel, Images.UnitDeletePanel, Images.UnitRepairPanel });
+                images.AddRange(new[] { Images.UnitDeletePanel, Images.UnitRepairPanel });
                 break;
         }
         
         BindControlButtons(images);
-        SetObjectSize(_imageDict["UnitUpgradeButtonPanel"], 0.6f);
-        SetObjectSize(_imageDict["UnitDeleteButtonPanel"], 0.6f);
-        SetObjectSize(_imageDict["UnitRepairButtonPanel"], 0.6f);
-        SetObjectSize(_imageDict["UnitUpgradeGoldImage"], 0.15f);
-        SetObjectSize(_imageDict["UnitDeleteGoldImage"], 0.15f);
-        SetObjectSize(_imageDict["UnitDeleteGoldPlusImage"], 0.1f);
-        SetObjectSize(_imageDict["UnitRepairGoldImage"], 0.15f);
+        SetObjectSize(_imageDict["UnitDeleteButtonPanel"], 0.7f);
+        SetObjectSize(_imageDict["UnitRepairButtonPanel"], 0.7f);
+        SetObjectSize(_imageDict["UnitDeleteGoldImage"], 0.18f);
+        SetObjectSize(_imageDict["UnitDeleteGoldPlusImage"], 0.12f);
+        SetObjectSize(_imageDict["UnitRepairGoldImage"], 0.18f);
     }
     
     private void BindControlButtons(List<Images> images)
     {
-        var allImages = new List<Images>
-        {
-            Images.UnitUpgradePanel,
-            Images.UnitDeletePanel,
-            Images.UnitRepairPanel,
-        };
+        var allImages = new List<Images> { Images.UnitDeletePanel, Images.UnitRepairPanel, };
         
         var imagesToBeHidden = allImages.Except(images).ToList();
         foreach (var hiddenImage in imagesToBeHidden)
@@ -243,14 +220,12 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
             _buttonDict[$"NorthUnitButton{i}"].gameObject.BindEvent(OnSlotClicked);
         }
         
-        _buttonDict["UnitUpgradeButton"].BindEvent(OnUpgradeClicked);
         _buttonDict["UnitDeleteButton"].BindEvent(OnDeleteClicked);
         _buttonDict["UnitRepairButton"].BindEvent(OnRepairClicked);
     }
     
     public async Task InitSlotAsync(int index)
     {
-        _gameVm.UpdateUnitUpgradeCostRequired(_gameVm.SelectedObjectIds.ToArray());
         _gameVm.UpdateUnitDeleteCostRequired(_gameVm.SelectedObjectIds.ToArray());
         _gameVm.UpdateUnitRepairCostRequired(_gameVm.SelectedObjectIds.ToArray());
         
@@ -331,11 +306,6 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         return Array.IndexOf(_buttonArray, button);
     }
 
-    public void UpdateUpgradeCostText(int cost)
-    {
-        GetText((int)Texts.UnitUpgradeGoldText).text = cost.ToString();
-    }
-
     public void UpdateDeleteCostText(int cost)
     {
         GetText((int)Texts.UnitDeleteGoldText).text = cost.ToString();
@@ -344,11 +314,6 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
     public void UpdateRepairCostText(int cost)
     {
         GetText((int)Texts.UnitRepairGoldText).text = cost.ToString();
-    }
-    
-    private void OnUpgradeClicked(PointerEventData data)
-    {
-        _gameVm.OnUnitUpgradeClicked(_gameVm.SelectedObjectIds);
     }
     
     private void OnDeleteClicked(PointerEventData data)

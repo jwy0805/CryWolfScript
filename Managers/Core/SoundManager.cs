@@ -1,15 +1,25 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf.Protocol;
+using Moq;
 using UnityEngine;
+using Object = UnityEngine.Object;
+using Random = UnityEngine.Random;
 
 public class SoundManager 
 {
 	private AudioSource[] _audioSources = new AudioSource[(int)Define.Sound.MaxCount];
     private Dictionary<string, AudioClip> _audioClips = new();
-    private Define.Scene _sceneType;
+    private Define.Scene _sceneType = Define.Scene.Unknown;
+    private Faction _currentFaction = Util.Faction;
+    private string _currentBgmName = string.Empty;
     private float _musicVolume;
     private float _sfxVolume;
+    private CancellationTokenSource _bgmFadeCts;
+    private const float BgmFadeDuration = 1.0f;
     
     
     // SFX field
@@ -61,17 +71,29 @@ public class SoundManager
         }
         
         _sceneType = BaseScene.SceneType;
-        PlayBgm(_sceneType);
+        PlayBgm(_sceneType, _currentFaction);
     }
 
     public void OnUpdate()
     {
 	    Define.Scene currentSceneType = BaseScene.SceneType;
-	    if (_sceneType != currentSceneType)
+	    Faction currentFaction = Util.Faction;
+	    
+	    bool sceneChanged = _sceneType != currentSceneType;
+	    bool factionChanged = _currentFaction != currentFaction;
+
+	    if (sceneChanged || NeedRefreshBgm(currentSceneType, factionChanged))
 	    {
 		    _sceneType = currentSceneType;
-		    PlayBgm(_sceneType);
+		    _currentFaction = currentFaction;
+		    PlayBgm(_sceneType, _currentFaction);
 	    }
+	    
+	    // if (_sceneType != currentSceneType)
+	    // {
+		   //  _sceneType = currentSceneType;
+		   //  PlayBgm(_sceneType);
+	    // }
 
 	    if (_activeSfx.Count > 0)
 	    {
@@ -92,14 +114,10 @@ public class SoundManager
 	    }
     }
 
-    public void Clear()
+    private bool NeedRefreshBgm(Define.Scene scene, bool factionChanged)
     {
-        foreach (AudioSource audioSource in _audioSources)
-        {
-            audioSource.clip = null;
-            audioSource.Stop();
-        }
-        _audioClips.Clear();
+	    if (!factionChanged) return false;
+	    return scene is Define.Scene.MainLobby or Define.Scene.FriendlyMatch;
     }
 
     public async Task Play(string path, Define.Sound type = Define.Sound.Effect, float pitch = 1.0f)
@@ -150,16 +168,94 @@ public class SoundManager
 		return clip;
     }
 	
-	private void PlayBgm(Define.Scene scene)
+	private void PlayBgm(Define.Scene scene, Faction faction)
 	{
 		_musicVolume = PlayerPrefs.GetFloat("MusicVolume");
 		
-		switch(scene)
+		var bgmName = GetBgmName(scene, Util.Faction);
+		if (string.IsNullOrEmpty(bgmName)) return;
+		
+		var bgmSource = _audioSources[(int)Define.Sound.Bgm];
+		if (bgmSource == null) return;
+
+		if (_currentBgmName == bgmName && bgmSource.isPlaying)
 		{
-			case Define.Scene.Game:
-				string nameBgm = "muffin_man";
-				_ = Play(nameBgm, Define.Sound.Bgm);
-				break;
+			bgmSource.volume = _musicVolume;
+			return;
+		}
+		
+		_currentBgmName = bgmName;
+		// 이전 페이드가 돌고 있으면 취소
+		_bgmFadeCts = new CancellationTokenSource();
+		var token = _bgmFadeCts.Token;
+		
+		_ = FadeToNewBgmAsync(bgmSource, bgmName, _musicVolume, BgmFadeDuration, token);
+	}
+
+	private string GetBgmName(Define.Scene scene, Faction faction)
+	{
+		return scene switch
+		{
+			Define.Scene.Game => "muffin_man",
+			Define.Scene.MainLobby => faction == Faction.Sheep ? "lobby_sheep" : "lobby_wolf",
+			Define.Scene.FriendlyMatch => faction == Faction.Sheep ? "lobby_sheep" : "lobby_wolf",
+			Define.Scene.MatchMaking => "match_making",
+			_ => string.Empty
+		};
+	}
+
+	public async Task FadeToNewBgmAsync(
+		AudioSource source, string bgmName, float targetVolume, float duration, CancellationToken token)
+	{
+		try
+		{
+			float startVolume = source.isPlaying ? source.volume : 0;
+			float t = 0f;
+
+			while (t < duration)
+			{
+				token.ThrowIfCancellationRequested();
+				t += Time.unscaledDeltaTime;
+				float lerp = Mathf.Clamp01(t / duration);
+				source.volume = Mathf.Lerp(startVolume, 0f, lerp);
+
+				await Task.Yield();
+			}
+
+			source.Stop();
+			source.clip = null;
+
+			// 새 클립 로드
+			AudioClip newClip = await GetOrAddAudioClip(bgmName, Define.Sound.Bgm);
+			token.ThrowIfCancellationRequested();
+			if (newClip == null) return;
+
+			source.clip = newClip;
+			source.volume = 0f;
+			source.loop = true;
+			source.Play();
+
+			t = 0f;
+			while (t < duration)
+			{
+				token.ThrowIfCancellationRequested();
+
+				t += Time.unscaledDeltaTime;
+				float lerp = Mathf.Clamp01(t / duration);
+				source.volume = Mathf.Lerp(0f, targetVolume, lerp);
+
+				await Task.Yield();
+			}
+
+			source.volume = targetVolume;
+		}
+		catch (OperationCanceledException)
+		{
+			// 다른 BGM 전환이 시작되어 취소됨 -> 무시
+		}
+		catch (Exception e)
+		{
+			Debug.LogError($"[Sound Manager]: {e}");
 		}
 	}
 
@@ -325,6 +421,16 @@ public class SoundManager
 
 		if (source != null) source.volume = 0;
 		ForceStopAndRelease(source);
+	}
+	
+	public void Clear()
+	{
+		foreach (AudioSource audioSource in _audioSources)
+		{
+			audioSource.clip = null;
+			audioSource.Stop();
+		}
+		_audioClips.Clear();
 	}
 
 	// short 2D sfx

@@ -42,7 +42,8 @@ public class LoginViewModel : IInitializable, IDisposable
     // Apple login properties
     private string _appleToken;
 
-    public event Action OnDirectLoginFailed;
+    public event Func<Task> OnDirectLoginNetworkFailed;
+    public event Func<Task> OnDirectLoginAuthFailed;
     public event Action OnRestoreButton;
     
     public bool ProcessingLogin { get; set; }
@@ -121,21 +122,32 @@ public class LoginViewModel : IInitializable, IDisposable
     #region Direct Login
     
     // This method is called when the login button is clicked, not using SOCIAL LOGIN such as google, facebook, apple
-    public async void TryDirectLogin()
+    #region Direct Login
+    
+    // This method is called when the login button is clicked, not using SOCIAL LOGIN such as google, facebook, apple
+    public async Task TryDirectLogin()
     {
         try
         {
-            var packet = new LoginUserAccountPacketRequired { UserAccount = UserAccount, Password = Password };
-            var task = _webService.SendWebRequestAsync<LoginUserAccountPacketResponse>(
+            var packet = new LoginUserAccountPacketRequired 
+            { 
+                UserAccount = UserAccount, 
+                Password = Password 
+            };
+
+            var response = await _webService.SendWebRequestAsync<LoginUserAccountPacketResponse>(
                 "UserAccount/Login", UnityWebRequest.kHttpVerbPOST, packet);
-            
-            await task;
-            
-            var response = task.Result;
+
             if (response == null)
             {
                 Debug.LogError("Direct login response is null");
-                OnDirectLoginFailed?.Invoke();
+                OnDirectLoginNetworkFailed?.Invoke();
+                return;
+            }
+
+            if (!response.LoginOk)
+            {
+                OnDirectLoginAuthFailed?.Invoke();
                 return;
             }
             
@@ -144,41 +156,13 @@ public class LoginViewModel : IInitializable, IDisposable
         catch (Exception e)
         {
             Debug.LogError($"Direct login error: {e}");
+            OnDirectLoginNetworkFailed?.Invoke();
         }
     }
+
     
     #endregion
-
-    #region Guest Login
-
-    public async void TryGuestLogin()
-    {
-        try
-        {
-            var guestId = SystemInfo.deviceUniqueIdentifier;
-            var packet = new LoginGuestPacketRequired { GuestId = guestId };
-            var task = _webService.SendWebRequestAsync<LoginGuestPacketResponse>(
-                "UserAccount/LoginGuest", UnityWebRequest.kHttpVerbPOST, packet);
-            
-            await task;
-            
-            var response = task.Result;
-            if (response.LoginOk)
-            {
-                User.Instance.IsGuest = true;
-                HandleSignInSuccess(response.AccessToken, response.RefreshToken);
-            }
-            else
-            {
-                Debug.LogError("Guest login failed");
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"Guest login error: {e}");
-        }
-    }
-
+    
     #endregion
 
     #region Social Login: Apple
@@ -283,7 +267,7 @@ public class LoginViewModel : IInitializable, IDisposable
         _googleAuth.SignIn(OnGoogleSignIn);
     }
 
-    private void OnGoogleSignIn(bool success, string error, GoogleUserInfo userInfo)
+    private void OnGoogleSignIn(bool success, string error, GUserInfo userInfo)
     {
         if (success == false)
         {
@@ -344,6 +328,38 @@ public class LoginViewModel : IInitializable, IDisposable
     
     #endregion
 
+    #region Guest Login
+
+    public async void TryGuestLogin()
+    {
+        try
+        {
+            var guestId = SystemInfo.deviceUniqueIdentifier;
+            var packet = new LoginGuestPacketRequired { GuestId = guestId };
+            var task = _webService.SendWebRequestAsync<LoginGuestPacketResponse>(
+                "UserAccount/LoginGuest", UnityWebRequest.kHttpVerbPOST, packet);
+            
+            await task;
+            
+            var response = task.Result;
+            if (response.LoginOk)
+            {
+                User.Instance.IsGuest = true;
+                HandleSignInSuccess(response.AccessToken, response.RefreshToken);
+            }
+            else
+            {
+                Debug.LogError("Guest login failed");
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Guest login error: {e}");
+        }
+    }
+
+    #endregion
+    
     public async Task SignIn()
     {
         await Managers.UI.ShowPopupUI<UI_SignInPopup>();

@@ -94,11 +94,12 @@ public class UI_Login : UI_Scene
     
     #endregion
 
-    private void OnTestLoginClicked(PointerEventData data)
+    private async Task OnTestLoginClicked(PointerEventData data)
     {
         _loginViewModel.UserAccount = "admin";
         _loginViewModel.Password = "1234";
-        _loginViewModel.TryDirectLogin();
+        
+        await _loginViewModel.TryDirectLogin();
     }
     
     private async Task OnSignUpClicked(PointerEventData data)

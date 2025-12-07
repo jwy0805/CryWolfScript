@@ -31,6 +31,13 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     private TutorialViewModel _tutorialVm;
     private ShopViewModel _shopVm;
 
+    private LobbyHeaderWidget _headerWidget;
+    private LobbyModeWidget _modeWidget;
+    private LobbyDeckWidget _deckWidget;
+    private LobbyCollectionWidget _collectionWidget;
+    private LobbyCraftingWidget _craftingWidget;
+    private LobbyShopWidget _shopWidget;
+
     private readonly float _modeChangeTime = 0.25f;
 
     private Slider _expSlider;
@@ -336,6 +343,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         GoldStorePanel,
         GoldPackagePanel,
         SpinelPackagePanel,
+        
+        NoticeScrollView,
     }
 
     #endregion
@@ -373,17 +382,23 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         _lobbyVm.OnMailAlert += OnMailAlert;
         _lobbyVm.OffMailAlert += OffMailAlert;
         _lobbyVm.OnPageChanged += UpdateScrollbar;
+        _lobbyVm.OnPageChanged += UpdateNotice;
         _lobbyVm.OnUpdateUsername += UpdateUsername;
         _lobbyVm.OnChangeButtonFocus += ChangeButtonFocus;
         _lobbyVm.OnChangeLanguage += ChangeLanguage;
 
-        _paymentService.OnPaymentSuccess += OnMailAlert;
-        _paymentService.OnCashPaymentSuccess += OnMailAlert;
+        _paymentService.OnPaymentSuccess += InitMailAlert;
+        _paymentService.OnPaymentSuccess += InitUserInfo;
+        _paymentService.OnPaymentSuccess += InitCollection;
+        _paymentService.OnPaymentSuccess += InitSubscriptionObjects;
+        _paymentService.OnCashPaymentSuccess += InitMailAlert;
+        _paymentService.OnCashPaymentSuccess += InitUserInfo;
         _paymentService.OnDailyPaymentSuccess += SoldOutDailyProduct;
+        _paymentService.OnDailyPaymentSuccess += async _ => await InitUserInfo();
         
         _deckVm.OnDeckInitialized += SetDeckUI;
-        _deckVm.OnDeckSwitched += SetDeckButtonUI;
-        _deckVm.OnDeckSwitched += ResetDeckUI;
+        _deckVm.OnDeckSwitched += HandleSetDeckButtonUI;
+        _deckVm.OnDeckSwitched += SetDeckUI;
         
         _collectionVm.OnCardInitialized += SetCollectionUI;
         _collectionVm.OnCardSwitched += SwitchCollection;
@@ -435,11 +450,33 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         }
     }
 
-    private void UpdateScrollbar(int pageIndex)
+    private Task UpdateScrollbar(int pageIndex)
     {
         scrollbar.value = _lobbyVm.GetScrollPageValue(pageIndex);
+        return Task.CompletedTask;
     }
 
+    private async Task UpdateNotice(int pageIndex)
+    {
+        if (pageIndex != 3) return;
+
+        var (notices, events) = await _lobbyVm.GetEventNoticeList();
+        var noticeScrollView = GetImage((int)Images.NoticeScrollView).gameObject;
+        var parent = Util.FindChild(noticeScrollView, "NoticeContents", true).transform;
+        
+        Util.DestroyAllChildren(parent);
+        
+        foreach (var noticeInfo in notices)
+        {
+            await Managers.Resource.GetNoticeFrame(noticeInfo, parent);
+        }
+
+        foreach (var eventInfo in events)
+        {
+            await Managers.Resource.GetEventFrame(eventInfo, parent);
+        }
+    }
+    
     private void UpdateUsername()
     {
         GetText((int)Texts.UsernameText).text = User.Instance.UserInfo.UserName;
@@ -1301,7 +1338,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             InitShop(),
             _lobbyVm.InitFriendAlert(),
             _lobbyVm.InitMailAlert(),
-            _lobbyVm.ConnectSignalR(_userService.UserInfo.UserName)
+            _lobbyVm.ConnectSignalR(_userService.UserInfo.UserTag)
             );
 
         BindUserInfo();
@@ -1443,6 +1480,17 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         GetImage((int)Images.MailAlertIcon).gameObject.SetActive(false);
     }
     
+    private async Task InitMailAlert()
+    {
+        await _lobbyVm.InitMailAlert();
+    }
+
+    private async Task InitUserInfo()
+    {
+        await _userService.LoadUserInfo();
+        BindUserInfo();
+    }
+
     private void SetActivePanels(Dictionary<string, GameObject> dictionary, string[] uiNames)
     {
         foreach (var pair in dictionary)
@@ -1514,15 +1562,19 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             _lobbyVm.OnMailAlert -= OnMailAlert;
             _lobbyVm.OffMailAlert -= OffMailAlert;
             _lobbyVm.OnPageChanged -= UpdateScrollbar;
+            _lobbyVm.OnPageChanged -= UpdateNotice;
             _lobbyVm.OnUpdateUsername -= UpdateUsername;
             _lobbyVm.OnChangeButtonFocus -= ChangeButtonFocus;
             _lobbyVm.OnChangeLanguage -= ChangeLanguage;
-            _paymentService.OnPaymentSuccess -= OnMailAlert;
-            _paymentService.OnCashPaymentSuccess -= OnMailAlert;
+            _paymentService.OnPaymentSuccess -= InitMailAlert;
+            _paymentService.OnPaymentSuccess -= InitUserInfo;
+            _paymentService.OnPaymentSuccess -= InitCollection;
+            _paymentService.OnCashPaymentSuccess -= InitMailAlert;
+            _paymentService.OnCashPaymentSuccess -= InitUserInfo;
             _paymentService.OnDailyPaymentSuccess -= SoldOutDailyProduct;
             _deckVm.OnDeckInitialized -= SetDeckUI;
-            _deckVm.OnDeckSwitched -= SetDeckButtonUI;
-            _deckVm.OnDeckSwitched -= ResetDeckUI;
+            _deckVm.OnDeckSwitched -= HandleSetDeckButtonUI;
+            _deckVm.OnDeckSwitched -= SetDeckUI;
             _collectionVm.OnCardInitialized -= SetCollectionUI;
             _collectionVm.OnCardSwitched -= SwitchCollection;
             _craftingVm.SetCardOnCraftingPanel -= SetCardOnCraftingPanel;

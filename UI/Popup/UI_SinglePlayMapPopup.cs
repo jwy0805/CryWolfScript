@@ -122,7 +122,7 @@ public class UI_SinglePlayMapPopup : UI_Popup
 
         foreach (var singleRewardInfo in singleRewardInfos)
         {
-            var framePath = "UI/Deck/ProductInfo";
+            var framePath = "UI/Lobby/Deck/ProductInfo";
             var rewardFrame = await Managers.Resource.Instantiate(framePath, rewardPanel);
             var countText = Util.FindChild(rewardFrame, "TextNum", true);
             var count = singleRewardInfo.Count;
@@ -176,7 +176,7 @@ public class UI_SinglePlayMapPopup : UI_Popup
                 rewardRect.anchorMin = new Vector2(0.5f, 0.5f);
                 rewardRect.anchorMax = new Vector2(0.5f, 0.5f);
 
-                var starPath = "UI/Deck/Star";
+                var starPath = "UI/Lobby/Deck/Star";
                 var star = await Managers.Resource.Instantiate(starPath, rewardFrame.transform);
                 var starRect = star.GetComponent<RectTransform>();
                 starRect.sizeDelta = new Vector2(150, 35);

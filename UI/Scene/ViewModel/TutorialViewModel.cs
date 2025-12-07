@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using UnityEngine;
@@ -15,23 +16,20 @@ public class TutorialViewModel : IDisposable
     private readonly IUserService _userService;
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
-    
-    public readonly Dictionary<string, Action> MainEventDict = new();
-    public readonly Dictionary<string, Action> BattleWolfEventDict = new();
-    public readonly Dictionary<string, Action> BattleSheepEventDict = new();
-    public readonly Dictionary<string, Action> CollectionEventDict = new();
-    public readonly Dictionary<string, Action> CraftingEventDict = new();
+    private UnitId _rewardUnitId;
+
+    public readonly Dictionary<string, Action> ActionDict = new();
     
     public bool ProcessTutorial { get; set; }
     public Faction TutorialFaction { get; set; }
-    public int Step { get; set; }
-    public UnitId RewardUnitId { get; set; }
+    public string CurrentTag { get; set; } = string.Empty;
+    public string NextTag { get; set; } = string.Empty;
     
     #region Events 
     
     public event Action<Vector3, Vector3> OnInitTutorialCamera1;
     public event Action<Vector3, Vector3> OnInitTutorialCamera2;
-    public event Action OnStepTutorial;
+    public event Func<string, Task> OnRunTutorialTag;
     public event Action OnShowSpeakerAfter3Sec;
     public event Action OnShowSpeaker;
     public event Action OnShowNewSpeaker;
@@ -76,74 +74,25 @@ public class TutorialViewModel : IDisposable
     {
         OnInitTutorialCamera1?.Invoke(npc1Position, camera1Position);
         OnInitTutorialCamera2?.Invoke(npc2Position, camera2Position);
-        
-        MainEventDict.TryAdd("ShowSpeaker", OnShowSpeakerAfter3Sec);
-        MainEventDict.TryAdd("ShowNewSpeaker", OnShowNewSpeaker);
-        MainEventDict.TryAdd("ChangeSpeaker", OnChangeSpeaker);
-        MainEventDict.TryAdd("ShowFactionSelectPopup", OnShowFactionSelectPopup);
-        MainEventDict.TryAdd("ChangeFaceCry", OnChangeFaceCry);
-        MainEventDict.TryAdd("ChangeFaceHappy", OnChangeFaceHappy);
-        MainEventDict.TryAdd("ChangeFaceNormal", OnChangeFaceNormal);
+        InitActionDict();
     }
 
     public void InitTutorialBattleWolf(Vector3 npcPosition, Vector3 cameraPosition)
     {
         OnInitTutorialCamera1?.Invoke(npcPosition, cameraPosition);
-        
-        BattleWolfEventDict.TryAdd("OnUiBlocker", OnUiBlocker);
-        BattleWolfEventDict.TryAdd("OffUiBlocker", OffUiBlocker);
-        BattleWolfEventDict.TryAdd("OnHandImage", OnHandImage);
-        BattleWolfEventDict.TryAdd("OffHandImage", OffHandImage);
-        BattleWolfEventDict.TryAdd("OffContinueButton", OffContinueButton);
-        BattleWolfEventDict.TryAdd("OnContinueButton", OnContinueButton);
-        BattleWolfEventDict.TryAdd("ShowSpeakerAfter3Sec", OnShowSpeakerAfter3Sec);
-        BattleWolfEventDict.TryAdd("ShowSpeaker", OnShowSpeaker);
-        BattleWolfEventDict.TryAdd("PointToTimePanel", PointToTimePanel);
-        BattleWolfEventDict.TryAdd("PointToResourcePanel", PointToResourcePanel);
-        BattleWolfEventDict.TryAdd("PointToCapacityPanel", PointToCapacityPanel);
-        BattleWolfEventDict.TryAdd("PointToLog", PointToLog);
-        BattleWolfEventDict.TryAdd("PointToUpgradeButton", PointToUpgradeButton);
-        BattleWolfEventDict.TryAdd("DragTankerUnit", DragTankerUnit);
-        BattleWolfEventDict.TryAdd("DragRangerUnit", DragRangerUnit);
-        BattleWolfEventDict.TryAdd("DragScene", DragScene);
-        BattleWolfEventDict.TryAdd("ShowSimpleTooltip", ShowSimpleTooltip);
-        BattleWolfEventDict.TryAdd("ClearScene", ClearScene);
-        BattleWolfEventDict.TryAdd("PointToSkillButtonAndPortrait", PointToSkillButtonAndPortrait);
-        BattleWolfEventDict.TryAdd("AdjustUiBlockerSize", AdjustUiBlockerSize);
-        BattleWolfEventDict.TryAdd("ResumeGame", ResumeGame);
+        InitActionDict();
     }
 
     public void InitTutorialBattleSheep(Vector3 npcPosition, Vector3 cameraPosition)
     {
         OnInitTutorialCamera1?.Invoke(npcPosition, cameraPosition);
-        
-        BattleSheepEventDict.TryAdd("OnUiBlocker", OnUiBlocker);
-        BattleSheepEventDict.TryAdd("OffUiBlocker", OffUiBlocker);
-        BattleSheepEventDict.TryAdd("OnHandImage", OnHandImage);
-        BattleSheepEventDict.TryAdd("OffHandImage", OffHandImage);
-        BattleSheepEventDict.TryAdd("OffContinueButton", OffContinueButton);
-        BattleSheepEventDict.TryAdd("OnContinueButton", OnContinueButton);
-        BattleSheepEventDict.TryAdd("ShowSpeakerAfter3Sec", OnShowSpeakerAfter3Sec);
-        BattleSheepEventDict.TryAdd("ShowSpeaker", OnShowSpeaker);
-        BattleSheepEventDict.TryAdd("PointToTimePanel", PointToTimePanel);
-        BattleSheepEventDict.TryAdd("PointToResourcePanel", PointToResourcePanel);
-        BattleSheepEventDict.TryAdd("PointToCapacityPanel", PointToCapacityPanel);
-        BattleSheepEventDict.TryAdd("PointToLog", PointToLog);
-        BattleSheepEventDict.TryAdd("PointToUpgradeButton", PointToUpgradeButton);
-        BattleSheepEventDict.TryAdd("DragTankerUnit", DragTankerUnit);
-        BattleSheepEventDict.TryAdd("DragRangerUnit", DragRangerUnit);
-        BattleSheepEventDict.TryAdd("DragScene", DragScene);
-        BattleSheepEventDict.TryAdd("ShowSimpleTooltip", ShowSimpleTooltip);
-        BattleSheepEventDict.TryAdd("ClearScene", ClearScene);
-        BattleSheepEventDict.TryAdd("PointToSkillButtonAndPortrait", PointToSkillButtonAndPortrait);
-        BattleSheepEventDict.TryAdd("AdjustUiBlockerSize", AdjustUiBlockerSize);
-        BattleSheepEventDict.TryAdd("ResumeGame", ResumeGame);
-        BattleSheepEventDict.TryAdd("ChangeFaceHappy", OnChangeFaceHappy);
+        InitActionDict();
     }
-
+    
     public void InitTutorialChangeFaction(Vector3 npcPosition, Vector3 cameraPosition)
     {
         OnInitTutorialCamera1?.Invoke(npcPosition, cameraPosition);
+        InitActionDict();
     }
     
     public void InitTutorialCollection()
@@ -155,14 +104,41 @@ public class TutorialViewModel : IDisposable
     {
         
     }
+
+    private void InitActionDict()
+    {
+    ActionDict.TryAdd("ShowSpeaker", () => OnShowSpeaker?.Invoke());
+    ActionDict.TryAdd("ShowSpeakerAfter3Sec", () => OnShowSpeakerAfter3Sec?.Invoke());
+    ActionDict.TryAdd("ShowNewSpeaker", () => OnShowNewSpeaker?.Invoke());
+    ActionDict.TryAdd("ChangeSpeaker", () => OnChangeSpeaker?.Invoke());
+    ActionDict.TryAdd("ShowFactionSelectPopup", () => OnShowFactionSelectPopup?.Invoke());
+    ActionDict.TryAdd("ChangeFaceCry", () => OnChangeFaceCry?.Invoke());
+    ActionDict.TryAdd("ChangeFaceHappy", () => OnChangeFaceHappy?.Invoke());
+    ActionDict.TryAdd("ChangeFaceNormal", () => OnChangeFaceNormal?.Invoke());
+    ActionDict.TryAdd("OnUiBlocker", () => OnUiBlocker?.Invoke());
+    ActionDict.TryAdd("OffUiBlocker", () => OffUiBlocker?.Invoke());
+    ActionDict.TryAdd("OnHandImage", () => OnHandImage?.Invoke());
+    ActionDict.TryAdd("OffHandImage", () => OffHandImage?.Invoke());
+    ActionDict.TryAdd("OffContinueButton", () => OffContinueButton?.Invoke());
+    ActionDict.TryAdd("OnContinueButton", () => OnContinueButton?.Invoke());
+    ActionDict.TryAdd("PointToTimePanel", () => PointToTimePanel?.Invoke());
+    ActionDict.TryAdd("PointToResourcePanel", () => PointToResourcePanel?.Invoke());
+    ActionDict.TryAdd("PointToCapacityPanel", () => PointToCapacityPanel?.Invoke());
+    ActionDict.TryAdd("PointToLog", () => PointToLog?.Invoke());
+    ActionDict.TryAdd("PointToUpgradeButton", () => PointToUpgradeButton?.Invoke());
+    ActionDict.TryAdd("DragTankerUnit", () => DragTankerUnit?.Invoke());
+    ActionDict.TryAdd("DragRangerUnit", () => DragRangerUnit?.Invoke());
+    ActionDict.TryAdd("DragScene", () => DragScene?.Invoke());
+    ActionDict.TryAdd("ShowSimpleTooltip", () => ShowSimpleTooltip?.Invoke());
+    ActionDict.TryAdd("ClearScene", () => ClearScene?.Invoke());
+    ActionDict.TryAdd("PointToSkillButtonAndPortrait", () => PointToSkillButtonAndPortrait?.Invoke());
+    ActionDict.TryAdd("AdjustUiBlockerSize", () => AdjustUiBlockerSize?.Invoke());
+    ActionDict.TryAdd("ResumeGame", () => ResumeGame?.Invoke());
+    }
     
     public void ClearDictionary()
     {
-        MainEventDict.Clear();
-        BattleWolfEventDict.Clear();
-        BattleSheepEventDict.Clear();
-        CollectionEventDict.Clear();
-        CraftingEventDict.Clear();
+        ActionDict.Clear();
     }
     
     public async Task StartTutorial(Faction faction, int sessionId)
@@ -188,9 +164,15 @@ public class TutorialViewModel : IDisposable
         }
     }
 
-    public void StepTutorial()
+    public void InitTag()
     {
-        OnStepTutorial?.Invoke();
+        CurrentTag = string.Empty;
+        NextTag = string.Empty;
+    }
+    
+    public void RunTutorialTag(string tutorialTag)
+    {
+        OnRunTutorialTag?.Invoke(tutorialTag);
     }
     
     public void SendHoldPacket(bool hold)
@@ -205,24 +187,14 @@ public class TutorialViewModel : IDisposable
 
     public void PortraitDragStartHandler()
     {
-        if ((Step != 6 && Step != 10 && Step != 12 && Util.Faction == Faction.Wolf) ||
-            (Step != 6 && Step != 8 && Util.Faction == Faction.Sheep)) return;
-        
+        if (!CurrentTag.Contains("Drag")) return;
         SendHoldPacket(false);
     }
 
     public void PortraitDragEndHandler()
     {
-        if (Util.Faction == Faction.Wolf)
-        {
-            if (Step != 6 && Step != 12) return;
-        }
-
-        if (Util.Faction == Faction.Sheep)
-        {
-            if (Step != 6 && Step != 8) return;
-        }
-        
+        if (CurrentTag.Contains("DragOneMore")) return;
+        if (!CurrentTag.Contains("Drag")) return;
         _ = ShowTutorialPopup();
     }
 
@@ -252,18 +224,42 @@ public class TutorialViewModel : IDisposable
         _ = ShowTutorialPopup();
     }
     
-    public async Task ShowTutorialPopup()
+    public async Task ShowTutorialPopup(bool isInterrupted = false, string tutorialTag = "")
     {
         await Task.Delay(100);
         
         // Init method in popup implements step tutorial
         if (Util.Faction == Faction.Wolf)
         {
-            await Managers.UI.ShowPopupUI<UI_TutorialBattleWolfPopup>();
+            var popup = await Managers.UI.ShowPopupUI<UI_TutorialBattleWolfPopup>();
+            popup.IsInterrupted = isInterrupted;
+            if (isInterrupted)
+            {
+                popup.InterruptTag = tutorialTag;
+            }
+            else
+            {
+                if (tutorialTag != string.Empty)
+                {
+                    NextTag = tutorialTag;
+                }
+            }
         }
         else
         {
-            await Managers.UI.ShowPopupUI<UI_TutorialBattleSheepPopup>();
+            var popup = await Managers.UI.ShowPopupUI<UI_TutorialBattleSheepPopup>();
+            popup.IsInterrupted = isInterrupted;
+            if (isInterrupted)
+            {
+                popup.InterruptTag = tutorialTag;
+            }
+            else
+            {
+                if (tutorialTag != string.Empty)
+                {
+                    NextTag = tutorialTag;
+                }
+            }
         }
         
         ClearDictionary();
@@ -392,7 +388,7 @@ public class TutorialViewModel : IDisposable
             new()
             {
                 ProductType = Google.Protobuf.Protocol.ProductType.Unit,
-                ItemId = (int)RewardUnitId,
+                ItemId = (int)_rewardUnitId,
                 Count = 1
             }
         };
@@ -426,13 +422,11 @@ public class TutorialViewModel : IDisposable
         
         _ = _webService.SendWebRequestAsync<UpdateTutorialResponse>(
             "UserAccount/UpdateTutorial", UnityWebRequest.kHttpVerbPUT, packet);
-
-        Debug.Log($"User {User.Instance.UserInfo.UserName} completed tutorial: {tutorialType}");
     }
 
     public void SetTutorialReward(UnitId rewardUnitId)
     {
-        RewardUnitId = rewardUnitId;
+        _rewardUnitId = rewardUnitId;
     }
     
     public void Dispose()

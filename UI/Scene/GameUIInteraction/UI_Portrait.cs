@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using Google.Protobuf.Protocol;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SocialPlatforms;
 using UnityEngine.UI;
 using Zenject;
-using C_UnitSpawnPos = Google.Protobuf.Protocol.C_UnitSpawnPos;
 
 public interface IPortrait
 {
@@ -18,20 +20,43 @@ public interface IPortrait
 
 public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
+    [CanBeNull] private TutorialViewModel _tutorialVm;
     private GameViewModel _gameVm;
-    private TutorialViewModel _tutorialVm;
-    
+
+    private Dictionary<int, Contents.UnitData> _data = new();
+    private RectTransform _rect;
     private UnitId _unitId;
-    private readonly float _sendTick = 0.15f;
     private bool _canSpawn = true;
     private Vector3 _originalPos;
-    private float _lastSendTime;
+    private Vector3 _fencePos;
     private string _name;
     private Vector3 _hitPoint;
     private GameObject _attackRangeRing;
     private GameObject _skillRangeRing;
     private GameObject _spawnableBounds;
-
+    
+    // Network
+    private readonly float _fenceMoveValue = 4f;
+    private readonly float _sendTick = 0.1f;
+    private float _lastSendTime;
+    private const float MinWorldDelta = 0.05f;
+    private Vector3 _lastSentPos;
+    
+    // Raycast / Overlap NonAlloc
+    private readonly RaycastHit[] _hits = new RaycastHit[1];
+    private readonly Collider[] _overlaps = new Collider[8];
+    private bool _lastHitValid;
+    
+    // Caching
+    private Vector2 _pointerPos;
+    private Camera _camera;
+    private Canvas _rootCanvas;
+    private int _rayMask;
+    private int _denyMask;
+    private bool _canSpawnLocal;
+    private const float MinZ = -20;
+    private const float MaxZ = 20;
+    
     public UnitId UnitId
     {
         get => _unitId;
@@ -54,7 +79,21 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         get => _canSpawn;
         set
         {
+            if (value == false) HideRing();
+            if (_canSpawn == value) return;
             _canSpawn = value;
+            
+            if (_canSpawn)
+            {
+                _data.TryGetValue((int)_unitId, out var data);
+                if (data != null)
+                {
+                    var attackRange = data.Stat.AttackRange;
+                    var skillRange = data.Stat.SkillRange;
+                    ShowRing(attackRange, skillRange);
+                }
+            }
+            
             gameObject.GetComponent<Image>().color = _canSpawn ? Color.white : Color.red;
         }
     }
@@ -65,12 +104,38 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         _gameVm = gameViewModel;
         _tutorialVm = tutorialViewModel;
     }
-    
+
+    private void Awake()
+    {
+        _data = Managers.Data.UnitDict;
+        _camera = Camera.main;
+        _rect = GetComponent<RectTransform>();
+        _rayMask = LayerMask.GetMask("Ground", "Fence", "MonsterStatue", "Base", "Sheep");
+        _denyMask = LayerMask.GetMask("Fence", "MonsterStatue", "Base", "Sheep");
+
+        var fence = Managers.Object.Find(go => go.CompareTag("Fence"));
+        if (fence != null)
+        {
+            _fencePos = fence.transform.position;
+        }
+
+        if (_rootCanvas == null)
+        {
+            var canvas = GetComponentInParent<Canvas>();
+            if (canvas != null) _rootCanvas = canvas.rootCanvas;
+        }
+    }
+
     public void OnBeginDrag(PointerEventData eventData)
     {
         Managers.UI.CloseAllPopupUI();
         var tf = transform;
         var bounce = GetComponent<ButtonBounce>();
+        if (bounce == null)
+        {
+            Debug.LogError("ButtonBounce component is missing on the portrait.");
+            return;
+        }
         bounce.Selected = false;
         
         // Drag start
@@ -84,49 +149,89 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         _gameVm.OnPortraitDrag = true;
         _originalPos = tf.position;
         _lastSendTime = 0;
+        _lastSentPos = Vector3.positiveInfinity;
         
-        // Send packet to show the range rings, spawnable bounds
-        Managers.Network.Send(new C_GetRanges { UnitId = (int)_gameVm.CurrentSelectedPortrait.UnitId });
+        // spawnable bounds
         Managers.Network.Send(new C_GetSpawnableBounds { Faction = Util.Faction });
         // Tutorial
-        _tutorialVm.PortraitDragStartHandler();
+        _tutorialVm?.PortraitDragStartHandler();
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        transform.position = Input.mousePosition;
-        
-        if (Camera.main != null)
-        {
-            var layerNames = new[] { "Ground", "Unit", "Fence", "Statue" };
-            var ray = Camera.main.ScreenPointToRay(Input.mousePosition); 
-            _hitPoint = Vector3.zero;
-            if (Physics.Raycast(ray, out var hit, Mathf.Infinity, LayerMask.GetMask(layerNames)))
-            {
-                _hitPoint = hit.point;
-                
-                // Move range ring toward portrait's transform
-                if (_attackRangeRing != null)
-                {
-                    _attackRangeRing.transform.position = _hitPoint + new Vector3(0, 0.05f, 0);
-                }
+        AdjustSpawnableBounds();
+        _pointerPos = eventData.position;
 
-                if (_skillRangeRing != null)
-                {
-                    _skillRangeRing.transform.position = _hitPoint + new Vector3(0, 0.05f, 0);
-                }
+        if (_rootCanvas == null)
+        {
+            Debug.LogError("rootCanvas is null. Please check if the portrait is under a Canvas.");
+            return;
+        }
         
-                // Send packet about the position of the unit
-                if (Time.time < _lastSendTime + _sendTick) return;
-                _lastSendTime = Time.time;
+        var parentRect = (RectTransform)_rect.parent;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            parentRect, eventData.position, _rootCanvas ? _rootCanvas.worldCamera : null, out var local);
+        _rect.anchoredPosition = local;
+
+        var ray = _camera.ScreenPointToRay(_pointerPos);
+        int hitCount = Physics.RaycastNonAlloc(ray, _hits, 1000f, _rayMask, QueryTriggerInteraction.Collide);
+        _lastHitValid = hitCount > 0;
+        if (!_lastHitValid)
+        {
+            CanSpawn = false;
+            return;
+        }
         
-                var unitId = _gameVm.CurrentSelectedPortrait.UnitId;
-                var destVector = new DestVector {X = _hitPoint.x, Y = _hitPoint.y, Z = _hitPoint.z};
-                Managers.Network.Send(new C_UnitSpawnPos { UnitId = (int)unitId, DestVector = destVector });
+        RaycastHit closestHit = _hits[0];
+        for (int i = 1; i < hitCount; i++)
+        {
+            if (_hits[i].distance < closestHit.distance)
+            {
+                closestHit = _hits[i];
             }
         }
-    }
+            
+        _hitPoint = closestHit.point;
+        var hitLayer = closestHit.collider.gameObject.layer;
+        
+        if (_attackRangeRing != null)
+        {
+            _attackRangeRing.transform.position = _hitPoint + new Vector3(0, 0.05f, 0);
+        }
 
+        if (_skillRangeRing != null)
+        {
+            _skillRangeRing.transform.position = _hitPoint + new Vector3(0, 0.05f, 0);
+        }
+        
+        if (hitLayer != LayerMask.NameToLayer("Ground"))
+        {
+            CanSpawn = false;
+            return;
+        }
+
+        CanSpawn = LocalCanSpawn(_hitPoint, hitLayer);
+    }
+    
+    private bool LocalCanSpawn(Vector3 point, int hitLayer)
+    {
+        if (point.z is < MinZ or > MaxZ) return false;
+        
+        // 레이캐스트가 맞은 레이어가 denyMask에 포함돼 있으면 소환 불가
+        int hitLayerMask = 1 << hitLayer;
+        if ((_denyMask & hitLayerMask) != 0)
+            return false;
+        
+        // 주변에 Fence/Statue/Base 같은 금지 오브젝트가 겹쳐 있는지 한 번 더 체크
+        Managers.Data.UnitDict.TryGetValue((int)_unitId, out var unitData);
+        if (unitData == null) return false;
+        var unitSize = unitData.Stat.SizeX * 0.25f;
+        int nonAlloc = 
+            Physics.OverlapSphereNonAlloc(point, unitSize, _overlaps, _denyMask, QueryTriggerInteraction.Collide);
+        
+        return nonAlloc <= 0;
+    }
+    
     public void OnEndDrag(PointerEventData eventData)
     {
         HideSpawnableBounds();
@@ -137,13 +242,13 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         GetComponent<Image>().color = Color.white;
         _gameVm.CancelClickedEffect();
         _gameVm.OnPortraitDrag = false;
-                
-        if (CanSpawn == false) return;
-        Managers.Game.Spawn(_gameVm.CurrentSelectedPortrait.UnitId, _hitPoint);
         _gameVm.TurnOffSelectRing();
         
+        if (CanSpawn == false || _lastHitValid == false) return;
+        Managers.Game.Spawn(_gameVm.CurrentSelectedPortrait.UnitId, _hitPoint);
+        
         // Tutorial
-        _tutorialVm.PortraitDragEndHandler();
+        _tutorialVm?.PortraitDragEndHandler();
     }
     
     public async void ShowRing(float attackRange, float skillRange)
@@ -198,6 +303,18 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         catch (Exception e)
         {
             Debug.LogWarning(e);
+        }
+    }
+
+    private void AdjustSpawnableBounds()
+    {
+        var fence = Managers.Object.Find(go => go.CompareTag("Fence"));
+        var fencePos = fence != null ? fence.transform.position : _fencePos;
+        if (fencePos.z - _fencePos.z > 1f)
+        {
+            var pos = _spawnableBounds.transform.position;
+            _spawnableBounds.transform.position = new Vector3(pos.x, pos.y, pos.z + _fenceMoveValue);
+            _fencePos = fencePos;
         }
     }
 

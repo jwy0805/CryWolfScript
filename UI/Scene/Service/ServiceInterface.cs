@@ -45,13 +45,13 @@ public interface ISignalRClient
 {
     [CanBeNull] event Action OnInvitationSent;
     [CanBeNull] event Func<DeckInfo, Task> OnEnemyDeckSwitched;
-    [CanBeNull] event Func<DeckInfo, DeckInfo, Task> OnFactionSwitched;
+    [CanBeNull] event Func<DeckInfo, DeckInfo, bool, Task> OnFactionSwitched;
     [CanBeNull] event Action<AcceptInvitationPacketResponse> OnInvitationSuccess;
     [CanBeNull] event Action<AcceptInvitationPacketResponse> OnEnterFriendlyMatch;
     [CanBeNull] event Action<FriendRequestPacketResponse> OnFriendRequestNotificationReceived;
     [CanBeNull] event Action OnGuestLeft;
     [CanBeNull] event Func<Task> OnStartFriendlyMatch;
-    Task Connect(string username);
+    Task Connect(string userTag);
     Task JoinLobby(string token);
     Task LeaveLobby();
     Task JoinGame(string token);
@@ -62,9 +62,9 @@ public interface ISignalRClient
     Task<InviteFriendlyMatchPacketResponse> SendInvitation(InviteFriendlyMatchPacketRequired required);
     Task<AcceptInvitationPacketResponse> SendAcceptInvitation(AcceptInvitationPacketRequired required);
     Task<FriendRequestPacketResponse> SendFriendRequest(FriendRequestPacketRequired required);
-    Task StartFriendlyMatch(string username);
+    Task StartFriendlyMatch(string userTag);
     Task SendSessionId(int sessionId);
-    Task<Tuple<bool, AcceptInvitationPacketResponse>> ReEntryFriendlyMatch(string username);
+    Task<Tuple<bool, AcceptInvitationPacketResponse>> ReEntryFriendlyMatch(string userTag);
     Task Disconnect();
 }
 
@@ -75,7 +75,12 @@ public interface IPaymentService
     Task BuyProductAsync(string productId);
     Task BuyDailyProductAsync(string productId);
     void RestorePurchases();
-    event Action OnCashPaymentSuccess;
-    event Action OnPaymentSuccess;
+    event Func<Task> OnCashPaymentSuccess;
+    event Func<Task> OnPaymentSuccess;
     event Func<int, Task> OnDailyPaymentSuccess;
+}
+
+public interface ITutorialHelper
+{
+    Task RunTutorialTag(string tag);
 }

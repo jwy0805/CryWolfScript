@@ -81,8 +81,7 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
             InitButtonEvents();
         
             // Tutorial
-            if ((_tutorialVm.Step == 13 && Util.Faction == Faction.Wolf) ||
-                (_tutorialVm.Step == 17 && Util.Faction == Faction.Sheep))
+            if (_tutorialVm.NextTag.Contains("BaseSkillWindow"))
             {
                 _tutorialVm.StepTutorialByClickingUI();
             }
@@ -95,17 +94,27 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
 
     protected override async Task InitUIAsync()
     {
-        var resourceString = Util.Faction == Faction.Sheep ? "IncreaseSheepResource" : "IncreaseWolfResource";
-        var assetString = Util.Faction == Faction.Sheep ? "CreateSheep" : "Enchant";
+        var baseUpgradeString = Util.Faction == Faction.Sheep ? "SheepBase" : "WolfPortal";
+        var resourceString = Util.Faction == Faction.Sheep ? "SheepResource" : "WolfResource";
+        var assetString = Util.Faction == Faction.Sheep ? "SheepAsset" : "WolfAsset";
+        
+        var baseUpgradeButtonImage = _buttonDict["BaseUpgradeButton"].GetComponent<Image>();
+        var repairButtonImage = _buttonDict["RepairButton"].GetComponent<Image>();
         var resourceButtonImage = _buttonDict["ResourceButton"].GetComponent<Image>();
         var assetButtonImage = _buttonDict["AssetButton"].GetComponent<Image>();
+        
         var baseUpgradeText = GetText((int)Texts.BaseUpgradeText);
         var repairText = GetText((int)Texts.RepairText);
         var resourceText = GetText((int)Texts.ResourceText);
         var assetText = GetText((int)Texts.AssetText);
-        var resourceKey = $"Sprites/Icons/icon_base_skill_{resourceString}";
-        var assetKey = $"Sprites/Icons/icon_base_skill_{assetString}";
         
+        var baseUpgradeKey = $"Sprites/Icons/SkillIcons/{baseUpgradeString}";
+        var repairKey = $"Sprites/Icons/SkillIcons/RepairAll";
+        var resourceKey = $"Sprites/Icons/SkillIcons/{resourceString}";
+        var assetKey = $"Sprites/Icons/SkillIcons/{assetString}";
+        
+        baseUpgradeButtonImage.sprite = await Managers.Resource.LoadAsync<Sprite>(baseUpgradeKey);
+        repairButtonImage.sprite = await Managers.Resource.LoadAsync<Sprite>(repairKey);
         resourceButtonImage.sprite = await Managers.Resource.LoadAsync<Sprite>(resourceKey);
         assetButtonImage.sprite = await Managers.Resource.LoadAsync<Sprite>(assetKey);
 

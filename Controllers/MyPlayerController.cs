@@ -238,7 +238,7 @@ public class MyPlayerController : PlayerController
                     _gameVm.SetPortraitFromFieldUnit(cc.UnitId);
                     
                     // Tutorial
-                    if (_tutorialVm.Step == 9 && Faction == Faction.Sheep)
+                    if (_tutorialVm.CurrentTag == "BattleSheep.TouchTower")
                     {
                         _tutorialVm.StepTutorialByClickingUI();
                     }
@@ -267,7 +267,7 @@ public class MyPlayerController : PlayerController
                     _gameVm.SetPortraitFromFieldUnit(cc.UnitId);
                     
                     // Tutorial
-                    if (_tutorialVm.Step == 7 && Faction == Faction.Wolf)
+                    if (_tutorialVm.CurrentTag == "BattleWolf.TouchStatue")
                     {
                         _tutorialVm.StepTutorialByClickingUI();
                     }
@@ -280,7 +280,7 @@ public class MyPlayerController : PlayerController
                     await AdjustUI<UnitControlWindow>(go, GameObjectType.Fence);
                     
                     // Tutorial
-                    if (_tutorialVm.Step == 13 && Faction == Faction.Sheep)
+                    if (_tutorialVm.CurrentTag == "BattleSheep.TouchFence")
                     {
                         _tutorialVm.StepTutorialByClickingUI();
                     }

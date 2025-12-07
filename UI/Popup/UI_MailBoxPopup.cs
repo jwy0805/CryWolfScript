@@ -145,12 +145,12 @@ public class UI_MailBoxPopup : UI_Popup
         switch (mailInfo.Type)
         {
             case MailType.Notice:
-                mailFrame = await Managers.Resource.Instantiate("UI/Deck/MailInfoNotification", frameParent);
+                mailFrame = await Managers.Resource.Instantiate("UI/Lobby/Mail/MailInfoNotification", frameParent);
                 var mailInfoNotification = mailFrame.GetOrAddComponent<MailInfoNotification>();
                 mailInfoNotification.MailInfo = mailInfo;
                 break;
             case MailType.Invite:
-                mailFrame = await Managers.Resource.Instantiate("UI/Deck/MailInfoInvitation", frameParent);
+                mailFrame = await Managers.Resource.Instantiate("UI/Lobby/Mail/MailInfoInvitation", frameParent);
                 var mailInfoInvitation = mailFrame.GetOrAddComponent<MailInfoInvitation>();
                 mailInfoInvitation.MailInfo = mailInfo;
                 break;

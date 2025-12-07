@@ -42,8 +42,8 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         // new ProductDefinition("com.hamon.crywolf.consumable.jeweled_chest", UnityEngine.Purchasing.ProductType.Consumable),
     };
     
-    public event Action OnCashPaymentSuccess;
-    public event Action OnPaymentSuccess;
+    public event Func<Task> OnCashPaymentSuccess;
+    public event Func<Task> OnPaymentSuccess;
     public event Func<int, Task> OnDailyPaymentSuccess;
     
     [Inject]
@@ -93,10 +93,19 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
 
         if (task.PaymentOk)
         {
-            var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-            var titleKey = "notify_payment_success_title";
-            var messageKey = "notify_payment_success_message";
-            await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
+            if (task.PaymentCode == VirtualPaymentCode.Product)
+            {
+                var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+                var titleKey = "notify_payment_success_title";
+                var messageKey = "notify_payment_success_message";
+                await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
+            }
+            else if (task.PaymentCode == VirtualPaymentCode.Subscription)
+            {
+                var popup = await Managers.UI.ShowPopupUI<UI_RewardSubscriptionPopup>();
+                popup.ProductCode = productCode;
+            }
+            
             OnPaymentSuccess?.Invoke();
         }
         else
@@ -149,35 +158,79 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
 
     public PurchaseProcessingResult ProcessPurchase(PurchaseEventArgs purchaseEvent)
     {
-        _ = VerifyAndConfirmAsync(purchaseEvent.purchasedProduct);
+        var product = purchaseEvent.purchasedProduct;
+        Debug.Log($"[IAP] ProcessPurchase called. Product={product.definition.id}, TxId={product.transactionID}");
+        _ = VerifyAndConfirmAsync(product);
         return PurchaseProcessingResult.Pending;
     }
 
     private async Task VerifyAndConfirmAsync(Product product)
     {
+        Debug.Log($"[IAP] VerifyAndConfirmAsync start. Product={product.definition.id}, TxId={product.transactionID}");
+
+        CashPaymentPacketResponse response = null;
+        var networkOk = false;
+
         try
         {
-            var ok = await SendReceiptToServer(product.receipt, product);
-            _storeController.ConfirmPendingPurchase(product);
-            if (ok)
+            response = await SendReceiptToServer(product.receipt, product);
+            networkOk = true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"VerifyAndConfirmAsync error: {e}");
+            networkOk = false;
+        }
+
+        var shouldConfirm = false;
+        var purchaseSuccess = false;
+        
+        if (!networkOk)
+        {
+            // 서버/네트워크에 못 닿음 -> pending 유지
+            await ShowPurchaseFailedPopup();
+        }
+        else
+        {
+            if (response.PaymentOk 
+                && response.ErrorCode is CashPaymentErrorCode.None or CashPaymentErrorCode.AlreadyProcessed)
+            {
+                // 정상 처리 or 이미 처리된 영수증
+                shouldConfirm = true;
+                purchaseSuccess = true;
+            }
+            else if (response.ErrorCode is CashPaymentErrorCode.InvalidReceipt or CashPaymentErrorCode.Unauthorized)
+            {
+                // 권한 문제 -> 재시도해도 의미x -> Confirm 하고 종료
+                shouldConfirm = true;
+                purchaseSuccess = false;
+            }
+            else
+            {
+                // 그 외 서버 내부 오류 등 -> pending 유지
+                shouldConfirm = false;
+                purchaseSuccess = false;
+            }
+
+            if (purchaseSuccess)
             {
                 await ShowPurchaseSuccessPopup();
+                Debug.Log("[IAP] Invoking OnCashPaymentSuccess handlers.");
                 OnCashPaymentSuccess?.Invoke();
             }
             else
             {
-                await ShowPurchaseFailedPopup();
+                await ShowPurchaseFailedPopup(response.ErrorCode);
             }
         }
-        catch (Exception e)
+
+        if (shouldConfirm)
         {
-            Debug.LogError(e);
             _storeController.ConfirmPendingPurchase(product);
-            await ShowPurchaseFailedPopup();
         }
     }
     
-    private async Task<bool> SendReceiptToServer(string receipt, Product purchaseProduct)
+    private Task<CashPaymentPacketResponse> SendReceiptToServer(string receipt, Product purchaseProduct)
     {
         var packet = new CashPaymentPacketRequired
         {
@@ -185,10 +238,11 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
             Receipt = receipt,
             ProductCode = purchaseProduct.definition.id,
         };
-        var response = await _webService.SendWebRequestAsync<CashPaymentPacketResponse>(
-            "Payment/PurchaseSpinel", UnityWebRequest.kHttpVerbPUT, packet);
         
-        return response is { PaymentOk: true };
+        Debug.Log($"[IAP] Sending receipt to server. Product={packet.ProductCode}");
+
+        return _webService.SendWebRequestAsync<CashPaymentPacketResponse>(
+            "Payment/PurchaseSpinel", UnityWebRequest.kHttpVerbPUT, packet);
     }
 
     public void RestorePurchases()
@@ -218,16 +272,25 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
     private async Task ShowPurchaseSuccessPopup()
     {
         var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-        const string titleKey = "notify_payment_success_title";
+        const string titleKey = "notify_payment_success_title"; 
         const string messageKey = "notify_payment_success_message";
+        
         await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
     }
     
-    private async Task ShowPurchaseFailedPopup()
+    private async Task ShowPurchaseFailedPopup(CashPaymentErrorCode errorCode = CashPaymentErrorCode.None)
     {
         var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         const string titleKey = "notify_payment_failed_title";
-        const string messageKey = "notify_payment_failed_message";
+        var messageKey = errorCode switch
+        {
+            CashPaymentErrorCode.InvalidReceipt => "notify_payment_failed_invalid_receipt",
+            CashPaymentErrorCode.Unauthorized => "notify_payment_failed_unauthorized",
+            CashPaymentErrorCode.AlreadyProcessed => "notify_payment_failed_already_processed",
+            CashPaymentErrorCode.InternalError => "notify_payment_failed_internal_error",
+            _ => "notify_payment_failed_message"
+        };
+        
         await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
     }
     

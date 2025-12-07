@@ -13,7 +13,6 @@ using Zenject;
 
 public interface IUnitControlWindow
 {
-    void UpdateUpgradeCostText(int cost);
     void UpdateDeleteCostText(int cost);
     void UpdateRepairCostText(int cost);
     void UpdateRepairAllCostText(int cost);
@@ -55,7 +54,6 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
 
     private enum Buttons
     {
-        UnitUpgradeButton,
         UnitDeleteButton,
         UnitRepairButton,
         UnitRepairAllButton,
@@ -64,19 +62,16 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
 
     private enum Images
     {
-        UnitUpgradePanel,
         UnitDeletePanel,
         UnitRepairPanel,
         UnitRepairAllPanel,
         UnitSkillPanel,
         
-        UnitUpgradeButtonPanel,
         UnitDeleteButtonPanel,
         UnitRepairButtonPanel,
         UnitRepairAllButtonPanel,
         UnitSkillButtonPanel,
 
-        UnitUpgradeGoldImage,
         UnitDeleteGoldImage,
         UnitDeleteGoldPlusImage,
         UnitRepairGoldImage,
@@ -87,7 +82,6 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
     
     private enum Texts
     {
-        UnitUpgradeGoldText,
         UnitDeleteGoldText,
         UnitRepairGoldText,
         UnitRepairAllGoldText,
@@ -165,16 +159,7 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         switch (_cc.ObjectType)
         {
             case GameObjectType.Tower:
-                if (_gameVm.GetLevelFromUiObject(_cc.UnitId) < 3)
-                {
-                    images.AddRange(new[] 
-                        { Images.UnitUpgradePanel, Images.UnitDeletePanel, Images.UnitSkillPanel });
-                }
-                else
-                {
-                    images.AddRange(new[] 
-                        { Images.UnitDeletePanel, Images.UnitSkillPanel });
-                }
+                images.AddRange(new[] { Images.UnitDeletePanel, Images.UnitSkillPanel });
                 break;
             case GameObjectType.Fence:
                 images.AddRange(new[] { Images.UnitRepairPanel, Images.UnitRepairAllPanel });
@@ -186,46 +171,30 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
                 images.AddRange(new[] { Images.UnitSkillPanel });
                 break;
             case GameObjectType.MonsterStatue:
-                if (_gameVm.GetLevelFromUiObject(_cc.UnitId) < 3)
+                images.AddRange(new[]
                 {
-                    images.AddRange(new[]
-                    {
-                        Images.UnitUpgradePanel,
-                        Images.UnitDeletePanel,
-                        Images.UnitRepairPanel,
-                        Images.UnitSkillPanel
-                    });
-                }
-                else
-                {
-                    images.AddRange(new[]
-                    {
-                        Images.UnitDeletePanel,
-                        Images.UnitRepairPanel,
-                        Images.UnitSkillPanel
-                    });
-                }
+                    Images.UnitDeletePanel,
+                    Images.UnitRepairPanel,
+                    Images.UnitSkillPanel
+                });
                 break;
         }
         
         BindControlButtons(images);
-        SetObjectSize(GetImage((int)Images.UnitUpgradeButtonPanel).gameObject, 0.7f);
         SetObjectSize(GetImage((int)Images.UnitDeleteButtonPanel).gameObject, 0.7f);
         SetObjectSize(GetImage((int)Images.UnitRepairButtonPanel).gameObject, 0.7f);
         SetObjectSize(GetImage((int)Images.UnitRepairAllButtonPanel).gameObject, 0.7f);
         SetObjectSize(GetImage((int)Images.UnitSkillButtonPanel).gameObject, 0.7f);
-        SetObjectSize(GetImage((int)Images.UnitUpgradeGoldImage).gameObject, 0.15f);
-        SetObjectSize(GetImage((int)Images.UnitDeleteGoldImage).gameObject, 0.15f);
-        SetObjectSize(GetImage((int)Images.UnitDeleteGoldPlusImage).gameObject, 0.1f);
-        SetObjectSize(GetImage((int)Images.UnitRepairGoldImage).gameObject, 0.15f);
-        SetObjectSize(GetImage((int)Images.UnitRepairAllGoldImage).gameObject, 0.15f);
+        SetObjectSize(GetImage((int)Images.UnitDeleteGoldImage).gameObject, 0.18f);
+        SetObjectSize(GetImage((int)Images.UnitDeleteGoldPlusImage).gameObject, 0.12f);
+        SetObjectSize(GetImage((int)Images.UnitRepairGoldImage).gameObject, 0.18f);
+        SetObjectSize(GetImage((int)Images.UnitRepairAllGoldImage).gameObject, 0.18f);
     }
 
     private void BindControlButtons(List<Images> images)
     {
         var allImages = new List<Images>
         {
-            Images.UnitUpgradePanel,
             Images.UnitDeletePanel,
             Images.UnitRepairPanel,
             Images.UnitRepairAllPanel,
@@ -277,7 +246,6 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
                 break;
         }
         
-        _gameVm.UpdateUnitUpgradeCostRequired(new []{ _cc.Id });
         _gameVm.UpdateUnitDeleteCostRequired(new []{ _cc.Id });
         _gameVm.UpdateUnitRepairCostRequired(new []{ _cc.Id });
     }
@@ -294,16 +262,10 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
 
     protected override void InitButtonEvents()
     {
-        GetButton((int)Buttons.UnitUpgradeButton).gameObject.BindEvent(OnUpgradeClicked);
         GetButton((int)Buttons.UnitDeleteButton).gameObject.BindEvent(OnDeleteClicked);
         GetButton((int)Buttons.UnitRepairButton).gameObject.BindEvent(OnRepairClicked);
         GetButton((int)Buttons.UnitRepairAllButton).gameObject.BindEvent(OnRepairAllClicked);
         GetButton((int)Buttons.UnitSkillButton).gameObject.BindEvent(OnSkillClicked);
-    }
-    
-    public void UpdateUpgradeCostText(int cost)
-    {
-        GetText((int)Texts.UnitUpgradeGoldText).text = cost.ToString();
     }
     
     public void UpdateDeleteCostText(int cost)
@@ -319,12 +281,6 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
     public void UpdateRepairAllCostText(int cost)
     {
         GetText((int)Texts.UnitRepairAllGoldText).text = cost.ToString();
-    }
-    
-    private void OnUpgradeClicked(PointerEventData data)
-    {
-        if (_cc == null) return;
-        _gameVm.OnUnitUpgradeClicked(new[] { _cc.Id });
     }
     
     private void OnDeleteClicked(PointerEventData data)

@@ -96,7 +96,7 @@ public class UI_ProductReservedInfoPopup : UI_Popup
         {
             var composition = _shopVm.ReservedProductsToBeClaimed[i];
             var key = _shopVm.ReservedProductKeys[i];
-            var framePath = $"UI/Deck/ProductDetailInfo";
+            var framePath = $"UI/Lobby/Deck/ProductDetailInfo";
             var productFrame = await Managers.Resource.Instantiate(framePath, contentsPanel.transform);
             var frame = Util.FindChild(productFrame, "Frame", true);
             var layoutElement = productFrame.GetOrAddComponent<LayoutElement>();
@@ -135,9 +135,16 @@ public class UI_ProductReservedInfoPopup : UI_Popup
         infoText.text = await Managers.Localization.BindLocalizedText(infoText, key);
     }
     
-    private void OnBuyButtonClicked(PointerEventData data)
+    private async void OnBuyButtonClicked(PointerEventData data)
     {
-        _shopVm.BuyProduct();
+        try
+        {
+            await _shopVm.BuyProduct();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
     }
     
     private void ClosePopup(PointerEventData data)

@@ -14,13 +14,13 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
 {
     private HubConnection _connection;
     private float _elapsedTime;
-    private string _username;
+    private string _userTag;
     
     private const float HeartbeatInterval = 60f;
 
     public event Action OnInvitationSent;
     public event Func<DeckInfo, Task> OnEnemyDeckSwitched;
-    public event Func<DeckInfo, DeckInfo, Task> OnFactionSwitched;
+    public event Func<DeckInfo, DeckInfo, bool, Task> OnFactionSwitched;
     public event Action<AcceptInvitationPacketResponse> OnInvitationSuccess;
     public event Action<AcceptInvitationPacketResponse> OnEnterFriendlyMatch;
     public event Action<FriendRequestPacketResponse> OnFriendRequestNotificationReceived;
@@ -34,7 +34,7 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
         _ = typeof(JsonHubProtocol);
     }
     
-    public async Task Connect(string username)
+    public async Task Connect(string userTag)
     {
         var url = Managers.Network.BaseUrl + "/signalRHub";
 
@@ -42,8 +42,8 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
         Register();
         await _connection.StartAsync();
         
-        _username = username;
-        Debug.Log($"{_username} {_connection.State} at {url}");
+        _userTag = userTag;
+        Debug.Log($"{_userTag} {_connection.State} at {url}");
     }
 
     public void Tick()
@@ -60,7 +60,7 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
     {
         if (_connection is { State: HubConnectionState.Connected })
         {
-            await _connection.InvokeAsync("HeartBeat", _username);
+            await _connection.InvokeAsync("HeartBeat", _userTag);
         }
     }
     
@@ -113,9 +113,9 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
             Managers.Dispatcher.Enqueue(() => OnEnemyDeckSwitched?.Invoke(deckInfo));
         });
 
-        _connection.On<DeckInfo, DeckInfo>("SwitchFaction", (myDeckInfo , enemyDeckInfo) =>
+        _connection.On<DeckInfo, DeckInfo, bool>("SwitchFaction", (myDeckInfo , enemyDeckInfo, isGuest) =>
         {
-            Managers.Dispatcher.Enqueue(() => OnFactionSwitched?.Invoke(myDeckInfo, enemyDeckInfo));
+            Managers.Dispatcher.Enqueue(() => OnFactionSwitched?.Invoke(myDeckInfo, enemyDeckInfo, isGuest));
         });
 
         _connection.On<AcceptInvitationPacketResponse>("GameRoomJoined", response =>
@@ -259,13 +259,17 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
         var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         await Managers.Localization.UpdateNotifyPopupText(popup, "notify_game_room_closed_by_host");
         popup.SetYesCallback(() => Managers.Scene.LoadScene(Define.Scene.MainLobby));
+        
+        Managers.Network.IsFriendlyMatchHost = false;
+        Managers.Game.ReEntry = false;
+        Managers.Game.ReEntryResponse = null;
     }
 
-    public async Task StartFriendlyMatch(string username)
+    public async Task StartFriendlyMatch(string userTag)
     {
         if (_connection is { State: HubConnectionState.Connected })
         {
-            await _connection.InvokeAsync("StartFriendlyMatch", username);
+            await _connection.InvokeAsync("StartFriendlyMatch", userTag);
         }
     }
 
@@ -284,12 +288,12 @@ public class SignalRClient : ISignalRClient, ITickable, IDisposable
         popup.SetYesCallback(() => Managers.Scene.LoadScene(Define.Scene.MainLobby));
     }
     
-    public async Task<Tuple<bool, AcceptInvitationPacketResponse>> ReEntryFriendlyMatch(string username)
+    public async Task<Tuple<bool, AcceptInvitationPacketResponse>> ReEntryFriendlyMatch(string userTag)
     {
         if (_connection is { State: HubConnectionState.Connected })
         {
             return await _connection
-                .InvokeAsync<Tuple<bool, AcceptInvitationPacketResponse>>("ReEntryFriendlyMatch", username);
+                .InvokeAsync<Tuple<bool, AcceptInvitationPacketResponse>>("ReEntryFriendlyMatch", userTag);
         }       
         
         Debug.LogWarning("Connection is not established. Cannot re-enter friendly match.");

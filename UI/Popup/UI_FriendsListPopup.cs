@@ -24,7 +24,8 @@ public class UI_FriendsListPopup : UI_Popup
     
     private enum Buttons
     {
-        InviteButton,
+        AddButton,
+        BackButton,
         FriendsAddButton,
         ExitButton,
     }
@@ -33,7 +34,7 @@ public class UI_FriendsListPopup : UI_Popup
     {
         FriendsListTitleText,
         FriendsListNoFriendText,
-        FriendsListInviteButtonText,
+        FriendsListAddButtonText,
     }
     
     [Inject]
@@ -73,8 +74,9 @@ public class UI_FriendsListPopup : UI_Popup
 
     protected override void InitButtonEvents()
     {
-        GetButton((int)Buttons.InviteButton).gameObject.BindEvent(OnInviteClicked);
+        GetButton((int)Buttons.AddButton).gameObject.BindEvent(OnFriendsAddClicked);
         GetButton((int)Buttons.FriendsAddButton).gameObject.BindEvent(OnFriendsAddClicked);
+        GetButton((int)Buttons.BackButton).gameObject.BindEvent(ClosePopup);
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(ClosePopup);
     }
 
@@ -152,12 +154,6 @@ public class UI_FriendsListPopup : UI_Popup
         data.pointerPress.gameObject.TryGetComponent(out Friend friend);
         if (friend == null) return;
         _selectedFriend = friend;
-    }
-    
-    private void OnInviteClicked(PointerEventData data)
-    {
-        if (_selectedFriend == null) return;
-        // Make a match with the selected friend
     }
     
     private async Task OnFriendsAddClicked(PointerEventData data)

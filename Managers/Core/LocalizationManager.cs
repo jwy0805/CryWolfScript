@@ -41,6 +41,13 @@ public class LocalizationManager
         {"Swedish", "sv"},
     };
 
+    private readonly Dictionary<string, string> _boldFontMap = new()
+    {
+        { "ko", "esamanru Bold SDF" },
+        { "en", "Sen SDF" },
+        { "ja", "mplus-1p-bold SDF" }
+    };
+
     private readonly Dictionary<string, string> _basicFontMap = new()
     {
         { "ko", "esamanru Medium SDF" },
@@ -68,7 +75,7 @@ public class LocalizationManager
         { "en", "Sen_Line_s_Red SDF" },
         { "ja", "mplus-1p-medium-outline-red SDF" }
     };
-
+    
     public string Language2Letter
     {
         get
@@ -154,6 +161,7 @@ public class LocalizationManager
     {
         var fontName = fontType switch
         {
+            FontType.Bold => _boldFontMap.GetValueOrDefault(Language2Letter, "esamanru Bold SDF"),
             FontType.BlackLined => _blackLinedFontMap.GetValueOrDefault(Language2Letter, "esamanru_outline Medium SDF"),
             FontType.BlueLined => _blueLinedFontMap.GetValueOrDefault(Language2Letter, "esamanru_outline_blue Medium SDF"),
             FontType.RedLined => _redLinedFontMap.GetValueOrDefault(Language2Letter, "esamanru_outline_red Medium SDF"),
@@ -252,6 +260,16 @@ public class LocalizationManager
         {
             tmpro.fontSize = entry.FontSize;
         }
+        
+        return entry.Text;
+    }
+    
+    public async Task<string> GetLocalizedText(string key)
+    {
+        var langDictionary = Managers.Data.LocalizationDict;
+        key = GetConvertedString(key);
+        if (langDictionary.TryGetValue(key, out var entryDictionary) == false) return string.Empty;
+        if (entryDictionary.TryGetValue(Language2Letter, out var entry) == false) return string.Empty;
         
         return entry.Text;
     }
