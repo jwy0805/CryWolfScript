@@ -47,7 +47,7 @@ public class UI_CraftSuccessPopup : UI_Popup
             InitButtonEvents();
             await InitUIAsync();
         
-            _craftingVm.InitSetting();
+            _craftingVm.InitReinforceSetting();
         }
         catch (Exception e)
         {

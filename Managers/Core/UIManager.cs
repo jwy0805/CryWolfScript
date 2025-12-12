@@ -15,6 +15,7 @@ public class UIManager
     public readonly List<UI_Popup> PopupList = new();
     
     private int _order = 10;
+    private UI_Loading _loadingUI = null;
     // private UI_Scene _sceneUI = null;
     
     public GameObject Root
@@ -90,25 +91,35 @@ public class UIManager
                 name = typeof(T).Name;
             }
 
-            if (Managers.Resource.InitAddressables == false && name != "UI_Loading")
+            if (name == "UI_Loading")
             {
-                Managers.Localization.InitLanguage(Application.systemLanguage.ToString());
-                await Addressables.InitializeAsync().Task;
-                await Addressables.LoadAssetAsync<TMP_Settings>("Externals/TextMesh Pro/Resources/TMP Settings.asset").Task;
-                Managers.Resource.InitAddressables = true;
+                await Managers.Data.InitAsync();
             }
-
-            Debug.Log("Show Scene UI Called, v44");
-            
-            await Managers.Data.InitAsync();
-            var key = $"UI/Scene/{name}";
-            var sceneUI = await Managers.Resource.InstantiateAsyncFromContainer(key, Root.transform);
-            sceneUI.GetComponent<UI_Scene>().Clear();
+            else
+            {
+                if (Managers.Resource.InitAddressables == false)
+                {
+                    Managers.Localization.InitLanguage(Application.systemLanguage.ToString());
+                    await Addressables.InitializeAsync().Task;
+                    await Addressables.LoadAssetAsync<TMP_Settings>("Externals/TextMesh Pro/Resources/TMP Settings.asset").Task;
+                    Managers.Resource.InitAddressables = true;
+                }
+                
+                var key = $"UI/Scene/{name}";
+                var sceneUI = await Managers.Resource.InstantiateAsyncFromContainer(key, Root.transform);
+                sceneUI.GetComponent<UI_Scene>().Clear();
+            }
+            // await Managers.Data.InitAsync();
         }
         catch (Exception e)
         {
             Debug.LogError("Admin Log: Managers.Data.InitAsync failed with" + e);
         }
+    }
+
+    public void RegisterLoadingScene(UI_Loading loading)
+    {
+        _loadingUI = loading;
     }
     
     private Type GetType<T>()

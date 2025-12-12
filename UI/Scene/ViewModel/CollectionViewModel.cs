@@ -14,8 +14,8 @@ public class CollectionViewModel
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
     
-    public event Action<Faction> OnCardInitialized;
-    public event Action<Faction> OnCardSwitched;
+    public event Func<Faction, Task> OnCardInitialized;
+    public event Func<Faction, Task> OnCardSwitched;
     
     [Inject]
     public CollectionViewModel(IUserService userService, IWebService webService, ITokenService tokenService)

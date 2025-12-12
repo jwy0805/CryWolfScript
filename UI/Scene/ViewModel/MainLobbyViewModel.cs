@@ -104,25 +104,23 @@ public class MainLobbyViewModel : IDisposable
         await InitMailAlert();
     }
     
-    public async Task ClaimProductFromMailbox(bool claimAll, MailInfo mailInfo = null)
+    public async Task ClaimProductFromMailbox(MailInfo mailInfo = null)
     {
-        var packet = new ClaimProductPacketRequired
+        var packet = new ContinueClaimPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
-            CurrentState = RewardPopupType.None,
-            ClaimAll = claimAll,
             MailId = mailInfo?.MailId ?? 0
         };
         
         var res = await _webService.SendWebRequestAsync<ClaimProductPacketResponse>(
-            "Payment/ClaimProduct", UnityWebRequest.kHttpVerbPUT, packet);
+            "Payment/StartClaim", UnityWebRequest.kHttpVerbPUT, packet);
 
         OnResetUI?.Invoke();
         await HandleClaimPacketResponse(res);
         await InitMailAlert();
     }
     
-        public async Task CardSelected(CompositionInfo composition)
+    public async Task SelectProduct(CompositionInfo composition)
     {
         var packet = new SelectProductPacketRequired
         {
@@ -136,53 +134,81 @@ public class MainLobbyViewModel : IDisposable
         await HandleClaimPacketResponse(res);
     }
 
-    public async Task ClaimFixedAndDisplay()
+    public async Task OpenProduct(ProductInfo productInfo, bool openAll)
     {
-        var packet = new DisplayClaimedProductPacketRequired
+        var packet = new OpenProductPacketRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            ProductId = productInfo.ProductId,
+            OpenAll = openAll,
+        };
+        
+        var res = await _webService.SendWebRequestAsync<ClaimProductPacketResponse>(
+            "Payment/OpenProduct", UnityWebRequest.kHttpVerbPUT, packet);
+        
+        await HandleClaimPacketResponse(res);
+    }
+    
+    public async Task ContinueClaim()
+    {
+        var packet = new ContinueClaimPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
         };
         
         var res = await _webService.SendWebRequestAsync<ClaimProductPacketResponse>(
-            "Payment/DisplayClaimedProduct", UnityWebRequest.kHttpVerbPUT, packet);
+            "Payment/ContinueClaim", UnityWebRequest.kHttpVerbPUT, packet);
         
         await HandleClaimPacketResponse(res);
     }
 
     private async Task HandleClaimPacketResponse(ClaimProductPacketResponse res)
     {
-        if (res.ClaimOk)
-        {
-            Managers.UI.CloseAllPopupUI();
+        if (!res.ClaimOk) return;
 
-            switch (res.RewardPopupType)
+        Managers.UI.CloseAllPopupUI();
+
+        switch (res.RewardPopupType)
+        {
+            case RewardPopupType.None:
+                break;
+
+            case RewardPopupType.Select:
             {
-                case RewardPopupType.None:
-                    break;
-                case RewardPopupType.Item:
-                    if (res.CompositionInfos.Count != 0)
-                    {
-                        var itemPopup = await Managers.UI.ShowPopupUI<UI_RewardItemPopup>();
-                        itemPopup.CompositionInfos = res.CompositionInfos;
-                    }
-                    break;
-                case RewardPopupType.Select:
-                    if (res.ProductInfos.Count != 0)
-                    {
-                        var selectPopup = await Managers.UI.ShowPopupUI<UI_RewardSelectPopup>();
-                        selectPopup.ProductInfo = res.ProductInfos.First();
-                        selectPopup.CompositionInfos = res.CompositionInfos;
-                    }                    
-                    break;
-                case RewardPopupType.Open:
-                    if (res.RandomProductInfos.Count != 0)
-                    {
-                        var openPopup = await Managers.UI.ShowPopupUI<UI_RewardOpenPopup>();
-                        openPopup.OriginalProductInfos = res.RandomProductInfos;
-                        openPopup.CompositionInfos = res.CompositionInfos;
-                    }
-                    break;
+                if (res.ProductInfos == null || res.ProductInfos.Count == 0) return;
+                var selectPopup = await Managers.UI.ShowPopupUI<UI_RewardSelectPopup>();
+                selectPopup.ProductInfo = res.ProductInfos[0];
+                selectPopup.CompositionInfos = res.CompositionInfos ?? new List<CompositionInfo>();
+                break;
             }
+
+            case RewardPopupType.Open:
+            {
+                // "열기 선택 화면" (open one / open all)
+                var openPopup = await Managers.UI.ShowPopupUI<UI_RewardOpenPopup>();
+                openPopup.RandomProductInfos = res.RandomProductInfos; // 이 프로퍼티 추가/연결 필요
+                break;
+            }
+
+            case RewardPopupType.OpenResult:
+            {
+                // "오픈 결과 화면"
+                var openResultPopup = await Managers.UI.ShowPopupUI<UI_RewardOpenResultPopup>();
+                openResultPopup.OriginalProductInfos = res.RandomProductInfos;
+                openResultPopup.CompositionInfos = res.CompositionInfos;
+                break;
+            }
+
+            case RewardPopupType.Item:
+            {
+                var itemPopup = await Managers.UI.ShowPopupUI<UI_RewardItemPopup>();
+                itemPopup.CompositionInfos = res.CompositionInfos;
+                break;
+            }
+
+            case RewardPopupType.Subscription:
+                // (선택) 구독 하이라이트 팝업
+                break;
         }
     }
     
@@ -230,20 +256,20 @@ public class MainLobbyViewModel : IDisposable
         OnMailAlert?.Invoke();
     }
     
-    public void OnPlayButtonClicked(UI_MainLobby.GameModeEnums mode)
+    public void OnPlayButtonClicked(Define.GameMode mode)
     {
         switch (mode)
         {
-            case UI_MainLobby.GameModeEnums.FriendlyMatch:
+            case Define.GameMode.FriendlyMatch:
                 Managers.Scene.LoadScene(Define.Scene.FriendlyMatch);
                 Managers.Network.IsFriendlyMatchHost = true;
                 break;
             
-            case UI_MainLobby.GameModeEnums.RankGame:
+            case Define.GameMode.RankGame:
                 Managers.Scene.LoadScene(Define.Scene.MatchMaking);
                 break;
             
-            case UI_MainLobby.GameModeEnums.SinglePlay:
+            case Define.GameMode.SinglePlay:
                 Managers.Scene.LoadScene(Define.Scene.SinglePlay);
                 break;
         }

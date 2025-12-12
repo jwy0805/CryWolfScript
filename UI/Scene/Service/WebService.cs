@@ -17,7 +17,6 @@ public class WebService : IWebService
     public WebService(ITokenService tokenService)
     {
         _tokenService = tokenService;
-        Debug.Log($"WebService Created {_tokenService.GetHashCode()}");
     }
     
     public async Task<T> SendWebRequestAsync<T>(string url, string method, object obj)

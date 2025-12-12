@@ -15,6 +15,7 @@ public class AdsRemover : ProductSimple
             if (value)
             {
                 appliedLabel.gameObject.SetActive(true);
+                appliedLabel.GetComponent<RectTransform>().anchoredPosition = new Vector2(-145, -85);
                 groupPrice.gameObject.SetActive(false);
             }
             else

@@ -151,7 +151,7 @@ public class UI_ProductInfoPopup : UI_Popup
             GameObject product;
             switch (composition.ProductType)
             {
-                case ProductType.None:
+                case ProductType.Container:
                 case ProductType.Subscription:
                     productName = ((ProductId)composition.CompositionId).ToString();
                     path = $"UI/Shop/NormalizedProducts/{productName}";
@@ -210,6 +210,8 @@ public class UI_ProductInfoPopup : UI_Popup
     {
         try
         {
+            if (!data.pointerPress.gameObject.GetComponent<Button>().interactable) return;
+            data.pointerPress.gameObject.GetComponent<Button>().interactable = false;
             await _shopVm.BuyProduct();
         }
         catch (Exception e)

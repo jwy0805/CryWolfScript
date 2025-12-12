@@ -257,6 +257,8 @@ public class EventInfo
     public List<RewardInfo> Rewards { get; set; }
 }
 
+#region For Client
+
 public class ValidateNewAccountPacketRequired
 {
     public string UserAccount { get; set; }
@@ -409,7 +411,7 @@ public class UpdateNamePacketRequired
 public class UpdateNamePacketResponse
 {
     public bool ChangeNameOk { get; set; }
-    public int ErrorCode { get; set; }
+    public int ErrorCode { get; set; } 
 }
 
 public class CancelMatchPacketRequired
@@ -584,6 +586,7 @@ public class InitCharacterPacketResponse
     public string RefreshToken { get; set; }
 }
 
+
 public class InitMaterialPacketRequired
 {
     public string AccessToken { get; set; }
@@ -622,6 +625,7 @@ public class GetSelectedDeckResponse
 {
     public bool GetSelectedDeckOk { get; set; }
     public DeckInfo Deck { get; set; }
+    public BattleSettingInfo BattleSetting{ get; set; }
 }
 
 public class UpdateDeckPacketRequired
@@ -697,7 +701,7 @@ public class ReinforceResultPacketResponse
 {
     public bool ReinforceResultOk { get; set; }
     public bool IsSuccess { get; set; }
-    public List<OwnedUnitInfo> OwnedUnitList { get; set; }
+    public List<OwnedUnitInfo> UnitList { get; set; }
     public int Error { get; set; }
 }
 
@@ -768,6 +772,7 @@ public class LoadPendingFriendPacketResponse
     public List<FriendUserInfo> PendingFriendList { get; set; }
     public List<FriendUserInfo> SendingFriendList { get; set; }
 }
+
 public class AcceptFriendPacketRequired
 {
     public string AccessToken { get; set; }
@@ -801,6 +806,8 @@ public class ClaimMailPacketRequired
 public class ClaimMailPacketResponse
 {
     public bool ClaimMailOk { get; set; }
+    public bool IsProductMail { get; set; }
+    public int ProductId { get; set; }
 }
 
 public class LoadInvitableFriendPacketRequired
@@ -889,23 +896,23 @@ public class CashPaymentPacketResponse
     public CashPaymentErrorCode ErrorCode { get; set; }
 }
 
-public class ClaimProductPacketRequired
-{
-    public string AccessToken { get; set; }
-    public RewardPopupType CurrentState { get; set; }
-    public bool ClaimAll { get; set; }
-    public int MailId { get; set; }
-}
-
 public class SelectProductPacketRequired
 {
     public string AccessToken { get; set; }
     public CompositionInfo SelectedCompositionInfo { get; set; }
 }
 
-public class DisplayClaimedProductPacketRequired
+public class OpenProductPacketRequired
 {
     public string AccessToken { get; set; }
+    public int ProductId { get; set; }
+    public bool OpenAll { get; set; }
+}
+
+public class ContinueClaimPacketRequired
+{
+    public string AccessToken { get; set; }
+    public int MailId { get; set; } = 0;
 }
 
 public class ClaimProductPacketResponse
@@ -963,3 +970,5 @@ public class RefreshDailyProductPacketResponse
     public List<DailyProductInfo> DailyProducts { get; set; }
     public DateTime RefreshTime { get; set; }
 }
+
+#endregion

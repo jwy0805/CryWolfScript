@@ -104,7 +104,7 @@ public class UI_ProductReservedInfoPopup : UI_Popup
 
             var path = composition.ProductType switch
             {
-                ProductType.None => $"UI/Shop/NormalizedProducts/{((ProductId)composition.CompositionId).ToString()}",
+                ProductType.Container => $"UI/Shop/NormalizedProducts/{((ProductId)composition.CompositionId).ToString()}",
                 ProductType.Spinel => "UI/Shop/NormalizedProducts/SpinelChest",
                 ProductType.Gold => "UI/Shop/NormalizedProducts/GoldBasket",
                 _ => null

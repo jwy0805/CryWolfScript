@@ -145,11 +145,29 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
             
             _portraitRawImage.texture = _portraitRenderTexture;
             _portraitCamera.targetTexture = _portraitRenderTexture;
-            
-            var unitPos = _cc.transform.position;
-            var offset = _cc.transform.forward * _cc.Stat.SizeX;
-            _portraitCamera.transform.position = unitPos + offset + Vector3.up * _cc.Stat.SizeY;
-            _portraitCamera.transform.LookAt(unitPos + Vector3.up * _cc.Stat.SizeY);
+
+            if (_cc.TryGetComponent(out Collider col))
+            {
+                var bounds = col.bounds;
+
+                // 콜라이더 가장 위 점과 높이
+                float height = bounds.size.y;                          // 전체 높이
+                float width = Math.Max(bounds.size.x, bounds.size.z); // 가로, 세로 중 큰 값
+                Vector3 top = bounds.center + Vector3.up * bounds.extents.y;
+
+                // 높이의 20% 만큼 아래로 내린 점 A
+                float offsetH = height * 0.2f;
+                Vector3 target = top - Vector3.up * offsetH;
+
+                // 카메라 위치: A에서 내려간 거리만큼 정면 쪽으로 이동
+                Vector3 viewDir = _cc.transform.forward.normalized;   // 필요하면 여기 + 로 바꿔도 됨
+                Vector3 camPos = top + viewDir * width + Vector3.forward;
+
+                _portraitCamera.transform.position = camPos;
+                _portraitCamera.transform.LookAt(target);
+                
+                Debug.Log($"{height} {bounds.extents.y}");
+            }
         }
     }
     

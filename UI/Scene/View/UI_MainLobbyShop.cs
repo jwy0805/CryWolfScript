@@ -128,7 +128,7 @@ public partial class UI_MainLobby
             countText.GetComponent<TextMeshProUGUI>().text = productInfo.Compositions
                 .FirstOrDefault(c => c.ProductId == productInfo.ProductId)?
                 .Count.ToString();
-            priceText.GetComponent<TextMeshProUGUI>().text = "KRW " + productInfo.Price.ToString("N0");
+            priceText.GetComponent<TextMeshProUGUI>().text = _paymentService.GetLocalizedPrice(productInfo.ProductCode);
             item.BindEvent(OnProductClicked);
         }
     }
@@ -173,11 +173,25 @@ public partial class UI_MainLobby
 
             if (dailyProductInfo.Slot < 3)
             {
-                item.BindEvent(OnDailyProductClicked);
+                if (dailyProductInfo.Bought)
+                {
+                    await SoldOutDailyProduct(dailyProductInfo.Slot);
+                }
+                else
+                {
+                    item.BindEvent(OnDailyProductClicked);
+                }
             }
             else
             {
-                item.BindEvent(data => OnAdsProductClicked(data, dailyProductInfo));
+                if (dailyProductInfo.Bought)
+                {
+                    await SoldOutDailyProduct(dailyProductInfo.Slot);
+                }
+                else
+                {
+                    item.BindEvent(data => OnAdsProductClicked(data, dailyProductInfo));
+                }
             }
         }
     }
@@ -373,6 +387,12 @@ public partial class UI_MainLobby
         }
     }
 
+    private async Task OnDailyPaymentSuccessHandler(int slot)
+    {
+        Debug.Log("[UI_MainLobby] Daily product purchase successful.");
+        await Task.WhenAll(SoldOutDailyProduct(slot), InitUserInfo());
+    }
+    
     private async Task SoldOutDailyProduct(int slot)
     {
         const string soldOutFramePath = "UI/Shop/SoldOut";

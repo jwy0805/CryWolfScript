@@ -12,6 +12,8 @@ public class UI_WarningPopup : UI_Popup
 
     protected override void Init()
     {
+        base.Init();
+        
         var text = Util.FindChild<TextMeshProUGUI>(gameObject, "WarningText", true);
         text.text = Text;
         text.font = Font;

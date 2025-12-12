@@ -75,6 +75,6 @@ public class UI_RewardSubscriptionPopup : UI_Popup
 
     private void OnTapToContinueClicked(PointerEventData data)
     {
-        Managers.UI.ClosePopupUI();
+        Managers.UI.CloseAllPopupUI();
     }
 }

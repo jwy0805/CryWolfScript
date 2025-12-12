@@ -351,7 +351,7 @@ public class UI_RewardPopup : UI_Popup
             case Google.Protobuf.Protocol.ProductType.Spinel:
                 card = await Managers.Resource.GetItemFrameSpinel(reward.Count, parent);
                 break;
-            case Google.Protobuf.Protocol.ProductType.None:
+            case Google.Protobuf.Protocol.ProductType.Container:
             default:
                 var rewardName = ((ProductId)reward.ItemId).ToString();
                 var path = $"UI/Shop/NormalizedProducts/{rewardName}";
@@ -376,7 +376,7 @@ public class UI_RewardPopup : UI_Popup
                 break;
             case Google.Protobuf.Protocol.ProductType.Gold:
             case Google.Protobuf.Protocol.ProductType.Spinel:
-            case Google.Protobuf.Protocol.ProductType.None:
+            case Google.Protobuf.Protocol.ProductType.Container:
                 if (card != null)
                 {
                     if (card.transform.GetChild(0).TryGetComponent(out RectTransform childRect))
@@ -396,7 +396,7 @@ public class UI_RewardPopup : UI_Popup
                 break;
         }        
         
-        var countText = Util.FindChild(card, "CountText", true);
+        var countText = Util.FindChild(card, "TextNum", true);
         if (countText != null)
         {
             countText.GetComponent<TextMeshProUGUI>().text = reward.Count.ToString();

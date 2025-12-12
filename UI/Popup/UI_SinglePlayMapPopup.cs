@@ -133,7 +133,7 @@ public class UI_SinglePlayMapPopup : UI_Popup
             GameObject reward;
             switch (singleRewardInfo.ProductType)
             {
-                case ProductType.None:
+                case ProductType.Container:
                 case ProductType.Material:
                     var rewardName = ((ProductId)singleRewardInfo.ItemId).ToString();
                     path = $"UI/Shop/NormalizedProducts/{rewardName}";

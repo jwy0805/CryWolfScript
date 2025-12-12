@@ -505,6 +505,9 @@ public class UI_TutorialMainPopup : UI_Popup, ITutorialHelper
         _tutorialVm.OnChangeFaceCry -= ChangeFaceCry;
         _tutorialVm.OnChangeFaceHappy -= ChangeFaceHappy;
         _tutorialVm.OnChangeFaceNormal -= ChangeFaceNormal;
+        
+        _tutorialCamera1.targetTexture = null;
+        _tutorialCamera2.targetTexture = null;
 
         if (_wolfRenderTexture != null)
         {

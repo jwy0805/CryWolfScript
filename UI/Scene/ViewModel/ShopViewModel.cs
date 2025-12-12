@@ -35,12 +35,12 @@ public class ShopViewModel
     
     public List<CompositionInfo> ReservedProductsToBeClaimed { get; } = new()
     {
-        new CompositionInfo { CompositionId = 60, ProductType = ProductType.None },
-        new CompositionInfo { CompositionId = 61, ProductType = ProductType.None },
+        new CompositionInfo { CompositionId = 60, ProductType = ProductType.Container },
+        new CompositionInfo { CompositionId = 61, ProductType = ProductType.Container },
         new CompositionInfo { CompositionId = 4001, ProductType = ProductType.Gold },
         new CompositionInfo { CompositionId = 4002, ProductType = ProductType.Spinel },
-        new CompositionInfo { CompositionId = 21, ProductType = ProductType.None },
-        new CompositionInfo { CompositionId = 53, ProductType = ProductType.None },
+        new CompositionInfo { CompositionId = 21, ProductType = ProductType.Container },
+        new CompositionInfo { CompositionId = 53, ProductType = ProductType.Container },
     };
 
     public List<string> ReservedProductKeys { get; } = new()

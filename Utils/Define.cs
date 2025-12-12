@@ -59,5 +59,29 @@ public class Define
         MatchMaking,
         Socket
     }
+    
+    public enum GameMode
+    {
+        RankGame = 0,
+        FriendlyMatch = 1,
+        SinglePlay = 2,
+    }
+    
+    public enum SelectMode
+    {
+        Normal,
+        CraftingPanel,
+        Craft,
+        Reinforce,
+        Recycle
+    }
+    
+    public enum ArrangeMode
+    {
+        All,
+        Summary,
+        Class,
+        Count
+    }
 }
 

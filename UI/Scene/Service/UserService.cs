@@ -18,8 +18,6 @@ public class UserService : IUserService
     
     public UserInfo UserInfo { get; set; }
     public UserTutorialInfo TutorialInfo { get; set; }
-    public bool TutorialSheepEnded { get; set; }
-    public bool TutorialWolfEnded { get; set; }
     
     [Inject]
     public UserService(ITokenService tokenService, IWebService webService)

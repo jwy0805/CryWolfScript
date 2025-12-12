@@ -312,6 +312,7 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         var fencePos = fence != null ? fence.transform.position : _fencePos;
         if (fencePos.z - _fencePos.z > 1f)
         {
+            if (_spawnableBounds == null) return;
             var pos = _spawnableBounds.transform.position;
             _spawnableBounds.transform.position = new Vector3(pos.x, pos.y, pos.z + _fenceMoveValue);
             _fencePos = fencePos;

@@ -218,7 +218,7 @@ public class UI_MailBoxPopup : UI_Popup
     private async Task ClaimAllClicked()
     {
         GetButton((int)Buttons.ClaimAllButton).interactable = false;
-        await _lobbyVm.ClaimProductFromMailbox(true);
+        await _lobbyVm.ClaimProductFromMailbox();
         GetButton((int)Buttons.ClaimAllButton).interactable = true;
     }
     

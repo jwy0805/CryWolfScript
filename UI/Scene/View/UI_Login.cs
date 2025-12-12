@@ -93,27 +93,33 @@ public class UI_Login : UI_Scene
     }
     
     #endregion
-
+    
     private async Task OnTestLoginClicked(PointerEventData data)
     {
+#if UNITY_EDITOR
+        if (!data.pointerPress.gameObject.GetComponent<Button>().interactable) return;
         _loginViewModel.UserAccount = "admin";
         _loginViewModel.Password = "1234";
         
         await _loginViewModel.TryDirectLogin();
+#endif
     }
     
     private async Task OnSignUpClicked(PointerEventData data)
     {
+        if (!data.pointerPress.gameObject.GetComponent<Button>().interactable) return;
         await _loginViewModel.SignIn();
     }
 
     private void OnGuestLoginClicked(PointerEventData data)
     {
+        if (!data.pointerPress.gameObject.GetComponent<Button>().interactable) return;
         _loginViewModel.TryGuestLogin();
     }
     
     private void OnGoogleClicked(PointerEventData data)
     {
+        if (!data.pointerPress.gameObject.GetComponent<Button>().interactable) return;
         if (_loginViewModel.ProcessingLogin) return;
         _loginViewModel.ProcessingLogin = true;
         _loginViewModel.RequestGoogleLogin();
@@ -122,6 +128,7 @@ public class UI_Login : UI_Scene
 
     private async Task OnAppleClicked(PointerEventData data)
     {
+        if (!data.pointerPress.gameObject.GetComponent<Button>().interactable) return;
 #if UNITY_ANDROID
         var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         const string titleKey = "notify_sign_in_error_title";

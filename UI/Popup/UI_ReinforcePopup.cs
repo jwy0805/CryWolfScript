@@ -25,7 +25,7 @@ public class UI_ReinforcePopup : UI_Popup
     private float _radius;
     private float _elapsedTime;
     private readonly int _standbyTime = 2500;
-    private readonly float _emitterThreshold = 120f;
+    private readonly float _emitterThreshold = 150f;
     private bool _showEffect;
     private UnitId? _newUnitId;
     private bool _isSuccess;
@@ -57,7 +57,6 @@ public class UI_ReinforcePopup : UI_Popup
         {
             base.Init();
         
-            _craftingVm.BindReinforceResult -= BindResult;
             _craftingVm.BindReinforceResult += BindResult;
         
             BindObjects();
@@ -112,35 +111,32 @@ public class UI_ReinforcePopup : UI_Popup
 
     private async Task RotateCards()
     {
+        if (_radius <= 0f)
+            return;
+
+        // 이펙트 트리거
+        if (_radius < _emitterThreshold && _showEffect == false)
+        {
+            _showEffect = true;
+            await ShowEmitterEffect();
+        }
+
+        // 반지름 감소
+        float shrinkSpeed = 200f; // 원하는 값, 필드로 빼도 됨
+        _radius = Mathf.Max(0f, _radius - shrinkSpeed * Time.deltaTime);
+
+        // 회전 속도
+        float deltaAngle = 10f * Time.deltaTime;
+
         for (var i = 0; i < _cardRects.Count; i++)
         {
-            float angle = _angles[i] + 10 * Time.deltaTime;
-            Vector3 newPos = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle)) * _radius;
-            _elapsedTime += Time.deltaTime;
-            
-            // Divide the elapsed time by 10 to determine a time-based factor,
-            // which will be used for modifying the radius.
-            float time = _elapsedTime / 3;
+            _angles[i] += deltaAngle;
 
-            if (_radius < _emitterThreshold)
-            {
-                if (_showEffect == false)
-                {
-                    _showEffect = true;
-                    await ShowEmitterEffect();
-                }
-            }
-            
-            if (_radius - time < 0)
-            {
-                _radius = 0;
-            }
-            else
-            {
-                _radius -= time * 2;
-            }
-            
-            _angles[i] = angle;
+            Vector3 newPos = new Vector3(
+                Mathf.Cos(_angles[i]),
+                Mathf.Sin(_angles[i])
+            ) * _radius;
+
             _cardRects[i].localPosition = newPos;
         }
     }
@@ -192,7 +188,8 @@ public class UI_ReinforcePopup : UI_Popup
         }
         else
         {
-            var successEffectPath = (int)newUnitInfo.Class >= 5 ? "UIEffects/SuccessHigh" : "UIEffects/SuccessLow";
+            var successEffectPath = 
+                (int)newUnitInfo.Class >= (int)UnitClass.NobleKnight ? "UIEffects/SuccessHigh" : "UIEffects/SuccessLow";
             var successText = textButton.GetComponentInChildren<TextMeshProUGUI>();
             var successKey = "reinforce_complete_text_success";
             await Managers.Resource.Instantiate(successEffectPath, _cardPanelRect);

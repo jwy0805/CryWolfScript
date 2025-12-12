@@ -25,7 +25,7 @@ public class NetworkManager
     private bool _noInternetPopupShowing = false;
     public Action OnInternetRestored;
 
-    public Env Environment => Env.Local;
+    public Env Environment => Env.Prod;
     public readonly bool ActualUser = true;
     public readonly bool UseAddressables = true;
     public bool IsFriendlyMatchHost { get; set; }
@@ -88,6 +88,7 @@ public class NetworkManager
             return Managers.Network.Environment switch
             {
                 Env.Dev => $"https://{Address}",
+                Env.Prod => $"https://{Address}",
                 _ => $"https://localhost:{LocalPort}"
             };
         }
@@ -166,6 +167,11 @@ public class NetworkManager
             
             case Env.Stage:
             case Env.Prod:
+                host = "crywolf-tcpbalancer-5dadfff82e2ee15a.elb.ap-northeast-2.amazonaws.com";
+                port = 7780;
+                ipHost = await Dns.GetHostEntryAsync(host);
+                ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
+                break;
             default:
                 return;
         }

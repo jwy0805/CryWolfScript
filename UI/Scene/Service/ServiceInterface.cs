@@ -75,6 +75,7 @@ public interface IPaymentService
     Task BuyProductAsync(string productId);
     Task BuyDailyProductAsync(string productId);
     void RestorePurchases();
+    string GetLocalizedPrice(string productCode);
     event Func<Task> OnCashPaymentSuccess;
     event Func<Task> OnPaymentSuccess;
     event Func<int, Task> OnDailyPaymentSuccess;

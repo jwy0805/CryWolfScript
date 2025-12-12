@@ -19,12 +19,15 @@ public class UI_CardClickPopup : UI_Popup
 {
     private IUserService _userService;
     private CraftingViewModel _craftingVm;
+    private LobbyUtilWidget _utilWidget;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
+    private Dictionary<string, GameObject> _buttonDict = new();
     
     public Vector3 CardPosition { get; set; }
     public Vector2 Size { get; set; }
     public bool FromDeck { get; set; }
+    public Define.SelectMode SelectMode { get; set; } = Define.SelectMode.Normal;
 
     public Card SelectedCard { get; set; }
 
@@ -93,15 +96,24 @@ public class UI_CardClickPopup : UI_Popup
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
+
+        _buttonDict = new Dictionary<string, GameObject>
+        {
+            { "UnitInfoButton", GetButton((int)Buttons.UnitInfoButton).gameObject },
+            { "UnitSelectButton", GetButton((int)Buttons.UnitSelectButton).gameObject },
+            { "UnitCraftingButton", GetButton((int)Buttons.UnitCraftingButton).gameObject },
+        };
+        
+        _utilWidget = new LobbyUtilWidget();
         
         _ = Managers.Localization.UpdateTextAndFont(_textDict);
     }
 
     protected override void InitButtonEvents()
     {
-        GetButton((int)Buttons.UnitInfoButton).gameObject.BindEvent(OnInfoClicked);
-        GetButton((int)Buttons.UnitSelectButton).gameObject.BindEvent(OnSelectClicked);
-        GetButton((int)Buttons.UnitCraftingButton).gameObject.BindEvent(OnCraftingClicked);
+        GetButton((int)Buttons.UnitInfoButton).onClick.AddListener(() => _ = OnInfoClicked());
+        GetButton((int)Buttons.UnitSelectButton).onClick.AddListener(() => _ = OnSelectClicked());
+        GetButton((int)Buttons.UnitCraftingButton).onClick.AddListener(OnCraftingClicked);
         GetImage((int)Images.CardBackground).gameObject.BindEvent(ClosePopup);
     }
     
@@ -109,7 +121,7 @@ public class UI_CardClickPopup : UI_Popup
     {
         GetImage((int)Images.CardClickPanel).TryGetComponent(out RectTransform rt);
         rt.position = CardPosition;
-        
+
         var unitSelectText = GetText((int)Texts.CardClickUnitSelectText);
         var cardParentName = SelectedCard.transform.parent.name;
         if (cardParentName is "Deck" or "BattleSettingPanel")
@@ -183,7 +195,7 @@ public class UI_CardClickPopup : UI_Popup
         cardFrameRect.anchorMax = new Vector2(0.5f, 0.5f);
     }
     
-    private async Task OnInfoClicked(PointerEventData data)
+    private async Task OnInfoClicked()
     {
         if (SelectedCard.AssetType == Asset.Unit)
         {
@@ -197,7 +209,7 @@ public class UI_CardClickPopup : UI_Popup
         }
     }
 
-    private async Task OnSelectClicked(PointerEventData data)
+    private async Task OnSelectClicked()
     {
         var deck = Util.Faction == Faction.Sheep 
             ? User.Instance.DeckSheep.UnitsOnDeck 
@@ -240,7 +252,7 @@ public class UI_CardClickPopup : UI_Popup
         }
     }
 
-    private void OnCraftingClicked(PointerEventData data)
+    private void OnCraftingClicked()
     {
         _craftingVm.SetCard(SelectedCard);
     }

@@ -30,8 +30,9 @@ public enum RewardPopupType
     None = 0, // from result popup, to main lobby
     Item = 1, // all item popup
     Select = 2, // select popup
-    Open = 3, // random open popup 
-    Subscription = 4, // subscription reward popup
+    Open = 3,
+    OpenResult = 4,
+    Subscription = 5, // subscription reward popup
 }
 
 public enum VirtualPaymentCode

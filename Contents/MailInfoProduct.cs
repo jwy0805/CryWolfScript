@@ -80,7 +80,7 @@ public class MailInfoProduct : UI_Base
     private async Task OnClaimClicked()
     {
         GetButton((int)Buttons.ClaimButton).interactable = false;
-        await _lobbyVm.ClaimProductFromMailbox(false, MailInfo);
+        await _lobbyVm.ClaimProductFromMailbox(MailInfo);
         GetButton((int)Buttons.ClaimButton).interactable = true;
     }
 

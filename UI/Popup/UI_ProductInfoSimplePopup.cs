@@ -124,6 +124,8 @@ public class UI_ProductInfoSimplePopup : UI_Popup
     {
         try
         {
+            if (!data.pointerPress.gameObject.GetComponent<Button>().interactable) return;
+            data.pointerPress.gameObject.GetComponent<Button>().interactable = false;
             if (IsDailyProduct)
             {
                 _shopVm.BuyDailyProduct();

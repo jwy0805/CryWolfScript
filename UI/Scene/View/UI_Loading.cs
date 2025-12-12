@@ -23,6 +23,11 @@ public class UI_Loading : UI_Scene
         LoadingResourcesText,
         ResourcesCountText
     }
+
+    private void Awake()
+    {
+        Managers.UI.RegisterLoadingScene(this);
+    }
     
     protected override async void Init()
     {

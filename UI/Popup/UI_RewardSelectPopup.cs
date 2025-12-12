@@ -21,6 +21,7 @@ public class UI_RewardSelectPopup : UI_Popup
 
     private GameObject _rewardPanel;
     private GameObject _selectEffect;
+    private bool _isSelected = false;
     
     public ProductInfo ProductInfo { get; set; }
     public List<CompositionInfo> CompositionInfos { get; set; } = new();
@@ -35,7 +36,6 @@ public class UI_RewardSelectPopup : UI_Popup
     {
         RewardSelectText,
         OpenedText,
-        TapToContinueText,
     }
     
     [Inject]
@@ -128,21 +128,29 @@ public class UI_RewardSelectPopup : UI_Popup
 
     private async Task OnCardSelected(PointerEventData data)
     {
-        var go = data.pointerPress;
-        _selectEffect.transform.SetParent(data.pointerPress.transform, false);
-        _selectEffect.GetComponent<RectTransform>().anchorMin = new Vector2(0.5f, 0.5f);
-        _selectEffect.GetComponent<RectTransform>().anchorMax = new Vector2(0.5f, 0.5f);
+        if (_isSelected) return;
+        _isSelected = true;
+        
+        var card = data.pointerPress.GetComponentInParent<Card>();
+        if (card == null) return;
+
+        var rt = _selectEffect.GetComponent<RectTransform>();
+
+        rt.SetParent(card.transform, false);
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = Vector2.zero;
         _selectEffect.SetActive(true);
         _selectEffect.GetComponent<ParticleImage>().Play();
         _rewardPanel.GetComponent<CanvasGroup>().blocksRaycasts = false;
         
         await Task.Delay(500);
         
-        var compositionId = go.GetComponent<Card>().Id;
+        var compositionId = card.Id;
         var compositionInfo = CompositionInfos.FirstOrDefault(ci => ci.CompositionId == compositionId);
         if (compositionInfo != null)
         {
-            await _lobbyVm.CardSelected(compositionInfo);
+            await _lobbyVm.SelectProduct(compositionInfo);
         }
     }
 }

@@ -42,6 +42,8 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         // new ProductDefinition("com.hamon.crywolf.consumable.jeweled_chest", UnityEngine.Purchasing.ProductType.Consumable),
     };
     
+    private Dictionary<string, Product> _storeProducts = new();
+    
     public event Func<Task> OnCashPaymentSuccess;
     public event Func<Task> OnPaymentSuccess;
     public event Func<int, Task> OnDailyPaymentSuccess;
@@ -96,6 +98,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
             if (task.PaymentCode == VirtualPaymentCode.Product)
             {
                 var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+                popup.SetYesCallback(Managers.UI.CloseAllPopupUI);
                 var titleKey = "notify_payment_success_title";
                 var messageKey = "notify_payment_success_message";
                 await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
@@ -111,8 +114,10 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         else
         {
             var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+            popup.SetYesCallback(Managers.UI.CloseAllPopupUI);
             var titleKey = "notify_payment_failed_title";
             var messageKey = "notify_payment_failed_message";
+            
             await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
         }
     }
@@ -129,6 +134,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
             "Payment/PurchaseDaily", UnityWebRequest.kHttpVerbPUT, packet);
 
         var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        popup.SetYesCallback(Managers.UI.CloseAllPopupUI);
         var titleKey = "notify_payment_success_title";
         var messageKey = "notify_payment_success_message";
         await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
@@ -144,6 +150,22 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         Debug.Log("IAP Initialized");
         _storeController = controller;
         _extensionProvider = extensions;
+        
+        foreach (var product in controller.products.all)
+        {
+            _storeProducts[product.definition.id] = product;
+            Debug.Log($"IAP Product Available: {product.definition.id}, Type: {product.definition.type}, Price: {product.metadata.localizedPriceString}");
+        }
+    }
+    
+    public string GetLocalizedPrice(string productCode)
+    {
+        if (_storeProducts.TryGetValue(productCode, out var product))
+        {
+            return product.metadata.localizedPriceString;
+        }
+
+        return string.Empty;
     }
 
     public void OnInitializeFailed(InitializationFailureReason error)

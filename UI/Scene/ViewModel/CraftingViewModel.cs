@@ -40,13 +40,13 @@ public class CraftingViewModel
 
     // Crafting Panel <- crafting panel itself in the scene
     // Craft Panel <- craft panel when a crafting button is clicked
-    public event Action<Card> SetCardOnCraftingPanel;
+    public event Func<Card, Task> SetCardOnCraftingPanel;
     public event Func<List<OwnedMaterialInfo>, List<OwnedMaterialInfo>, Task> SetMaterialsOnCraftPanel;
     public event Action InitCraftingPanel;
-    public event Action<Faction> SetCollectionUI;
+    public event Func<Faction, Task> SetCollectionUI;
     public event Action<UnitId, bool> BindReinforceResult;
 
-    public void InitSetting()
+    public void InitReinforceSetting()
     {
         CraftingMaterials.Clear();
         TotalCraftingMaterials.Clear();
@@ -107,10 +107,9 @@ public class CraftingViewModel
             UnitList = ReinforceMaterialUnits
         };
         
-        var reinforceTask = _webService.SendWebRequestAsync<ReinforceResultPacketResponse>(
+        var res = await _webService.SendWebRequestAsync<ReinforceResultPacketResponse>(
             "Crafting/ReinforceCard", "PUT", reinforcePacket);
-        var res = await reinforceTask;
-        
+
         if (res.ReinforceResultOk == false)
         {
             var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
@@ -360,7 +359,10 @@ public class CraftingViewModel
     
     public void AddNewUnitMaterial(UnitInfo unitInfo)
     {
-        ReinforceMaterialUnits.Add(unitInfo);
+        if (ReinforceMaterialUnits.Count < 8)
+        {
+            ReinforceMaterialUnits.Add(unitInfo);
+        }
     }
     
     public void RemoveNewUnitMaterial(UnitInfo unitInfo)
