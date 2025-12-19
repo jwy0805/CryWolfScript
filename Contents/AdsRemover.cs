@@ -11,7 +11,8 @@ public class AdsRemover : ProductSimple
         {
             var appliedLabel = Util.FindChild(gameObject, "AppliedFlag", true, true);
             var groupPrice = Util.FindChild(gameObject, "GroupPrice", true);
-            
+
+            if (appliedLabel == null || groupPrice == null) return;
             if (value)
             {
                 appliedLabel.gameObject.SetActive(true);
@@ -23,8 +24,6 @@ public class AdsRemover : ProductSimple
                 appliedLabel.gameObject.SetActive(false);
                 groupPrice.gameObject.SetActive(true);
             }
-            
-            Debug.Log($"Ads Remover Applied set to {value}");
         }
     }
     

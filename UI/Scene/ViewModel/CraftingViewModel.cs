@@ -24,6 +24,7 @@ public class CraftingViewModel
     public List<OwnedMaterialInfo> TotalCraftingMaterials { get; set; } = new();
     public List<UnitInfo> ReinforceMaterialUnits { get; set; } = new();
     public int ReinforcePointNeeded { get; set; }
+    public (UnitId newUnitId, bool isSuccess) IsReinforceSuccess { get; set; }
     public Card CardToBeCrafted { get; set; }
     public int CraftingCount { get; set; }
 
@@ -44,7 +45,6 @@ public class CraftingViewModel
     public event Func<List<OwnedMaterialInfo>, List<OwnedMaterialInfo>, Task> SetMaterialsOnCraftPanel;
     public event Action InitCraftingPanel;
     public event Func<Faction, Task> SetCollectionUI;
-    public event Action<UnitId, bool> BindReinforceResult;
 
     public void InitReinforceSetting()
     {
@@ -116,7 +116,7 @@ public class CraftingViewModel
             await Managers.Localization.UpdateWarningPopupText(popup, "warning_server_error");
         }
         
-        BindReinforceResult?.Invoke((UnitId)unitInfo.Id + 1, res.IsSuccess);
+        IsReinforceSuccess = ((UnitId)(unitInfo.Id + 1), res.IsSuccess);
         
         // Update the user's owned list on the client side
         UpdateOwnedMaterials(CraftingMaterials);

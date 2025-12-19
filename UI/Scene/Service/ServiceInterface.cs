@@ -7,13 +7,9 @@ using JetBrains.Annotations;
 public interface IUserService
 {
     void LoadOwnedUnit(List<OwnedUnitInfo> units);
-    void LoadNotOwnedUnit(List<UnitInfo> units);
     void LoadOwnedSheep(List<OwnedSheepInfo> sheepInfo);
-    void LoadNotOwnedSheep(List<SheepInfo> sheepInfo);
     void LoadOwnedEnchant(List<OwnedEnchantInfo> enchantInfo);
-    void LoadNotOwnedEnchant(List<EnchantInfo> enchantInfo);
     void LoadOwnedCharacter(List<OwnedCharacterInfo> characterInfo);
-    void LoadNotOwnedCharacter(List<CharacterInfo> characterInfo);
     void LoadOwnedMaterial(List<OwnedMaterialInfo> materialInfo);
     void LoadBattleSetting(BattleSettingInfo battleSettingInfo);
     void LoadDeck(DeckInfo deckInfo);
@@ -22,7 +18,6 @@ public interface IUserService
     void BindDeck();
     Task LoadTestUserInfo(int userId);
     event Action<Faction> InitDeckButton;
-    UserInfo UserInfo { get; set; }
     UserTutorialInfo TutorialInfo { get; set; }
 }
 
@@ -76,6 +71,7 @@ public interface IPaymentService
     Task BuyDailyProductAsync(string productId);
     void RestorePurchases();
     string GetLocalizedPrice(string productCode);
+    event Func<Task> OnIapReady;
     event Func<Task> OnCashPaymentSuccess;
     event Func<Task> OnPaymentSuccess;
     event Func<int, Task> OnDailyPaymentSuccess;

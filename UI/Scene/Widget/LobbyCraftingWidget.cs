@@ -129,7 +129,7 @@ public class LobbyCraftingWidget
         _setSelectMode?.Invoke(Define.SelectMode.CraftingPanel);    
         _craftingPanel.gameObject.SetActive(true);
         _utilWidget.SetActivePanels(_craftingUiDict, new[] { "CraftingSelectPanel" });
-
+        
         var card = _getSelectedCard?.Invoke();
         if (card == null)
         {
@@ -140,14 +140,26 @@ public class LobbyCraftingWidget
         }
         
         _selectedCardForCrafting = card;
+        
         var type = card.AssetType;
         
         switch (type)
         {
             case Asset.Unit:
+                var notOwnedUnits = User.Instance.NotOwnedUnitList.Select(info => info.Id).ToList();
                 var unitLevel = _collectionVm.GetLevelFromUiObject((UnitId)card.Id);
-                _reinforcingButton.interactable = unitLevel != 3;
                 _craftingButton.interactable = unitLevel == 1;
+
+                if (notOwnedUnits.Contains(card.Id))
+                {
+                    _reinforcingButton.interactable = false;
+                    
+                }
+                else
+                {
+                    _reinforcingButton.interactable = unitLevel != 3;
+                }
+
                 break;
         }
     }
@@ -508,19 +520,6 @@ public class LobbyCraftingWidget
         InitCraftingPanel();
     }
     
-    public async Task OnCraftClicked()
-    {
-        if (_getSelectedCard?.Invoke() == null || _selectedCardForCrafting == null)
-        {
-            var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            await Managers.Localization.UpdateWarningPopupText(popup, "warning_select_card");
-            return;
-        }
-        
-        _craftingVm.CardToBeCrafted = _craftCardPanel.GetComponentInChildren<Card>();
-        _ = _craftingVm.CraftCard();
-    }
-    
     public void OnCraftUpperArrowClicked(PointerEventData data)
     {
         if (_craftingVm.CraftingCount >= 100) return;
@@ -549,6 +548,19 @@ public class LobbyCraftingWidget
         {
             Debug.LogWarning(e);
         }
+    }
+    
+    public async Task OnCraftClicked()
+    {
+        if (_getSelectedCard?.Invoke() == null || _selectedCardForCrafting == null)
+        {
+            var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+            await Managers.Localization.UpdateWarningPopupText(popup, "warning_select_card");
+            return;
+        }
+        
+        _craftingVm.CardToBeCrafted = _craftCardPanel.GetComponentInChildren<Card>();
+        await _craftingVm.CraftCard();
     }
     
     public async Task OnReinforceClicked()

@@ -33,14 +33,4 @@ public class FenceController : CreatureController
         StartCoroutine(Despawn(gameObject, time));
         _ = Managers.Sound.PlaySfx3D("InGame/fence_down", transform.position);
     }
-
-    public void Tutorial()
-    {
-        if (!Managers.Game.IsTutorial || Util.Faction != Faction.Sheep) return;
-        Debug.Log($"{transform.position}");
-        if (transform.position.z > 10)
-        {
-            Managers.Game.HelpSheepTutorial();
-        }
-    }
 }

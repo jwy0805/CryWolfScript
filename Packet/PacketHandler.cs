@@ -157,7 +157,6 @@ public class PacketHandler
         if (go.TryGetComponent(out BaseController bc) == false) return;
 
         bc.transform.position = new Vector3(movePacket.Dest.X, movePacket.Dest.Y, movePacket.Dest.Z);
-        bc.HelpSheepTutorial();
     }
     
     public static void S_StateHandler(PacketSession session, IMessage packet)

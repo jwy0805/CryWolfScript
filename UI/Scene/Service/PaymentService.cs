@@ -21,29 +21,21 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
     private IStoreController _storeController;
     private IExtensionProvider _extensionProvider;
 
+    private const string PendingKey = "IAP_Pending_Receipt";
+    
     private readonly HashSet<ProductDefinition> _products = new()
     {
-        // new ProductDefinition("com.hamon.crywolf.consumable.over_power", UnityEngine.Purchasing.ProductType.Consumable),
-        // new ProductDefinition("com.hamon.crywolf.consumable.beginning_of_the_legend1", UnityEngine.Purchasing.ProductType.Consumable),
-        // new ProductDefinition("com.hamon.crywolf.consumable.beginning_of_the_legend2", UnityEngine.Purchasing.ProductType.Consumable),
-        // new ProductDefinition("com.hamon.crywolf.consumable.beginners_spirit", UnityEngine.Purchasing.ProductType.Consumable),
-        // new ProductDefinition("com.hamon.crywolf.consumable.beginners_luck", UnityEngine.Purchasing.ProductType.Consumable),
-        // new ProductDefinition("com.hamon.crywolf.consumable.beginners_resolve", UnityEngine.Purchasing.ProductType.Consumable),
-        // new ProductDefinition("com.hamon.crywolf.consumable.beginners_ambition", UnityEngine.Purchasing.ProductType.Consumable),
-        // new ProductDefinition("com.hamon.crywolf.consumable.rainbow_egg_package", UnityEngine.Purchasing.ProductType.Consumable),
         new ProductDefinition("com.hamon.crywolf.consumable.spinel_pile", UnityEngine.Purchasing.ProductType.Consumable),
         new ProductDefinition("com.hamon.crywolf.consumable.spinel_fistful", UnityEngine.Purchasing.ProductType.Consumable),
         new ProductDefinition("com.hamon.crywolf.consumable.spinel_pouch", UnityEngine.Purchasing.ProductType.Consumable),
         new ProductDefinition("com.hamon.crywolf.consumable.spinel_basket", UnityEngine.Purchasing.ProductType.Consumable),
         new ProductDefinition("com.hamon.crywolf.consumable.spinel_chest", UnityEngine.Purchasing.ProductType.Consumable),
         new ProductDefinition("com.hamon.crywolf.consumable.spinel_vault", UnityEngine.Purchasing.ProductType.Consumable),
-        // new ProductDefinition("com.hamon.crywolf.consumable.wooden_chest", UnityEngine.Purchasing.ProductType.Consumable),
-        // new ProductDefinition("com.hamon.crywolf.consumable.golden_chest", UnityEngine.Purchasing.ProductType.Consumable),
-        // new ProductDefinition("com.hamon.crywolf.consumable.jeweled_chest", UnityEngine.Purchasing.ProductType.Consumable),
     };
     
     private Dictionary<string, Product> _storeProducts = new();
-    
+
+    public event Func<Task> OnIapReady;
     public event Func<Task> OnCashPaymentSuccess;
     public event Func<Task> OnPaymentSuccess;
     public event Func<int, Task> OnDailyPaymentSuccess;
@@ -59,12 +51,12 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
     {
         try
         {
-            await UnityServices.InitializeAsync();
             InitPurchasing();
+            await InitUgs();
         }
         catch (Exception e)
         {
-            Debug.LogError($"PaymentService Init Error: {e}");
+            Debug.LogWarning(e);
         }
     }
     
@@ -77,6 +69,11 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         UnityPurchasing.Initialize(this, builder);
     }
 
+    private async Task InitUgs()
+    {
+        await UnityServices.InitializeAsync();
+    }
+    
     public void BuyCashProduct(string productCode)
     {
         _storeController?.InitiatePurchase(productCode);
@@ -102,14 +99,13 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
                 var titleKey = "notify_payment_success_title";
                 var messageKey = "notify_payment_success_message";
                 await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
+                await Util.InvokeAll(OnPaymentSuccess);
             }
             else if (task.PaymentCode == VirtualPaymentCode.Subscription)
             {
                 var popup = await Managers.UI.ShowPopupUI<UI_RewardSubscriptionPopup>();
                 popup.ProductCode = productCode;
             }
-            
-            OnPaymentSuccess?.Invoke();
         }
         else
         {
@@ -135,13 +131,19 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
 
         var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
         popup.SetYesCallback(Managers.UI.CloseAllPopupUI);
-        var titleKey = "notify_payment_success_title";
-        var messageKey = "notify_payment_success_message";
-        await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
-
+        
         if (task.PaymentOk)
         {
-            OnDailyPaymentSuccess?.Invoke(task.Slot);
+            var titleKey = "notify_payment_success_title";
+            var messageKey = "notify_payment_success_message";
+            await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
+            await Util.InvokeAll(OnDailyPaymentSuccess, task.Slot);
+        }
+        else
+        {
+            var titleKey = "notify_payment_failed_title";
+            var messageKey = "notify_payment_failed_message";
+            await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
         }
     }
 
@@ -150,24 +152,29 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         Debug.Log("IAP Initialized");
         _storeController = controller;
         _extensionProvider = extensions;
-        
+
+        _storeProducts.Clear();
         foreach (var product in controller.products.all)
         {
             _storeProducts[product.definition.id] = product;
             Debug.Log($"IAP Product Available: {product.definition.id}, Type: {product.definition.type}, Price: {product.metadata.localizedPriceString}");
         }
+
+        _ = Util.InvokeAll(OnIapReady);
+        _ = RetryPendingIfAnyAsync();
     }
     
     public string GetLocalizedPrice(string productCode)
     {
-        if (_storeProducts.TryGetValue(productCode, out var product))
+        if (_storeProducts.TryGetValue(productCode, out var product) &&
+            product != null && product.availableToPurchase)
         {
-            return product.metadata.localizedPriceString;
+            var s = product.metadata?.localizedPriceString;
+            if (!string.IsNullOrEmpty(s)) return s;
         }
-
-        return string.Empty;
+        return "—";
     }
-
+    
     public void OnInitializeFailed(InitializationFailureReason error)
     {
         Debug.LogError($"IAP Initialization Failed: {error}");
@@ -191,65 +198,90 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         Debug.Log($"[IAP] VerifyAndConfirmAsync start. Product={product.definition.id}, TxId={product.transactionID}");
 
         CashPaymentPacketResponse response = null;
-        var networkOk = false;
+        var reachedServer = false;
 
         try
         {
             response = await SendReceiptToServer(product.receipt, product);
-            networkOk = true;
+            reachedServer = true;
         }
         catch (Exception e)
         {
             Debug.LogError($"VerifyAndConfirmAsync error: {e}");
-            networkOk = false;
+            reachedServer = false;
         }
 
         var shouldConfirm = false;
-        var purchaseSuccess = false;
+        var grantReward = false;
         
-        if (!networkOk)
+        if (!reachedServer)
         {
-            // 서버/네트워크에 못 닿음 -> pending 유지
+            // 서버/네트워크에 못 닿음 -> 확인 지연 -> pending 유지
+            await ShowPurchaseVerifyingPopup();
+            EnqueuePendingRetry(product);
+            return;
+        }
+
+        if (response.PaymentOk 
+            && response.ErrorCode is CashPaymentErrorCode.None or CashPaymentErrorCode.AlreadyProcessed)
+        {
+            // 정상 처리 or 이미 처리된 영수증
+            shouldConfirm = true;
+            grantReward = true;
+        }
+        else if (response.ErrorCode is CashPaymentErrorCode.InvalidReceipt or CashPaymentErrorCode.Unauthorized)
+        {
+            // 권한 문제 -> 재시도해도 의미x -> Confirm 하고 종료
+            shouldConfirm = true;
+            grantReward = false;
             await ShowPurchaseFailedPopup();
         }
         else
         {
-            if (response.PaymentOk 
-                && response.ErrorCode is CashPaymentErrorCode.None or CashPaymentErrorCode.AlreadyProcessed)
-            {
-                // 정상 처리 or 이미 처리된 영수증
-                shouldConfirm = true;
-                purchaseSuccess = true;
-            }
-            else if (response.ErrorCode is CashPaymentErrorCode.InvalidReceipt or CashPaymentErrorCode.Unauthorized)
-            {
-                // 권한 문제 -> 재시도해도 의미x -> Confirm 하고 종료
-                shouldConfirm = true;
-                purchaseSuccess = false;
-            }
-            else
-            {
-                // 그 외 서버 내부 오류 등 -> pending 유지
-                shouldConfirm = false;
-                purchaseSuccess = false;
-            }
-
-            if (purchaseSuccess)
-            {
-                await ShowPurchaseSuccessPopup();
-                Debug.Log("[IAP] Invoking OnCashPaymentSuccess handlers.");
-                OnCashPaymentSuccess?.Invoke();
-            }
-            else
-            {
-                await ShowPurchaseFailedPopup(response.ErrorCode);
-            }
+            // 그 외 서버 내부 오류 등 -> pending 유지
+            shouldConfirm = false;
+            grantReward = false;
+            await ShowPurchaseVerifyingPopup();
+            EnqueuePendingRetry(product);
         }
 
-        if (shouldConfirm)
+        if (grantReward)
+        {
+            await ShowPurchaseSuccessPopup();
+            await Util.InvokeAll(OnCashPaymentSuccess);
+        }
+        else
+        {
+            await ShowPurchaseFailedPopup(response.ErrorCode);
+        }
+
+        if (shouldConfirm && _storeController != null)
         {
             _storeController.ConfirmPendingPurchase(product);
         }
+    }
+
+    private void EnqueuePendingRetry(Product product)
+    {
+        var item = $"{product.transactionID}|||{product.definition.id}|||{product.receipt}";
+        PlayerPrefs.SetString(PendingKey, item);
+        PlayerPrefs.Save();
+    }
+
+    public async Task RetryPendingIfAnyAsync()
+    {
+        var s = PlayerPrefs.GetString(PendingKey, "");
+        if (string.IsNullOrEmpty(s)) return;
+        
+        var parts = s.Split(new[] {"|||"},
+            StringSplitOptions.None);
+        if (parts.Length < 3) return;
+
+        var txId = parts[0];
+        var productId = parts[1];
+        var receipt = parts[2];
+        
+        
     }
     
     private Task<CashPaymentPacketResponse> SendReceiptToServer(string receipt, Product purchaseProduct)
@@ -312,6 +344,15 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
             CashPaymentErrorCode.InternalError => "notify_payment_failed_internal_error",
             _ => "notify_payment_failed_message"
         };
+        
+        await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
+    }
+
+    private async Task ShowPurchaseVerifyingPopup()
+    {
+        var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        const string titleKey = "notify_payment_verifying_title";
+        const string messageKey = "notify_payment_verifying_message";
         
         await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
     }

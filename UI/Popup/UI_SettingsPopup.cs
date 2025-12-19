@@ -112,28 +112,32 @@ public class UI_SettingsPopup : UI_Popup
     {
         _musicSlider.onValueChanged.AddListener(val =>
         {
-            PlayerPrefs.SetFloat("musicVolume", val);
+            Managers.Sound.SetMusicVolume(val);
         });
         
         _sfxSlider.onValueChanged.AddListener(val =>
         {
-            PlayerPrefs.SetFloat("sfxVolume", val);
+            Managers.Sound.SetSfxVolume(val);
         });
     }
     
     protected override void InitUI()
     {
-        _musicSlider.value = PlayerPrefs.GetFloat("musicVolume", 0.5f);
-        _sfxSlider.value = PlayerPrefs.GetFloat("sfxVolume", 0.5f);
-        var notificationFill = GetImage((int)Images.NotificationFill);
-        notificationFill.fillAmount = PlayerPrefs.GetInt("notification", 1) == 1 ? 1 : 0;
+        _musicSlider.value = PlayerPrefs.GetFloat("MusicVolume", 0.5f);
+        _sfxSlider.value = PlayerPrefs.GetFloat("SfxVolume", 0.5f);
         
-        _ = UpdateFlag(Managers.Localization.Language2Letter);
+        Managers.Sound.SetMusicVolume(_musicSlider.value, save:false);
+        Managers.Sound.SetSfxVolume(_sfxSlider.value, save:false);
+        
+        var notificationFill = GetImage((int)Images.NotificationFill);
+        notificationFill.fillAmount = PlayerPrefs.GetInt("Notification", 1) == 1 ? 1 : 0;
+        
+        _ = UpdateFlag();
     }
     
-    public async Task UpdateFlag(string language2Letter)
+    public async Task UpdateFlag()
     {
-        var flagPath = $"Sprites/Icons/IconFlag/Small/icon_flag_{language2Letter}";
+        var flagPath = $"Sprites/Icons/IconFlag/Small/icon_flag_{Managers.Localization.Language2Letter}";
         var flagImage = GetImage((int)Images.FlagImage);
         flagImage.sprite = await Managers.Resource.LoadAsync<Sprite>(flagPath);
     }
@@ -157,19 +161,19 @@ public class UI_SettingsPopup : UI_Popup
         var notificationText = GetText((int)Texts.NotificationText);
         var handleRect = notificationHandle.GetComponent<RectTransform>();
         
-        if (PlayerPrefs.GetInt("notification", 1) == 0)
+        if (PlayerPrefs.GetInt("Notification", 1) == 0)
         {
             handleRect.anchoredPosition = new Vector2(57, 0);
             notificationFill.gameObject.SetActive(true);
             notificationText.text = "ON";
-            PlayerPrefs.SetInt("notification", 1);
+            PlayerPrefs.SetInt("Notification", 1);
         }
         else
         {
             handleRect.anchoredPosition = new Vector2(-57, 0);
             notificationFill.gameObject.SetActive(false);
             notificationText.text = "OFF";
-            PlayerPrefs.SetInt("notification", 0);
+            PlayerPrefs.SetInt("Notification", 0);
         }
     }
     
@@ -257,13 +261,14 @@ public class UI_SettingsPopup : UI_Popup
         });
     }
     
-    public async Task ChangeLanguage(string language2Letter)
+    public async Task ChangeLanguage()
     {
-        await Managers.Localization.UpdateChangedTextAndFont(_textDict, language2Letter);
+        await Managers.Localization.UpdateChangedTextAndFont(_textDict, Managers.Localization.Language2Letter);
     }
     
     private void OnExitClicked(PointerEventData data)
     {
+        PlayerPrefs.Save();
         Managers.UI.ClosePopupUI();
     }
 }

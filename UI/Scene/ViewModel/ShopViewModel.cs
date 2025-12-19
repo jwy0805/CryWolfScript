@@ -26,8 +26,8 @@ public class ShopViewModel
     public List<ProductInfo> GoldItems;
     public List<ProductInfo> SpinelItems;
     public List<DailyProductInfo> DailyProducts;
-    
-    public event Func<Task> OnResetUI;
+
+    public event Func<Task> OnResetDailyProductUI;
     
     public ProductInfo AdsRemover { get; set; }
     public ProductInfo SelectedProduct { get; set; }
@@ -181,11 +181,16 @@ public class ShopViewModel
             Slot = dailyProduct.Slot,
         };
         
-        var task = _webService.SendWebRequestAsync<RevealDailyProductPacketResponse>(
+        var result = await _webService.SendWebRequestAsync<RevealDailyProductPacketResponse>(
             "Ads/RevealDailyProduct", UnityWebRequest.kHttpVerbPUT, packet);
-        await task;
 
-        return task.Result.RevealDailyProductOk;
+        if (result.RevealDailyProductOk)
+        {
+            DailyProducts = result.DailyProductInfos.OrderBy(dpi => dpi.Slot).ToList();
+            await Util.InvokeAll(OnResetDailyProductUI);
+        }
+        
+        return result.RevealDailyProductOk;
     }
     
     public async Task<bool> RefreshDailyProducts()

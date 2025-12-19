@@ -88,9 +88,7 @@ public class UI_ProductInfoSimplePopup : UI_Popup
 
     protected override async Task InitUIAsync()
     {
-        var iconPath = _productInfo.CurrencyType == CurrencyType.Spinel 
-            ? "Sprites/ShopIcons/icon_spinel"
-            : "Sprites/ShopIcons/icon_gold";
+        var iconPath = SetIconPath(_productInfo.CurrencyType, _productInfo.Category);
         var composition = _productInfo.Compositions.FirstOrDefault(c => c.ProductId == _productInfo.ProductId);
         var str = _productInfo.Category == ProductCategory.GoldPackage ? "" : "X";
         var frameRect = FrameObject.GetComponent<RectTransform>();
@@ -113,6 +111,21 @@ public class UI_ProductInfoSimplePopup : UI_Popup
         {
             GetText((int)Texts.TextNum).gameObject.SetActive(false);
         }
+    }
+
+    private string SetIconPath(CurrencyType currencyType, ProductCategory category)
+    {
+        const string spinelIconPath = "Sprites/ShopIcons/icon_spinel";
+        const string goldIconPath = "Sprites/ShopIcons/icon_gold";
+        const string cashIconPath = "Sprites/ShopIcons/icon_cash";
+
+        return category switch
+        {
+            ProductCategory.DailyDeal => goldIconPath,
+            ProductCategory.ReservedSale => spinelIconPath,
+            ProductCategory.SpinelPackage => cashIconPath,
+            _ => currencyType == CurrencyType.Spinel ? spinelIconPath : goldIconPath
+        };
     }
     
     private void GetProductInfo()

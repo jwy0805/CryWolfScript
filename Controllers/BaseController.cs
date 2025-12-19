@@ -176,19 +176,4 @@ public abstract class BaseController : MonoBehaviour
         var animSpeed = param * AttackAnimValue;
         Anim.SetFloat(_animAttackSpeed, animSpeed);
     }
-
-    public void HelpSheepTutorial()
-    {
-        if (TryGetComponent(out FenceController fc) == false) return;
-        if (fc.transform.position.z > 10)
-        {
-            StartCoroutine(Helper());
-        }
-    }
-
-    private IEnumerator Helper()
-    {
-        yield return new WaitForSeconds(2f);
-        Managers.Game.HelpSheepTutorial();
-    }
 }

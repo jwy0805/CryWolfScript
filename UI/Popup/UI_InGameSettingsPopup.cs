@@ -95,21 +95,25 @@ public class UI_InGameSettingsPopup : UI_Popup
     {
         _musicSlider.onValueChanged.AddListener(val =>
         {
-            PlayerPrefs.SetFloat("musicVolume", val);
+            Managers.Sound.SetMusicVolume(val);
         });
         
         _sfxSlider.onValueChanged.AddListener(val =>
         {
-            PlayerPrefs.SetFloat("sfxVolume", val);
+            Managers.Sound.SetSfxVolume(val);
         });
     }
     
     protected override void InitUI()
     {
-        _musicSlider.value = PlayerPrefs.GetFloat("musicVolume", 0.5f);
-        _sfxSlider.value = PlayerPrefs.GetFloat("sfxVolume", 0.5f);
+        _musicSlider.value = PlayerPrefs.GetFloat("MusicVolume", 0.5f);
+        _sfxSlider.value = PlayerPrefs.GetFloat("SfxVolume", 0.5f);
+        
+        Managers.Sound.SetMusicVolume(_musicSlider.value, save:false);
+        Managers.Sound.SetSfxVolume(_sfxSlider.value, save:false);
+        
         var buildFill = GetImage((int)Images.BuildFill);
-        buildFill.fillAmount = PlayerPrefs.GetInt("buildRecommendation", 1) == 1 ? 1 : 0;
+        buildFill.fillAmount = PlayerPrefs.GetInt("BuildRecommendation", 1) == 1 ? 1 : 0;
     }
     
     private void UpdateMusicVolume(PointerEventData data, Slider slider)
@@ -131,24 +135,25 @@ public class UI_InGameSettingsPopup : UI_Popup
         var text = GetText((int)Texts.BuildText);
         var handleRect = handle.GetComponent<RectTransform>();
         
-        if (PlayerPrefs.GetInt("buildRecommendation", 1) == 0)
+        if (PlayerPrefs.GetInt("BuildRecommendation", 1) == 0)
         {
             handleRect.anchoredPosition = new Vector2(57, 0);
             fill.gameObject.SetActive(true);
             text.text = "ON";
-            PlayerPrefs.SetInt("buildRecommendation", 1);
+            PlayerPrefs.SetInt("BuildRecommendation", 1);
         }
         else
         {
             handleRect.anchoredPosition = new Vector2(-57, 0);
             fill.gameObject.SetActive(false);
             text.text = "OFF";
-            PlayerPrefs.SetInt("buildRecommendation", 0);
+            PlayerPrefs.SetInt("BuildRecommendation", 0);
         }
     }
     
     private void OnExitClicked(PointerEventData data)
     {
+        PlayerPrefs.Save();
         Managers.UI.ClosePopupUI();
     }
 }

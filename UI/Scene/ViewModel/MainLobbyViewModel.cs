@@ -28,16 +28,17 @@ public class MainLobbyViewModel : IDisposable
     private readonly float _swipeDistance = Screen.width * 0.45f;           
     private int _currentPage;
 
+    public event Func<Task> OnInitUserInfo;
     public event Action OnFriendRequestNotificationReceived;
     public event Action OnFriendRequestNotificationOff;
     public event Action OnMailAlert;
     public event Action OffMailAlert;
-    public event Func<Task> OnResetUI;
+    public event Func<Task> OnResetMailUI;
     public event Action OnUpdateFriendList;
     public event Action OnUpdateUsername;
     public event Func<int, Task> OnPageChanged;
     public event Action<int> OnChangeButtonFocus;
-    public event Action<string> OnChangeLanguage;
+    public event Func<Task> OnChangeLanguage;
     
     public bool ChildScrolling { get; set; }
     public float[] ScrollPageValues { get; private set; }
@@ -75,6 +76,11 @@ public class MainLobbyViewModel : IDisposable
         };
     }
 
+    public async Task InitUserInfo()
+    {
+        await Util.InvokeAll(OnInitUserInfo);
+    }
+    
     public async Task ConnectSignalR(string username)
     {
         await _signalRClient.Connect(username);
@@ -100,7 +106,7 @@ public class MainLobbyViewModel : IDisposable
         
         await _webService.SendWebRequestAsync<ClaimMailPacketResponse>(
             "Mail/ClaimMail", UnityWebRequest.kHttpVerbPUT, packet);
-        OnResetUI?.Invoke();
+        OnResetMailUI?.Invoke();
         await InitMailAlert();
     }
     
@@ -115,7 +121,7 @@ public class MainLobbyViewModel : IDisposable
         var res = await _webService.SendWebRequestAsync<ClaimProductPacketResponse>(
             "Payment/StartClaim", UnityWebRequest.kHttpVerbPUT, packet);
 
-        OnResetUI?.Invoke();
+        OnResetMailUI?.Invoke();
         await HandleClaimPacketResponse(res);
         await InitMailAlert();
     }
@@ -234,7 +240,7 @@ public class MainLobbyViewModel : IDisposable
         await _webService.SendWebRequestAsync<DeleteReadMailPacketResponse>(
             "Mail/DeleteReadMail", UnityWebRequest.kHttpVerbDELETE, packet);
         
-        OnResetUI?.Invoke();
+        OnResetMailUI?.Invoke();
         await InitMailAlert();
     }
     
@@ -457,9 +463,9 @@ public class MainLobbyViewModel : IDisposable
         return new Tuple<List<NoticeInfo>, List<EventInfo>>(_noticeCache, _eventCache);
     }
     
-    public void ChangeLanguage(string language2Letter)
+    public async Task ChangeLanguage()
     {
-        OnChangeLanguage?.Invoke(language2Letter);
+        await Util.InvokeAll(OnChangeLanguage);
     }
     
     #region MainLobbyScrollView

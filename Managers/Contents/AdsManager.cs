@@ -113,7 +113,7 @@ public class AdsManager
     {
         var adIdentifier = Device.advertisingIdentifier;
         _idfa = string.IsNullOrEmpty(adIdentifier) ? User.Instance.UserInfo.UserAccount : adIdentifier;
-        Debug.Log($"[Ads] IDFA = {_idfa}");
+        Debug.Log($"[AdsManager] IDFA = {_idfa}");
     }
     
 #else
@@ -122,7 +122,7 @@ public class AdsManager
     {
         var userId = User.Instance.UserInfo.UserAccount;
         _idfa = string.IsNullOrEmpty(userId) ? SystemInfo.deviceUniqueIdentifier : userId;
-        Debug.Log($"[Ads] IDFA = {_idfa}");
+        Debug.Log($"[AdsManager] IDFA = {_idfa}");
     }
 #endif
 
@@ -146,37 +146,39 @@ public class AdsManager
 
     public void InitLevelPlay()
     {
-//         if (_levelPlayInitialized) return;
-//         
-//         ApplyRegulationFlags();
-//         var userIdfa = string.IsNullOrEmpty(_idfa) ? User.Instance.UserInfo.UserAccount : _idfa;
-//         string appKey =
-// #if UNITY_ANDROID
-//             AndroidAppKey;
-// #elif UNITY_IOS
-//             IOSAppKey;
-// #elif UNITY_EDITOR
-//             Application.platform switch
-//             {
-//                 RuntimePlatform.WindowsEditor => AndroidAppKey,
-//                 RuntimePlatform.OSXEditor => IOSAppKey,
-//                 _ => throw new NotSupportedException("Unsupported platform for AdsManager in Editor.")
-//             };
-// #endif
-//         
-//         // AdsTest
-//         LevelPlay.SetMetaData("is_test_suite", "enable");
-//         // AdsTest
-//
-//         WireInitEventsOnce();
-//         
-//         LevelPlay.Init(appKey, userIdfa);
+        if (_levelPlayInitialized) return;
+        
+        ApplyRegulationFlags();
+        var userIdfa = string.IsNullOrEmpty(_idfa) ? User.Instance.UserInfo.UserAccount : _idfa;
+        string appKey =
+#if UNITY_ANDROID
+            AndroidAppKey;
+#elif UNITY_IOS
+            IOSAppKey;
+#elif UNITY_EDITOR
+            Application.platform switch
+            {
+                RuntimePlatform.WindowsEditor => AndroidAppKey,
+                RuntimePlatform.OSXEditor => IOSAppKey,
+                _ => throw new NotSupportedException("Unsupported platform for AdsManager in Editor.")
+            };
+#endif
+        
+        // AdsTest
+        LevelPlay.SetMetaData("is_test_suite", "enable");
+        // AdsTest
+
+        WireInitEventsOnce();
+        
+        LevelPlay.Init(appKey, userIdfa);
     }
     
     private void WireInitEventsOnce()
     {
         if (_sInitEventsWired) return;
 
+        LevelPlay.OnInitSuccess -= OnLevelPlayInitialized;
+        LevelPlay.OnInitFailed  -= OnLevelPlayInitFailed;
         LevelPlay.OnInitSuccess += OnLevelPlayInitialized;
         LevelPlay.OnInitFailed  += OnLevelPlayInitFailed;
 
@@ -199,10 +201,13 @@ public class AdsManager
         Debug.Log("LevelPlay Initialization Completed.");
         _levelPlayInitialized = true;
         
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        LevelPlay.LaunchTestSuite();
+        Debug.Log("[Ads] LevelPlay Test Suite Launched.");
+        return;
+#endif
         CreateAndWireRewarded();
         _rewardedAd.LoadAd();
-        
-        LevelPlay.LaunchTestSuite();
     }
     
     private void OnLevelPlayInitFailed(LevelPlayInitError error)

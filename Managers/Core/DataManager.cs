@@ -106,8 +106,6 @@ public class DataManager
         if (UnitDict.Count > 0 || ObjectDict.Count > 0 || SkillDict.Count > 0 || TutorialDict.Count > 0 ||
             LocalizationDict.Count > 0) return;
         
-        Debug.Log($"Use Addressables : {Managers.Network.UseAddressables}");
-        
         var unitLoaderTask = LoadJsonAsync<Contents.UnitLoader>("UnitData");
         var objectLoaderTask = LoadJsonAsync<Contents.ObjectLoader>("ObjectData");
         var skillLoaderTask = LoadJsonAsync<Contents.SkillLoader>("SkillData");
@@ -121,10 +119,6 @@ public class DataManager
         SkillDict = skillLoaderTask.Result!.MakeDict();
         TutorialDict = tutorialLoaderTask.Result!.MakeDict();
         LocalizationDict = localeDictTask.Result;
-        
-        Debug.Log($"Data Initialization completed. {UnitDict.Count} units, " +
-                  $"{ObjectDict.Count} objects, {SkillDict.Count} skills, " +
-                  $"{TutorialDict.Count} tutorials, {LocalizationDict.Count} languages loaded.");
         
         _isInitialized = true;
     }

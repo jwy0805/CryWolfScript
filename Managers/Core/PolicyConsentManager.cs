@@ -70,6 +70,7 @@ public class PolicyConsentManager
         
         popup.SetYesCallback(() =>
         {
+            SetPolicyConsent(true);
             _tcs.SetResult(true);
         });
         

@@ -80,76 +80,67 @@ public class LocalizationManager
     {
         get
         {
-            if (_language2Letter == null)
+            if (string.IsNullOrEmpty(_language2Letter))
             {
-                if (PlayerPrefs.HasKey("Language"))
-                {
-                    var language = Application.systemLanguage.ToString();
-                    var language2Letter = _languageMap.GetValueOrDefault(language, "en");
-                    SetLanguage(language2Letter);
-                    return _language2Letter;
-                }
-                else
-                {
-                    return PlayerPrefs.GetString("Language");
-                }
+                _language2Letter = GetSavedOrSystemLanguage2Letter();
             }
-            
             return _language2Letter;
         }
-        private set
-        {
-            if (value.Length != 2)
-            {
-                _language2Letter = value switch
-                {
-                    "Korean" => "ko",
-                    "English" => "en",
-                    "Japanese" => "ja",
-                    "Vietnamese" => "vi",
-                    _ => "en"
-                };
-            }
-            else
-            {
-                _language2Letter = value;
-            }
-        }
+        
+        private set => _language2Letter = NormalizeTo2Letter(value);
     }
-
-    public void InitLanguage(string language)
+    
+    public void InitLanguage(string systemLanguageString)
     {
         if (PlayerPrefs.HasKey("Language"))
         {
-            var language2Letter = PlayerPrefs.GetString("Language");
-            SetLanguage(language2Letter);
+            SetLanguage(PlayerPrefs.GetString("Language"));
+            return;
         }
-        else
-        {
-            SetLanguage(language);
-        }
+
+        SetLanguage(systemLanguageString);
     }
     
-    public void SetLanguage(string language2Letter)
+    public void SetLanguage(string input)
     {
-        if (_languageMap.TryGetValue(language2Letter, out var languageCode))
+        var lang2 = NormalizeTo2Letter(input);
+        PlayerPrefs.SetString("Language", lang2);
+        PlayerPrefs.Save();
+        Language2Letter = lang2;
+    }
+
+    private string GetSavedOrSystemLanguage2Letter()
+    {
+        if (PlayerPrefs.HasKey("Language"))
         {
-            PlayerPrefs.SetString("Language", language2Letter);
-            Language2Letter = languageCode;
+            return NormalizeTo2Letter(PlayerPrefs.GetString("Language"));
         }
-        else
+        
+        return NormalizeTo2Letter(Application.systemLanguage.ToString());
+    }
+    
+    private string NormalizeTo2Letter(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return "en";
+
+        // "EN", "Ko" 등 처리
+        input = input.Trim();
+        if (input.Length == 2) return input.ToLowerInvariant();
+
+        if (_languageMap != null && _languageMap.TryGetValue(input, out var mapped))
         {
-            if (_languageMap.Values.Contains(language2Letter))
-            {
-                PlayerPrefs.SetString("Language", language2Letter);
-                Language2Letter = language2Letter;
-            }
-            else
-            {
-                PlayerPrefs.SetString("Language", "English");
-                Language2Letter = "en";
-            }
+            var m = mapped?.Trim() ?? "en";
+            return m.Length == 2 ? m.ToLowerInvariant() : NormalizeTo2Letter(m);
         }
+        
+        return input switch
+        {
+            "Korean" => "ko",
+            "English" => "en",
+            "Japanese" => "ja",
+            "Vietnamese" => "vi",
+            _ => "en"
+        };
     }
     
     private async Task<TMP_FontAsset> GetFont(string fontName)

@@ -82,7 +82,7 @@ public class UI_MailBoxPopup : UI_Popup
 
     private void InitEvents()
     {
-        _lobbyVm.OnResetUI += ResetUI;
+        _lobbyVm.OnResetMailUI += ResetMailUI;
     }
     
     protected override void InitButtonEvents()
@@ -96,7 +96,7 @@ public class UI_MailBoxPopup : UI_Popup
     {
         try
         {
-            await ResetUI();
+            await ResetMailUI();
         }
         catch (Exception e)
         {
@@ -104,7 +104,7 @@ public class UI_MailBoxPopup : UI_Popup
         }
     }
 
-    private async Task ResetUI()
+    private async Task ResetMailUI()
     {
         GetImage((int)Images.NoMailBackground).gameObject.SetActive(false);
 
@@ -229,6 +229,6 @@ public class UI_MailBoxPopup : UI_Popup
 
     private void OnDestroy()
     {
-        _lobbyVm.OnResetUI -= ResetUI;
+        _lobbyVm.OnResetMailUI -= ResetMailUI;
     }
 }

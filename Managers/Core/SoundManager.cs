@@ -14,11 +14,12 @@ public class SoundManager
 	private AudioSource[] _audioSources = new AudioSource[(int)Define.Sound.MaxCount];
     private Dictionary<string, AudioClip> _audioClips = new();
     private Define.Scene _sceneType = Define.Scene.Unknown;
-    private Faction _currentFaction = Util.Faction;
+    private Faction _currentFaction = Faction.None;
     private string _currentBgmName = string.Empty;
-    private float _musicVolume;
-    private float _sfxVolume;
+    private float _musicVolume = 1f;
+    private float _sfxVolume = 1f;
     private CancellationTokenSource _bgmFadeCts;
+    private float _bgmFade = 1f; // 0~1 페이드 계수
     private const float BgmFadeDuration = 1.0f;
     
     
@@ -47,17 +48,17 @@ public class SoundManager
         }
 
         _root = root.transform;
-        
-        string[] soundNames = System.Enum.GetNames(typeof(Define.Sound));
-        for (int i = 0; i < soundNames.Length - 1; i++)
+
+        for (int i = 0; i < (int)Define.Sound.MaxCount; i++)
         {
-	        GameObject go = new GameObject { name = soundNames[i] };
+	        var go = new GameObject(((Define.Sound)i).ToString());
+	        go.transform.SetParent(_root, false);
 	        _audioSources[i] = go.AddComponent<AudioSource>();
-	        go.transform.parent = root.transform;
         }
-
-        _audioSources[(int)Define.Sound.Bgm].loop = true;
-
+        
+        var bgmSource = _audioSources[(int)Define.Sound.Bgm];
+        if (bgmSource != null) bgmSource.loop = true;
+        
         if (_sfxPoolRoot == null)
         {
 	        var poolObj = new GameObject("SFX_Pool");
@@ -70,7 +71,16 @@ public class SoundManager
 	        }
         }
         
+        _musicVolume = PlayerPrefs.GetFloat("MusicVolume", 1f);
+        _sfxVolume = PlayerPrefs.GetFloat("SfxVolume", 1f);
+
+        _bgmFade = 1f;
+        SetMusicVolume(_musicVolume, false);
+        SetSfxVolume(_sfxVolume, false);
+        
         _sceneType = BaseScene.SceneType;
+        _currentFaction = Util.Faction;
+        
         PlayBgm(_sceneType, _currentFaction);
     }
 
@@ -88,13 +98,8 @@ public class SoundManager
 		    _currentFaction = currentFaction;
 		    PlayBgm(_sceneType, _currentFaction);
 	    }
-	    
-	    // if (_sceneType != currentSceneType)
-	    // {
-		   //  _sceneType = currentSceneType;
-		   //  PlayBgm(_sceneType);
-	    // }
 
+	    // 재생 끝난 sfx 회수
 	    if (_activeSfx.Count > 0)
 	    {
 		    _tmpList ??= new List<AudioSource>(32);
@@ -114,42 +119,45 @@ public class SoundManager
 	    }
     }
 
+    public void SetMusicVolume(float volume, bool save = true)
+    {
+	    volume = Mathf.Clamp01(volume);
+	    _musicVolume = volume;
+		
+	    var bgmSource = _audioSources[(int)Define.Sound.Bgm];
+	    if (bgmSource != null)
+	    {
+		    bgmSource.volume = _musicVolume * _bgmFade;
+	    }
+		
+	    if (save)
+	    {
+		    PlayerPrefs.SetFloat("MusicVolume", volume);
+	    }
+    }
+    
+    public void SetSfxVolume(float volume, bool save = true)
+	{
+	    volume = Mathf.Clamp01(volume);
+	    _sfxVolume = volume;
+		
+	    var sfxSource = _audioSources[(int)Define.Sound.Effect];
+	    if (sfxSource != null)
+	    {
+		    sfxSource.volume = _sfxVolume;
+	    }
+	    
+	    if (save)
+	    {
+		    PlayerPrefs.SetFloat("SfxVolume", volume);
+	    }
+	}
+    
     private bool NeedRefreshBgm(Define.Scene scene, bool factionChanged)
     {
 	    if (!factionChanged) return false;
 	    return scene is Define.Scene.MainLobby or Define.Scene.FriendlyMatch;
     }
-
-    public async Task Play(string path, Define.Sound type = Define.Sound.Effect, float pitch = 1.0f)
-    {
-        AudioClip audioClip = await GetOrAddAudioClip(path, type);
-        Play(audioClip, type, pitch);
-    }
-
-	public void Play(AudioClip audioClip, Define.Sound type = Define.Sound.Effect, float pitch = 1.0f)
-	{
-        if (audioClip == null)
-            return;
-
-        var source = _audioSources[(int)type];
-        source.volume = _musicVolume;
-        
-		if (type == Define.Sound.Bgm)
-		{
-			AudioSource audioSource = _audioSources[(int)Define.Sound.Bgm];
-			if (audioSource.isPlaying) audioSource.Stop();
-
-			audioSource.pitch = pitch;
-			audioSource.clip = audioClip;
-			audioSource.Play();
-		}
-		else
-		{
-			AudioSource audioSource = _audioSources[(int)Define.Sound.Effect];
-			audioSource.pitch = pitch;
-			audioSource.PlayOneShot(audioClip);
-		}
-	}
 
 	private async Task<AudioClip> GetOrAddAudioClip(string path, Define.Sound type = Define.Sound.Effect)
     {
@@ -170,26 +178,29 @@ public class SoundManager
 	
 	private void PlayBgm(Define.Scene scene, Faction faction)
 	{
-		_musicVolume = PlayerPrefs.GetFloat("MusicVolume");
-		
-		var bgmName = GetBgmName(scene, Util.Faction);
+		var bgmName = GetBgmName(scene, faction); // <-- faction 사용
 		if (string.IsNullOrEmpty(bgmName)) return;
-		
+
 		var bgmSource = _audioSources[(int)Define.Sound.Bgm];
 		if (bgmSource == null) return;
 
-		if (_currentBgmName == bgmName && bgmSource.isPlaying)
+		// 같은 트랙이면 재시작x, 볼륨만 조정
+		if (_currentBgmName == bgmName && bgmSource.clip != null && bgmSource.isPlaying)
 		{
 			bgmSource.volume = _musicVolume;
 			return;
 		}
-		
+
+		// 이전 페이드가 있다면 확실히 정리
+		_bgmFadeCts?.Cancel();
+		_bgmFadeCts?.Dispose();
+
 		_currentBgmName = bgmName;
-		// 이전 페이드가 돌고 있으면 취소
+
 		_bgmFadeCts = new CancellationTokenSource();
 		var token = _bgmFadeCts.Token;
-		
-		_ = FadeToNewBgmAsync(bgmSource, bgmName, _musicVolume, BgmFadeDuration, token);
+
+		_ = FadeToNewBgmAsync(bgmSource, bgmName, BgmFadeDuration, token);
 	}
 
 	private string GetBgmName(Define.Scene scene, Faction faction)
@@ -199,29 +210,33 @@ public class SoundManager
 			Define.Scene.Game => "muffin_man",
 			Define.Scene.MainLobby => faction == Faction.Sheep ? "lobby_sheep" : "lobby_wolf",
 			Define.Scene.FriendlyMatch => faction == Faction.Sheep ? "lobby_sheep" : "lobby_wolf",
+			Define.Scene.SinglePlay => faction == Faction.Sheep ? "lobby_sheep" : "lobby_wolf",
 			Define.Scene.MatchMaking => "match_making",
 			_ => string.Empty
 		};
 	}
 
-	public async Task FadeToNewBgmAsync(
-		AudioSource source, string bgmName, float targetVolume, float duration, CancellationToken token)
+	public async Task FadeToNewBgmAsync(AudioSource source, string bgmName, float duration, CancellationToken token)
 	{
 		try
 		{
-			float startVolume = source.isPlaying ? source.volume : 0;
-			float t = 0f;
+			float t = 0;
+			float startFade = _bgmFade;
 
 			while (t < duration)
 			{
 				token.ThrowIfCancellationRequested();
 				t += Time.unscaledDeltaTime;
 				float lerp = Mathf.Clamp01(t / duration);
-				source.volume = Mathf.Lerp(startVolume, 0f, lerp);
 
+				_bgmFade = Mathf.Lerp(startFade, 0f, lerp);
+				source.volume = _musicVolume * _bgmFade;
+				
 				await Task.Yield();
 			}
 
+			_bgmFade = 0;
+			source.volume = 0;
 			source.Stop();
 			source.clip = null;
 
@@ -231,7 +246,6 @@ public class SoundManager
 			if (newClip == null) return;
 
 			source.clip = newClip;
-			source.volume = 0f;
 			source.loop = true;
 			source.Play();
 
@@ -239,20 +253,19 @@ public class SoundManager
 			while (t < duration)
 			{
 				token.ThrowIfCancellationRequested();
-
 				t += Time.unscaledDeltaTime;
 				float lerp = Mathf.Clamp01(t / duration);
-				source.volume = Mathf.Lerp(0f, targetVolume, lerp);
+				
+				_bgmFade = Mathf.Lerp(0f, 1f, lerp);
+				source.volume = _musicVolume * _bgmFade;
 
 				await Task.Yield();
 			}
 
-			source.volume = targetVolume;
+			_bgmFade = 1;
+			source.volume = _musicVolume;
 		}
-		catch (OperationCanceledException)
-		{
-			// 다른 BGM 전환이 시작되어 취소됨 -> 무시
-		}
+		catch (OperationCanceledException) { }
 		catch (Exception e)
 		{
 			Debug.LogError($"[Sound Manager]: {e}");
@@ -293,7 +306,7 @@ public class SoundManager
 		}
 		
 		var source = GetSourceFromPool();
-		ConfigureSource(source, clip, volume * _sfxVolume, pitch, pitchJitter, spatialBlend, worldPos, follow, loop);
+		ConfigureSource(source, clip, volume, pitch, pitchJitter, spatialBlend, worldPos, follow, loop);
 		list.AddLast(source);
 
 		if (loop)
@@ -349,12 +362,14 @@ public class SoundManager
 		return _sfxPool.Count > 0 ? _sfxPool.Dequeue() : CreatePooledSource(_sfxPoolRoot);
 	}
 
-	private void ConfigureSource(AudioSource source, AudioClip clip, float volume, float pitch, float pitchJitter,
+	private void ConfigureSource(AudioSource source, AudioClip clip, float baseVolume, float pitch, float pitchJitter,
 		float spatialBlend, Vector3? worldPos, Transform follow, bool loop)
 	{
 		var p = pitchJitter > 0f ? pitch + Random.Range(-pitchJitter, pitchJitter) : pitch;
+		baseVolume = Mathf.Clamp01(baseVolume);
+		
 		source.clip = clip;
-		source.volume = Mathf.Clamp01(PlayerPrefs.GetFloat("SfxVolume", 1f));
+		source.volume = baseVolume * _sfxVolume;
 		source.pitch = Mathf.Clamp(p, -3f, 3f);
 		source.loop = loop;
 		source.spatialBlend = Mathf.Clamp01(spatialBlend);
@@ -425,12 +440,56 @@ public class SoundManager
 	
 	public void Clear()
 	{
-		foreach (AudioSource audioSource in _audioSources)
+		// 1) 루프 SFX 전부 정지 + 풀로 반환
+		if (_loopingSfx.Count > 0)
 		{
-			audioSource.clip = null;
-			audioSource.Stop();
+			foreach (var kv in _loopingSfx)
+			{
+				var src = kv.Value;
+				if (src != null)
+					ForceStopAndRelease(src);
+			}
+			_loopingSfx.Clear();
 		}
+
+		// 2) 재생 중인(일회성) SFX 전부 정지 + 풀로 반환
+		if (_activeSfx.Count > 0)
+		{
+			_tmpList ??= new List<AudioSource>(_activeSfx.Count);
+			_tmpList.Clear();
+			foreach (var src in _activeSfx)
+				_tmpList.Add(src);
+
+			foreach (var src in _tmpList)
+				if (src != null)
+					ForceStopAndRelease(src);
+
+			_activeSfx.Clear();
+		}
+
+		// 3) per-clip voice tracking 정리
+		_voicesPerClip.Clear();
+
+		// 4) 원샷용 Effect AudioSource 정리 (BGM은 건드리지 않음)
+		var effectSource = _audioSources[(int)Define.Sound.Effect];
+		if (effectSource != null)
+		{
+			effectSource.Stop();
+			effectSource.clip = null;
+		}
+
+		// 5) SFX 클립 캐시만 비움 (BGM mp3는 여기 저장하지 않음)
 		_audioClips.Clear();
+
+		// 6) 풀에 남아있는 소스들도 안전하게 기본 상태로 리셋 (선택)
+		foreach (var src in _sfxPool)
+		{
+			if (src == null) continue;
+			src.Stop();
+			src.clip = null;
+			src.loop = false;
+			src.transform.SetParent(_sfxPoolRoot, false);
+		}
 	}
 
 	// short 2D sfx

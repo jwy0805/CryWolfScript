@@ -29,6 +29,11 @@ public class CollectionViewModel
     {
         // Load unit & item data
         await LoadInfoAsync();
+        await LoadCollection();
+    }
+
+    public async Task LoadCollection()
+    {
         await Task.WhenAll(
             InitializeCards(), InitializeSheep(), InitializeEnchants(), InitializeCharacters(), InitializeMaterials());
         
@@ -80,7 +85,6 @@ public class CollectionViewModel
         }
 
         _userService.LoadOwnedUnit(cardResponse.OwnedCardList);
-        _userService.LoadNotOwnedUnit(cardResponse.NotOwnedCardList);
     }
 
     private async Task InitializeSheep()
@@ -105,7 +109,6 @@ public class CollectionViewModel
         }
 
         _userService.LoadOwnedSheep(sheepResponse.OwnedSheepList);
-        _userService.LoadNotOwnedSheep(sheepResponse.NotOwnedSheepList);
     }
 
     private async Task InitializeEnchants()
@@ -130,7 +133,6 @@ public class CollectionViewModel
         }
 
         _userService.LoadOwnedEnchant(enchantResponse.OwnedEnchantList);
-        _userService.LoadNotOwnedEnchant(enchantResponse.NotOwnedEnchantList);
     }
 
     private async Task InitializeCharacters()
@@ -155,7 +157,6 @@ public class CollectionViewModel
         }
 
         _userService.LoadOwnedCharacter(characterResponse.OwnedCharacterList);
-        _userService.LoadNotOwnedCharacter(characterResponse.NotOwnedCharacterList);
     }
     
     private async Task InitializeMaterials()

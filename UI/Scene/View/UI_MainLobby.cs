@@ -7,6 +7,7 @@ using DG.Tweening;
 using Google.Protobuf.Protocol;
 using NUnit.Framework.Internal;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -47,14 +48,6 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     private RectTransform _loadingMark;
     private RectTransform _craftingPanel;
     private ScrollRect _craftingScrollRect;
-    private Transform _specialPackagePanel;
-    private Transform _beginnerPackagePanel;
-    private Transform _reservedSalePanel;
-    private Transform _dailyProductPanel;
-    private Transform _goldStorePanel;
-    private Transform _spinelStorePanel;
-    private Transform _spinelPackagePanel;
-    private Transform _goldPackagePanel;
     private List<GameObject> _modes;
     private Dictionary<string, GameObject> _craftingUiDict;
     private Dictionary<string, GameObject> _collectionUiDict;
@@ -117,215 +110,6 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             _cardPopup = value;
         }
     }
-    
-    #region Enums
-    
-    private enum Buttons
-    {
-        ShopButton,
-        ShopButtonFocus,
-        ItemButton,
-        ItemButtonFocus,
-        GameButton,
-        GameButtonFocus,
-        EventButton,
-        EventButtonFocus,
-        ClanButton,
-        ClanButtonFocus,
-        
-        FactionButton,
-        
-        ProfilePanelButton,
-        SettingsButton,
-        FriendsButton,
-        MailButton,
-        
-        PlayButton,
-        ModeSelectButtonLeft,
-        ModeSelectButtonRight,
-        
-        LobbyDeckButton1,
-        LobbyDeckButton2,
-        LobbyDeckButton3,
-        LobbyDeckButton4,
-        LobbyDeckButton5,
-        
-        DeckTabButton,
-        DeckButton1,
-        DeckButton2,
-        DeckButton3,
-        DeckButton4,
-        DeckButton5,
-        
-        CollectionTabButton,
-        
-        ArrangeAllButton,
-        ArrangeSummaryButton,
-        ArrangeClassButton,
-        ArrangeCountButton,
-        
-        CraftingBackButton,
-        CraftingTabButton,
-        CraftingButton,
-        CraftUpperArrowButton,
-        CraftLowerArrowButton,
-        CraftButton,
-        
-        ReinforcingButton,
-        ReinforceButton,
-        
-        RecyclingButton,
-        
-        DailyProductsRefreshButton,
-        AdsRemover,
-        RestorePurchaseButton,
-    }
-
-    private enum Texts
-    {
-        GoldText,
-        SpinelText,
-        LevelText,
-        ExpText,
-        
-        UsernameText,
-        RankText,
-        
-        MainSettingsButtonText,
-        MainFriendsButtonText,
-        MainMailButtonText,
-        MainMissionButtonText,
-        MainGiftButtonText,
-        PlayButtonText,
-        FriendlyMatchPanelText,
-        RankGamePanelText,
-        SinglePlayPanelText,
-        MainShopButtonText,
-        MainItemButtonText,
-        MainBattleButtonText,
-        MainEventButtonText,
-        MainClanButtonText,
-        
-        MainDeckLabelText,
-        MainBattleSettingLabelText,
-        MainCraftingButtonText,
-        MainReinforcingButtonText,
-        MainRecyclingButtonText,
-        MainCraftText,
-        CraftCountText,
-        MainTempText,
-        ReinforceCardSelectText,
-        ReinforceCardNumberText,
-        SuccessRateText,
-        SuccessText,
-        
-        HoldingLabelText,
-        NotHoldingLabelText,
-        AssetHoldingLabelText,
-        AssetNotHoldingLabelText,
-        CharacterHoldingLabelText,
-        CharacterNotHoldingLabelText,
-        MaterialHoldingLabelText,
-        
-        SpecialDealText,
-        SpecialPackageLabelText,
-        BeginnerPackageLabelText,
-        ReservedSaleLabelText,
-        DailyDealLabelText,
-        SpinelStoreLabelText,
-        GoldStoreLabelText,
-        GoldPackageLabelText,
-        SpinelPackageLabelText,
-        
-        RestorePurchaseText,
-        RefreshText,
-        DailyProductsRefreshButtonTimeText
-    }
-
-    private enum Images
-    {
-        TopPanel,
-        GamePanelBackground,
-        GameImageGlow,
-        LobbyDeck,
-        
-        FactionButtonIcon,
-        ExpSliderBackground,
-        
-        FriendAlertIcon,
-        MailAlertIcon,
-        
-        ModeSelectButtonLeftFrame,
-        ModeSelectButtonRightFrame,
-        
-        RankGamePanel,
-        FriendlyMatchPanel,
-        SinglePlayPanel,
-        
-        ShopBackground,
-        ItemBackground,
-        EventBackground,
-        ClanBackground,
-        
-        DeckScrollView,
-        CollectionScrollView,
-        Deck,
-        
-        ShopPanel,
-        UnitHoldingCardPanel,
-        UnitNotHoldingCardPanel,
-        AssetHoldingCardPanel,
-        AssetNotHoldingCardPanel,
-        CharacterHoldingCardPanel,
-        CharacterNotHoldingCardPanel,
-        MaterialHoldingPanel,
-        
-        UnitHoldingLabelPanel,
-        UnitNotHoldingLabelPanel,
-        AssetHoldingLabelPanel,
-        AssetNotHoldingLabelPanel,
-        CharacterHoldingLabelPanel,
-        CharacterNotHoldingLabelPanel,
-        MaterialHoldingLabelPanel,
-        
-        BattleSettingPanel,
-        CraftingPanel,
-        
-        CraftingCardPanel,
-        CardPedestal,
-        
-        CraftingBackButtonFakePanel,
-        CraftingSelectPanel,
-        CraftingCraftPanel,
-        CraftCardPanel,
-        
-        CraftingReinforcePanel,
-        ReinforceCardPanel,
-        ArrowPanel,
-        ReinforceResultPanel,
-        
-        CraftingRecyclePanel,
-        
-        MaterialScrollView,
-        MaterialPanel,
-        
-        BeginnerPackagePanel,
-        SpecialPackagePanel,
-        ReservedSalePanel,
-        DailyDealPanel,
-        DailyDealProductPanel,
-        SpinelStorePanel,
-        GoldStorePanel,
-        GoldPackagePanel,
-        SpinelPackagePanel,
-        
-        NoticeScrollView,
-        
-        LoadingPanel,
-        LoadingMarkImage,
-    }
-
-    #endregion
 
     [Inject]
     public void Construct(
@@ -356,33 +140,12 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
 
         _lobbyVm.Initialize(Util.FindChild(gameObject, "HorizontalContents", true)
             .transform.childCount);
+    }
 
-        _lobbyVm.OnFriendRequestNotificationReceived += OnFriendAlert;
-        _lobbyVm.OnFriendRequestNotificationOff += OffFriendAlert;
-        _lobbyVm.OnMailAlert += OnMailAlert;
-        _lobbyVm.OffMailAlert += OffMailAlert;
-        _lobbyVm.OnPageChanged += ShakeModeSelectButtons;
-        _lobbyVm.OnPageChanged += UpdateScrollbar;
-        _lobbyVm.OnPageChanged += UpdateNotice;
-        _lobbyVm.OnUpdateUsername += UpdateUsername;
-        _lobbyVm.OnChangeButtonFocus += ChangeButtonFocus;
-        _lobbyVm.OnChangeLanguage += ChangeLanguage;
-
-        _paymentService.OnPaymentSuccess += InitMailAlert;
-        _paymentService.OnPaymentSuccess += InitUserInfo;
-        // _paymentService.OnPaymentSuccess += InitCollection;
-        _paymentService.OnPaymentSuccess += InitSubscriptionObjects;
-        _paymentService.OnCashPaymentSuccess += InitMailAlert;
-        _paymentService.OnCashPaymentSuccess += InitUserInfo;
-        _paymentService.OnDailyPaymentSuccess += OnDailyPaymentSuccessHandler;
-
-        
-        _craftingVm.SetCollectionUI += _collectionWidget.SetCollectionUI;
-        
-        _userService.InitDeckButton += _deckWidget.OnInitDeckButton;
-        
-        Managers.Ads.OnRewardedRevealDailyProduct += RevealDailyProduct;
-        Managers.Ads.OnRewardedRefreshDailyProducts += RefreshDailyProducts;
+    private void OnEnable()
+    {
+        ReleaseEvents();
+        BindEvents();
     }
 
     private void InitWidgets()
@@ -402,6 +165,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             mode => SelectMode = mode,
             routine => StartCoroutine(routine)
             ,OnCardClicked);
+        _shopWidget = new LobbyShopWidget(_shopVm, _paymentService, InitUserInfo);
         _tutorialWidget = new LobbyTutorialWidget(_tutorialVm, GameObject.FindGameObjectsWithTag("Camera"));
     }
     
@@ -525,38 +289,6 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         _lobbyVm.IsSwipeMode = false;
     }
 
-    private async void ChangeLanguage(string language2Letter)
-    {
-        try
-        {
-            await Managers.Localization.UpdateChangedTextAndFont(_textDict, language2Letter);
-            var shopPanel = GetImage((int)Images.ShopPanel);
-        
-            foreach (var product in shopPanel.GetComponentsInChildren<ProductSimple>())
-            {
-                await product.SetProductText();
-            }
-        
-            foreach (var product in shopPanel.GetComponentsInChildren<ProductPackage>())
-            {
-                await product.SetProductText();
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning(e);
-        }
-    }
-    
-    private void ChangeButtonFocus(int pageIndex)
-    {
-        var list = new List<string> { "ShopButton", "ItemButton", "GameButton", "EventButton", "ClanButton" };
-        _utilWidget.SetBottomButton(list[pageIndex]);
-    }
-    
-    // UI Size Adjustments
-    #region UiAdjustment
-    
     protected override async Task BindObjectsAsync()
     {
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
@@ -589,85 +321,18 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             GetImage((int)Images.SinglePlayPanel).gameObject
         };
         
-        _craftingUiDict = new Dictionary<string, GameObject>
-        {
-            { "CraftingBackButtonFakePanel", GetImage((int)Images.CraftingBackButtonFakePanel).gameObject },
-            { "CraftingSelectPanel", GetImage((int)Images.CraftingSelectPanel).gameObject },
-            { "CraftingCraftPanel", GetImage((int)Images.CraftingCraftPanel).gameObject },
-            { "CraftingReinforcePanel", GetImage((int)Images.CraftingReinforcePanel).gameObject },
-            { "CraftingRecyclePanel", GetImage((int)Images.CraftingRecyclePanel).gameObject },
-            { "MaterialScrollView", GetImage((int)Images.MaterialScrollView).gameObject }
-        };
-
-        _collectionUiDict = new Dictionary<string, GameObject>
-        {
-            { "UnitHoldingCardPanel", GetImage((int)Images.UnitHoldingCardPanel).gameObject },
-            { "UnitNotHoldingCardPanel", GetImage((int)Images.UnitNotHoldingCardPanel).gameObject },
-            { "AssetHoldingCardPanel", GetImage((int)Images.AssetHoldingCardPanel).gameObject },
-            { "AssetNotHoldingCardPanel", GetImage((int)Images.AssetNotHoldingCardPanel).gameObject },
-            { "CharacterHoldingCardPanel", GetImage((int)Images.CharacterHoldingCardPanel).gameObject },
-            { "CharacterNotHoldingCardPanel", GetImage((int)Images.CharacterNotHoldingCardPanel).gameObject },
-            { "MaterialHoldingPanel", GetImage((int)Images.MaterialHoldingPanel).gameObject },
-            { "UnitHoldingLabelPanel", GetImage((int)Images.UnitHoldingLabelPanel).gameObject },
-            { "UnitNotHoldingLabelPanel", GetImage((int)Images.UnitNotHoldingLabelPanel).gameObject },
-            { "AssetHoldingLabelPanel", GetImage((int)Images.AssetHoldingLabelPanel).gameObject },
-            { "AssetNotHoldingLabelPanel", GetImage((int)Images.AssetNotHoldingLabelPanel).gameObject },
-            { "CharacterHoldingLabelPanel", GetImage((int)Images.CharacterHoldingLabelPanel).gameObject },
-            { "CharacterNotHoldingLabelPanel", GetImage((int)Images.CharacterNotHoldingLabelPanel).gameObject },
-            { "MaterialHoldingLabelPanel", GetImage((int)Images.MaterialHoldingLabelPanel).gameObject }
-        };
-        
-        _arrangeButtonDict = new Dictionary<string, GameObject>
-        {
-            { "ArrangeAllButton", GetButton((int)Buttons.ArrangeAllButton).gameObject },
-            { "ArrangeSummaryButton", GetButton((int)Buttons.ArrangeSummaryButton).gameObject },
-            { "ArrangeClassButton", GetButton((int)Buttons.ArrangeClassButton).gameObject },
-            { "ArrangeCountButton", GetButton((int)Buttons.ArrangeCountButton).gameObject }
-        };
-
-        _bottomButtonDict = new Dictionary<string, GameObject>
-        {
-            { "ShopButton", GetButton((int)Buttons.ShopButton).gameObject },
-            { "ItemButton", GetButton((int)Buttons.ItemButton).gameObject },
-            { "GameButton", GetButton((int)Buttons.GameButton).gameObject },
-            { "EventButton", GetButton((int)Buttons.EventButton).gameObject },
-            { "ClanButton", GetButton((int)Buttons.ClanButton).gameObject },
-        };
-        
-        _bottomButtonFocusDict = new Dictionary<string, GameObject>
-        {
-            { "ShopButtonFocus", GetButton((int)Buttons.ShopButtonFocus).gameObject },
-            { "ItemButtonFocus", GetButton((int)Buttons.ItemButtonFocus).gameObject },
-            { "GameButtonFocus", GetButton((int)Buttons.GameButtonFocus).gameObject },
-            { "EventButtonFocus", GetButton((int)Buttons.EventButtonFocus).gameObject },
-            { "ClanButtonFocus", GetButton((int)Buttons.ClanButtonFocus).gameObject },
-        };
-        
-        _tabButtonDict = new Dictionary<string, GameObject>
-        {
-            { "DeckTabButton", GetButton((int)Buttons.DeckTabButton).gameObject },
-            { "CollectionTabButton", GetButton((int)Buttons.CollectionTabButton).gameObject },
-            { "CraftingTabButton", GetButton((int)Buttons.CraftingTabButton).gameObject }
-        };
-        
-        _deckButtonDict = new Dictionary<string, GameObject>
-        {
-            { "DeckButton1", GetButton((int)Buttons.DeckButton1).gameObject },
-            { "DeckButton2", GetButton((int)Buttons.DeckButton2).gameObject },
-            { "DeckButton3", GetButton((int)Buttons.DeckButton3).gameObject },
-            { "DeckButton4", GetButton((int)Buttons.DeckButton4).gameObject },
-            { "DeckButton5", GetButton((int)Buttons.DeckButton5).gameObject }
-        };
-        
-        _lobbyDeckButtonDict = new Dictionary<string, GameObject>
-        {
-            { "LobbyDeckButton1", GetButton((int)Buttons.LobbyDeckButton1).gameObject },
-            { "LobbyDeckButton2", GetButton((int)Buttons.LobbyDeckButton2).gameObject },
-            { "LobbyDeckButton3", GetButton((int)Buttons.LobbyDeckButton3).gameObject },
-            { "LobbyDeckButton4", GetButton((int)Buttons.LobbyDeckButton4).gameObject },
-            { "LobbyDeckButton5", GetButton((int)Buttons.LobbyDeckButton5).gameObject }
-        };
+        BindDictionary();
     }
+
+    private void ChangeButtonFocus(int pageIndex)
+    {
+        var list = new List<string> { "ShopButton", "ItemButton", "GameButton", "EventButton", "ClanButton" };
+        _utilWidget.SetBottomButton(list[pageIndex]);
+    }
+
+    // UI Size Adjustments
+
+    #region UiAdjustment
 
     private async Task BindAssetHoldingLabelText(Faction faction)
     {
@@ -738,6 +403,19 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             GetText((int)Texts.CraftCountText),
             GetText((int)Texts.ReinforceCardNumberText),
             GetText((int)Texts.SuccessRateText));
+        
+        var adsRemover = GetButton((int)Buttons.AdsRemover).GetOrAddComponent<AdsRemover>();
+        _shopWidget.BindViews(GetImage((int)Images.SpecialPackagePanel).transform,
+            GetImage((int)Images.BeginnerPackagePanel).transform,
+            GetImage((int)Images.ReservedSalePanel).transform,
+            GetImage((int)Images.DailyDealProductPanel).transform,
+            GetImage((int)Images.GoldStorePanel).transform,
+            GetImage((int)Images.SpinelStorePanel).transform,
+            GetImage((int)Images.GoldPackagePanel).transform,
+            GetImage((int)Images.SpinelPackagePanel).transform,
+            adsRemover,
+            GetButton((int)Buttons.DailyProductsRefreshButton),
+            GetText((int)Texts.DailyProductsRefreshButtonTimeText));
     }
     
     protected override void InitButtonEvents()
@@ -767,6 +445,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         GetButton((int)Buttons.FriendsButton).gameObject.BindEvent(OnFriendsClicked);
         GetButton((int)Buttons.MailButton).gameObject.BindEvent(OnMailClicked);
         GetButton((int)Buttons.FactionButton).gameObject.BindEvent(OnFactionClicked);
+        GetButton((int)Buttons.GoldButton).onClick.AddListener(OnResourceClicked);
+        GetButton((int)Buttons.SpinelButton).onClick.AddListener(OnResourceClicked);
         GetButton((int)Buttons.PlayButton).gameObject.BindEvent(OnPlayButtonClicked);
         GetButton((int)Buttons.ModeSelectButtonLeft).gameObject
             .BindEvent(data => OnModeSelectButtonClicked(data, 1));
@@ -796,7 +476,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         
         GetButton((int)Buttons.RecyclingButton).onClick
             .AddListener(() => _ = _craftingWidget.OnRecyclingClicked());
-        GetButton((int)Buttons.RestorePurchaseButton).gameObject.BindEvent(OnRestorePurchaseClicked);
+        GetButton((int)Buttons.RestorePurchaseButton).gameObject.BindEvent(_shopWidget.OnRestorePurchaseClicked);
     }
     
     private async Task InitMainLobby()
@@ -820,25 +500,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             iconRect.anchorMax = new Vector2(iconRect.anchorMax.x, 0.66f);
         }
 
-        if (Managers.Network.ActualUser == false)
-        {
-            await _userService.LoadTestUserInfo(userId: 1);
-        }
-        else
-        {
-            await _userService.LoadUserInfo();
-        }
-
-        await Task.WhenAll(
-            _collectionWidget.InitCollection(),
-            _deckWidget.InitDeck(),
-            InitShop(),
-            _lobbyVm.InitFriendAlert(),
-            _lobbyVm.InitMailAlert(),
-            _lobbyVm.ConnectSignalR(_userService.UserInfo.UserTag)
-            );
-
-        BindUserInfo();
+        await InitUserInfo();
+        await InitMainLobbyItems();
         GetImage((int)Images.LoadingPanel).gameObject.SetActive(false);
         
 #if !UNITY_EDITOR
@@ -880,9 +543,48 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         }
     }
 
+    private async Task InitMainLobbyItems()
+    {
+        await Task.WhenAll(
+            _collectionWidget.InitCollection(),
+            _deckWidget.InitDeck(),
+            _shopWidget.InitShop(),
+            _lobbyVm.InitFriendAlert(),
+            _lobbyVm.InitMailAlert(),
+            _lobbyVm.ConnectSignalR(User.Instance.UserInfo.UserTag)
+        );
+    }
+
+    private async Task InitUserInfo()
+    {
+        await _userService.LoadUserInfo();
+        BindUserInfo();
+    }
+    
+    private async Task InitMailAlert()
+    {
+        await _lobbyVm.InitMailAlert();
+    }
+
+    private async Task OnLanguageChanged()
+    {
+        _shopWidget.DestroyShop();
+        await Managers.Localization.UpdateTextAndFont(_textDict);
+        
+        var deckButtonText = GetButton((int)Buttons.DeckTabButton).GetComponent<TextMeshProUGUI>();
+        var collectionButtonText = GetButton((int)Buttons.CollectionTabButton).GetComponent<TextMeshProUGUI>();
+        var craftingButtonText = GetButton((int)Buttons.CraftingTabButton).GetComponent<TextMeshProUGUI>();
+        
+        await Managers.Localization.BindLocalizedText(deckButtonText, "deck_text");
+        await Managers.Localization.BindLocalizedText(collectionButtonText, "collection_text");
+        await Managers.Localization.BindLocalizedText(craftingButtonText, "crafting_text");
+        
+        await _shopWidget.InitShop();
+    }
+    
     private void BindUserInfo()
     {
-        var userInfo = _userService.UserInfo;
+        var userInfo = User.Instance.UserInfo;
         var exp = userInfo.Exp;
         var expMax = userInfo.ExpToLevelUp;
 
@@ -980,17 +682,6 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         GetImage((int)Images.MailAlertIcon).gameObject.SetActive(false);
     }
     
-    private async Task InitMailAlert()
-    {
-        await _lobbyVm.InitMailAlert();
-    }
-
-    private async Task InitUserInfo()
-    {
-        await _userService.LoadUserInfo();
-        BindUserInfo();
-    }
-    
     #endregion
     
     // Touch Events
@@ -1021,6 +712,13 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         await SwitchLobbyUI(Util.Faction);
     }
 
+    private void OnResourceClicked()
+    {
+        var shopScrollbar = GetImage((int)Images.ShopScrollbar).GetComponent<Scrollbar>();
+        _lobbyVm.SetCurrentPage(0);
+        shopScrollbar.value = 0;
+    }
+    
     private async Task OnProfileClicked(PointerEventData data)
     {
         var popup = await Managers.UI.ShowPopupUI<UI_PlayerProfilePopup>();
@@ -1182,132 +880,64 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             Debug.LogWarning(e);
         }
     }
-
-    private async Task OnProductClicked(PointerEventData data)
-    {
-        GameProduct product = null;
-        var go = data.pointerPress.gameObject;
-        if (go.TryGetComponent(out ProductSimple productSimple))
-        {
-            if (productSimple.IsDragging) return;
-            var simplePopup = await Managers.UI.ShowPopupUI<UI_ProductInfoSimplePopup>();
-            simplePopup.FrameObject = Instantiate(go);
-            simplePopup.FrameSize = go.GetComponent<RectTransform>().sizeDelta;
-            product = productSimple;
-            simplePopup.FrameObject.GetComponent<ProductSimple>().ProductInfo = product.ProductInfo;
-        }
-        
-        if (go.TryGetComponent(out ProductPackage productPackage))
-        {
-            if (productPackage.IsDragging) return;
-            var packagePopup = await Managers.UI.ShowPopupUI<UI_ProductInfoPopup>();
-            packagePopup.FrameObject = Instantiate(go);
-            packagePopup.FrameSize = go.GetComponent<RectTransform>().sizeDelta;
-            product = productPackage;
-            packagePopup.FrameObject.GetComponent<ProductPackage>().ProductInfo = product.ProductInfo;
-        }
-
-        if (product == null) return;
-        _shopVm.SelectedProduct = product.ProductInfo;
-    }
-
-    private async Task OnDailyProductClicked(PointerEventData data)
-    {
-        var go = data.pointerPress.gameObject;
-        if (go.TryGetComponent(out ProductSimple productSimple))
-        {
-            if (productSimple.IsDragging) return;
-            var simplePopup = await Managers.UI.ShowPopupUI<UI_ProductInfoSimplePopup>();
-            simplePopup.IsDailyProduct = true;
-            simplePopup.FrameObject = Instantiate(go);
-            simplePopup.FrameSize = go.GetComponent<RectTransform>().sizeDelta;
-            simplePopup.FrameObject.GetComponent<ProductSimple>().ProductInfo = productSimple.ProductInfo;
-            _shopVm.SelectedProduct = productSimple.ProductInfo;
-        }
-    }
-    
-    private async Task OnAdsRemoverClicked(PointerEventData data)
-    {
-        if (User.Instance.SubscribeAdsRemover) return;
-        await OnProductClicked(data);
-    }
-    
-    private async Task OnAdsProductClicked(PointerEventData data, DailyProductInfo dailyProductInfo)
-    {
-        var product = data.pointerPress.gameObject.GetComponent<GameProduct>();
-        if (product == null || product.IsDragging) return;
-        
-        if (User.Instance.SubscribeAdsRemover)
-        {
-            await _shopVm.RevealDailyProduct(dailyProductInfo);
-        }
-        else
-        {
-            Managers.Ads.RevealedDailyProduct = dailyProductInfo;
-            Managers.Ads.ShowRewardVideo("Check_Daily_Product");
-        }
-    }
-
-    private async Task OnRefreshDailyProductsClicked(PointerEventData data)
-    {
-        if (User.Instance.SubscribeAdsRemover)
-        {
-            await _shopVm.RefreshDailyProducts();
-        }
-        else
-        {
-            Managers.Ads.ShowRewardVideo("Refresh_Daily_Products");
-        }
-    }
-    
-    private async Task OnReservedSalesClicked(PointerEventData data)
-    {
-        var go = data.pointerPress.gameObject;
-        if (go.TryGetComponent(out ProductPackage package) == false) return;
-        if (package.IsDragging) return;
-        var popup = await Managers.UI.ShowPopupUI<UI_ProductReservedInfoPopup>();
-        var infoOrigin = Managers.Data.MaterialInfoDict[package.ProductInfo.Compositions[0].CompositionId];
-        var info = new MaterialInfo { Id = infoOrigin.Id, Class = infoOrigin.Class };
-        var parent = Util.FindChild(popup.gameObject, "Frame", true).transform;
-        var size = popup.GetComponent<RectTransform>().sizeDelta.x * 0.42f;
-        
-        popup.FrameObject = await Managers.Resource.GetMaterialResources(info, parent);
-        popup.FrameSize = new Vector2(size, size);
-        _shopVm.SelectedProduct = package.ProductInfo;
-    }
-    
-    private void OnRestorePurchaseClicked(PointerEventData data)
-    {
-        _paymentService.RestorePurchases();
-    }
     
     #endregion
+
+    private void BindEvents()
+    {
+        _lobbyVm.OnInitUserInfo += InitUserInfo;
+        _lobbyVm.OnFriendRequestNotificationReceived += OnFriendAlert;
+        _lobbyVm.OnFriendRequestNotificationOff += OffFriendAlert;
+        _lobbyVm.OnMailAlert += OnMailAlert;
+        _lobbyVm.OffMailAlert += OffMailAlert;
+        _lobbyVm.OnPageChanged += ShakeModeSelectButtons;
+        _lobbyVm.OnPageChanged += UpdateScrollbar;
+        _lobbyVm.OnPageChanged += UpdateNotice;
+        _lobbyVm.OnUpdateUsername += UpdateUsername;
+        _lobbyVm.OnChangeButtonFocus += ChangeButtonFocus;
+        _lobbyVm.OnChangeLanguage += OnLanguageChanged;
+        
+        _paymentService.OnPaymentSuccess += InitMailAlert;
+        _paymentService.OnPaymentSuccess += InitUserInfo;
+        _paymentService.OnPaymentSuccess += _collectionVm.LoadCollection;
+        _paymentService.OnCashPaymentSuccess += InitMailAlert;
+        _paymentService.OnCashPaymentSuccess += InitUserInfo;
+        
+        _craftingVm.SetCollectionUI += _collectionWidget.SetCollectionUI;
+        
+        _userService.InitDeckButton += _deckWidget.OnInitDeckButton;
+        
+    }
+
+    private void ReleaseEvents()
+    {
+        _lobbyVm.OnInitUserInfo -= InitUserInfo;
+        _lobbyVm.OnFriendRequestNotificationReceived -= OnFriendAlert;
+        _lobbyVm.OnFriendRequestNotificationOff -= OffFriendAlert;
+        _lobbyVm.OnMailAlert -= OnMailAlert;
+        _lobbyVm.OffMailAlert -= OffMailAlert;
+        _lobbyVm.OnPageChanged -= ShakeModeSelectButtons;
+        _lobbyVm.OnPageChanged -= UpdateScrollbar;
+        _lobbyVm.OnPageChanged -= UpdateNotice;
+        _lobbyVm.OnUpdateUsername -= UpdateUsername;
+        _lobbyVm.OnChangeButtonFocus -= ChangeButtonFocus;
+        _lobbyVm.OnChangeLanguage -= OnLanguageChanged;
+        
+        _paymentService.OnPaymentSuccess -= InitMailAlert;
+        _paymentService.OnPaymentSuccess -= InitUserInfo;
+        _paymentService.OnPaymentSuccess -= _collectionVm.LoadCollection;
+        _paymentService.OnCashPaymentSuccess -= InitMailAlert;
+        _paymentService.OnCashPaymentSuccess -= InitUserInfo;
+        
+        _craftingVm.SetCollectionUI -= _collectionWidget.SetCollectionUI;
+        _userService.InitDeckButton -= _deckWidget.OnInitDeckButton;
+    }
     
     private async void OnDestroy()
     {
         try
         {
-            _lobbyVm.OnFriendRequestNotificationReceived -= OnFriendAlert;
-            _lobbyVm.OnFriendRequestNotificationOff -= OffFriendAlert;
-            _lobbyVm.OnMailAlert -= OnMailAlert;
-            _lobbyVm.OffMailAlert -= OffMailAlert;
-            _lobbyVm.OnPageChanged -= ShakeModeSelectButtons;
-            _lobbyVm.OnPageChanged -= UpdateScrollbar;
-            _lobbyVm.OnPageChanged -= UpdateNotice;
-            _lobbyVm.OnUpdateUsername -= UpdateUsername;
-            _lobbyVm.OnChangeButtonFocus -= ChangeButtonFocus;
-            _lobbyVm.OnChangeLanguage -= ChangeLanguage;
-            _paymentService.OnPaymentSuccess -= InitMailAlert;
-            _paymentService.OnPaymentSuccess -= InitUserInfo;
-            // _paymentService.OnPaymentSuccess -= InitCollection;
-            _paymentService.OnCashPaymentSuccess -= InitMailAlert;
-            _paymentService.OnCashPaymentSuccess -= InitUserInfo;
-            _paymentService.OnDailyPaymentSuccess -= OnDailyPaymentSuccessHandler;
-            _craftingVm.SetCollectionUI -= _collectionWidget.SetCollectionUI;
-            _userService.InitDeckButton -= _deckWidget.OnInitDeckButton;
-            Managers.Ads.OnRewardedRevealDailyProduct -= RevealDailyProduct;
-            Managers.Ads.OnRewardedRefreshDailyProducts -= RefreshDailyProducts;
-        
+            ReleaseEvents();
             await _lobbyVm.LeaveLobby();
             DisposeWidgets();
             _lobbyVm.Dispose();

@@ -6,9 +6,13 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Zenject;
 
 public class UI_RewardItemPopup : UI_Popup
 {
+    private MainLobbyViewModel _lobbyVm;
+    private CollectionViewModel _collectionVm;
+    
     private readonly Dictionary<string, GameObject> _textDict = new();
     
     private GameObject _itemScrollView;
@@ -29,6 +33,13 @@ public class UI_RewardItemPopup : UI_Popup
         TapToContinueText,
     }
 
+    [Inject]
+    public void Construct(MainLobbyViewModel lobbyVm, CollectionViewModel collectionVm)
+    {
+        _lobbyVm = lobbyVm;
+        _collectionVm = collectionVm;
+    }
+    
     protected override async void Init()
     {
         try
@@ -38,6 +49,7 @@ public class UI_RewardItemPopup : UI_Popup
             await BindObjectsAsync();
             InitButtonEvents();
             await InitUIAsync();
+            await ResetCollectionAndUserInfo();
         }
         catch (Exception e)
         {
@@ -217,7 +229,13 @@ public class UI_RewardItemPopup : UI_Popup
             }
         }
     }
-        
+
+    private async Task ResetCollectionAndUserInfo()
+    {
+        await _collectionVm.LoadCollection();
+        await _lobbyVm.InitUserInfo();
+    }
+    
     private void ClosePopup(PointerEventData data)
     {
         Managers.UI.ClosePopupUI();

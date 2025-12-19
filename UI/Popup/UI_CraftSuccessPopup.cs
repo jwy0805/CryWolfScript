@@ -12,6 +12,7 @@ using Zenject;
 public class UI_CraftSuccessPopup : UI_Popup
 {
     private CraftingViewModel _craftingVm;
+    private CollectionViewModel _collectionVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
     
@@ -32,9 +33,10 @@ public class UI_CraftSuccessPopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(CraftingViewModel craftingVm)
+    public void Construct(CraftingViewModel craftingVm, CollectionViewModel collectionVm)
     {
         _craftingVm = craftingVm;
+        _collectionVm = collectionVm;
     }
     
     protected override async void Init()
@@ -90,5 +92,6 @@ public class UI_CraftSuccessPopup : UI_Popup
     {
         // Reset the crafting UI
         Managers.UI.ClosePopupUI();
+        _ = _collectionVm.LoadCollection();
     }
 }

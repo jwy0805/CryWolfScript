@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Cinemachine;
 using Google.Protobuf.Protocol;
 using JetBrains.Annotations;
@@ -77,6 +78,26 @@ public class Util
         return foundObjects;
     }
 
+    public static async Task InvokeAll(Func<Task> evt)
+    {
+        if (evt == null) return;
+        foreach (var @delegate in evt.GetInvocationList())
+        {
+            var handler = (Func<Task>)@delegate;
+            await handler();
+        }
+    }
+
+    public static async Task InvokeAll(Func<int, Task> evt, int arg)
+    {
+        if (evt == null) return;  
+        foreach (var @delegate in evt.GetInvocationList())
+        {
+            var handler = (Func<int, Task>)@delegate;
+            await handler(arg);
+        }
+    }
+    
     public static void Inject(object obj)
     {
         var sceneContainer = Object.FindAnyObjectByType<SceneContext>().Container;

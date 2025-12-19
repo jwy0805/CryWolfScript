@@ -16,6 +16,7 @@ using Zenject;
 public class UI_ReinforcePopup : UI_Popup
 {
     private CraftingViewModel _craftingVm;
+    private CollectionViewModel _collectionVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
     private readonly List<RectTransform> _cardRects = new();
@@ -46,9 +47,10 @@ public class UI_ReinforcePopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(CraftingViewModel craftingVm)
+    public void Construct(CraftingViewModel craftingVm, CollectionViewModel collectionVm)
     {
         _craftingVm = craftingVm;
+        _collectionVm = collectionVm;
     }
     
     protected override async void Init()
@@ -56,9 +58,7 @@ public class UI_ReinforcePopup : UI_Popup
         try
         {
             base.Init();
-        
-            _craftingVm.BindReinforceResult += BindResult;
-        
+            
             BindObjects();
             InitButtonEvents();
             InitUI();
@@ -150,6 +150,8 @@ public class UI_ReinforcePopup : UI_Popup
     private async Task ShowResult()
     {
         await Task.Delay(_standbyTime);
+        BindResult();
+        
         if (_newUnitId == null)
         {
             Debug.LogWarning("New unit ID is null. Cannot show reinforce result.");
@@ -200,10 +202,10 @@ public class UI_ReinforcePopup : UI_Popup
         puffEffect.transform.SetAsLastSibling();
     }
 
-    private void BindResult(UnitId newUnitId, bool success)
+    private void BindResult()
     {
-        _newUnitId = newUnitId;
-        _isSuccess = success;
+        _newUnitId = _craftingVm.IsReinforceSuccess.newUnitId;
+        _isSuccess = _craftingVm.IsReinforceSuccess.isSuccess;
     }
     
     protected override void BindObjects()
@@ -233,10 +235,6 @@ public class UI_ReinforcePopup : UI_Popup
     {
         // Reset the crafting UI
         Managers.UI.ClosePopupUI();
-    }
-    
-    private void OnDestroy()
-    {
-        _craftingVm.BindReinforceResult -= BindResult;
+        _ = _collectionVm.LoadCollection();
     }
 }

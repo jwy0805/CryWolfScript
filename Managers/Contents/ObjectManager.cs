@@ -138,7 +138,6 @@ public class ObjectManager
                     fc.Id = info.ObjectId;
                     fc.PosInfo = info.PosInfo;
                     fc.Stat = info.StatInfo;
-                    fc.Tutorial();
                     break;
                 
                 case GameObjectType.Sheep:

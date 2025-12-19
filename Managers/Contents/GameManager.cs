@@ -11,12 +11,22 @@ public class GameManager
 {
     private GameObject _player;
     private GameObject _sheep;
+    private bool _isTutorial;
     private bool _helpTutorial;
     private readonly Dictionary<UnitId, GameObject> _units = new();
     
     public Action<int> OnSpawnEvent;
     public bool GameResult { get; set; }
-    public bool IsTutorial { get; set; }
+
+    public bool IsTutorial
+    {
+        get => _isTutorial;
+        set
+        {
+            _isTutorial = value;
+            _helpTutorial = false;
+        }
+    }
     public bool ReEntry { get; set; } = false;
     public AcceptInvitationPacketResponse FriendlyMatchResponse { get; set; } = new();
     public AcceptInvitationPacketResponse ReEntryResponse { get; set; } = new();
@@ -106,30 +116,5 @@ public class GameManager
         }
 
         return UnitId.UnknownUnit;
-    }
-    
-    public void HelpSheepTutorial()
-    {
-        if (_helpTutorial) return;
-        
-        C_Spawn sp0 = new()
-        {
-            Type = GameObjectType.Tower,
-            Num = (int)UnitId.Blossom,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = -3, PosY = 6, PosZ = 13f, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(sp0);
-        
-        C_Spawn sp1 = new()
-        {
-            Type = GameObjectType.Tower,
-            Num = (int)UnitId.Toadstool,
-            PosInfo = new PositionInfo { State = State.Idle, PosX = 3, PosY = 6, PosZ = 13f, Dir = 180 },
-            Way = SpawnWay.North
-        };
-        Managers.Network.Send(sp1);
-
-        _helpTutorial = true;
     }
 }

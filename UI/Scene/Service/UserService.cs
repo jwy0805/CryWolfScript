@@ -16,7 +16,6 @@ public class UserService : IUserService
 
     public event Action<Faction> InitDeckButton;
     
-    public UserInfo UserInfo { get; set; }
     public UserTutorialInfo TutorialInfo { get; set; }
     
     [Inject]
@@ -26,85 +25,98 @@ public class UserService : IUserService
         _webService = webService;
     }
     
-    public void LoadOwnedUnit(List<OwnedUnitInfo> units)
+    public void LoadOwnedUnit(List<OwnedUnitInfo> ownedUnitsFromServer)
     {
         User.Instance.OwnedUnitList.Clear();
-        
-        foreach (var unit in units)
-        {
-            User.Instance.OwnedUnitList.Add(unit);
-        }
-    }
-
-    public void LoadNotOwnedUnit(List<UnitInfo> units)
-    {
         User.Instance.NotOwnedUnitList.Clear();
 
-        foreach (var unit in units)
+        var ownedById = ownedUnitsFromServer
+            .Where(x => x?.UnitInfo != null)
+            .ToDictionary(x => x.UnitInfo.Id, x => x);
+
+        foreach (var info in Managers.Data.UnitInfoDict.Values)
         {
-            User.Instance.NotOwnedUnitList.Add(unit);
+            if (ownedById.TryGetValue(info.Id, out var owned))
+            {
+                // 서버가 준 UnitInfo 대신, 클라 UnitInfo로 교체(참조 일관성)
+                owned.UnitInfo = info;
+                User.Instance.OwnedUnitList.Add(owned);
+            }
+            else
+            {
+                User.Instance.NotOwnedUnitList.Add(info);
+            }
         }
     }
 
-    public void LoadOwnedSheep(List<OwnedSheepInfo> sheep)
+    public void LoadOwnedSheep(List<OwnedSheepInfo> ownedSheepFromServer)
     {
         User.Instance.OwnedSheepList.Clear();
-
-        foreach (var eachSheep in sheep)
-        {
-            User.Instance.OwnedSheepList.Add(eachSheep);
-        }
-    }
-
-    public void LoadNotOwnedSheep(List<SheepInfo> sheep)
-    {
         User.Instance.NotOwnedSheepList.Clear();
 
-        foreach (var eachSheep in sheep)
+        var ownedById = ownedSheepFromServer
+            .Where(x => x?.SheepInfo != null)
+            .ToDictionary(x => x.SheepInfo.Id, x => x);
+
+        foreach (var master in Managers.Data.SheepInfoDict.Values)
         {
-            User.Instance.NotOwnedSheepList.Add(eachSheep);
+            if (ownedById.TryGetValue(master.Id, out var owned))
+            {
+                owned.SheepInfo = master;
+                User.Instance.OwnedSheepList.Add(owned);
+            }
+            else
+            {
+                User.Instance.NotOwnedSheepList.Add(master);
+            }
         }
     }
-    
-    public void LoadOwnedEnchant(List<OwnedEnchantInfo> enchants)
+
+    public void LoadOwnedEnchant(List<OwnedEnchantInfo> ownedEnchantsFromServer)
     {
         User.Instance.OwnedEnchantList.Clear();
-
-        foreach (var enchant in enchants)
-        {
-            User.Instance.OwnedEnchantList.Add(enchant);
-        }
-    }
-    
-    public void LoadNotOwnedEnchant(List<EnchantInfo> enchants)
-    {
         User.Instance.NotOwnedEnchantList.Clear();
 
-        foreach (var enchant in enchants)
+        var ownedById = ownedEnchantsFromServer
+            .Where(x => x?.EnchantInfo != null)
+            .ToDictionary(x => x.EnchantInfo.Id, x => x);
+
+        foreach (var master in Managers.Data.EnchantInfoDict.Values)
         {
-            User.Instance.NotOwnedEnchantList.Add(enchant);
+            if (ownedById.TryGetValue(master.Id, out var owned))
+            {
+                owned.EnchantInfo = master;
+                User.Instance.OwnedEnchantList.Add(owned);
+            }
+            else
+            {
+                User.Instance.NotOwnedEnchantList.Add(master);
+            }
         }
     }
-    
-    public void LoadOwnedCharacter(List<OwnedCharacterInfo> characters)
+
+    public void LoadOwnedCharacter(List<OwnedCharacterInfo> ownedCharactersFromServer)
     {
         User.Instance.OwnedCharacterList.Clear();
-
-        foreach (var character in characters)
-        {
-            User.Instance.OwnedCharacterList.Add(character);
-        }
-    }
-    
-    public void LoadNotOwnedCharacter(List<CharacterInfo> characters)
-    {
         User.Instance.NotOwnedCharacterList.Clear();
 
-        foreach (var character in characters)
+        var ownedById = ownedCharactersFromServer
+            .Where(x => x?.CharacterInfo != null)
+            .ToDictionary(x => x.CharacterInfo.Id, x => x);
+
+        foreach (var master in Managers.Data.CharacterInfoDict.Values)
         {
-            User.Instance.NotOwnedCharacterList.Add(character);
+            if (ownedById.TryGetValue(master.Id, out var owned))
+            {
+                owned.CharacterInfo = master;
+                User.Instance.OwnedCharacterList.Add(owned);
+            }
+            else
+            {
+                User.Instance.NotOwnedCharacterList.Add(master);
+            }
         }
-    }    
+    }
     
     public void LoadOwnedMaterial(List<OwnedMaterialInfo> materials)
     {
@@ -183,19 +195,14 @@ public class UserService : IUserService
     public async Task LoadUserInfo()
     {
         var loadUserInfoPacket = new LoadUserInfoPacketRequired{ AccessToken = _tokenService.GetAccessToken() };
-        var loadUserInfoTask = _webService.SendWebRequestAsync<LoadUserInfoPacketResponse>(
+        var res = await _webService.SendWebRequestAsync<LoadUserInfoPacketResponse>(
             "UserAccount/LoadUserInfo", "POST", loadUserInfoPacket);
+        if (res.LoadUserInfoOk == false) return;
         
-        await loadUserInfoTask;
-        
-        var loadUserInfoResponse = loadUserInfoTask.Result;
-        if (loadUserInfoResponse.LoadUserInfoOk == false) return;
-        
-        UserInfo = loadUserInfoResponse.UserInfo;
-        TutorialInfo = loadUserInfoResponse.UserTutorialInfo;
-        User.Instance.ExpTable = loadUserInfoResponse.ExpTable;
-        User.Instance.UserInfo = UserInfo;
-        User.Instance.SubscribeAdsRemover = loadUserInfoResponse.UserInfo.Subscriptions
+        TutorialInfo = res.UserTutorialInfo;
+        User.Instance.ExpTable = res.ExpTable;
+        User.Instance.UserInfo = res.UserInfo;
+        User.Instance.SubscribeAdsRemover = res.UserInfo.Subscriptions
             .FirstOrDefault(si => si.SubscriptionType == SubscriptionType.AdsRemover) != null;
     }
 
@@ -207,10 +214,9 @@ public class UserService : IUserService
         
         await task;
         
-        UserInfo = task.Result.UserInfo;
         TutorialInfo = task.Result.UserTutorialInfo;
         User.Instance.ExpTable = task.Result.ExpTable;
-        User.Instance.UserInfo = UserInfo;
+        User.Instance.UserInfo = task.Result.UserInfo;
         
         _tokenService.SaveAccessToken(task.Result.AccessToken);
         _tokenService.SaveRefreshToken(task.Result.RefreshToken);

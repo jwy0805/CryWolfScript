@@ -635,7 +635,7 @@ public class UI_TutorialBattleWolfPopup : UI_Popup
 
             if (IsInterrupted)
             {
-                if (!Managers.Data.TutorialDict.TryGetValue(TutorialType.BattleSheep, out var tutorialData)) return;
+                if (!Managers.Data.TutorialDict.TryGetValue(TutorialType.BattleWolf, out var tutorialData)) return;
                 if (!tutorialData.StepsDict.TryGetValue(InterruptTag, out var step)) return;
                 if (step.Next.Contains("Close"))
                 {

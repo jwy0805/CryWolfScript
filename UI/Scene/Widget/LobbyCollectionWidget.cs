@@ -69,6 +69,7 @@ public class LobbyCollectionWidget
         _arrangeAllButton = arrangeAllButton;
         _collectionUiDict = collectionUiDict;
         
+        ReleaseEvents();
         BindEvents();
     }
 
@@ -78,24 +79,25 @@ public class LobbyCollectionWidget
         _collectionVm.OnCardSwitched += SetCollectionUI;
     }
 
+    private void ReleaseEvents()
+    {
+        _collectionVm.OnCardInitialized -= SetCollectionUI;
+        _collectionVm.OnCardSwitched -= SetCollectionUI;
+    }
+
     public async Task InitCollection()
     {
         await _collectionVm.Initialize();
         
-        InitCollectionUI();
+        InitCollectionTabUI();
     }
 
-    private void InitCollectionUI()
+    private void InitCollectionTabUI()
     {
         _utilWidget.FocusTabButton("DeckTabButton");
         _craftingPanel.sizeDelta = new Vector2(_craftingPanel.sizeDelta.x, 0);
         _collectionScrollView.SetActive(false);
         _arrangeAllButton.GetComponentInChildren<Image>().color = Color.cyan;
-    }
-    
-    public async Task SwitchCollection(Faction faction)
-    {
-        await SetCollectionUI(faction);
     }
     
     public async Task SetCollectionUI(Faction faction)
@@ -114,15 +116,15 @@ public class LobbyCollectionWidget
     public async Task SetCollectionUIDetails(Faction faction)
     {
         var user = User.Instance;
-        var ownedUnits      = _utilWidget.OrderOwnedUnits(user.OwnedUnitList, ArrangeMode);
-        var ownedSheep      = _utilWidget.OrderOwnedSheep(user.OwnedSheepList, ArrangeMode);
-        var ownedEnchants   = _utilWidget.OrderOwnedEnchants(user.OwnedEnchantList, ArrangeMode);
+        var ownedUnits = _utilWidget.OrderOwnedUnits(user.OwnedUnitList, ArrangeMode);
+        var ownedSheep = _utilWidget.OrderOwnedSheep(user.OwnedSheepList, ArrangeMode);
+        var ownedEnchants = _utilWidget.OrderOwnedEnchants(user.OwnedEnchantList, ArrangeMode);
         var ownedCharacters = _utilWidget.OrderOwnedCharacters(user.OwnedCharacterList, ArrangeMode);
-        var ownedMaterials  = _utilWidget.OrderOwnedMaterials(user.OwnedMaterialList, ArrangeMode);
-        var notOwnedUnits   = _utilWidget.OrderAssetList(user.NotOwnedUnitList
+        var ownedMaterials = _utilWidget.OrderOwnedMaterials(user.OwnedMaterialList, ArrangeMode);
+        var notOwnedUnits = _utilWidget.OrderAssetList(user.NotOwnedUnitList
             .FindAll(info => info.Faction == faction), ArrangeMode);
-        var notOwnedSheep      = _utilWidget.OrderAssetList(user.NotOwnedSheepList, ArrangeMode);
-        var notOwnedEnchants   = _utilWidget.OrderAssetList(user.NotOwnedEnchantList, ArrangeMode);
+        var notOwnedSheep = _utilWidget.OrderAssetList(user.NotOwnedSheepList, ArrangeMode);
+        var notOwnedEnchants = _utilWidget.OrderAssetList(user.NotOwnedEnchantList, ArrangeMode);
         var notOwnedCharacters = _utilWidget.OrderAssetList(user.NotOwnedCharacterList, ArrangeMode);
         
         _utilWidget.SetActivePanels(_collectionUiDict, _collectionUiDict.Keys.ToArray());
@@ -135,6 +137,7 @@ public class LobbyCollectionWidget
         Util.DestroyAllChildren(_materialCollection);
         
         // Units
+        Debug.Log($"{ownedUnits.Count} owned units, {notOwnedUnits.Count} not owned units");
         foreach (var unit in ownedUnits)
         {
             var cardFrame = await Managers.Resource.GetCardResources<UnitId>(
@@ -223,7 +226,6 @@ public class LobbyCollectionWidget
     
     public void Dispose()
     {
-        _collectionVm.OnCardInitialized -= SetCollectionUI;
-        _collectionVm.OnCardSwitched -= SetCollectionUI;
+        ReleaseEvents();
     }
 }

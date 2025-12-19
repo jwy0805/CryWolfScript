@@ -103,13 +103,9 @@ public class UI_LanguagePopup : UI_Popup
     
     private async Task ChangeLanguageAsync(string language2Letter)
     {
-        await SettingsPopup.UpdateFlag(language2Letter);
-        await SettingsPopup.ChangeLanguage(language2Letter);
-        _lobbyVm.ChangeLanguage(language2Letter);
-
-        await Task.Delay(1000); // Wait for the UI to update
-        
         Managers.Localization.SetLanguage(language2Letter);
+        await Task.WhenAll(SettingsPopup.UpdateFlag(), SettingsPopup.ChangeLanguage(), _lobbyVm.ChangeLanguage());
+        
         Managers.UI.ClosePopupUI();
     }
     
