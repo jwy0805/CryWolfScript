@@ -79,6 +79,9 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
     
     private enum Texts
     {
+        UnitDeleteText,
+        UnitRepairText,
+        
         UnitDeleteGoldText,
         UnitRepairGoldText,
     }
@@ -121,7 +124,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
             _gameVm.CapacityWindow = this;
         
             BindObjects();
-            InitUI();
+            await InitUIAsync();
             InitButtonEvents();
             await InitSlotAsync(0);
             InitEvents();
@@ -147,7 +150,7 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         }
     }
     
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         var images = new List<Images>();
         switch (ObjectType)
@@ -164,11 +167,17 @@ public class CapacityWindow : UI_Popup, ICapacityWindow
         }
         
         BindControlButtons(images);
-        SetObjectSize(_imageDict["UnitDeleteButtonPanel"], 0.7f);
-        SetObjectSize(_imageDict["UnitRepairButtonPanel"], 0.7f);
-        SetObjectSize(_imageDict["UnitDeleteGoldImage"], 0.18f);
-        SetObjectSize(_imageDict["UnitDeleteGoldPlusImage"], 0.12f);
-        SetObjectSize(_imageDict["UnitRepairGoldImage"], 0.18f);
+        
+        var goldIconPath = Util.Faction == Faction.Sheep ? "Sprites/UIIcons/icon_coin" : "Sprites/UIIcons/icon_dna";
+
+        var unitDeleteText = GetText((int)Texts.UnitDeleteText);
+        var unitRepairText = GetText((int)Texts.UnitRepairText);
+        
+        GetImage((int)Images.UnitDeleteGoldImage).sprite = await Managers.Resource.LoadAsync<Sprite>(goldIconPath);
+        GetImage((int)Images.UnitDeleteGoldPlusImage).sprite = await Managers.Resource.LoadAsync<Sprite>(goldIconPath);
+        
+        await Managers.Localization.BindLocalizedText(unitDeleteText, "delete_text");
+        await Managers.Localization.BindLocalizedText(unitRepairText, "repair_text");
     }
     
     private void BindControlButtons(List<Images> images)

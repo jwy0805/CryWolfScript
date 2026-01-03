@@ -5,9 +5,12 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Zenject;
 
 public class UI_RewardSubscriptionPopup : UI_Popup
 {
+    private ShopViewModel _shopVm;
+    
     private readonly Dictionary<string, GameObject> _textDict = new();
     
     public string ProductCode { get; set; }
@@ -23,6 +26,12 @@ public class UI_RewardSubscriptionPopup : UI_Popup
         TapToContinueText,
     }
 
+    [Inject]
+    public void Construct(ShopViewModel shopVm) 
+    {
+        _shopVm = shopVm;
+    }
+    
     protected override async void Init()
     {
         try
@@ -32,6 +41,7 @@ public class UI_RewardSubscriptionPopup : UI_Popup
             await BindObjectsAsync();
             InitButtonEvents();
             await InitUIAsync();
+            await ResetAdsRemover();
         }
         catch (Exception e)
         {
@@ -71,8 +81,15 @@ public class UI_RewardSubscriptionPopup : UI_Popup
                 adsRemover.Applied = true;
                 break;
         }
+
+        User.Instance.SubscribeAdsRemover = true;
     }
 
+    private async Task ResetAdsRemover()
+    {
+        await _shopVm.ApplyAdsRemover();
+    }
+    
     private void OnTapToContinueClicked(PointerEventData data)
     {
         Managers.UI.CloseAllPopupUI();

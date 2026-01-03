@@ -14,9 +14,14 @@ public class UI_PolicyPopup : UI_Popup
 {
     private IWebService _webService;
     private ITokenService _tokenService;
-    private MainLobbyViewModel _mainLobbyVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
+
+    private TaskCompletionSource<PolicyPopupResult> _resultTcs;
+    private bool _agreedPolicy = true;
+    private bool _agreedTerms = true;
+    private bool _isUnder13 = false;
+    
     private Action _yesCallback; // Only yes callback is used because applying no will quit the app.
 
     private enum Buttons
@@ -47,11 +52,16 @@ public class UI_PolicyPopup : UI_Popup
     }
 
     [Inject]
-    public void Construct(IWebService webService, ITokenService tokenService, MainLobbyViewModel mainLobbyVm)
+    public void Construct(IWebService webService, ITokenService tokenService)
     {
         _webService = webService;
         _tokenService = tokenService;
-        _mainLobbyVm = mainLobbyVm;
+    }
+    
+    public Task<PolicyPopupResult> WaitResultAsync()
+    {
+        _resultTcs = new TaskCompletionSource<PolicyPopupResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        return _resultTcs.Task;
     }
     
     protected override void Init()
@@ -61,6 +71,7 @@ public class UI_PolicyPopup : UI_Popup
         BindObjects();
         InitButtonEvents();
         InitUI();
+        InitDefaultStates();
     }
 
     protected override void BindObjects()
@@ -80,78 +91,80 @@ public class UI_PolicyPopup : UI_Popup
         GetButton((int)Buttons.NoButton).gameObject.BindEvent(OnNoClicked);
         
         var policyToggle = GetToggle((int)Toggles.PolicyToggle);
-        policyToggle.onValueChanged.AddListener(value => Managers.Policy.ReadPolicy = value);
-        policyToggle.isOn = true;
-        Managers.Policy.ReadPolicy = true;
+        policyToggle.onValueChanged.AddListener(value => _agreedPolicy = value);
         
         var termsToggle = GetToggle((int)Toggles.TermsToggle);
-        termsToggle.onValueChanged.AddListener(value => Managers.Policy.ReadTerms = value);
-        termsToggle.isOn = true;
-        Managers.Policy.ReadTerms = true;
+        termsToggle.onValueChanged.AddListener(value => _agreedTerms = value);
         
         var ageToggle = GetToggle((int)Toggles.AgeToggle);
-        ageToggle.onValueChanged.AddListener(value => Managers.Policy.AgeUnder13 = !value);
-        ageToggle.isOn = true;
+        ageToggle.onValueChanged.AddListener(isOver13 => _isUnder13 = !isOver13);
     }
 
     protected override void InitUI()
     {
         _textDict["PolicyWarningText"].gameObject.SetActive(false);
     }
+
+    private void InitDefaultStates()
+    {
+        _agreedPolicy = true;
+        _agreedTerms = true;
+        
+        var ageToggle = GetToggle((int)Toggles.AgeToggle);
+        ageToggle.isOn = true;
+        _isUnder13 = !ageToggle.isOn;
+        
+        var policyToggle = GetToggle((int)Toggles.PolicyToggle);
+        policyToggle.isOn = true;
+        _agreedPolicy = policyToggle.isOn;
+        
+        var termsToggle = GetToggle((int)Toggles.TermsToggle);
+        termsToggle.isOn = true;
+        _agreedTerms = termsToggle.isOn;
+    }
     
     private void OnGoingPolicyClicked(PointerEventData data)
     {
-        var url = Managers.Network.BaseUrl + "/privacy";
-        Application.OpenURL(url);
+        Application.OpenURL(Managers.Network.BaseUrl + "/privacy");
     }
     
     private void OnGoingTermsClicked(PointerEventData data)
     {
-        var url = Managers.Network.BaseUrl + "/terms";
-        Application.OpenURL(url);
-    }
-
-    public void SetYesCallback(Action callback)
-    {
-        _yesCallback = callback;
+        Application.OpenURL(Managers.Network.BaseUrl + "/terms");
     }
     
     private async Task OnYesClicked(PointerEventData data)
     {
         try
         {
-            if (Managers.Policy.ReadPolicy == false || Managers.Policy.ReadTerms == false)
+            if (!_agreedPolicy || !_agreedTerms)
             {
                 var textObject = _textDict["PolicyWarningText"].gameObject;
                 textObject.SetActive(true);
                 await Managers.Localization.UpdateTextAndFont(textObject, "policy_warning_text_must_agree");
                 return;
             }
-
-            Managers.Policy.SetCoppaConsent(Managers.Policy.AgeUnder13);
-
+            
             var packet = new PolicyAgreedPacketRequired
             {
                 AccessToken = _tokenService.GetAccessToken(),
                 PolicyAgreed = true
             };
 
-            var task = await _webService.SendWebRequestAsync<PolicyAgreedPacketResponse>(
+            var res = await _webService.SendWebRequestAsync<PolicyAgreedPacketResponse>(
                 "UserAccount/PolicyAgreed", UnityWebRequest.kHttpVerbPOST, packet);
 
-            if (task.PolicyAgreedOk)
-            {
-                Managers.UI.ClosePopupUI<UI_PolicyPopup>();
-                Managers.Policy.SetPolicyConsent(true);
-                _yesCallback?.Invoke();
-            }
-            else
+            if (!res.PolicyAgreedOk)
             {
                 var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
-                var titleKey = "notify_network_error_title";
-                var messageKey = "notify_network_error_message";
-                await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
+                await Managers.Localization.UpdateNotifyPopupText(
+                    popup, "notify_network_error_message", "notify_network_error_title");
+                return;
             }
+            
+            _resultTcs?.TrySetResult(new PolicyPopupResult(_agreedPolicy, _agreedTerms, _isUnder13));
+
+            Managers.UI.ClosePopupUI<UI_PolicyPopup>();
         }
         catch (Exception e)
         {

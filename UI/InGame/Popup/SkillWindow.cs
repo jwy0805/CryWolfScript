@@ -30,6 +30,7 @@ public class SkillWindow : UI_Popup, ISkillWindow
     private enum Images
     {
         SkillPanel,
+        GoldImage
     }
 
     private enum Texts
@@ -95,6 +96,7 @@ public class SkillWindow : UI_Popup, ISkillWindow
         var panelRect = _skillPanel.GetComponent<RectTransform>();
         panelRect.anchoredPosition = new Vector2(0, 0);
         panelRect.sizeDelta = new Vector2(0, 0);
+        panelRect.localScale = Vector3.one;
         
         // Set Skill Buttons on the skill panel
         _skillButtons = _skillPanel.GetComponentsInChildren<Button>();
@@ -106,9 +108,13 @@ public class SkillWindow : UI_Popup, ISkillWindow
             UpdateSkillButton();
         }
         
-        // Set Current Unit Name
+        var upgradeText = GetText((int)Texts.SkillWindowUpgradeText);
         var currentNameText = GetText((int)Texts.CurrentName);
-        currentNameText.text = await Managers.Localization.BindLocalizedText(currentNameText, unitId.ToString());
+        await Managers.Localization.BindLocalizedText(upgradeText, "upgrade_text");
+        await Managers.Localization.BindLocalizedText(currentNameText, unitId.ToString());
+        
+        var goldIconPath = Util.Faction == Faction.Sheep ? "Sprites/UIIcons/icon_coin" : "Sprites/UIIcons/icon_dna";
+        GetImage((int)Images.GoldImage).sprite = await Managers.Resource.LoadAsync<Sprite>(goldIconPath);
     }
     
     // Update skill button when a skill is upgraded

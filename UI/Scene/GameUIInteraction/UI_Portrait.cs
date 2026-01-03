@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -12,9 +13,9 @@ public interface IPortrait
 {
     UnitId UnitId { get; set; }
     bool CanSpawn { get; set; }
-    void ShowRing(float attackRange, float skillRange);
+    Task EnsureRingsAsync(int token, float attackRange, float skillRange);
     void ShowSpawnableBounds(float minZ, float maxZ);
-    void HideRing();
+    void DestroyRing();
     void HideSpawnableBounds();
 }
 
@@ -34,11 +35,10 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
     private GameObject _attackRangeRing;
     private GameObject _skillRangeRing;
     private GameObject _spawnableBounds;
+    private Image _image;
     
     // Network
     private readonly float _fenceMoveValue = 4f;
-    private readonly float _sendTick = 0.1f;
-    private float _lastSendTime;
     private const float MinWorldDelta = 0.05f;
     private Vector3 _lastSentPos;
     
@@ -56,6 +56,10 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
     private bool _canSpawnLocal;
     private const float MinZ = -20;
     private const float MaxZ = 20;
+
+    private int _ringToken;
+    private bool _loadingAttackRing;
+    private bool _loadingSkillRing;
     
     public UnitId UnitId
     {
@@ -79,22 +83,29 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         get => _canSpawn;
         set
         {
-            if (value == false) HideRing();
             if (_canSpawn == value) return;
             _canSpawn = value;
-            
+            _image.color = _canSpawn ? Color.white : Color.red;
+
             if (_canSpawn)
             {
-                _data.TryGetValue((int)_unitId, out var data);
-                if (data != null)
+                if (_attackRangeRing != null) _attackRangeRing.SetActive(true);
+                if (_skillRangeRing != null) _skillRangeRing.SetActive(true);
+                
+                if ((_attackRangeRing == null || _skillRangeRing == null) &&
+                    _data.TryGetValue((int)_unitId, out var data) && data != null)
                 {
-                    var attackRange = data.Stat.AttackRange;
-                    var skillRange = data.Stat.SkillRange;
-                    ShowRing(attackRange, skillRange);
+                    var token = ++_ringToken;
+                    _ = EnsureRingsAsync(token, data.Stat.AttackRange, data.Stat.SkillRange);
                 }
             }
-            
-            gameObject.GetComponent<Image>().color = _canSpawn ? Color.white : Color.red;
+            else
+            {
+                if (_attackRangeRing != null) _attackRangeRing.SetActive(false);
+                if (_skillRangeRing != null) _skillRangeRing.SetActive(false);
+                
+                _ringToken++;
+            }
         }
     }
     
@@ -112,6 +123,7 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         _rect = GetComponent<RectTransform>();
         _rayMask = LayerMask.GetMask("Ground", "Fence", "MonsterStatue", "Base", "Sheep");
         _denyMask = LayerMask.GetMask("Fence", "MonsterStatue", "Base", "Sheep");
+        _image = GetComponent<Image>();
 
         var fence = Managers.Object.Find(go => go.CompareTag("Fence"));
         if (fence != null)
@@ -148,7 +160,6 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         _gameVm.CurrentSelectedPortrait = portrait;
         _gameVm.OnPortraitDrag = true;
         _originalPos = tf.position;
-        _lastSendTime = 0;
         _lastSentPos = Vector3.positiveInfinity;
         
         // spawnable bounds
@@ -235,7 +246,7 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
     public void OnEndDrag(PointerEventData eventData)
     {
         HideSpawnableBounds();
-        HideRing();
+        DestroyRing();
         
         // Drag ended
         transform.position = _originalPos;
@@ -250,25 +261,67 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         // Tutorial
         _tutorialVm?.PortraitDragEndHandler();
     }
-    
-    public async void ShowRing(float attackRange, float skillRange)
+
+    public async Task EnsureRingsAsync(int token, float attackRange, float skillRange)
     {
         try
         {
-            if (attackRange > 0)
+            if (attackRange > 0 && _attackRangeRing == null && !_loadingAttackRing)
             {
-                _attackRangeRing = await Managers.Resource.Instantiate("WorldObjects/RangeRing");
-                if (_attackRangeRing.TryGetComponent(out UI_RangeRing ring)) ring.AboutAttack = true;
-                _attackRangeRing.transform.position = _hitPoint;
-                ring.SetScale(attackRange);
+                _loadingAttackRing = true;
+                try
+                {
+                    var go = await Managers.Resource.Instantiate("WorldObjects/RangeRing");
+                    
+                    if (token != _ringToken) 
+                    {
+                        Managers.Resource.Destroy(go);
+                        return;
+                    }
+                    
+                    _attackRangeRing = go;
+                    if (go.TryGetComponent(out UI_RangeRing ring))
+                    {
+                        ring.AboutAttack = true;
+                        ring.SetScale(attackRange);
+                    }
+
+                    go.SetActive(_canSpawn);
+                    go.transform.position = _hitPoint + new Vector3(0, 0.05f, 0);
+                }
+                finally
+                {
+                    _loadingAttackRing = false;
+                }
             }
 
-            if (skillRange > 0)
+            if (skillRange > 0 && _skillRangeRing == null && !_loadingSkillRing)
             {
-                _skillRangeRing = await Managers.Resource.Instantiate("WorldObjects/RangeRing");
-                if (_skillRangeRing.TryGetComponent(out UI_RangeRing ring)) ring.AboutSkill = true;
-                _skillRangeRing.transform.position = _hitPoint;
-                ring.SetScale(skillRange);
+                _loadingSkillRing = true;
+                try
+                {
+                    var go = await Managers.Resource.Instantiate("WorldObjects/RangeRing");
+                    
+                    if (token != _ringToken) 
+                    {
+                        Managers.Resource.Destroy(go);
+                        return;
+                    }
+
+                    _skillRangeRing = go;
+                    if (go.TryGetComponent(out UI_RangeRing ring))
+                    {
+                        ring.AboutSkill = true;
+                        ring.SetScale(skillRange);
+                    }
+                    
+                    go.SetActive(_canSpawn);
+                    go.transform.position = _hitPoint + new Vector3(0, 0.05f, 0);
+                }
+                finally
+                {
+                    _loadingSkillRing = false;
+                }
             }
         }
         catch (Exception e)
@@ -277,8 +330,10 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         }
     }
     
-    public void HideRing()
+    public void DestroyRing()
     {
+        _ringToken++; // 생성 중 Task 무효화
+
         if (_attackRangeRing != null)
         {
             Managers.Resource.Destroy(_attackRangeRing);

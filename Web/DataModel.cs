@@ -1,5 +1,19 @@
 using NUnit.Framework.Constraints;
 
+public readonly struct PolicyPopupResult
+{
+    public readonly bool AgreedPolicy;
+    public readonly bool AgreedTerms;
+    public readonly bool IsUnder13;
+    
+    public PolicyPopupResult(bool agreedPolicy, bool agreedTerms, bool isUnder13)
+    {
+        AgreedPolicy = agreedPolicy;
+        AgreedTerms = agreedTerms;
+        IsUnder13 = isUnder13;
+    }
+}
+
 public enum MaterialId
 {
     None = 2000,

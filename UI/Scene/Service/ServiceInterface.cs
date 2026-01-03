@@ -65,13 +65,14 @@ public interface ISignalRClient
 
 public interface IPaymentService
 {
+    bool IsInitialized { get; }
     void Init();
     void BuyCashProduct(string productId);
     Task BuyProductAsync(string productId);
     Task BuyDailyProductAsync(string productId);
     void RestorePurchases();
     string GetLocalizedPrice(string productCode);
-    event Func<Task> OnIapReady;
+    event Action OnIapReady;
     event Func<Task> OnCashPaymentSuccess;
     event Func<Task> OnPaymentSuccess;
     event Func<int, Task> OnDailyPaymentSuccess;

@@ -35,10 +35,12 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
     
     private Dictionary<string, Product> _storeProducts = new();
 
-    public event Func<Task> OnIapReady;
+    public event Action OnIapReady;
     public event Func<Task> OnCashPaymentSuccess;
     public event Func<Task> OnPaymentSuccess;
     public event Func<int, Task> OnDailyPaymentSuccess;
+    
+    public bool IsInitialized { get; private set; }
     
     [Inject]
     public PaymentService(IWebService webService, ITokenService tokenService)
@@ -87,32 +89,35 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
             ProductCode = productCode
         };
         
-        var task = await _webService.SendWebRequestAsync<VirtualPaymentPacketResponse>(
+        var res = await _webService.SendWebRequestAsync<VirtualPaymentPacketResponse>(
             "Payment/Purchase", UnityWebRequest.kHttpVerbPUT, packet);
 
-        if (task.PaymentOk)
+        if (res.PaymentOk)
         {
-            if (task.PaymentCode == VirtualPaymentCode.Product)
+            if (res.PaymentCode == VirtualPaymentCode.Product)
             {
                 var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
                 popup.SetYesCallback(Managers.UI.CloseAllPopupUI);
                 var titleKey = "notify_payment_success_title";
                 var messageKey = "notify_payment_success_message";
                 await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
-                await Util.InvokeAll(OnPaymentSuccess);
             }
-            else if (task.PaymentCode == VirtualPaymentCode.Subscription)
+            else if (res.PaymentCode == VirtualPaymentCode.Subscription)
             {
                 var popup = await Managers.UI.ShowPopupUI<UI_RewardSubscriptionPopup>();
                 popup.ProductCode = productCode;
             }
+            
+            await Util.InvokeAll(OnPaymentSuccess);
         }
         else
         {
             var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
             popup.SetYesCallback(Managers.UI.CloseAllPopupUI);
-            var titleKey = "notify_payment_failed_title";
-            var messageKey = "notify_payment_failed_message";
+            var titleKey = "notify_payment_reject_title";
+            var messageKey = res.CurrencyType == CurrencyType.Gold 
+                ? "notify_payment_lack_of_gold" 
+                : "notify_payment_lack_of_spinel";
             
             await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
         }
@@ -141,15 +146,14 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         }
         else
         {
-            var titleKey = "notify_payment_failed_title";
-            var messageKey = "notify_payment_failed_message";
+            var titleKey = "notify_payment_reject_title";
+            var messageKey = "notify_payment_lack_of_gold";
             await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
         }
     }
 
     public void OnInitialized(IStoreController controller, IExtensionProvider extensions)
     {
-        Debug.Log("IAP Initialized");
         _storeController = controller;
         _extensionProvider = extensions;
 
@@ -157,21 +161,26 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         foreach (var product in controller.products.all)
         {
             _storeProducts[product.definition.id] = product;
-            Debug.Log($"IAP Product Available: {product.definition.id}, Type: {product.definition.type}, Price: {product.metadata.localizedPriceString}");
         }
 
-        _ = Util.InvokeAll(OnIapReady);
-        _ = RetryPendingIfAnyAsync();
+        IsInitialized = true;
+        Debug.Log("IAP Initialized");
+        OnIapReady?.Invoke();
     }
     
     public string GetLocalizedPrice(string productCode)
     {
-        if (_storeProducts.TryGetValue(productCode, out var product) &&
-            product != null && product.availableToPurchase)
+        if (_storeController?.products == null)
+            return "—";
+
+        if (_storeProducts != null &&
+            _storeProducts.TryGetValue(productCode, out var product) &&
+            product is { availableToPurchase: true })
         {
             var s = product.metadata?.localizedPriceString;
             if (!string.IsNullOrEmpty(s)) return s;
         }
+
         return "—";
     }
     
@@ -234,6 +243,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
             // 권한 문제 -> 재시도해도 의미x -> Confirm 하고 종료
             shouldConfirm = true;
             grantReward = false;
+            Debug.LogWarning($"[paymentservice] Invalid receipt or error: {response.ErrorCode}");
             await ShowPurchaseFailedPopup();
         }
         else
@@ -252,6 +262,7 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         }
         else
         {
+            Debug.LogWarning($"[paymentservice] Purchase not granted. ErrorCode={response.ErrorCode}");
             await ShowPurchaseFailedPopup(response.ErrorCode);
         }
 
@@ -266,22 +277,6 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
         var item = $"{product.transactionID}|||{product.definition.id}|||{product.receipt}";
         PlayerPrefs.SetString(PendingKey, item);
         PlayerPrefs.Save();
-    }
-
-    public async Task RetryPendingIfAnyAsync()
-    {
-        var s = PlayerPrefs.GetString(PendingKey, "");
-        if (string.IsNullOrEmpty(s)) return;
-        
-        var parts = s.Split(new[] {"|||"},
-            StringSplitOptions.None);
-        if (parts.Length < 3) return;
-
-        var txId = parts[0];
-        var productId = parts[1];
-        var receipt = parts[2];
-        
-        
     }
     
     private Task<CashPaymentPacketResponse> SendReceiptToServer(string receipt, Product purchaseProduct)
@@ -326,8 +321,9 @@ public class PaymentService : IPaymentService, IDetailedStoreListener
     private async Task ShowPurchaseSuccessPopup()
     {
         var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        popup.SetYesCallback(Managers.UI.CloseAllPopupUI);
         const string titleKey = "notify_payment_success_title"; 
-        const string messageKey = "notify_payment_success_message";
+        const string messageKey = "notify_payment_success_message_cash";
         
         await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
     }

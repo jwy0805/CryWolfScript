@@ -22,6 +22,7 @@ public class UI_ProductInfoSimplePopup : UI_Popup
     private ProductInfo _productInfo;
     
     public bool IsDailyProduct { get; set; }
+    public string LocalizedPriceText { get; set; } = string.Empty;
     public GameObject FrameObject { get; set; }
     public Vector2 FrameSize { get; set; }
 
@@ -105,7 +106,9 @@ public class UI_ProductInfoSimplePopup : UI_Popup
         var productText = GetText((int)Texts.TextName);
         productText.text = await Managers.Localization.BindLocalizedText(productText, _productInfo.ProductCode);
         GetText((int)Texts.TextNum).text = str + composition?.Count;
-        GetText((int)Texts.TextPrice).text = _productInfo.Price.ToString();
+        GetText((int)Texts.TextPrice).text = LocalizedPriceText == string.Empty 
+            ? _productInfo.Price.ToString()
+            : LocalizedPriceText;
 
         if (IsDailyProduct)
         {
@@ -117,13 +120,11 @@ public class UI_ProductInfoSimplePopup : UI_Popup
     {
         const string spinelIconPath = "Sprites/ShopIcons/icon_spinel";
         const string goldIconPath = "Sprites/ShopIcons/icon_gold";
-        const string cashIconPath = "Sprites/ShopIcons/icon_cash";
 
         return category switch
         {
             ProductCategory.DailyDeal => goldIconPath,
             ProductCategory.ReservedSale => spinelIconPath,
-            ProductCategory.SpinelPackage => cashIconPath,
             _ => currencyType == CurrencyType.Spinel ? spinelIconPath : goldIconPath
         };
     }

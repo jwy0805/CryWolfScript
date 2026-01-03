@@ -26,6 +26,7 @@ public class LobbyShopWidget
     private AdsRemover _adsRemover;
     private Button _refreshButton;
     private TextMeshProUGUI _refreshButtonTimerText;
+    private bool _spinelItemsInited;
 
     private readonly Func<Task> _initUserInfo;
     
@@ -76,9 +77,30 @@ public class LobbyShopWidget
             InitPackages(_shopVm.GoldPackages, _goldStorePanel),
             InitPackages(_shopVm.SpinelPackages, _spinelStorePanel),
             InitGoldItems(),
-            InitSpinelItems(),
             InitDailyPanelObjects(),
             InitSubscriptionObjects());
+        
+        // Spinel만 IAP 준비되면 붙인다
+        HookSpinelInitAfterIap();
+    }
+    
+    private void HookSpinelInitAfterIap()
+    {
+        // 이미 초기화 완료면 즉시 실행
+        if (_paymentService.IsInitialized)
+        {
+            _ = InitSpinelItemsOnce();
+            return;
+        }
+
+        _paymentService.OnIapReady -= OnIapInitializedForSpinel; 
+        _paymentService.OnIapReady += OnIapInitializedForSpinel;
+    }
+    
+    private void OnIapInitializedForSpinel()
+    {
+        _paymentService.OnIapReady -= OnIapInitializedForSpinel;
+        _ = InitSpinelItemsOnce();
     }
     
     private async Task InitSpecialPackage()
@@ -92,7 +114,7 @@ public class LobbyShopWidget
             var priceText = Util.FindChild(item, "TextPrice", true, true);
             
             priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
-            item.BindEvent(OnProductClicked);
+            item.BindEvent(data => OnProductClicked(data));
         }
     }
     
@@ -105,7 +127,7 @@ public class LobbyShopWidget
             var priceText = Util.FindChild(item, "TextPrice", true, true);
             
             priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
-            item.BindEvent(OnProductClicked);
+            item.BindEvent(data => OnProductClicked(data));
         }
     }
 
@@ -133,7 +155,7 @@ public class LobbyShopWidget
             // var frameObject = Util.FindChild(item, "ItemIcon", true, true);
             
             priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
-            item.BindEvent(OnProductClicked);
+            item.BindEvent(data => OnProductClicked(data));
         }
     }
     
@@ -151,8 +173,17 @@ public class LobbyShopWidget
                 .FirstOrDefault(c => c.ProductId == productInfo.ProductId)?
                 .Count.ToString();
             priceText.GetComponent<TextMeshProUGUI>().text = productInfo.Price.ToString();
-            item.BindEvent(OnProductClicked);
+            item.BindEvent(data => OnProductClicked(data));
         }
+    }
+    
+    private async Task InitSpinelItemsOnce()
+    {
+        if (_spinelItemsInited) return;
+        _spinelItemsInited = true;
+
+        await InitSpinelItems();
+        BindLocalizedPrices(); // IAP 완료 후이므로 여기서 가격 바인딩까지 같이
     }
     
     private async Task InitSpinelItems()
@@ -162,23 +193,49 @@ public class LobbyShopWidget
             var itemName = ((ProductId)productInfo.ProductId).ToString();
             var item = await InitiateProduct(itemName, productInfo, _spinelPackagePanel);
             var countText = Util.FindChild(item, "TextNum", true, true);
-            var priceText = Util.FindChild(item, "TextPrice", true, true);
-            var localizedPrice = _paymentService.GetLocalizedPrice(productInfo.ProductCode);
-            
-            countText.GetComponent<TextMeshProUGUI>().text = productInfo.Compositions
-                .FirstOrDefault(c => c.ProductId == productInfo.ProductId)?
-                .Count.ToString();
-            priceText.GetComponent<TextMeshProUGUI>().text = localizedPrice;
-            productInfo.Price = localizedPrice switch
+            if (countText != null)
             {
-                "" => 0,
-                "-" => 0,
-                "--" => 0,
-                "$0.01" => 0,
-                _ => int.Parse(localizedPrice.Replace(",", "").Replace("$", ""))
-            };
-            
-            item.BindEvent(OnProductClicked);
+                var count = productInfo.Compositions
+                    .FirstOrDefault(c => c.ProductId == productInfo.ProductId)?
+                    .Count ?? 0;
+
+                var tmp = countText.GetComponent<TextMeshProUGUI>();
+                if (tmp != null) tmp.text = count.ToString();
+            }
+
+            var button = item.GetOrAddComponent<Button>();
+            button.onClick.RemoveAllListeners();
+
+            var productCode = productInfo.ProductCode; 
+            button.onClick.AddListener(() => _shopVm.BuyCashProduct(productCode));
+        }
+    }
+
+    private void BindLocalizedPrices()
+    {
+        foreach (Transform child in _spinelPackagePanel)
+        {
+            var product = child.GetComponent<GameProduct>();
+            if (product == null) continue;
+
+            var priceText = Util.FindChild(child.gameObject, "TextPrice", true, true);
+            if (priceText == null) continue;
+
+            var tmp = priceText.GetComponent<TextMeshProUGUI>();
+            if (tmp == null) continue;
+
+            // 텍스트가 클릭을 가로채지 않도록(자주 발생)
+            tmp.raycastTarget = false;
+
+            var code = product.ProductInfo?.ProductCode;
+            if (string.IsNullOrEmpty(code))
+            {
+                tmp.text = "-";
+                continue;
+            }
+
+            var localizedPrice = _paymentService.GetLocalizedPrice(code);
+            tmp.text = string.IsNullOrEmpty(localizedPrice) ? "-" : localizedPrice;
         }
     }
     
@@ -244,7 +301,7 @@ public class LobbyShopWidget
         await SetRefreshTimer();
     }
 
-    private async Task InitSubscriptionObjects()
+    public async Task InitSubscriptionObjects()
     {
         await InitAdsRemover();
     }
@@ -393,8 +450,14 @@ public class LobbyShopWidget
         Util.DestroyAllChildren(_dailyProductPanel);
         await InitDailyProducts();
     }
+
+    private async Task ApplyAdsRemoverUI()
+    {
+        User.Instance.SubscribeAdsRemover = true;
+        await InitAdsRemover();
+    }
     
-    private async Task OnProductClicked(PointerEventData data)
+    private async Task OnProductClicked(PointerEventData data, string localizedPrice = null)
     {
         GameProduct product = null;
         var go = data.pointerPress.gameObject;
@@ -402,6 +465,11 @@ public class LobbyShopWidget
         {
             if (productSimple.IsDragging) return;
             var simplePopup = await Managers.UI.ShowPopupUI<UI_ProductInfoSimplePopup>();
+            if (localizedPrice != null)
+            {
+                simplePopup.LocalizedPriceText = localizedPrice;
+            }
+            
             simplePopup.FrameObject = Object.Instantiate(go);
             simplePopup.FrameSize = go.GetComponent<RectTransform>().sizeDelta;
             product = productSimple;
@@ -495,8 +563,8 @@ public class LobbyShopWidget
     private void BindEvents()
     {
         _shopVm.OnResetDailyProductUI += OnResetDailyProductUI;
+        _shopVm.OnApplyAdsRemover += ApplyAdsRemoverUI;
         
-        _paymentService.OnIapReady += InitSpinelItems;
         _paymentService.OnPaymentSuccess += InitSubscriptionObjects;
         _paymentService.OnDailyPaymentSuccess += OnDailyPaymentSuccessHandler;
 
@@ -507,8 +575,8 @@ public class LobbyShopWidget
     private void ReleaseEvents()
     {
         _shopVm.OnResetDailyProductUI -= OnResetDailyProductUI;
+        _shopVm.OnApplyAdsRemover -= ApplyAdsRemoverUI;
         
-        _paymentService.OnIapReady -= InitSpinelItems;
         _paymentService.OnPaymentSuccess -= InitSubscriptionObjects;
         _paymentService.OnDailyPaymentSuccess -= OnDailyPaymentSuccessHandler;
         

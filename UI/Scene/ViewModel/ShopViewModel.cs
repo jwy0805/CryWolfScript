@@ -28,6 +28,7 @@ public class ShopViewModel
     public List<DailyProductInfo> DailyProducts;
 
     public event Func<Task> OnResetDailyProductUI;
+    public event Func<Task> OnApplyAdsRemover; 
     
     public ProductInfo AdsRemover { get; set; }
     public ProductInfo SelectedProduct { get; set; }
@@ -157,14 +158,13 @@ public class ShopViewModel
     public async Task BuyProduct()
     {
         if (SelectedProduct == null) return;
-        if (SelectedProduct.CurrencyType == CurrencyType.Cash)
-        {
-            _paymentService.BuyCashProduct(SelectedProduct.ProductCode);
-        }
-        else
-        {
-            await _paymentService.BuyProductAsync(SelectedProduct.ProductCode);
-        }
+        await _paymentService.BuyProductAsync(SelectedProduct.ProductCode);
+    }
+
+    public void BuyCashProduct(string productCode)
+    {
+        Debug.Log($"[ShopViewModel] BuyCashProduct: {productCode}");
+        _paymentService.BuyCashProduct(productCode);
     }
 
     public void BuyDailyProduct()
@@ -210,5 +210,10 @@ public class ShopViewModel
         }
 
         return task.RefreshDailyProductOk;
+    }
+
+    public async Task ApplyAdsRemover()
+    {
+        await Util.InvokeAll(OnApplyAdsRemover);
     }
 }

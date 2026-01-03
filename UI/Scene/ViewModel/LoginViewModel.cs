@@ -197,7 +197,6 @@ public class LoginViewModel : IInitializable, IDisposable
             var tokenLength = token.Length;
             var idToken = Encoding.UTF8.GetString(token, 0, tokenLength);
             
-            Debug.Log($"Sign-in with Apple successfully done. IDToken: {idToken}");
             _appleToken = idToken;
             ProcessingLogin = false;
 

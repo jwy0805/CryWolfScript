@@ -1,131 +1,96 @@
 using System;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
+#if UNITY_IOS && !UNITY_EDITOR
+using Unity.Advertisement.IosSupport;
+#endif
 using UnityEngine;
+using UnityEngine.UIElements;
+
+// ReSharper disable InconsistentNaming
 
 public class PolicyConsentManager
 {
     private TaskCompletionSource<bool> _tcs;
     private const string PolicyKey = "PolicyConsent";
-    private const string CoppaKey = "CoppaConsent";
-    private const string CcpaKey = "CcpaConsent";
+    private const string AgeGateKey = "AgeGateConsent";
+    private const string Under13Key = "IsUnder13";
     private const string AttKey = "AttConsent";
-    
-    public bool ReadPolicy { get; set; }
-    public bool ReadTerms { get; set; }
-    public bool AgeUnder13 { get; set; }
-    
-    public bool CheckPolicyConsent()
-    {
-        var regionCode = RegionInfo.CurrentRegion.TwoLetterISORegionName;
-        bool policyChecked = false;
 
-        if (regionCode == "US")
+    private readonly SemaphoreSlim _gate = new(1, 1);
+
+    public bool PolicyConsent => PlayerPrefs.GetInt(PolicyKey, 0) == 1;
+    public bool AgeGateDone => PlayerPrefs.GetInt(AgeGateKey, 0) == 1;
+    public bool IsUnder13 => PlayerPrefs.GetInt(Under13Key, 0) == 1;
+    
+    public bool? AttConsent => PlayerPrefs.HasKey(AttKey) ? PlayerPrefs.GetInt(AttKey) == 1 : null;
+    
+    private bool IsPolicyDone()
+    {
+        return PolicyConsent && AgeGateDone && PlayerPrefs.HasKey(Under13Key);
+    }
+    
+    public void SetPolicyDone(bool isUnder13)
+    {
+        PlayerPrefs.SetInt(PolicyKey, 1);
+        PlayerPrefs.SetInt(AgeGateKey, 1);
+        PlayerPrefs.SetInt(Under13Key, isUnder13 ? 1 : 0);
+        PlayerPrefs.Save();
+    }
+    
+    public void SetAttConsent(bool v)
+    {
+        PlayerPrefs.SetInt(AttKey, v ? 1 : 0);
+        PlayerPrefs.Save();
+    }
+
+    public async Task EnsureConsentsAndInitAdsAsync()
+    {
+        await _gate.WaitAsync().ConfigureAwait(false);
+        try
         {
-            if (GetCoppaConsent() != null && GetPolicyConsent() != null)
+            if (!IsPolicyDone())
             {
-                policyChecked = true;
+                var popup = await Managers.UI.ShowPopupUI<UI_PolicyPopup>();
+                var result = await popup.WaitResultAsync();
+
+                SetPolicyDone(result.IsUnder13);
             }
-        }
-        else
-        {
-            if (GetPolicyConsent() != null)
+
+            var under13 = IsUnder13;
+
+#if UNITY_IOS && !UNITY_EDITOR
+            if (!under13)
             {
-                policyChecked = true;
+                var status = ATTrackingStatusBinding.GetAuthorizationTrackingStatus();
+                
+                if (status == ATTrackingStatusBinding.AuthorizationTrackingStatus.NOT_DETERMINED)
+                {
+                    await Managers.Ads.RequestAttAsync(timeoutSeconds: 10);
+                }
+                else
+                {
+                    if (AttConsent == null)
+                    {
+                        var authorized = status == ATTrackingStatusBinding.AuthorizationTrackingStatus.AUTHORIZED;
+                        SetAttConsent(authorized);
+                    }
+                }
             }
-        }
-
-        return policyChecked;
-    }
-    
-    public bool CheckAttConsent()
-    {
-#if UNITY_IOS
-        return GetAttConsent() != null;
+            else
+            {
+                if (AttConsent == null)
+                    SetAttConsent(false);
+            }
 #endif
-        return true;
-    }
 
-    public async Task RequestConsents(bool policyFinished, bool attFinished)
-    {
-        if (policyFinished == false)
-        {
-            await ShowPolicyPopupAsync();
+            Managers.Ads.FetchAdvertisingUserId();
+            Managers.Ads.InitLevelPlay();
         }
-        Debug.Log("[Manager] Requesting consents...");
-
-#if UNITY_IOS
-        if (attFinished == false)
+        finally
         {
-            await Managers.Ads.RequestAttAsync();
+            _gate.Release();
         }
-        Debug.Log("[Manager] Requesting att...");
-#endif
-    }
-
-    private async Task<bool> ShowPolicyPopupAsync()
-    {
-        _tcs = new TaskCompletionSource<bool>();
-        var popup = await Managers.UI.ShowPopupUI<UI_PolicyPopup>();
-        
-        popup.SetYesCallback(() =>
-        {
-            SetPolicyConsent(true);
-            _tcs.SetResult(true);
-        });
-        
-        return await _tcs.Task;
-    }
-    
-    public void SetPolicyConsent(bool consent)
-    {
-        PlayerPrefs.SetInt(PolicyKey, consent ? 1 : 0);
-        PlayerPrefs.Save();
-    }
-    
-    public void SetCoppaConsent(bool consent)
-    {
-        PlayerPrefs.SetInt(CoppaKey, consent ? 1 : 0);
-        PlayerPrefs.Save();
-    }
-    
-    public void SetCcpaConsent(bool consent)
-    {
-        PlayerPrefs.SetInt(CcpaKey, consent ? 1 : 0);
-        PlayerPrefs.Save();
-    }
-    
-    public void SetAttConsent(bool consent)
-    {
-        PlayerPrefs.SetInt(AttKey, consent ? 1 : 0);
-        PlayerPrefs.Save();
-    }
-    
-    public bool? GetPolicyConsent()
-    {
-        if (PlayerPrefs.HasKey(PolicyKey))
-            return PlayerPrefs.GetInt(PolicyKey) == 1;
-        return null;
-    }
-    
-    public bool? GetCoppaConsent()
-    {
-        if (PlayerPrefs.HasKey(CoppaKey))
-            return PlayerPrefs.GetInt(CoppaKey) == 1;
-        return null;
-    }
-    
-    public bool? GetCcpaConsent()
-    {
-        if (PlayerPrefs.HasKey(CcpaKey))
-            return PlayerPrefs.GetInt(CcpaKey) == 1;
-        return null;
-    }
-    
-    public bool? GetAttConsent()
-    {
-        if (PlayerPrefs.HasKey(AttKey))
-            return PlayerPrefs.GetInt(AttKey) == 1;
-        return null;
     }
 }

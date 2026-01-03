@@ -108,29 +108,31 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
         var resourceText = GetText((int)Texts.ResourceText);
         var assetText = GetText((int)Texts.AssetText);
         
-        var baseUpgradeKey = $"Sprites/Icons/SkillIcons/{baseUpgradeString}";
-        var repairKey = $"Sprites/Icons/SkillIcons/RepairAll";
-        var resourceKey = $"Sprites/Icons/SkillIcons/{resourceString}";
-        var assetKey = $"Sprites/Icons/SkillIcons/{assetString}";
+        var baseUpgradeIconPath = $"Sprites/Icons/SkillIcons/{baseUpgradeString}";
+        var repairIconPath = $"Sprites/Icons/SkillIcons/RepairAll";
+        var resourceIconPath = $"Sprites/Icons/SkillIcons/{resourceString}";
+        var assetIconPath = $"Sprites/Icons/SkillIcons/{assetString}";
+        var goldIconPath = Util.Faction == Faction.Sheep ? "Sprites/UIIcons/icon_coin" : "Sprites/UIIcons/icon_dna";
         
-        baseUpgradeButtonImage.sprite = await Managers.Resource.LoadAsync<Sprite>(baseUpgradeKey);
-        repairButtonImage.sprite = await Managers.Resource.LoadAsync<Sprite>(repairKey);
-        resourceButtonImage.sprite = await Managers.Resource.LoadAsync<Sprite>(resourceKey);
-        assetButtonImage.sprite = await Managers.Resource.LoadAsync<Sprite>(assetKey);
+        var baseUpgradeKey = Util.Faction == Faction.Sheep ? "upgrade_base" : "upgrade_portal";
+        var repairKey = Util.Faction == Faction.Sheep ? "repair_all_fences" : "repair_all_statues";
+        var resourceKey = Util.Faction == Faction.Sheep ? "increase_gold" : "increase_dna";
+        var assetKey = Util.Faction == Faction.Sheep ? "create_sheep" : "upgrade_enchant";
+        
+        baseUpgradeButtonImage.sprite = await Managers.Resource.LoadAsync<Sprite>(baseUpgradeIconPath);
+        repairButtonImage.sprite = await Managers.Resource.LoadAsync<Sprite>(repairIconPath);
+        resourceButtonImage.sprite = await Managers.Resource.LoadAsync<Sprite>(resourceIconPath);
+        assetButtonImage.sprite = await Managers.Resource.LoadAsync<Sprite>(assetIconPath);
+        
+        GetImage((int)Images.BaseUpgradeGoldImage).sprite = await Managers.Resource.LoadAsync<Sprite>(goldIconPath);
+        GetImage((int)Images.RepairGoldImage).sprite = await Managers.Resource.LoadAsync<Sprite>(goldIconPath);
+        GetImage((int)Images.ResourceGoldImage).sprite = await Managers.Resource.LoadAsync<Sprite>(goldIconPath);
+        GetImage((int)Images.AssetGoldImage).sprite = await Managers.Resource.LoadAsync<Sprite>(goldIconPath);
 
-        baseUpgradeText.text = Util.Faction == Faction.Sheep ? "기지\n업그레이드" : "포탈\n업그레이드";
-        repairText.text = Util.Faction == Faction.Sheep ? "모든 울타리\n수리" : "모든 석상\n수리";
-        resourceText.text = Util.Faction == Faction.Sheep ? "획득 골드\n증가" : "획득 DNA\n증가";
-        assetText.text = Util.Faction == Faction.Sheep ? "양 생성" : "주술 강화";
-        
-        SetObjectSize(GetImage((int)Images.BaseUpgradeButtonPanel).gameObject, 0.65f, 0.65f);
-        SetObjectSize(GetImage((int)Images.RepairButtonPanel).gameObject, 0.65f, 0.65f);
-        SetObjectSize(GetImage((int)Images.ResourceButtonPanel).gameObject, 0.65f, 0.65f);
-        SetObjectSize(GetImage((int)Images.AssetButtonPanel).gameObject, 0.65f, 0.65f);
-        SetObjectSize(GetImage((int)Images.BaseUpgradeGoldImage).gameObject, 0.15f, 0.15f);
-        SetObjectSize(GetImage((int)Images.RepairGoldImage).gameObject, 0.15f, 0.15f);
-        SetObjectSize(GetImage((int)Images.ResourceGoldImage).gameObject, 0.15f, 0.15f);
-        SetObjectSize(GetImage((int)Images.AssetGoldImage).gameObject, 0.15f, 0.15f);
+        await Managers.Localization.BindLocalizedText(baseUpgradeText, baseUpgradeKey);
+        await Managers.Localization.BindLocalizedText(repairText, repairKey);
+        await Managers.Localization.BindLocalizedText(resourceText, resourceKey);
+        await Managers.Localization.BindLocalizedText(assetText, assetKey);
     }
     
     protected override void BindObjects()

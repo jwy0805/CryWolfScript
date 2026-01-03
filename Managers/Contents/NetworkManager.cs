@@ -25,7 +25,7 @@ public class NetworkManager
     private bool _noInternetPopupShowing = false;
     public Action OnInternetRestored;
 
-    public Env Environment => Env.Local;
+    public Env Environment => Env.Prod;
     public readonly bool UseAddressables = true;
     public bool IsFriendlyMatchHost { get; set; }
 

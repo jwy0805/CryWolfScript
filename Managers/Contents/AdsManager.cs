@@ -25,13 +25,18 @@ public class AdsManager
 
     private LevelPlayRewardedAd _rewardedAd;
     
-    private string _idfa = string.Empty;
+    private readonly SemaphoreSlim _attGate = new(1,1);
+    private string _advertisingUserId = string.Empty;
     private bool _levelPlayInitialized;
-    private bool _attRequested;
+    private bool _userRequestedShow;
+    private string _lastRequestedPlacement = string.Empty;
 
+    private enum NotifyState { None, Loading, Unavailable }
+    private NotifyState _notifyState = NotifyState.None;
+    private UI_NotifyPopup _activeNotifyPopup;
+    
     public event Func<DailyProductInfo, Task> OnRewardedRevealDailyProduct;
     public event Func<Task> OnRewardedRefreshDailyProducts;
-    public event Action OnAdFailed;
 
     public DailyProductInfo RevealedDailyProduct { get; set; }
     
@@ -42,106 +47,78 @@ public class AdsManager
         _sInitEventsWired = false;
     }
 #endif
-
-#if UNITY_EDITOR
-    private void OnPlayModeStateChanged(PlayModeStateChange state)
-    {
-        // 편집→플레이 전환/종료 시 안전하게 해제
-        if (state == PlayModeStateChange.ExitingPlayMode || state == PlayModeStateChange.ExitingEditMode)
-            TearDownInitEvents();
-    }
-#endif
     
 #if UNITY_IOS
-    public async Task RequestAttAsync()
+    public async Task RequestAttAsync(int timeoutSeconds = 10)
     {
-        if (_attRequested)
-        {
-            Debug.LogWarning("[Ads] ATT request already made.");
-            return;
-        }
-        _attRequested = true;
-
+        Debug.Log("RequestAttAsync called");
+        await _attGate.WaitAsync().ConfigureAwait(false);
         try
         {
-            // Return if ATT status is already determined
-            var current = ATTrackingStatusBinding.GetAuthorizationTrackingStatus();
-            if (current != ATTrackingStatusBinding.AuthorizationTrackingStatus.NOT_DETERMINED)
+            var status = ATTrackingStatusBinding.GetAuthorizationTrackingStatus();
+            if (status != ATTrackingStatusBinding.AuthorizationTrackingStatus.NOT_DETERMINED)
             {
-                if (Managers.Policy.GetAttConsent() == null)
-                {
-                    var result = current == ATTrackingStatusBinding.AuthorizationTrackingStatus.AUTHORIZED;
-                    Managers.Policy.SetAttConsent(result);
-                    return;
-                }
-
-                var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-                void Request()
-                {
-                    ATTrackingStatusBinding.RequestAuthorizationTracking(result =>
-                    {
-                        var resultStatus =
-                            result == (int)ATTrackingStatusBinding.AuthorizationTrackingStatus.AUTHORIZED;
-                        Managers.Policy.SetAttConsent(resultStatus);
-                        tcs.TrySetResult(true);
-                    });
-                }
-
-                Request();
-
-                // Time out
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-                var completed = await Task
-                    .WhenAny(tcs.Task, Task.Delay(Timeout.Infinite, cts.Token)) == tcs.Task;
-
-                if (!completed)
-                {
-                    var fallback = ATTrackingStatusBinding.GetAuthorizationTrackingStatus();
-                    var result = fallback == ATTrackingStatusBinding.AuthorizationTrackingStatus.AUTHORIZED;
-                    Managers.Policy.SetAttConsent(result);
-                }
+                SaveAttStatus(status);
+                return;
             }
+
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            ATTrackingStatusBinding.RequestAuthorizationTracking(_ => { tcs.TrySetResult(true); });
+            
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+            try
+            {
+                await Task.WhenAny(tcs.Task, Task.Delay(Timeout.Infinite, cts.Token)).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException e)
+            {
+                // ignore
+            }
+
+            status = ATTrackingStatusBinding.GetAuthorizationTrackingStatus();
+            SaveAttStatus(status);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[Ads] ATT request failed: {e.Message}");
+            var fallback = ATTrackingStatusBinding.GetAuthorizationTrackingStatus();
+            SaveAttStatus(fallback);
         }
         finally
         {
-            _attRequested = false;
+            _attGate.Release();
         }
     }
 
-    public void FetchIdfa()
+    private void SaveAttStatus(ATTrackingStatusBinding.AuthorizationTrackingStatus status)
     {
-        var adIdentifier = Device.advertisingIdentifier;
-        _idfa = string.IsNullOrEmpty(adIdentifier) ? User.Instance.UserInfo.UserAccount : adIdentifier;
-        Debug.Log($"[AdsManager] IDFA = {_idfa}");
+        var authorized = status == ATTrackingStatusBinding.AuthorizationTrackingStatus.AUTHORIZED;
+        Managers.Policy.SetAttConsent(authorized);
+        
+        Debug.Log($"[AdsManager] ATT status = {status}, authorized = {authorized}");
+    }
+
+    public void FetchAdvertisingUserId()
+    {
+        var idfa = Device.advertisingIdentifier;
+        _advertisingUserId = string.IsNullOrEmpty(idfa) ? User.Instance.UserInfo.UserAccount : idfa;
+        if (string.IsNullOrEmpty(_advertisingUserId)) _advertisingUserId = SystemInfo.deviceUniqueIdentifier;
     }
     
 #else
-    public Task RequestAttAsync() => Task.CompletedTask;
-    public void FetchIdfa() 
+    public Task RequestAttAsync(int timeoutSeconds = 10) => Task.CompletedTask;
+
+    public void FetchAdvertisingUserId()
     {
         var userId = User.Instance.UserInfo.UserAccount;
-        _idfa = string.IsNullOrEmpty(userId) ? SystemInfo.deviceUniqueIdentifier : userId;
-        Debug.Log($"[AdsManager] IDFA = {_idfa}");
+        _advertisingUserId = string.IsNullOrEmpty(userId) ? SystemInfo.deviceUniqueIdentifier : userId;
     }
 #endif
 
     private void ApplyRegulationFlags()
     {
-        // // GDPR
-        // IronSource.Agent.setConsent();
-        // // CCPA
-        // IronSource.Agent.setMetaData("do_not_sell", consent.CcpaOptout ? "true" : "false");
-        // // LGPD
-        // IronSource.Agent.setMetaData("lgpdConsent", consent.GdprConsent ? "true" : "false");
-        
-        // COPPA
-        var coppaConsent = Managers.Policy.GetCoppaConsent();
-        if (coppaConsent != null)
-        {
-            var coppa = coppaConsent.Value;
-            LevelPlay.SetMetaData("is_child_directed", coppa ? "true": "false");
-        }
+        var under13 = Managers.Policy.IsUnder13;
+        LevelPlay.SetMetaData("is_child_directed", under13 ? "true" : "false");
     }
 
     public void InitLevelPlay()
@@ -149,7 +126,11 @@ public class AdsManager
         if (_levelPlayInitialized) return;
         
         ApplyRegulationFlags();
-        var userIdfa = string.IsNullOrEmpty(_idfa) ? User.Instance.UserInfo.UserAccount : _idfa;
+        var userIdfa = string.IsNullOrEmpty(_advertisingUserId)
+            ? User.Instance.UserInfo.UserAccount
+            : _advertisingUserId;
+        if (string.IsNullOrEmpty(userIdfa)) userIdfa = SystemInfo.deviceUniqueIdentifier;
+        
         string appKey =
 #if UNITY_ANDROID
             AndroidAppKey;
@@ -162,18 +143,20 @@ public class AdsManager
                 RuntimePlatform.OSXEditor => IOSAppKey,
                 _ => throw new NotSupportedException("Unsupported platform for AdsManager in Editor.")
             };
+#else
+        "";
 #endif
         
-        // AdsTest
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
         LevelPlay.SetMetaData("is_test_suite", "enable");
-        // AdsTest
+#endif        
 
         WireInitEventsOnce();
         
         LevelPlay.Init(appKey, userIdfa);
     }
     
-    private void WireInitEventsOnce()
+    private static void WireInitEventsOnce()
     {
         if (_sInitEventsWired) return;
 
@@ -186,7 +169,7 @@ public class AdsManager
     }
     
     
-    private void TearDownInitEvents()
+    private static void TearDownInitEvents()
     {
         if (!_sInitEventsWired) return;
 
@@ -196,28 +179,32 @@ public class AdsManager
         _sInitEventsWired = false;
     }
 
-    private void OnLevelPlayInitialized(LevelPlayConfiguration configuration)
+    private static void OnLevelPlayInitialized(LevelPlayConfiguration configuration)
+    {
+        Managers.Ads.LevelPlayInitialized(configuration);
+    }
+
+    private void LevelPlayInitialized(LevelPlayConfiguration configuration)
     {
         Debug.Log("LevelPlay Initialization Completed.");
         _levelPlayInitialized = true;
         
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         LevelPlay.LaunchTestSuite();
-        Debug.Log("[Ads] LevelPlay Test Suite Launched.");
-        return;
 #endif
+        
         CreateAndWireRewarded();
         _rewardedAd.LoadAd();
     }
     
-    private void OnLevelPlayInitFailed(LevelPlayInitError error)
+    private static void OnLevelPlayInitFailed(LevelPlayInitError error)
     {
         Debug.LogError($"[Ads] LevelPlay Initialization Failed: {error}");
-        OnAdFailed?.Invoke();
     }
 
     private void CreateAndWireRewarded()
     {
+        if (_rewardedAd != null) return;
         if (string.IsNullOrEmpty(RewardedAdUnitId) || RewardedAdUnitId.Contains("PUT_"))
         {
             Debug.LogError("[Ads] RewardedAdUnitId is missing.");
@@ -242,52 +229,93 @@ public class AdsManager
         switch (placementName)
         {
             case "Check_Daily_Product":
-                Debug.Log("[Ads] Editor simulated rewarded ad for Check_Daily_Product.");;
-                OnRewardedRevealDailyProduct?.Invoke(RevealedDailyProduct);
+                Debug.Log("[Ads] Editor simulated rewarded ad for Check_Daily_Product.");
+                _ = InvokeSafeAsync(OnRewardedRevealDailyProduct, RevealedDailyProduct);
                 break;
             case "Refresh_Daily_Products":
                 Debug.Log("[Ads] Editor simulated rewarded ad for Refresh_Daily_Products.");
-                OnRewardedRefreshDailyProducts?.Invoke();
+                _ = InvokeSafeAsync(OnRewardedRefreshDailyProducts);
                 break;
             default:
                 Debug.Log("[Ads] Editor simulated rewarded ad with no specific placement.");
                 break;
         }
+
+        return;
 #endif
+        _userRequestedShow = true;
+        _lastRequestedPlacement = placementName ?? string.Empty;
         
         if (_rewardedAd == null)
         {
             Debug.LogWarning("[Ads] Rewarded ad is not initialized.");
+            _userRequestedShow = false;
+            _ = ShowAdUnavailableAsync();
             return;
         }
 
-        if (_rewardedAd.IsAdReady() &&
-            (string.IsNullOrEmpty(placementName) || !LevelPlayRewardedAd.IsPlacementCapped(placementName)))
+        bool capped = !string.IsNullOrEmpty(placementName) && LevelPlayRewardedAd.IsPlacementCapped(placementName);
+        if (capped)
         {
-            if (string.IsNullOrEmpty(placementName))
-            {
-                _rewardedAd.ShowAd();
-            }
-            else
-            {
-                _rewardedAd.ShowAd(placementName);
-            }
+            _userRequestedShow = false;
+            _ = ShowAdUnavailableAsync();
+            return;
         }
-        else
+
+        if (_rewardedAd.IsAdReady())
         {
-            Debug.Log("[Ads] Reward video ad is not ready, loading ad...");
-            _rewardedAd.LoadAd();
+            CloseNotifyIfAny();
+            ShowRewardInternal(placementName);
+            return;
         }
+
+        // 아직 준비 안 됨 -> 로드 + 로딩 팝업
+        _rewardedAd.LoadAd();
+        _ = ShowAdLoadingNotifyAsync();
     }
 
+    private void ShowRewardInternal(string placementName)
+    {
+        if (string.IsNullOrEmpty(placementName))
+            _rewardedAd.ShowAd();
+        else
+            _rewardedAd.ShowAd(placementName);
+    }
+    
     private void OnRewardedLoaded(LevelPlayAdInfo adInfo)
     {
-        
+        if (!_userRequestedShow) return;
+
+        var placement = _lastRequestedPlacement ?? string.Empty;
+        var capped = !string.IsNullOrEmpty(placement) && LevelPlayRewardedAd.IsPlacementCapped(placement);
+
+        if (capped)
+        {
+            _userRequestedShow = false;
+            CloseNotifyIfAny();
+            _ = ShowAdUnavailableAsync();
+            return;
+        }
+
+        if (_rewardedAd != null && _rewardedAd.IsAdReady())
+        {
+            _userRequestedShow = false;
+            CloseNotifyIfAny();
+            ShowRewardInternal(placement);
+        }
     }
 
     private void OnRewardedLoadFailed(LevelPlayAdError adError)
     {
         Debug.LogError($"[Ads] Rewarded ad failed to load: {adError}");
+        
+        if (_userRequestedShow)
+        {
+            _userRequestedShow = false;
+            CloseNotifyIfAny();
+            _ = ShowAdUnavailableAsync();
+        }
+
         Managers.Instance.StartCoroutine(RetryLoadAdCoroutine(5f));
     }
 
@@ -299,20 +327,28 @@ public class AdsManager
 
     private void OnRewardedDisplayed(LevelPlayAdInfo adInfo)
     {
-        
+        _userRequestedShow = false;
+        CloseNotifyIfAny();
     }
     
     private void OnRewardedDisplayFailed(LevelPlayAdInfo adInfo, LevelPlayAdError adError)
     {
         Debug.LogError($"[Ads] Rewarded ad failed to display: {adError}");
-        OnAdFailed?.Invoke();
-        _rewardedAd.LoadAd();
+
+        _rewardedAd?.LoadAd();
+
+        if (_userRequestedShow)
+        {
+            _userRequestedShow = false;
+            CloseNotifyIfAny();
+            _ = ShowAdUnavailableAsync();
+        }
     }
 
     private void OnRewardedClosed(LevelPlayAdInfo adInfo)
     {
         // 광고가 닫힌 후 다음 노출 대비 로드
-        _rewardedAd.LoadAd();
+        _rewardedAd?.LoadAd();
     }
 
     private void OnRewardedClicked(LevelPlayAdInfo adInfo)
@@ -332,12 +368,68 @@ public class AdsManager
         switch (adInfo.PlacementName)
         {
             case "Check_Daily_Product":
-                OnRewardedRevealDailyProduct?.Invoke(RevealedDailyProduct);
+                _ = InvokeSafeAsync(OnRewardedRevealDailyProduct, RevealedDailyProduct);
                 break;
             case "Refresh_Daily_Products":
-                OnRewardedRefreshDailyProducts?.Invoke();
+                _ = InvokeSafeAsync(OnRewardedRefreshDailyProducts);
                 break;
         }
+    }
+    
+    private static async Task InvokeSafeAsync(Func<DailyProductInfo, Task> evt, DailyProductInfo arg)
+    {
+        if (evt == null) return;
+        try { await evt.Invoke(arg); }
+        catch (Exception e) { Debug.LogException(e); }
+    }
+
+    private static async Task InvokeSafeAsync(Func<Task> evt)
+    {
+        if (evt == null) return;
+        try { await evt.Invoke(); }
+        catch (Exception e) { Debug.LogException(e); }
+    }
+    
+    private Task ShowAdLoadingNotifyAsync() => ShowNotifyAsync(NotifyState.Loading, "notify_ads_loading");
+    private Task ShowAdUnavailableAsync() => ShowNotifyAsync(NotifyState.Unavailable, "notify_ads_unavailable");
+    
+    private async Task ShowNotifyAsync(NotifyState state, string messageKey)
+    {
+        if (_notifyState == state && _activeNotifyPopup != null) return;
+
+        // 상태 전환 시 기존 팝업 닫기
+        CloseNotifyIfAny();
+
+        _notifyState = state;
+
+        try
+        {
+            var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+            _activeNotifyPopup = popup;
+
+            popup.SetYesCallback(CloseNotifyIfAny);
+            popup.SetExitCallback(CloseNotifyIfAny);
+
+            await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, "empty_text");
+        }
+        catch
+        {
+            // 실패 시 상태만 원복
+            _notifyState = NotifyState.None;
+            _activeNotifyPopup = null;
+            throw;
+        }
+    }
+
+    private void CloseNotifyIfAny()
+    {
+        if (_activeNotifyPopup != null)
+        {
+            Managers.UI.ClosePopupUI(_activeNotifyPopup);
+            _activeNotifyPopup = null;
+        }
+
+        _notifyState = NotifyState.None;    
     }
     
     public void TearDownEvents()
@@ -355,5 +447,8 @@ public class AdsManager
             _rewardedAd.OnAdClicked -= OnRewardedClicked;
             _rewardedAd.OnAdInfoChanged -= OnRewardedInfoChanged;
         }
+        
+        CloseNotifyIfAny();
+        _levelPlayInitialized = false;
     }
 }

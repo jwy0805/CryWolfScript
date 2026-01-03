@@ -166,7 +166,7 @@ public class UI_UnitInfoPopup : UI_Popup
         {
             base.Init();
         
-            BindObjects();
+            await BindObjectsAsync();
             InitButtonEvents();
             GetUnitInfo((UnitId)SelectedCard.Id);
             InitUI();
@@ -178,13 +178,13 @@ public class UI_UnitInfoPopup : UI_Popup
         }
     }
 
-    protected override void BindObjects()
+    protected override async Task BindObjectsAsync()
     {
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Image>(typeof(Images));
         Bind<Button>(typeof(Buttons));
         
-        _ = Managers.Localization.UpdateTextAndFont(_textDict);
+        await Managers.Localization.UpdateTextAndFont(_textDict);
         
         _levelButtons.Add(1, GetButton((int)Buttons.LevelButton1));
         _levelButtons.Add(2, GetButton((int)Buttons.LevelButton2));

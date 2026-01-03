@@ -504,42 +504,38 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         await InitMainLobbyItems();
         GetImage((int)Images.LoadingPanel).gameObject.SetActive(false);
         
+        var sheepTutorialDone = _userService.TutorialInfo.SheepTutorialDone;
+        var wolfTutorialDone = _userService.TutorialInfo.WolfTutorialDone;
+        var changeFactionTutorialDone = _userService.TutorialInfo.ChangeFactionTutorialDone;
+        
 #if !UNITY_EDITOR
-        var policyFinished = Managers.Policy.CheckPolicyConsent();
-        var attFinished = Managers.Policy.CheckAttConsent();
-        if (policyFinished == false || attFinished == false)
-        {
-            await Managers.Policy.RequestConsents(policyFinished, attFinished);
-        }
-
-        Managers.Ads.FetchIdfa();
-        Managers.Ads.InitLevelPlay();
+        await Managers.Policy.EnsureConsentsAndInitAdsAsync();
 #endif
         
-        if (User.Instance.IsGuest)
+        if (sheepTutorialDone == false || wolfTutorialDone == false || changeFactionTutorialDone == false)
+        {
+            await _tutorialWidget.ProcessTutorial(_userService.TutorialInfo);
+        }
+        
+        if (User.Instance.IsGuest && !User.Instance.GuestPopupShown)
         {
             var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
             const string titleKey = "warning_text";
             const string messageKey = "notify_warning_guest_account_message";
             await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, titleKey);
             
-            var tcs = new TaskCompletionSource<bool>();
-            popup.SetYesCallback(() =>
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            void Close()
             {
+                if (User.Instance.IsGuest) User.Instance.GuestPopupShown = true;
                 tcs.TrySetResult(true);
                 Managers.UI.ClosePopupUI(popup);
-            });
+            }
+
+            popup.SetYesCallback(Close);
+            popup.SetExitCallback(Close);
             
             await tcs.Task;
-        }
-        
-        var sheepTutorialDone = _userService.TutorialInfo.SheepTutorialDone;
-        var wolfTutorialDone = _userService.TutorialInfo.WolfTutorialDone;
-        var changeFactionTutorialDone = _userService.TutorialInfo.ChangeFactionTutorialDone;
-        
-        if (sheepTutorialDone == false || wolfTutorialDone == false || changeFactionTutorialDone == false)
-        {
-            await _tutorialWidget.ProcessTutorial(_userService.TutorialInfo);
         }
     }
 

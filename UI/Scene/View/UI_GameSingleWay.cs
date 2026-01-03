@@ -24,6 +24,9 @@ public class UI_GameSingleWay : UI_Game
     
     private enum Images
     {
+        ResourceImage,
+        CapacityImage,
+        
         UnitPanel0,
         UnitPanel1,
         UnitPanel2,
@@ -72,14 +75,21 @@ public class UI_GameSingleWay : UI_Game
         _tutorialVm.OnGetRangerIndex += GetRangerIndex;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
-        Faction = Util.Faction;
+        try
+        {
+            base.Init();
+            Faction = Util.Faction;
         
-        BindObjects();
-        InitButtonEvents();
-        InitUI();
+            BindObjects();
+            InitButtonEvents();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
     
     protected override async void BindObjects()
@@ -108,8 +118,14 @@ public class UI_GameSingleWay : UI_Game
         GetButton((int)Buttons.ResourceButton).gameObject.BindEvent(OnResourceClicked);
     }
     
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
+        var resourceIconPath = Util.Faction == Faction.Sheep ? "Sprites/UIIcons/icon_coin" : "Sprites/UIIcons/icon_dna";
+        var capacityIconPath = Util.Faction == Faction.Sheep ? "Sprites/sheep_face_icon" : "Sprites/wolf_face_icon";
+        
+        GetImage((int)Images.ResourceImage).sprite = await Managers.Resource.LoadAsync<Sprite>(resourceIconPath);
+        GetImage((int)Images.CapacityImage).sprite = await Managers.Resource.LoadAsync<Sprite>(capacityIconPath);
+        
         if (Managers.Game.IsTutorial)
         {
             _ = SetTutorialUI();
@@ -137,10 +153,13 @@ public class UI_GameSingleWay : UI_Game
                 await Managers.Resource.LoadAsync<Sprite>($"Sprites/Portrait/{portrait.UnitId}");
             prefab.BindEvent(OnPortraitClicked);
             
+            var goldIconPath = Util.Faction == Faction.Sheep ? "Sprites/UIIcons/icon_coin" : "Sprites/UIIcons/icon_dna";
+            var goldImage = Util.FindChild(parent.gameObject, "GoldImage", true);
             var unitRole = Managers.Data.UnitDict[initPortraitId].UnitRole;
             var rolePath = $"Sprites/Icons/icon_role_{unitRole.ToString().ToLower()}";
             var roleIcon = Util.FindChild(prefab, "RoleIcon", true);
             
+            goldImage.GetComponent<Image>().sprite = await Managers.Resource.LoadAsync<Sprite>(goldIconPath);
             roleIcon.GetComponent<Image>().sprite = await Managers.Resource.LoadAsync<Sprite>(rolePath);
             roleIcon.transform.parent.GetComponent<RectTransform>().anchorMin = new Vector2(0, 1);
             roleIcon.transform.parent.GetComponent<RectTransform>().anchorMax = new Vector2(0, 1);

@@ -12,14 +12,9 @@ using Zenject;
 
 public class UI_MailBoxPopup : UI_Popup
 {
-    private IUserService _userService;
-    private IWebService _webService;
-    private ITokenService _tokenService;
     private MainLobbyViewModel _lobbyVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
-    
-    private bool _allClaimClicked = false;
     
     private enum Images
     {
@@ -42,15 +37,8 @@ public class UI_MailBoxPopup : UI_Popup
     }
 
     [Inject]
-    public void Construct(
-        IUserService userService,
-        IWebService webService, 
-        ITokenService tokenService, 
-        MainLobbyViewModel lobbyViewModel)
+    public void Construct(MainLobbyViewModel lobbyViewModel)
     {
-        _userService = userService;
-        _webService = webService;
-        _tokenService = tokenService;
         _lobbyVm = lobbyViewModel;
     }
 

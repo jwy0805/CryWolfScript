@@ -451,7 +451,7 @@ public class LobbyCraftingWidget
         await LoadCraftingCard(card);
     }
     
-    public async Task LoadCraftingCard(Card card)
+    private async Task LoadCraftingCard(Card card)
     {
         try
         {

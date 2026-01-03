@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
@@ -11,6 +12,7 @@ using Zenject;
 public class UI_RewardItemPopup : UI_Popup
 {
     private MainLobbyViewModel _lobbyVm;
+    private ShopViewModel _shopVm;
     private CollectionViewModel _collectionVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
@@ -34,9 +36,10 @@ public class UI_RewardItemPopup : UI_Popup
     }
 
     [Inject]
-    public void Construct(MainLobbyViewModel lobbyVm, CollectionViewModel collectionVm)
+    public void Construct(MainLobbyViewModel lobbyVm, ShopViewModel shopVm, CollectionViewModel collectionVm)
     {
         _lobbyVm = lobbyVm;
+        _shopVm = shopVm;
         _collectionVm = collectionVm;
     }
     
@@ -234,6 +237,10 @@ public class UI_RewardItemPopup : UI_Popup
     {
         await _collectionVm.LoadCollection();
         await _lobbyVm.InitUserInfo();
+        if (CompositionInfos.Select(c => c.ProductType).Contains(ProductType.Subscription))
+        {
+            await _shopVm.ApplyAdsRemover();
+        }
     }
     
     private void ClosePopup(PointerEventData data)

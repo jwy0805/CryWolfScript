@@ -23,6 +23,7 @@ public class UI_DeckChangePopup : UI_Popup
     
     private enum Images
     {
+        WarningPanel,
         PopupPanel,
         Deck,
         CardPanel,
@@ -83,7 +84,8 @@ public class UI_DeckChangePopup : UI_Popup
 
     protected override void InitUI()
     {
-        
+        var warningPanel = GetImage((int)Images.WarningPanel).gameObject;
+        warningPanel.SetActive(false);
     }
     
     private void SetDeckUiInPopup()

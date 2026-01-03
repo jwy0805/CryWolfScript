@@ -299,27 +299,29 @@ public class PacketHandler
             var floatingTextObject = await Managers.Resource.Instantiate("WorldObjects/DmgText");
             var text = floatingTextObject.GetComponentInChildren<TextMeshPro>();
             var typeWriter = floatingTextObject.GetComponentInChildren<TypewriterByCharacter>();
+            var damageString = damagePacket.DamageType == Damage.Miss ? "Miss" : $"{damagePacket.Damage}";
             floatingTextObject.transform.position = go.transform.position + Vector3.up;
-            typeWriter.ShowText($"{damagePacket.Damage}");
+            typeWriter.ShowText($"{damageString}");
             switch (damagePacket.DamageType)
             {
                 case Damage.Normal:
                     text.color = new Color32(255, 114, 4, 255);
-                    // text.outlineColor = new Color32(255, 30, 0, 255);
                     break;
                 case Damage.Magical:
                     text.color = new Color32(0, 255, 245, 255);
-                    // text.outlineColor = new Color32(0, 35, 255, 255);
                     break;
                 case Damage.Poison:
                     text.color = new Color32(177, 0, 255, 255);
-                    // text.outlineColor = new Color32(57, 0, 255, 255);
                     break;
                 case Damage.True:
                     text.color = new Color32(255, 255, 186, 255);
                     break;
                 case Damage.Heal:
                     text.color = Color.green;
+                    break;
+                case Damage.Shield:
+                case Damage.Miss:
+                    text.color = new Color32(200, 200, 200, 255);
                     break;
                 case Damage.None:
                 case Damage.Fire:

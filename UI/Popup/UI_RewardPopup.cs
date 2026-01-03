@@ -306,6 +306,7 @@ public class UI_RewardPopup : UI_Popup
 
         foreach (var reward in Rewards)
         {
+            Debug.Log($"ItemId: {reward.ItemId}, Type: {reward.ProductType}");
             await BindRewardUI(content.transform, reward);
         }
     }
@@ -352,10 +353,11 @@ public class UI_RewardPopup : UI_Popup
                 card = await Managers.Resource.GetItemFrameSpinel(reward.Count, parent);
                 break;
             case Google.Protobuf.Protocol.ProductType.Container:
-            default:
                 var rewardName = ((ProductId)reward.ItemId).ToString();
                 var path = $"UI/Shop/NormalizedProducts/{rewardName}";
                 card = await Managers.Resource.Instantiate(path, parent);
+                break;
+            default:
                 break;
         }
 

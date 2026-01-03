@@ -13,8 +13,9 @@ using Image = UnityEngine.UI.Image;
 public class UI_NotifyPopup : UI_Popup
 {
     private Func<Task> _yesAsyncCallback;
-    private Action _yesCallback; 
-    
+    private Action _yesCallback;
+    private Action _exitCallback;
+
     public string TitleText { get; set; }
     public TMP_FontAsset TitleFont { get; set; }
     public int TitleFontSize { get; set; }
@@ -93,6 +94,11 @@ public class UI_NotifyPopup : UI_Popup
     {
         _yesAsyncCallback = callback;
     }
+
+    public void SetExitCallback(Action callback)
+    {
+        _exitCallback = callback;
+    }
     
     private void OnNotifyClicked(PointerEventData data)
     {
@@ -103,6 +109,7 @@ public class UI_NotifyPopup : UI_Popup
     
     private void OnExitClicked(PointerEventData data)
     {
+        _exitCallback?.Invoke();
         Managers.UI.ClosePopupUI();
     }
 
@@ -110,5 +117,6 @@ public class UI_NotifyPopup : UI_Popup
     {
         _yesCallback = null;
         _yesAsyncCallback = null;
+        _exitCallback = null;
     }
 }

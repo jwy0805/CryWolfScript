@@ -82,6 +82,11 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
     
     private enum Texts
     {
+        UnitDeleteText,
+        UnitRepairText,
+        UnitRepairAllText,
+        UnitSkillText,
+        
         UnitDeleteGoldText,
         UnitRepairGoldText,
         UnitRepairAllGoldText,
@@ -97,20 +102,27 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         _gameVm = gameViewModel;
     }
 
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
-        _gameVm.UnitControlWindow = this;
-        
-        BindObjects();
-        InitUI();
-        InitButtonEvents();
-        InitCamera();
+        try
+        {
+            base.Init();
+            _gameVm.UnitControlWindow = this;
+
+            BindObjects();
+            await InitUIAsync();
+            InitButtonEvents();
+            InitCamera();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+        }
     }
 
     protected void FixedUpdate()
     {
-        if (_cc == null) return;
+        if (_cc == null || _portraitCamera == null) return;
         
         var offset = _cc.transform.forward * _cc.Stat.SizeX;
         _portraitCamera.transform.position = _cc.transform.position + offset + Vector3.up * _cc.Stat.SizeY;
@@ -171,7 +183,7 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         }
     }
     
-    protected override void InitUI()
+    protected override async Task InitUIAsync()
     {
         var images = new List<Images>();
         switch (_cc.ObjectType)
@@ -199,14 +211,22 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         }
         
         BindControlButtons(images);
-        SetObjectSize(GetImage((int)Images.UnitDeleteButtonPanel).gameObject, 0.7f);
-        SetObjectSize(GetImage((int)Images.UnitRepairButtonPanel).gameObject, 0.7f);
-        SetObjectSize(GetImage((int)Images.UnitRepairAllButtonPanel).gameObject, 0.7f);
-        SetObjectSize(GetImage((int)Images.UnitSkillButtonPanel).gameObject, 0.7f);
-        SetObjectSize(GetImage((int)Images.UnitDeleteGoldImage).gameObject, 0.18f);
-        SetObjectSize(GetImage((int)Images.UnitDeleteGoldPlusImage).gameObject, 0.12f);
-        SetObjectSize(GetImage((int)Images.UnitRepairGoldImage).gameObject, 0.18f);
-        SetObjectSize(GetImage((int)Images.UnitRepairAllGoldImage).gameObject, 0.18f);
+        
+        var goldIconPath = Util.Faction == Faction.Sheep ? "Sprites/UIIcons/icon_coin" : "Sprites/UIIcons/icon_dna";
+
+        var unitDeleteText = GetText((int)Texts.UnitDeleteText);
+        var unitRepairText = GetText((int)Texts.UnitRepairText);
+        var unitRepairAllText = GetText((int)Texts.UnitRepairAllText);
+        var unitSkillText = GetText((int)Texts.UnitSkillText);
+        
+        GetImage((int)Images.UnitDeleteGoldImage).sprite = await Managers.Resource.LoadAsync<Sprite>(goldIconPath);
+        GetImage((int)Images.UnitRepairGoldImage).sprite = await Managers.Resource.LoadAsync<Sprite>(goldIconPath);
+        GetImage((int)Images.UnitRepairAllGoldImage).sprite = await Managers.Resource.LoadAsync<Sprite>(goldIconPath);
+        
+        await Managers.Localization.BindLocalizedText(unitDeleteText, "delete_text");
+        await Managers.Localization.BindLocalizedText(unitRepairText, "repair_text");
+        await Managers.Localization.BindLocalizedText(unitRepairAllText, "repair_all_text");
+        await Managers.Localization.BindLocalizedText(unitSkillText, "skill_tree_text");
     }
 
     private void BindControlButtons(List<Images> images)
@@ -326,7 +346,5 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
     private void OnDestroy()
     {
         _gameVm.UnitControlWindow = null;
-        // _portraitRenderTexture.Release();
-        // Destroy(_portraitRenderTexture);
     }
 }

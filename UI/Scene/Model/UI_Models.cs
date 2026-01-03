@@ -28,6 +28,7 @@ public class User
     public Deck DeckWolf { get; set; } = new();
     public bool SubscribeAdsRemover { get; set; }
     public bool IsGuest { get; set; } = false;
+    public bool GuestPopupShown { get; set; } = false;
     public Dictionary<int, int> ExpTable { get; set; } = new();
     public void Clear()
     {

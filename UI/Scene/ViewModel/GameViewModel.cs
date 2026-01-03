@@ -185,7 +185,7 @@ public class GameViewModel : IDisposable
 
     public void HideMarker()
     {
-        CurrentSelectedPortrait?.HideRing();
+        CurrentSelectedPortrait?.DestroyRing();
         CurrentSelectedPortrait?.HideSpawnableBounds();
     }
     
