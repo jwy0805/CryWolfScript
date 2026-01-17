@@ -17,13 +17,13 @@ public class UI_RewardOpenPopup : UI_Popup
     private MainLobbyViewModel _lobbyVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
-    private RandomProductInfo _randomProductInfo = new();
+    private TotalProductInfo _randomProductInfo = new();
     private Transform _rewardView;
     private GameObject _rewardObject;
     private GameObject _openEffect;
     private Coroutine _shakeCo;
 
-    public List<RandomProductInfo> RandomProductInfos { get; set; }
+    public List<TotalProductInfo> RandomProductInfos { get; set; }
     
     private enum Buttons
     {

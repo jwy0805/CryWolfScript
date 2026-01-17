@@ -45,6 +45,7 @@ public class ServiceInstaller
         container.Bind<IWebService>().To<WebService>().AsSingle();
         container.Bind<ITokenService>().To<TokenService>().AsSingle();
         container.Bind<IPaymentService>().To<PaymentService>().AsSingle();
+        container.Bind<ISecretService>().To<SecretService>().AsSingle();
         container.BindInterfacesAndSelfTo<SignalRClient>().AsSingle();
 
         _servicesBound = true;

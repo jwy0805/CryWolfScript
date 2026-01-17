@@ -39,7 +39,6 @@ public class LobbyDeckWidget
         _deckVm.OnDeckInitialized += SetDeckUI;
         _deckVm.OnDeckSwitched += HandleSetDeckButtonUI;
         _deckVm.OnDeckSwitched += SetDeckUI;
-        Debug.Log("[LobbyDeckWidget] Deck events subscribed");
     }
     
     public void BindViews(
@@ -91,8 +90,6 @@ public class LobbyDeckWidget
         
         _deckButtonDict[$"DeckButton{deckNumber}"].GetComponent<DeckButtonInfo>().IsSelected = true;
         _lobbyDeckButtonDict[$"LobbyDeckButton{deckNumber}"].GetComponent<DeckButtonInfo>().IsSelected = true;
-
-        Debug.Log($"[LobbyDeckWidget] DeckButtonUI updated. Faction={faction}, Deck={deckNumber}");
     }
 
     public async Task ResetDeckUI(Faction faction)
@@ -145,8 +142,6 @@ public class LobbyDeckWidget
         // Set Character Frame
         var character = User.Instance.BattleSetting.CharacterInfo;
         await Managers.Resource.GetCardResources<CharacterId>(character, _assetParent, _onCardClicked);
-
-        Debug.Log($"[LobbyDeckWidget] SetDeckUI completed. Faction={faction}");
     }
     
     public async Task OnDeckButtonClicked(PointerEventData data)

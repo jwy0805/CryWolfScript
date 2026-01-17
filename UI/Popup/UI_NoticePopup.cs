@@ -30,7 +30,7 @@ public class UI_NoticePopup : UI_Popup
         {
             base.Init();
         
-            await BindObjectsAsync();
+            BindObjects();
             InitButtonEvents();
             await InitUIAsync();
         }
@@ -40,12 +40,12 @@ public class UI_NoticePopup : UI_Popup
         }
     }
     
-    protected override async Task BindObjectsAsync()
+    protected override void BindObjects()
     {
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
         
-        var str = await Managers.Localization.GetLocalizedText("enter_text");
+        var str = Managers.Localization.GetLocalizedText("enter_text");
         _textDict["EnterText"].GetComponent<TextMeshProUGUI>().text = str;
     }
     

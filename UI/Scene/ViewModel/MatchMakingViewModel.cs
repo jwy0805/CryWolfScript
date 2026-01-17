@@ -24,12 +24,12 @@ public class MatchMakingViewModel
         _tokenService = tokenService;
     }
 
-    public void ConnectSocketServer()
+    public async Task ConnectSocketServer()
     {
-        _ = Managers.Network.ConnectGameSession();
+        await Managers.Network.ConnectGameSession();
     }
     
-    public void StartMatchMaking()
+    public async Task StartMatchMaking()
     {
         // Change the act to match making
         var packet = new ChangeActPacketRequired
@@ -40,8 +40,8 @@ public class MatchMakingViewModel
             MapId = Managers.Map.MapId
         };
 
-        _webService
-            .SendWebRequest<ChangeActPacketResponse>("Match/ChangeActByMatchMaking", "PUT", packet, _ => { });
+        await _webService.SendWebRequestAsync<ChangeActPacketResponse>(
+            "Match/ChangeActByMatchMaking", UnityWebRequest.kHttpVerbPUT, packet);
         
         OnMatchMakingStarted?.Invoke();
     }
@@ -68,7 +68,7 @@ public class MatchMakingViewModel
         }
     }
     
-    public void TestMatchMaking()
+    public async Task TestMatchMaking()
     {
         Debug.Log("Start Test");
         var packet = new ChangeActTestPacketRequired
@@ -84,10 +84,10 @@ public class MatchMakingViewModel
             AccessToken = _tokenService.GetAccessToken(),
         };        
         
-        _webService
-            .SendWebRequest<ChangeActTestPacketResponse>("Match/TestMatchMaking", "PUT", packet, _ => { });
-        _webService.SendWebRequest<CancelMatchPacketResponse>(
-            "Match/CancelMatchMaking", "PUT", cancelPacket, _ => { });
+        await _webService.SendWebRequestAsync<ChangeActTestPacketResponse>(
+            "Match/TestMatchMaking", UnityWebRequest.kHttpVerbPUT, packet);
+        await _webService.SendWebRequestAsync<CancelMatchPacketResponse>(
+            "Match/CancelMatchMaking", UnityWebRequest.kHttpVerbPUT, cancelPacket);
     }
     
     public async Task CancelMatchMaking()

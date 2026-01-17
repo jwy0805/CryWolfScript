@@ -48,6 +48,7 @@ public class UI_Login : UI_Scene
         try
         {
             base.Init();
+            await TryLoginWithSavedTokenAsync();
             await BindObjectsAsync();
             InitButtonEvents();
             InitEvents();
@@ -67,6 +68,11 @@ public class UI_Login : UI_Scene
 
     #region SetUiSize
 
+    private async Task TryLoginWithSavedTokenAsync()
+    {
+        await _loginViewModel.TryLoginWithSavedTokenAsync();
+    }
+    
     protected override async Task BindObjectsAsync()
     {
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);

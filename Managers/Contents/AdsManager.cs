@@ -52,7 +52,7 @@ public class AdsManager
     public async Task RequestAttAsync(int timeoutSeconds = 10)
     {
         Debug.Log("RequestAttAsync called");
-        await _attGate.WaitAsync().ConfigureAwait(false);
+        await _attGate.WaitAsync();
         try
         {
             var status = ATTrackingStatusBinding.GetAuthorizationTrackingStatus();
@@ -68,9 +68,9 @@ public class AdsManager
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
             try
             {
-                await Task.WhenAny(tcs.Task, Task.Delay(Timeout.Infinite, cts.Token)).ConfigureAwait(false);
+                await Task.WhenAny(tcs.Task, Task.Delay(Timeout.Infinite, cts.Token));
             }
-            catch (OperationCanceledException e)
+            catch (OperationCanceledException)
             {
                 // ignore
             }
@@ -410,7 +410,7 @@ public class AdsManager
             popup.SetYesCallback(CloseNotifyIfAny);
             popup.SetExitCallback(CloseNotifyIfAny);
 
-            await Managers.Localization.UpdateNotifyPopupText(popup, messageKey, "empty_text");
+            await Managers.Localization.UpdateNotifyPopupText(popup, messageKey);
         }
         catch
         {

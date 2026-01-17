@@ -7,9 +7,7 @@ using System.Threading.Tasks;
 using AssetKits.ParticleImage;
 using Google.Protobuf.Protocol;
 using TMPro;
-using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.TextCore.Text;
 using UnityEngine.UI;
 using Zenject;
 

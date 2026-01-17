@@ -24,6 +24,7 @@ public partial class UI_MainLobby
         SettingsButton,
         FriendsButton,
         MailButton,
+        DiscordButton,
         
         PlayButton,
         ModeSelectButtonLeft,
@@ -44,7 +45,6 @@ public partial class UI_MainLobby
         DeckButton3,
         DeckButton4,
         DeckButton5,
-        
         
         ArrangeAllButton,
         ArrangeSummaryButton,
@@ -82,6 +82,7 @@ public partial class UI_MainLobby
         MainMailButtonText,
         MainMissionButtonText,
         MainGiftButtonText,
+        MainDiscordButtonText,
         PlayButtonText,
         FriendlyMatchPanelText,
         RankGamePanelText,
@@ -90,7 +91,7 @@ public partial class UI_MainLobby
         MainItemButtonText,
         MainBattleButtonText,
         MainEventButtonText,
-        MainClanButtonText,
+        MainNoticeButtonText,
         
         MainDeckLabelText,
         MainBattleSettingLabelText,
@@ -207,6 +208,7 @@ public partial class UI_MainLobby
         SpinelPackagePanel,
         
         NoticeScrollView,
+        EventScrollView,
         
         LoadingPanel,
         LoadingMarkImage,

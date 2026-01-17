@@ -38,7 +38,6 @@ public class UI_MatchMaking : UI_Scene
     
     private enum Texts
     {
-        MatchMakingQueueInfoText,
         MatchMakingCountDownText,
         UserNameText,
         RankPointText,
@@ -70,7 +69,7 @@ public class UI_MatchMaking : UI_Scene
             InitUI();
         
             // Connect to the game session in advance
-            _matchMakingVm.ConnectSocketServer();
+            await _matchMakingVm.ConnectSocketServer();
         }
         catch (Exception e)
         {
@@ -93,7 +92,7 @@ public class UI_MatchMaking : UI_Scene
     public void StartMatchMaking(int sessionId)
     {
         _matchMakingVm.SessionId = sessionId;
-        _matchMakingVm.StartMatchMaking();
+        _ =  _matchMakingVm.StartMatchMaking();
     }
 
     private async Task SetUserInfo()
@@ -143,23 +142,24 @@ public class UI_MatchMaking : UI_Scene
 
     private async Task SetQueueInfo(int queueCountsWolf, int queueCountsSheep)
     {
-        var text = GetText((int)Texts.MatchMakingQueueInfoText);
-        var key = "match_making_queue_info_text";
-        var placeholders = new List<string> {"value1", "value2"};
-        
-        if (Util.Faction == Faction.Sheep)
-        {
-            queueCountsSheep -= 1;
-            if (queueCountsSheep < 0) queueCountsSheep = 0;
-        }
-        else
-        {
-            queueCountsWolf -= 1;
-            if (queueCountsWolf < 0) queueCountsWolf = 0;
-        }
-        
-        var replaceValues = new List<string> { queueCountsWolf.ToString(), queueCountsSheep.ToString() };
-        await Managers.Localization.FormatLocalizedText(text, key, placeholders, replaceValues);
+        // var text = GetText((int)Texts.MatchMakingQueueInfoText);
+        // var key = "match_making_queue_info_text";
+        // var placeholders = new List<string> {"value1", "value2"};
+        //
+        // if (Util.Faction == Faction.Sheep)
+        // {
+        //     queueCountsSheep -= 1;
+        //     if (queueCountsSheep < 0) queueCountsSheep = 0;
+        // }
+        // else
+        // {
+        //     queueCountsWolf -= 1;
+        //     if (queueCountsWolf < 0) queueCountsWolf = 0;
+        // }
+        //
+        // var replaceValues = new List<string> { queueCountsWolf.ToString(), queueCountsSheep.ToString() };
+        // await Managers.Localization.FormatLocalizedText(text, key, placeholders, replaceValues);
+        return;
     }
     
     private IEnumerator CountDown(int seconds = 6)
@@ -201,7 +201,7 @@ public class UI_MatchMaking : UI_Scene
     
     private void OnTestButtonClicked(PointerEventData data)
     {
-        _matchMakingVm.TestMatchMaking();
+        _ = _matchMakingVm.TestMatchMaking();
     }
     
     // UI Setting

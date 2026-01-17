@@ -430,37 +430,94 @@ public class MainLobbyViewModel : IDisposable
     {
         await _signalRClient.LeaveLobby();
     }
-    
-    public async Task<Tuple<List<NoticeInfo>, List<EventInfo>>> GetEventNoticeList()
+
+    public async Task<List<NoticeInfo>> GetNoticeList()
     {
-        var packet = new ListEventNoticeRequired
+        var packet = new GetNoticeRequired
         {
             AccessToken = _tokenService.GetAccessToken(),
             LanguageCode = Managers.Localization.Language2Letter
         };
-        
-        var res = await _webService.SendWebRequestAsync<ListEventNoticeResponse>(
-            "Event/ListEventNotice", UnityWebRequest.kHttpVerbPOST, packet);
-        
-        if (res == null || res.ListNoticeOk == false || res.NoticeInfos == null)
+
+        var res = await _webService.SendWebRequestAsync<GetNoticeResponse>(
+            "Event/GetNotice", UnityWebRequest.kHttpVerbPOST, packet);
+
+        if (res == null || res.GetNoticeOk == false || res.NoticeInfos == null)
         {
             Debug.LogWarning("GetNoticeList failed or empty.");
             _noticeCache = new List<NoticeInfo>();
-            _eventCache = new List<EventInfo>();
-            return new Tuple<List<NoticeInfo>, List<EventInfo>>(_noticeCache, _eventCache);
+            return new List<NoticeInfo>(_noticeCache);
         }
-        
+
         _noticeCache = res.NoticeInfos
+            .Where(n => n != null) // 방어
             .OrderByDescending(n => n.IsPinned)
             .ThenByDescending(n => n.CreatedAt)
+            .ThenByDescending(n => n.NoticeId)
             .ToList();
-        
+
+        return new List<NoticeInfo>(_noticeCache);
+    }
+
+    public async Task<List<EventInfo>> GetEventList()
+    {
+        var packet = new GetEventRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            LanguageCode = Managers.Localization.Language2Letter
+        };
+
+        var res = await _webService.SendWebRequestAsync<GetEventResponse>(
+            "Event/GetEvent", UnityWebRequest.kHttpVerbPOST, packet);
+
+        if (res == null || res.GetEventOk == false || res.EventInfos == null)
+        {
+            Debug.LogWarning("GetEventList failed or empty.");
+            _eventCache = new List<EventInfo>();
+            return new List<EventInfo>(_eventCache);
+        }
+
+        // EventInfo가 정렬키를 직접 가짐
+        // 우선순위: Priority -> IsPinned -> StartAtUtc -> EventId
         _eventCache = res.EventInfos
-            .OrderByDescending(e => e.NoticeInfo.IsPinned)
-            .ThenByDescending(e => e.NoticeInfo.CreatedAt)
+            .Where(e => e != null)
+            .OrderByDescending(e => e.Priority)
+            .ThenByDescending(e => e.IsPinned)
+            .ThenByDescending(e => e.StartAtUtc ?? DateTime.MinValue)
+            .ThenByDescending(e => e.EventId)
             .ToList();
+
+        return new List<EventInfo>(_eventCache);
+    }
+    
+    public async Task<GetEventProgressResponse> GetEventProgress(int eventId)
+    {
+        var packet = new GetEventProgressRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            LanguageCode = Managers.Localization.Language2Letter,
+            EventId = eventId
+        };
+
+        var res = await _webService.SendWebRequestAsync<GetEventProgressResponse>(
+            "Event/GetEventProgress", UnityWebRequest.kHttpVerbPOST, packet);
+
+        return res;
+    }
+
+    public async Task<ClaimEventRewardResponse> ClaimEventReward(int eventId, int tier)
+    {
+        var packet = new ClaimEventRewardRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            EventId = eventId,
+            Tier = tier
+        };
         
-        return new Tuple<List<NoticeInfo>, List<EventInfo>>(_noticeCache, _eventCache);
+        var res = await _webService.SendWebRequestAsync<ClaimEventRewardResponse>(
+            "Event/ClaimEventReward", UnityWebRequest.kHttpVerbPOST, packet);
+
+        return res;
     }
     
     public async Task ChangeLanguage()

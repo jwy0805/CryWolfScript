@@ -109,7 +109,6 @@ public class UIManager
                 var sceneUI = await Managers.Resource.InstantiateAsyncFromContainer(key, Root.transform);
                 sceneUI.GetComponent<UI_Scene>().Clear();
             }
-            // await Managers.Data.InitAsync();
         }
         catch (Exception e)
         {

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -49,12 +50,21 @@ public class UI_GameMenuPopup : UI_Popup
     {
         BindData<TextMeshProUGUI>(typeof(Texts), _textDict);
         Bind<Button>(typeof(Buttons));
+        
+        _ =  Managers.Localization.UpdateTextAndFont(_textDict);
     }
 
-    private void OnSurrenderClicked(PointerEventData data)
+    private async Task OnSurrenderClicked(PointerEventData data)
     {
+        if (Managers.Game.IsTutorial)
+        {
+            var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+            popup.Text = Managers.Localization.GetLocalizedText("warning_in_game_tutorial_no_surrender");
+            return;
+        }
+        
         var packet = new SurrenderPacketRequired { AccessToken = _tokenService.GetAccessToken() };
-        _webService.SendWebRequestAsync<SurrenderPacketResponse>("Match/Surrender", "PUT", packet);
+        await _webService.SendWebRequestAsync<SurrenderPacketResponse>("Match/Surrender", "PUT", packet);
     }
     
     private void OnSettingsClicked(PointerEventData data)

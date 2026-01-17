@@ -200,16 +200,17 @@ public class ShopViewModel
             AccessToken = _tokenService.GetAccessToken(),
         };
         
-        var task = await _webService.SendWebRequestAsync<RefreshDailyProductPacketResponse>(
+        var res = await _webService.SendWebRequestAsync<RefreshDailyProductPacketResponse>(
             "Ads/RefreshDailyProduct", UnityWebRequest.kHttpVerbPUT, packet);
         
-        if (task.RefreshDailyProductOk)
+        if (res.RefreshDailyProductOk)
         {
-            DailyProducts = task.DailyProducts.OrderBy(pi => pi.Slot).ToList();
+            DailyProducts = res.DailyProducts.OrderBy(pi => pi.Slot).ToList();
             LastDailyProductRefreshTime = DateTime.UtcNow;
+            await Util.InvokeAll(OnResetDailyProductUI);
         }
 
-        return task.RefreshDailyProductOk;
+        return res.RefreshDailyProductOk;
     }
 
     public async Task ApplyAdsRemover()

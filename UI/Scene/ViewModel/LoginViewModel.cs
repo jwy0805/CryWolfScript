@@ -53,6 +53,7 @@ public class LoginViewModel : IInitializable, IDisposable
         get => User.Instance.UserInfo.UserAccount;
         set => User.Instance.UserInfo.UserAccount = value;
     }
+    
     public string Password { get; set; }
     public bool RememberMe { get; set; }
     
@@ -77,7 +78,7 @@ public class LoginViewModel : IInitializable, IDisposable
 
 #if UNITY_IOS && !UNITY_EDITOR
             // 2) UGS Core (비동기)  ─────────────────────────────
-            await InitUgs().ConfigureAwait(false);
+            await InitUgs();
 
             // 3) Apple Auth (동기) ─────────────────────────────
             InitAppleAuth();                
@@ -122,9 +123,6 @@ public class LoginViewModel : IInitializable, IDisposable
     #region Direct Login
     
     // This method is called when the login button is clicked, not using SOCIAL LOGIN such as google, facebook, apple
-    #region Direct Login
-    
-    // This method is called when the login button is clicked, not using SOCIAL LOGIN such as google, facebook, apple
     public async Task TryDirectLogin()
     {
         try
@@ -132,7 +130,8 @@ public class LoginViewModel : IInitializable, IDisposable
             var packet = new LoginUserAccountPacketRequired 
             { 
                 UserAccount = UserAccount, 
-                Password = Password 
+                Password = Password ,
+                CountryCode = System.Globalization.RegionInfo.CurrentRegion.TwoLetterISORegionName
             };
 
             var response = await _webService.SendWebRequestAsync<LoginUserAccountPacketResponse>(
@@ -159,9 +158,6 @@ public class LoginViewModel : IInitializable, IDisposable
             OnDirectLoginNetworkFailed?.Invoke();
         }
     }
-
-    
-    #endregion
     
     #endregion
 
@@ -223,7 +219,11 @@ public class LoginViewModel : IInitializable, IDisposable
             await AuthenticationService.Instance.SignInWithAppleAsync(idToken);
             
             // Handle login success
-            var appleLoginPacket = new LoginApplePacketRequired { IdToken = idToken };
+            var appleLoginPacket = new LoginApplePacketRequired
+            {
+                IdToken = idToken,
+                CountryCode = System.Globalization.RegionInfo.CurrentRegion.TwoLetterISORegionName
+            };
             var task = _webService.SendWebRequestAsync<LoginApplePacketResponse>(
                 "UserAccount/LoginApple", UnityWebRequest.kHttpVerbPOST, appleLoginPacket);
             await task;
@@ -308,7 +308,11 @@ public class LoginViewModel : IInitializable, IDisposable
     
     private async Task HandleGoogleSignInSuccessAsync(string idToken)
     {
-        var googleLoginPacket = new LoginGooglePacketRequired { IdToken = idToken };
+        var googleLoginPacket = new LoginGooglePacketRequired
+        {
+            IdToken = idToken,
+            CountryCode = System.Globalization.RegionInfo.CurrentRegion.TwoLetterISORegionName
+        };
         var task = _webService.SendWebRequestAsync<LoginGooglePacketResponse>(
             "UserAccount/LoginGoogle", UnityWebRequest.kHttpVerbPOST, googleLoginPacket);
         await task;
@@ -334,7 +338,11 @@ public class LoginViewModel : IInitializable, IDisposable
         try
         {
             var guestId = SystemInfo.deviceUniqueIdentifier;
-            var packet = new LoginGuestPacketRequired { GuestId = guestId };
+            var packet = new LoginGuestPacketRequired
+            {
+                GuestId = guestId,
+                CountryCode = System.Globalization.RegionInfo.CurrentRegion.TwoLetterISORegionName
+            };
             var task = _webService.SendWebRequestAsync<LoginGuestPacketResponse>(
                 "UserAccount/LoginGuest", UnityWebRequest.kHttpVerbPOST, packet);
             
@@ -373,6 +381,40 @@ public class LoginViewModel : IInitializable, IDisposable
     {
         SetInitialSettings();
         HandleLoginSuccess(accessToken, refreshToken);
+    }
+    
+    public async Task TryLoginWithSavedTokenAsync()
+    {
+        var refreshToken = _tokenService.GetRefreshToken();
+
+        if (string.IsNullOrEmpty(refreshToken))
+        {
+            Debug.Log("No saved tokens found.");
+            return;
+        }
+
+        try
+        {
+            var packet = new LoginTokenPacketRequired
+            {
+                RefreshToken = refreshToken
+            };
+
+            var response = await _webService.SendWebRequestAsync<LoginTokenPacketResponse>(
+                "UserAccount/LoginToken", UnityWebRequest.kHttpVerbPOST, packet);
+
+            if (response is not { LoginOk: true })
+            {
+                if (response.ErrorCode != 0 && response.ErrorCode != 3) _tokenService.ClearTokens();
+                return;
+            }
+
+            HandleLoginSuccess(response.AccessToken, response.RefreshToken);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"Token login error (will not clear tokens automatically): {e}");
+        }
     }
     
     private void SetInitialSettings()

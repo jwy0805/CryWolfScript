@@ -47,7 +47,7 @@ public class PolicyConsentManager
 
     public async Task EnsureConsentsAndInitAdsAsync()
     {
-        await _gate.WaitAsync().ConfigureAwait(false);
+        await _gate.WaitAsync();
         try
         {
             if (!IsPolicyDone())
@@ -57,10 +57,10 @@ public class PolicyConsentManager
 
                 SetPolicyDone(result.IsUnder13);
             }
-
+            
+#if UNITY_IOS && !UNITY_EDITOR
             var under13 = IsUnder13;
 
-#if UNITY_IOS && !UNITY_EDITOR
             if (!under13)
             {
                 var status = ATTrackingStatusBinding.GetAuthorizationTrackingStatus();

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
@@ -19,15 +20,43 @@ public class WebService : IWebService
         _tokenService = tokenService;
     }
     
+    public void SendWebRequest(string url, string method, object obj)
+    {
+        var sendUrl = $"{Managers.Network.BaseUrl}/api/{url}";
+        string jsonPayload = obj != null ? JsonConvert.SerializeObject(obj) : "";
+    
+        try
+        {
+            using var client = new HttpClient();
+            // 종료 시 지연을 방지하기 위해 타임아웃을 짧게 설정 (1~2초)
+            client.Timeout = TimeSpan.FromSeconds(2);
+            
+            var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+            var accessToken = _tokenService.GetAccessToken();
+            
+            if (!string.IsNullOrEmpty(accessToken))
+            {
+                client.DefaultRequestHeaders.Authorization = 
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+            }
+
+            // 메서드에 따른 처리
+            if (method.Equals("PUT", StringComparison.OrdinalIgnoreCase))
+                _ = client.PutAsync(sendUrl, content).Result;
+            else if (method.Equals("POST", StringComparison.OrdinalIgnoreCase))
+                _ = client.PostAsync(sendUrl, content).Result;
+            else if (method.Equals("GET", StringComparison.OrdinalIgnoreCase))
+                _ = client.GetAsync(sendUrl).Result;
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[WebService] Synchronous request failed: {e.Message}");
+        }
+    }
+    
     public async Task<T> SendWebRequestAsync<T>(string url, string method, object obj)
     {
         return await SendWebRequestInternalAsync<T>(url, method, obj, allowRetry: true);
-    }
-
-    public async Task SendWebRequest<T>(string url, string method, object obj, Action<T> responseAction)
-    {
-        var result = await SendWebRequestInternalAsync<T>(url, method, obj, allowRetry: true);
-        responseAction?.Invoke(result);
     }
 
     private async Task<T> SendWebRequestInternalAsync<T>(string url, string method, object obj, bool allowRetry)

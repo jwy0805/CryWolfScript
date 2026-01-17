@@ -120,13 +120,13 @@ public class UI_SignInPopup : UI_Popup
 
     private async Task ShowPasswordErrorMessage()
     {
-        var message = await Managers.Localization.GetLocalizedText("notify_sign_up_error_message_invalid_password");
+        var message = Managers.Localization.GetLocalizedText("notify_sign_up_error_message_invalid_password");
         await Managers.UI.ShowErrorPopup(message);
     }
     
     private async Task ShowNetworkErrorMessage()
     {
-        var message = await Managers.Localization.GetLocalizedText("notify_sign_up_unexpected_error_message");
+        var message = Managers.Localization.GetLocalizedText("notify_sign_up_unexpected_error_message");
         await Managers.UI.ShowErrorPopup(message);
     }
     

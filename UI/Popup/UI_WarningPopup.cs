@@ -8,7 +8,7 @@ public class UI_WarningPopup : UI_Popup
     public string Text { get; set; }
     public TMP_FontAsset Font { get; set; }
     public int FontSize { get; set; }
-    public int DelayTime { get; set; } = 2;
+    public int DelayTime { get; set; } = 3;
 
     protected override void Init()
     {

@@ -613,19 +613,6 @@ public class ResourceManager
         return frame;
     }
     
-    public async Task<GameObject> GetEventFrame(EventInfo eventInfo, Transform parent)
-    {
-        var frame = await Instantiate("UI/Lobby/Notice/EventFrame", parent);
-        var titleText = Util.FindChild(frame, "EventTitleText", true).GetComponent<TextMeshProUGUI>();
-        var infoText = Util.FindChild(frame, "EventContentText", true).GetComponent<TextMeshProUGUI>();
-
-        frame.GetOrAddComponent<EventFrame>().EventInfo = eventInfo;
-        titleText.text = eventInfo.NoticeInfo.Title;
-        infoText.text = eventInfo.NoticeInfo.Content;
-
-        return frame;
-    }
-    
     public RenderTexture CreateRenderTexture(string textureName)
     {  
         var rt = new RenderTexture(256, 256, 0)

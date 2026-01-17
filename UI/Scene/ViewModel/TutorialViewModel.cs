@@ -40,6 +40,10 @@ public class TutorialViewModel : IDisposable
     public event Action OnChangeFaceNormal;
     public event Action OnUiBlocker;
     public event Action OffUiBlocker;
+    public event Action OnUiBlocker05Sec;
+    public event Action OnUiBlocker1Sec;
+    public event Action OnUiBlocker2Sec;
+    public event Action OnUiBlocker3Sec;
     public event Action OnHandImage;
     public event Action OffHandImage;
     public event Action OffContinueButton;
@@ -117,6 +121,10 @@ public class TutorialViewModel : IDisposable
     ActionDict.TryAdd("ChangeFaceNormal", () => OnChangeFaceNormal?.Invoke());
     ActionDict.TryAdd("OnUiBlocker", () => OnUiBlocker?.Invoke());
     ActionDict.TryAdd("OffUiBlocker", () => OffUiBlocker?.Invoke());
+    ActionDict.TryAdd("OnUiBlocker05Sec", () => OnUiBlocker05Sec?.Invoke());
+    ActionDict.TryAdd("OnUiBlocker1Sec", () => OnUiBlocker1Sec?.Invoke());
+    ActionDict.TryAdd("OnUiBlocker2Sec", () => OnUiBlocker2Sec?.Invoke());
+    ActionDict.TryAdd("OnUiBlocker3Sec", () => OnUiBlocker3Sec?.Invoke());
     ActionDict.TryAdd("OnHandImage", () => OnHandImage?.Invoke());
     ActionDict.TryAdd("OffHandImage", () => OffHandImage?.Invoke());
     ActionDict.TryAdd("OffContinueButton", () => OffContinueButton?.Invoke());
@@ -160,6 +168,7 @@ public class TutorialViewModel : IDisposable
         
         if (apiTask.Result.ChangeOk)
         {
+            Managers.Game.TutorialType = faction == Faction.Wolf ? TutorialType.BattleWolf : TutorialType.BattleSheep;
             Managers.Scene.LoadScene(Define.Scene.Game);
         }
     }
@@ -360,6 +369,7 @@ public class TutorialViewModel : IDisposable
             AccessToken = _tokenService.GetAccessToken(),
             TutorialTypes = new[] { TutorialType.BattleWolf, TutorialType.BattleSheep, TutorialType.ChangeFaction },
             Done = true,
+            TutorialStep = 0
         };
         
         _ = _webService.SendWebRequestAsync<UpdateTutorialResponse>(
@@ -417,11 +427,25 @@ public class TutorialViewModel : IDisposable
         {
             AccessToken = _tokenService.GetAccessToken(),
             TutorialTypes = new[] { tutorialType },
-            Done = true
+            Done = true,
+            TutorialStep = 0
         };
         
         _ = _webService.SendWebRequestAsync<UpdateTutorialResponse>(
             "UserAccount/UpdateTutorial", UnityWebRequest.kHttpVerbPUT, packet);
+    }
+
+    public void OnInterruptTutorial(TutorialType tutorialType)
+    {
+        var packet = new UpdateTutorialRequired
+        {
+            AccessToken = _tokenService.GetAccessToken(),
+            TutorialTypes = new[] { tutorialType },
+            Done = false,
+            TutorialStep = -1
+        };
+        
+        _webService.SendWebRequest("UserAccount/UpdateTutorial", UnityWebRequest.kHttpVerbPUT, packet);
     }
 
     public void SetTutorialReward(UnitId rewardUnitId)

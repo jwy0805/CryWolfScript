@@ -50,11 +50,3 @@ public enum CashPaymentErrorCode
     AlreadyProcessed = 3,   // 이미 처리된 영수증 - 멱등성 처리용
     InternalError = 4,      // 서버 내부 오류 - 재시도
 }
-
-public enum NoticeType
-{
-    None,
-    Notice,
-    Event,
-    Emergency
-}

@@ -3,10 +3,8 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Docker.DotNet.Models;
 using Google.Protobuf.Protocol;
 using TMPro;
-using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Zenject;
@@ -22,7 +20,7 @@ public class UI_RewardOpenResultPopup : UI_Popup
     private readonly Queue<CompositionInfo> _largeProducts = new();
     private readonly Queue<CompositionInfo> _smallProducts = new();
     
-    public List<RandomProductInfo> OriginalProductInfos { get; set; } = new();
+    public List<TotalProductInfo> OriginalProductInfos { get; set; } = new();
     public List<CompositionInfo> CompositionInfos { get; set; } = new();
     
     private enum Images

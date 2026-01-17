@@ -97,7 +97,7 @@ public class DailyProductInfo
     public bool NeedAds { get; set; }
 }
 
-public class RandomProductInfo
+public class TotalProductInfo
 {
     public ProductInfo ProductInfo { get; set; }
     public int Count { get; set; }
@@ -236,25 +236,43 @@ public class RewardInfo
 
 public class NoticeInfo
 {
-    public int EventNoticeId { get; set; }
-    public NoticeType NoticeType { get; set; }
+    public int NoticeId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public bool IsPinned { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
-public class EventNoticeLocalizationInfo
+public class EventInfo
 {
-    public string Lang { get; set; } = "en";
+    public int EventId { get; set; }
+    public string EventKey { get; set; } = "";
+    public DateTime? StartAtUtc { get; set; }
+    public DateTime? EndAtUtc { get; set; }
+
+    public bool IsPinned { get; set; }
+    public int Priority { get; set; }
+
+    public string Title { get; set; } = "";
+    public string Content { get; set; } = ""; 
+}
+
+public class LocalizationInfo
+{
+    public string LanguageCode { get; set; } = "en";
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
 }
 
-public class EventInfo
+public class TierInfo
 {
-    public NoticeInfo NoticeInfo { get; set; }
-    public List<RewardInfo> Rewards { get; set; }
+    public int Tier { get; set; }
+    public string ConditionJson { get; set; } = "{}";
+    public string RewardJson { get; set; } = "{}"; 
+    public int MinEventVersion { get; set; } = 1;
+    public int? MaxEventVersion { get; set; }
+    public bool IsClaimed { get; set; }
+    public bool IsClaimable { get; set; }   
 }
 
 #region For Client
@@ -275,6 +293,7 @@ public class LoginUserAccountPacketRequired
 {
     public string UserAccount { get; set; }
     public string Password { get; set; }
+    public string CountryCode { get; set; }
 }
 
 public class LoginUserAccountPacketResponse
@@ -287,6 +306,7 @@ public class LoginUserAccountPacketResponse
 public class LoginApplePacketRequired
 {
     public string IdToken { get; set; }
+    public string CountryCode { get; set; }
 }
 
 public class LoginApplePacketResponse
@@ -299,6 +319,7 @@ public class LoginApplePacketResponse
 public class LoginGooglePacketRequired
 {
     public string IdToken { get; set; }
+    public string CountryCode { get; set; }
 }
 
 public class LoginGooglePacketResponse
@@ -311,6 +332,7 @@ public class LoginGooglePacketResponse
 public class LoginGuestPacketRequired
 {
     public string GuestId { get; set; }
+    public string CountryCode { get; set; }
 }
 
 public class LoginGuestPacketResponse
@@ -318,6 +340,19 @@ public class LoginGuestPacketResponse
     public bool LoginOk { get; set; }
     public string AccessToken { get; set; }
     public string RefreshToken { get; set; }
+}
+
+public class LoginTokenPacketRequired
+{
+    public string RefreshToken { get; set; }
+}
+
+public class LoginTokenPacketResponse
+{
+    public bool LoginOk { get; set; }
+    public string AccessToken { get; set; }
+    public string RefreshToken { get; set; }
+    public int ErrorCode { get; set; } // 0 - Success, 1 - Invalid Token, 2 - Token Expired, 3 - Network
 }
 
 public class LogoutPacketRequired
@@ -495,6 +530,7 @@ public class UpdateTutorialRequired
     public string AccessToken { get; set; }
     public TutorialType[] TutorialTypes { get; set; }
     public bool Done { get; set; }
+    public int TutorialStep { get; set; }
 }
 
 public class UpdateTutorialResponse
@@ -502,17 +538,65 @@ public class UpdateTutorialResponse
     public bool UpdateTutorialOk { get; set; }
 }
 
-public class ListEventNoticeRequired
+public class GetNoticeRequired
 {
     public string AccessToken { get; set; }
     public string LanguageCode { get; set; }
 }
 
-public class ListEventNoticeResponse
+public class GetNoticeResponse
 {
-    public bool ListNoticeOk { get; set; }
+    public bool GetNoticeOk { get; set; }
     public List<NoticeInfo> NoticeInfos { get; set; }
-    public List<EventInfo> EventInfos { get; set; }
+}
+
+public class GetEventRequired
+{
+    public string AccessToken { get; set; }
+    public string LanguageCode { get; set; }
+}
+
+public class GetEventResponse
+{
+    public bool GetEventOk { get; set; }
+    public DateTime ServerNowUtc { get; set; }
+    public List<EventInfo> EventInfos { get; set; } = new();
+}
+
+public class GetEventProgressRequired
+{
+    public string AccessToken { get; set; }
+    public string LanguageCode { get; set; }
+    public int EventId { get; set; }
+}
+
+public class GetEventProgressResponse
+{
+    public bool GetEventProgressOk { get; set; }
+    public int EventId { get; set; }
+    public string EventKey { get; set; } = "";
+    public string CycleKey { get; set; } = "default";
+    public int ProgressValue { get; set; }
+    public string Title { get; set; } = "";
+    public string Content { get; set; } = "";
+    public List<TierInfo> TierInfos { get; set; } = new();
+}
+
+public class ClaimEventRewardRequired
+{
+    public string AccessToken { get; set; }
+    public int EventId { get; set; }
+    public int Tier { get; set; }
+}
+
+public class ClaimEventRewardResponse
+{
+    public bool ClaimOk { get; set; }
+    public bool AlreadyClaimed { get; set; }
+    public int EventId { get; set; }
+    public int Tier { get; set; }
+    public string CycleKey { get; set; } = "default";
+    public string? Error { get; set; }
 }
 
 public class RefreshTokenRequired
@@ -916,7 +1000,7 @@ public class ClaimProductPacketResponse
 {
     public bool ClaimOk { get; set; }
     public List<ProductInfo> ProductInfos { get; set; }
-    public List<RandomProductInfo> RandomProductInfos { get; set; }
+    public List<TotalProductInfo> RandomProductInfos { get; set; }
     public List<CompositionInfo> CompositionInfos { get; set; }
     public RewardPopupType RewardPopupType { get; set; }
 }

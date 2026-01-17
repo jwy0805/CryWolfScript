@@ -11,26 +11,16 @@ public class GameManager
 {
     private GameObject _player;
     private GameObject _sheep;
-    private bool _isTutorial;
-    private bool _helpTutorial;
     private readonly Dictionary<UnitId, GameObject> _units = new();
     
     public Action<int> OnSpawnEvent;
     public bool GameResult { get; set; }
 
-    public bool IsTutorial
-    {
-        get => _isTutorial;
-        set
-        {
-            _isTutorial = value;
-            _helpTutorial = false;
-        }
-    }
+    public bool IsTutorial { get; set; } = false;
+    public TutorialType TutorialType { get; set; } = TutorialType.Main;
     public bool ReEntry { get; set; } = false;
     public AcceptInvitationPacketResponse FriendlyMatchResponse { get; set; } = new();
     public AcceptInvitationPacketResponse ReEntryResponse { get; set; } = new();
-    
     
     public void Spawn(UnitId unitId, Vector3 spawnPos)
     {

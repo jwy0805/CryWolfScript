@@ -109,6 +109,10 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         _tutorialVm.OnRunTutorialTag += RunTutorialTag;
         _tutorialVm.OnUiBlocker += OnUiBlocker;
         _tutorialVm.OffUiBlocker += OffUiBlocker;
+        _tutorialVm.OnUiBlocker05Sec += OnUiBlocker05Sec;
+        _tutorialVm.OnUiBlocker1Sec += OnUiBlocker1Sec;
+        _tutorialVm.OnUiBlocker2Sec += OnUiBlocker2Sec;
+        _tutorialVm.OnUiBlocker3Sec += OnUiBlocker3Sec;
         _tutorialVm.OnHandImage += OnHandImage;
         _tutorialVm.OffHandImage += OffHandImage;
         _tutorialVm.OnContinueButton += OnContinueButton;
@@ -369,6 +373,33 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         _uiBlocker.SetActive(false);
     }
 
+    private void OnUiBlocker05Sec()
+    {
+        StartCoroutine(nameof(OnUiBlockerTimerRoutine), 0.5f);
+    }
+    
+    private void OnUiBlocker1Sec()
+    {
+        StartCoroutine(nameof(OnUiBlockerTimerRoutine), 1f);
+    }
+
+    private void OnUiBlocker2Sec()
+    {
+        StartCoroutine(nameof(OnUiBlockerTimerRoutine), 2f);
+    }
+    
+    private void OnUiBlocker3Sec()
+    {
+        StartCoroutine(nameof(OnUiBlockerTimerRoutine), 3f);
+    }
+    
+    private IEnumerator OnUiBlockerTimerRoutine(float duration = 2f)
+    {
+        _uiBlocker.SetActive(true);
+        yield return new WaitForSeconds(duration);
+        _uiBlocker.SetActive(false);
+    }
+    
     private void OnHandImage()
     {
         _hand.SetActive(true);
@@ -685,6 +716,10 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         _tutorialVm.OnRunTutorialTag -= RunTutorialTag;
         _tutorialVm.OnUiBlocker -= OnUiBlocker;
         _tutorialVm.OffUiBlocker -= OffUiBlocker;
+        _tutorialVm.OnUiBlocker05Sec -= OnUiBlocker05Sec;
+        _tutorialVm.OnUiBlocker1Sec -= OnUiBlocker1Sec;
+        _tutorialVm.OnUiBlocker2Sec -= OnUiBlocker2Sec;
+        _tutorialVm.OnUiBlocker3Sec -= OnUiBlocker3Sec;
         _tutorialVm.OnHandImage -= OnHandImage;
         _tutorialVm.OffHandImage -= OffHandImage;
         _tutorialVm.OnContinueButton -= OnContinueButton;

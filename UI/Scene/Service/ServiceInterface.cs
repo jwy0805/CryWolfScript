@@ -24,7 +24,7 @@ public interface IUserService
 public interface IWebService
 { 
     Task<T> SendWebRequestAsync<T>(string url, string method, object obj);
-    Task SendWebRequest<T>(string url, string method, object obj, Action<T> responseAction);
+    void SendWebRequest(string url, string method, object obj);
 }
 
 public interface ITokenService
@@ -34,6 +34,31 @@ public interface ITokenService
     string GetAccessToken();
     string GetRefreshToken();
     void ClearTokens();
+}
+
+public interface ISecretService
+{
+    /// <summary>
+    /// 지정한 키로 값을 저장하는 함수
+    /// </summary>
+    /// <param name="key">키</param>
+    /// <param name="value">값</param>
+    /// <returns>저장에 성공했는지 여부</returns>
+    bool Put(string key, string value); 
+    
+    /// <summary>
+    /// 지정한 키의 값을 가져오는 함수
+    /// </summary>
+    /// <param name="key">키</param>
+    /// <returns>지정한 키로 설정된 값, 없으면 null</returns>
+    string Get(string key);
+    
+    /// <summary>
+    /// 지정한 키의 값을 삭제하는 함수
+    /// </summary>
+    /// <param name="key">키</param>
+    /// <returns>삭제에 성공했는지 여부</returns>
+    bool Delete(string key);
 }
 
 public interface ISignalRClient

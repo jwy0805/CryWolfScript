@@ -22,6 +22,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
 {
     [SerializeField] private Scrollbar scrollbar;
     
+    private const string DiscordInviteUrl = "https://discord.gg/m6FZGpJqXg";
+    
     private IUserService _userService;
     private ITokenService _tokenService;
     private IPaymentService _paymentService;
@@ -241,12 +243,35 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         scrollbar.value = _lobbyVm.GetScrollPageValue(pageIndex);
         return Task.CompletedTask;
     }
-
-    private async Task UpdateNotice(int pageIndex)
+    
+    private async Task UpdateEvents(int pageIndex)
     {
         if (pageIndex != 3) return;
 
-        var (notices, events) = await _lobbyVm.GetEventNoticeList();
+        var events = await _lobbyVm.GetEventList();
+        var noticeScrollView = GetImage((int)Images.EventScrollView).gameObject;
+        var parent = Util.FindChild(noticeScrollView, "EventContents", true).transform;
+        
+        Util.DestroyAllChildren(parent);
+
+        foreach (var eventInfo in events)
+        {
+            var frame = await Managers.Resource.Instantiate("UI/Lobby/Notice/EventFrame", parent);
+            var titleText = Util.FindChild(frame, "EventTitleText", true).GetComponent<TextMeshProUGUI>();
+            var infoText = Util.FindChild(frame, "EventContentText", true).GetComponent<TextMeshProUGUI>();
+            var eventFrame = frame.GetComponent<EventFrame>();
+            
+            eventFrame.EventInfo = eventInfo;
+            titleText.text = eventInfo.Title;
+            infoText.text = eventInfo.Content;        
+        }
+    }
+
+    private async Task UpdateNotices(int pageIndex)
+    {
+        if (pageIndex != 4) return;
+
+        var notices = await _lobbyVm.GetNoticeList();
         var noticeScrollView = GetImage((int)Images.NoticeScrollView).gameObject;
         var parent = Util.FindChild(noticeScrollView, "NoticeContents", true).transform;
         
@@ -255,11 +280,6 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         foreach (var noticeInfo in notices)
         {
             await Managers.Resource.GetNoticeFrame(noticeInfo, parent);
-        }
-
-        foreach (var eventInfo in events)
-        {
-            await Managers.Resource.GetEventFrame(eventInfo, parent);
         }
     }
     
@@ -444,6 +464,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         GetButton((int)Buttons.SettingsButton).gameObject.BindEvent(OnSettingsClicked);
         GetButton((int)Buttons.FriendsButton).gameObject.BindEvent(OnFriendsClicked);
         GetButton((int)Buttons.MailButton).gameObject.BindEvent(OnMailClicked);
+        GetButton((int)Buttons.DiscordButton).gameObject.BindEvent(OnDiscordClicked);
         GetButton((int)Buttons.FactionButton).gameObject.BindEvent(OnFactionClicked);
         GetButton((int)Buttons.GoldButton).onClick.AddListener(OnResourceClicked);
         GetButton((int)Buttons.SpinelButton).onClick.AddListener(OnResourceClicked);
@@ -508,11 +529,9 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         var wolfTutorialDone = _userService.TutorialInfo.WolfTutorialDone;
         var changeFactionTutorialDone = _userService.TutorialInfo.ChangeFactionTutorialDone;
         
-#if !UNITY_EDITOR
         await Managers.Policy.EnsureConsentsAndInitAdsAsync();
-#endif
         
-        if (sheepTutorialDone == false || wolfTutorialDone == false || changeFactionTutorialDone == false)
+        if (!sheepTutorialDone || !wolfTutorialDone || !changeFactionTutorialDone)
         {
             await _tutorialWidget.ProcessTutorial(_userService.TutorialInfo);
         }
@@ -735,6 +754,12 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     {
         await Managers.UI.ShowPopupUI<UI_MailBoxPopup>();
     }
+
+    private async Task OnDiscordClicked(PointerEventData data)
+    {
+        Application.OpenURL(DiscordInviteUrl);
+        await Task.CompletedTask;
+    }
     
     private void OnMissionClicked(PointerEventData data)
     {
@@ -888,7 +913,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         _lobbyVm.OffMailAlert += OffMailAlert;
         _lobbyVm.OnPageChanged += ShakeModeSelectButtons;
         _lobbyVm.OnPageChanged += UpdateScrollbar;
-        _lobbyVm.OnPageChanged += UpdateNotice;
+        _lobbyVm.OnPageChanged += UpdateEvents;
+        _lobbyVm.OnPageChanged += UpdateNotices;
         _lobbyVm.OnUpdateUsername += UpdateUsername;
         _lobbyVm.OnChangeButtonFocus += ChangeButtonFocus;
         _lobbyVm.OnChangeLanguage += OnLanguageChanged;
@@ -914,7 +940,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         _lobbyVm.OffMailAlert -= OffMailAlert;
         _lobbyVm.OnPageChanged -= ShakeModeSelectButtons;
         _lobbyVm.OnPageChanged -= UpdateScrollbar;
-        _lobbyVm.OnPageChanged -= UpdateNotice;
+        _lobbyVm.OnPageChanged -= UpdateEvents;
+        _lobbyVm.OnPageChanged -= UpdateNotices;
         _lobbyVm.OnUpdateUsername -= UpdateUsername;
         _lobbyVm.OnChangeButtonFocus -= ChangeButtonFocus;
         _lobbyVm.OnChangeLanguage -= OnLanguageChanged;

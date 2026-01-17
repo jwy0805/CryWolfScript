@@ -1,4 +1,5 @@
 using NUnit.Framework.Constraints;
+// ReSharper disable InconsistentNaming
 
 public readonly struct PolicyPopupResult
 {
@@ -367,4 +368,25 @@ public enum FontType
     BlackLined,
     BlueLined,
     RedLined,
+}
+
+public enum EventRepeatType
+{
+    None,
+    Daily,
+    Weekly,
+    Monthly,
+}
+
+public enum EventConditionType
+{
+    None,
+    Counter,
+}
+
+public enum EventCounterKey
+{
+    friendly_match,
+    first_purchase,
+    single_play_win,
 }

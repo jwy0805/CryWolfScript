@@ -164,8 +164,8 @@ public class LocalizationManager
 
     public string GetConvertedString(string str)
     {
-        // ex) "ContinueButtonText" -> "continue_button_text"
-        return Regex.Replace(str, "([a-z])([A-Z])", "$1_$2").ToLower();
+        // ex) "ContinueButton1Text" -> "continue_button1_text"
+        return Regex.Replace(str, "([a-z0-9])([A-Z])", "$1_$2").ToLower();
     }
     
     public async Task UpdateTextAndFont(Dictionary<string, GameObject> textDict)
@@ -255,12 +255,12 @@ public class LocalizationManager
         return entry.Text;
     }
     
-    public async Task<string> GetLocalizedText(string key)
+    public string GetLocalizedText(string key)
     {
         var langDictionary = Managers.Data.LocalizationDict;
         key = GetConvertedString(key);
-        if (langDictionary.TryGetValue(key, out var entryDictionary) == false) return string.Empty;
-        if (entryDictionary.TryGetValue(Language2Letter, out var entry) == false) return string.Empty;
+        if (!langDictionary.TryGetValue(key, out var entryDictionary)) return string.Empty;
+        if (!entryDictionary.TryGetValue(Language2Letter, out var entry)) return string.Empty;
         
         return entry.Text;
     }

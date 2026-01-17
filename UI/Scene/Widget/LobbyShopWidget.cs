@@ -329,6 +329,7 @@ public class LobbyShopWidget
         var go = _refreshButton.gameObject;
         if (!go.TryGetComponent<TimerSeconds>(out var timer)) timer = go.AddComponent<TimerSeconds>();
         timer.TimerText = _refreshButtonTimerText;
+        timer.AdsImage = Util.FindChild(go, "Icon", true).GetComponent<Image>();
         
         await _shopVm.InitDailyProductRefreshTime();
         timer.LastRefreshTime = _shopVm.LastDailyProductRefreshTime;

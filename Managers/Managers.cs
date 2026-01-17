@@ -98,4 +98,31 @@ public class Managers : MonoBehaviour
         Object.Clear();
         UI.Clear();
     }
+
+    private void OnApplicationPause(bool pauseStatus)
+    {
+        if (pauseStatus)
+        {
+            if (Game is { IsTutorial: true })
+            {
+                var tutorialVm = ResolveTutorialViewModel();
+                tutorialVm?.OnInterruptTutorial(Game.TutorialType);
+            }
+        }
+    }
+
+    private void OnApplicationQuit()
+    {
+        if (Game is { IsTutorial: true })
+        {
+            var tutorialVm = ResolveTutorialViewModel();
+            tutorialVm?.OnInterruptTutorial(Game.TutorialType);
+        }
+    }
+    
+    private TutorialViewModel ResolveTutorialViewModel()
+    {
+        var sceneContext = FindAnyObjectByType<Zenject.SceneContext>();
+        return sceneContext != null ? sceneContext.Container.Resolve<TutorialViewModel>() : null;
+    }
 }
