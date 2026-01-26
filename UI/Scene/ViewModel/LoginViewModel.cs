@@ -201,6 +201,7 @@ public class LoginViewModel : IInitializable, IDisposable
         else
         {
             Debug.LogError("Sign-in with Apple error. Credential is null or not IAppleIDCredential.");
+            ProcessingLogin = false;
         }
         
         OnRestoreButton?.Invoke();
@@ -209,6 +210,7 @@ public class LoginViewModel : IInitializable, IDisposable
     private void OnAppleSignInError(IAppleError error)
     {
         Debug.Log($"Sign-in with Apple error. Message: {error}");
+        ProcessingLogin = false;
         OnRestoreButton?.Invoke();
     }
     
@@ -271,6 +273,8 @@ public class LoginViewModel : IInitializable, IDisposable
         if (success == false)
         {
             Debug.LogError($"Google sign in failed: {error}");
+            ProcessingLogin = false;
+            OnRestoreButton?.Invoke();
             return;
         }
         
@@ -282,6 +286,8 @@ public class LoginViewModel : IInitializable, IDisposable
         if (success == false || tokenResponse == null)
         {
             Debug.LogError($"Failed to get token response: {error}");
+            ProcessingLogin = false;
+            OnRestoreButton?.Invoke();
             return;
         }
         

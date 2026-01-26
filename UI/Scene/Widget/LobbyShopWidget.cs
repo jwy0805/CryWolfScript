@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using TMPro;
@@ -26,8 +27,8 @@ public class LobbyShopWidget
     private AdsRemover _adsRemover;
     private Button _refreshButton;
     private TextMeshProUGUI _refreshButtonTimerText;
-    private bool _spinelItemsInited;
-
+    private bool _spinelItemsInitialized;
+    
     private readonly Func<Task> _initUserInfo;
     
     public LobbyShopWidget(ShopViewModel shopVm, IPaymentService paymentService, Func<Task> initUserInfo)
@@ -179,8 +180,8 @@ public class LobbyShopWidget
     
     private async Task InitSpinelItemsOnce()
     {
-        if (_spinelItemsInited) return;
-        _spinelItemsInited = true;
+        if (_spinelItemsInitialized) return;
+        _spinelItemsInitialized = true;
 
         await InitSpinelItems();
         BindLocalizedPrices(); // IAP 완료 후이므로 여기서 가격 바인딩까지 같이
@@ -285,11 +286,11 @@ public class LobbyShopWidget
             {
                 if (dailyProductInfo.NeedAds)
                 {
-                    item.BindEvent(data => OnAdsProductClicked(data, dailyProductInfo));
+                    item.BindEventOne(data => OnAdsProductClicked(data, dailyProductInfo));
                 }
                 else
                 {
-                    item.BindEvent(OnDailyProductClicked);
+                    item.BindEventOne(OnDailyProductClicked);
                 }
             }
         }
@@ -317,14 +318,14 @@ public class LobbyShopWidget
         product.ProductInfo = _shopVm.AdsRemover;
         product.Init();
         
-        _adsRemover.gameObject.BindEvent(OnAdsRemoverClicked);
+        _adsRemover.gameObject.BindEventOne(OnAdsRemoverClicked);
         
         return Task.CompletedTask;
     }
     
     private async Task SetRefreshTimer()
     {
-        _refreshButton.gameObject.BindEvent(OnRefreshDailyProductsClicked);
+        _refreshButton.gameObject.BindEventOne(OnRefreshDailyProductsClicked);
 
         var go = _refreshButton.gameObject;
         if (!go.TryGetComponent<TimerSeconds>(out var timer)) timer = go.AddComponent<TimerSeconds>();
@@ -357,83 +358,95 @@ public class LobbyShopWidget
         
         // Bind Product Image
         string iconPath;
+        GameObject iconObject;
+        if (productInfo.Compositions.Count == 1 && productInfo.Compositions.First().ProductType == ProductType.Unit)
+        {
+            var unitId = productInfo.Compositions.First().CompositionId;
+            var unit = Managers.Data.UnitInfoDict[unitId];
+            iconObject = await Managers.Resource.GetCardResources<UnitId>(unit, frame.transform);
+            iconObject.transform.SetSiblingIndex(3);
+            
+            var iconRect = iconObject.GetComponent<RectTransform>();
+            iconRect.sizeDelta = new Vector2(135, 216);
+            iconRect.anchorMin = new Vector2(0.5f, 0.6f);
+            iconRect.anchorMax = new Vector2(0.5f, 0.6f);
+        }
+        else if (productInfo.Compositions.First().ProductType == ProductType.Gold || 
+                 productInfo.Compositions.First().ProductType == ProductType.Spinel)
+        {
+            iconObject = Util.FindChild(frame, "ItemIcon", true);
+            
+            var textNum = Util.FindChild(frame, "TextNum", true);
+            textNum.SetActive(true);
+        }
+        else
+        {
+            iconPath = $"UI/Shop/NormalizedProducts/{itemName}";
+            iconObject = await Managers.Resource.Instantiate(iconPath, frame.transform);
+            iconObject.transform.SetSiblingIndex(3);
+            
+            var iconRect = iconObject.GetComponent<RectTransform>();
+            iconRect.sizeDelta = new Vector2(216, 216);
+            iconRect.anchorMin = new Vector2(0.5f, 0.6f);
+            iconRect.anchorMax = new Vector2(0.5f, 0.6f);
+        }
 
         if (dailyProductInfo.NeedAds)
         {
             iconPath = "UI/Shop/NormalizedProducts/Ads";
-            var iconObject = await Managers.Resource.Instantiate(iconPath, frame.transform);
-            var iconRect = iconObject.GetComponent<RectTransform>();
+            
+            var adsObject = await Managers.Resource.Instantiate(iconPath, frame.transform);
+            adsObject.transform.SetSiblingIndex(4);
+            
+            var iconRect = adsObject.GetComponent<RectTransform>();
             iconRect.anchorMin = new Vector2(0.5f, 0.65f);
             iconRect.anchorMax = new Vector2(0.5f, 0.65f);
             iconRect.sizeDelta = new Vector2(216, 216);
-            iconObject.transform.SetSiblingIndex(3);
         }
-        else
-        {
-            if (productInfo.Compositions.Count == 1 && productInfo.Compositions.First().ProductType == ProductType.Unit)
-            {
-                var unitId = productInfo.Compositions.First().CompositionId;
-                var unit = Managers.Data.UnitInfoDict[unitId];
-                var iconObject = await Managers.Resource.GetCardResources<UnitId>(unit, frame.transform);
-                var iconRect = iconObject.GetComponent<RectTransform>();
-                iconRect.sizeDelta = new Vector2(135, 216);
-                iconRect.anchorMin = new Vector2(0.5f, 0.6f);
-                iconRect.anchorMax = new Vector2(0.5f, 0.6f);
-                iconObject.transform.SetSiblingIndex(3);
-            }
-            else if (productInfo.Compositions.First().ProductType == ProductType.Gold || 
-                     productInfo.Compositions.First().ProductType == ProductType.Spinel)
-            {
-                var textNum = Util.FindChild(frame, "TextNum", true);
-                textNum.SetActive(true);
-            }
-            else
-            {
-                iconPath = $"UI/Shop/NormalizedProducts/{itemName}";
-                var iconObject = await Managers.Resource.Instantiate(iconPath, frame.transform);
-                var iconRect = iconObject.GetComponent<RectTransform>();
-                iconRect.anchorMin = new Vector2(0.5f, 0.6f);
-                iconRect.anchorMax = new Vector2(0.5f, 0.6f);
-                iconObject.transform.SetSiblingIndex(3);
-            }
-        }
+        
+        iconObject.AddComponent<DailyProductHelper>();
+        iconObject.SetActive(!dailyProductInfo.NeedAds);
         
         return frame;
     }
     
     private async Task RevealDailyProduct(DailyProductInfo dailyProduct)
     {
-        var result = await _shopVm.RevealDailyProduct(dailyProduct);
-
-        if (result == false)
+        var slot = await _shopVm.RevealDailyProduct(dailyProduct);
+        if (slot == -1)
         {
             var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+            await Managers.Localization.UpdateNotifyPopupText(
+                popup, "notify_network_error_title", "notify_network_error_message");
+            return;
         }
+        
+        var childObject = _dailyProductPanel.GetChild(slot).gameObject;
+        var adsImage = Util.FindChild(childObject, "Ads", true, true);
+        var productImage = childObject.transform.GetComponentInChildren<DailyProductHelper>(true);
+        childObject.BindEventOne(OnDailyProductClicked);
+        adsImage.SetActive(false);
+        productImage.gameObject.SetActive(true);
     }
 
     private async Task RefreshDailyProducts()
     {
         var result = await _shopVm.RefreshDailyProducts();
-
-        if (result == false)
+        if (!result)
         {
             var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+            await Managers.Localization.UpdateNotifyPopupText(
+                popup, "notify_network_error_title", "notify_network_error_message");
         }
         else
         {
-            foreach (Transform child in _dailyProductPanel)
-            {
-                Managers.Resource.Destroy(child.gameObject);
-            }
-            
             await SetRefreshTimer();
-            await InitDailyProducts();
+            await OnResetDailyProductUI();
         }
     }
 
     private async Task OnDailyPaymentSuccessHandler(int slot)
     {
-        Debug.Log("[UI_MainLobby] Daily product purchase successful.");
         await SoldOutDailyProduct(slot);
         await _initUserInfo();
     }
@@ -445,10 +458,17 @@ public class LobbyShopWidget
         var soldOutPanel = await Managers.Resource.Instantiate(soldOutFramePath, _dailyProductPanel);
         soldOutPanel.transform.SetSiblingIndex(slot);
     }
-
+    
     private async Task OnResetDailyProductUI()
     {
         Util.DestroyAllChildren(_dailyProductPanel);
+        
+        for (int i = 0; i < 5; i++)
+        {
+            if (_dailyProductPanel.childCount == 0) break;
+            await Managers.Coroutine.WaitUntilNextFrameAsync();
+        }       
+        
         await InitDailyProducts();
     }
 
@@ -519,11 +539,19 @@ public class LobbyShopWidget
         
         if (User.Instance.SubscribeAdsRemover)
         {
-            await _shopVm.RevealDailyProduct(dailyProductInfo);
+            await RevealDailyProduct(dailyProductInfo);
         }
         else
         {
             Managers.Ads.RevealedDailyProduct = dailyProductInfo;
+            
+            if (!Managers.Ads.IsRewardReady())
+            {
+                Managers.Ads.RequestRewardedPreload();  
+                Managers.Ads.ShowLoadingOnly();         
+                return;
+            }
+            
             Managers.Ads.ShowRewardVideo("Check_Daily_Product");
         }
     }
@@ -532,7 +560,7 @@ public class LobbyShopWidget
     {
         if (User.Instance.SubscribeAdsRemover)
         {
-            await _shopVm.RefreshDailyProducts();
+            await RefreshDailyProducts();
         }
         else
         {
@@ -563,7 +591,6 @@ public class LobbyShopWidget
     
     private void BindEvents()
     {
-        _shopVm.OnResetDailyProductUI += OnResetDailyProductUI;
         _shopVm.OnApplyAdsRemover += ApplyAdsRemoverUI;
         
         _paymentService.OnPaymentSuccess += InitSubscriptionObjects;
@@ -575,7 +602,6 @@ public class LobbyShopWidget
 
     private void ReleaseEvents()
     {
-        _shopVm.OnResetDailyProductUI -= OnResetDailyProductUI;
         _shopVm.OnApplyAdsRemover -= ApplyAdsRemoverUI;
         
         _paymentService.OnPaymentSuccess -= InitSubscriptionObjects;

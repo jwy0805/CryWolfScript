@@ -69,7 +69,8 @@ public class UI_MatchMaking : UI_Scene
             InitUI();
         
             // Connect to the game session in advance
-            await _matchMakingVm.ConnectSocketServer();
+            var connected = await _matchMakingVm.ConnectSocketServer();
+            if (!connected) return;
         }
         catch (Exception e)
         {

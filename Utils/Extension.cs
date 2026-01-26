@@ -25,6 +25,20 @@ public static class Extension
         return;
         async void Action(PointerEventData data) => await action(data);
     }
+
+    public static void BindEventOne(this GameObject gameObject, Action<PointerEventData> action,
+        Define.UIEvent type = Define.UIEvent.Click)
+    {
+        UI_Base.BindEventOne(gameObject, action, type);
+    }
+    
+    public static void BindEventOne(this GameObject gameObject, Func<PointerEventData, Task> action,
+        Define.UIEvent type = Define.UIEvent.Click)
+    {
+        UI_Base.BindEventOne(gameObject, Action, type);
+        return;
+        async void Action(PointerEventData data) => await action(data);
+    }
     
     public static T ToEnum<T>(this string enumString) where T : Enum
     {

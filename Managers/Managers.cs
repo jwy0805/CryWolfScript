@@ -34,6 +34,7 @@ public class Managers : MonoBehaviour
     
     #region Core
 
+    private readonly CoroutineManager _coroutine = new();
     private readonly DataManager _data = new();
     private readonly InputManager _input = new();
     private readonly LocalizationManager _localization = new();
@@ -44,6 +45,7 @@ public class Managers : MonoBehaviour
     private readonly SceneManagerEx _scene = new();
     private readonly UIManager _ui = new();
 
+    public static CoroutineManager Coroutine => Instance._coroutine;
     public static DataManager Data => Instance._data;
     public static InputManager Input => Instance._input;
     public static LocalizationManager Localization => Instance._localization;
@@ -84,6 +86,7 @@ public class Managers : MonoBehaviour
 
             DontDestroyOnLoad(go);
             s_instance = go.GetComponent<Managers>();
+            s_instance._coroutine.Init();
             s_instance._pool.Init();
             s_instance._sound.Init();
         }

@@ -205,7 +205,7 @@ public class UI_SinglePlayMapPopup : UI_Popup
     {
         if (_selectedStage == null) return;
         if (_selectedStage.UserStageInfo == null || _selectedStage.UserStageInfo.IsAvailable == false) return;
-        await _singlePlayVm.ConnectGameSession();
+        await Managers.Network.ConnectGameSession();
     }
     
     private void CloseInfoPanel(PointerEventData data)

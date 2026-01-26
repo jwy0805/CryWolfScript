@@ -59,7 +59,9 @@ public class UI_GameMenuPopup : UI_Popup
         if (Managers.Game.IsTutorial)
         {
             var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            popup.Text = Managers.Localization.GetLocalizedText("warning_in_game_tutorial_no_surrender");
+            const string messageKey = "warning_in_game_tutorial_no_surrender";
+            
+            await Managers.Localization.UpdateWarningPopupText(popup, messageKey);
             return;
         }
         

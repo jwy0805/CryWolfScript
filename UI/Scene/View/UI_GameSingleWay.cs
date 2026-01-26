@@ -257,7 +257,6 @@ public class UI_GameSingleWay : UI_Game
         if (_tutorialVm.CurrentTag.Contains("CheckUpgrade"))
         {
             StepTutorial(_tutorialVm.NextTag);
-            _tutorialVm.SendHoldPacket(true);
         }
     }
 

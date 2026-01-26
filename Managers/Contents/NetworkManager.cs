@@ -16,7 +16,9 @@ using Zenject;
 public class NetworkManager
 {
     private ServerSession _session = new();
-    private int _sessionId;
+    private int _sessionId = -1;
+    private TaskCompletionSource<int> _sessionIdTcs;
+    private bool _awaitingSessionId;
     private const string LocalPort = "7270";
     private const string Address = "hamonstudio.net";
 
@@ -34,9 +36,22 @@ public class NetworkManager
         get => _sessionId;
         set
         {
-            _sessionId = value;
+            if (value == -1)
+            {
+                _sessionId = value;
+                return;
+            }
 
-            if (_sessionId == -1) return;
+            if (_awaitingSessionId == false)
+            {
+                Debug.LogWarning($"Ignoring SessionId because no pending connect: {value}");
+                return;
+            }
+
+            _sessionId = value;
+            _awaitingSessionId = false;
+            _sessionIdTcs?.TrySetResult(_sessionId);
+            _sessionIdTcs = null;
             
             var sceneContext = UnityEngine.Object.FindAnyObjectByType<SceneContext>();
             if (sceneContext == null)
@@ -44,8 +59,6 @@ public class NetworkManager
                 Debug.LogWarning("SceneContext not found. Cannot set SessionId.");
                 return;
             }
-            
-            Debug.Log("Getting SessionId: " + _sessionId);
             
             var tutorialVm = sceneContext.Container.TryResolve<TutorialViewModel>();
             if (tutorialVm == null)
@@ -135,7 +148,7 @@ public class NetworkManager
         }
     }
     
-    public async Task ConnectGameSession(bool test = false)
+    public async Task<bool> ConnectGameSession(bool test = false)
     {
         // DNS (Domain Name System)
         string host;
@@ -172,19 +185,77 @@ public class NetworkManager
                 ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
                 break;
             default:
-                return;
+                return false;
         }
         
-        if (ipAddress == null) return;
+        if (ipAddress == null) return false;
+
+        if (_awaitingSessionId)
+        {
+            return await AwaitSessionIdAsync(_sessionIdTcs?.Task);
+        }
+
         Debug.Log($"Connecting to {ipAddress} with SessionId: {_sessionId}");
+        
+        var sessionIdTask = WaitForSessionIdAsync();
         var endPointLocal = new IPEndPoint(ipAddress, port);
         _session = new ServerSession();
         new Connector().Connect(endPointLocal, () => _session, test);
+
+        const int timeoutMilliseconds = 5000;
+        var completedTask = await Task.WhenAny(sessionIdTask, Task.Delay(timeoutMilliseconds));
+        if (completedTask != sessionIdTask)
+        {
+            CancelSessionIdWait();
+            Disconnect();
+            var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+            await Managers.Localization.UpdateWarningPopupText(popup, "warning_server_error");
+            return false;
+        }
+
+        return await AwaitSessionIdAsync(sessionIdTask);
+    }
+
+    private Task<int> WaitForSessionIdAsync()
+    {
+        _awaitingSessionId = true;
+        if (_sessionIdTcs == null || _sessionIdTcs.Task.IsCompleted)
+        {
+            _sessionIdTcs = new TaskCompletionSource<int>();
+        }
+
+        return _sessionIdTcs.Task;
+    }
+
+    private async Task<bool> AwaitSessionIdAsync(Task<int> sessionIdTask)
+    {
+        if (sessionIdTask == null) return false;
+
+        try
+        {
+            await sessionIdTask;
+            return true;
+        }
+        catch (TaskCanceledException)
+        {
+            return false;
+        }
+    }
+
+    private void CancelSessionIdWait()
+    {
+        _awaitingSessionId = false;
+        if (_sessionIdTcs != null && _sessionIdTcs.Task.IsCompleted == false)
+        {
+            _sessionIdTcs.TrySetCanceled();
+        }
+        _sessionIdTcs = null;
     }
     
     // Disconnect TCP Connection
     public void Disconnect()
     {
+        CancelSessionIdWait();
         _session.Disconnect();
         _sessionId = -1;
     }

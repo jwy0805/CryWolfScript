@@ -27,7 +27,6 @@ public class ShopViewModel
     public List<ProductInfo> SpinelItems;
     public List<DailyProductInfo> DailyProducts;
 
-    public event Func<Task> OnResetDailyProductUI;
     public event Func<Task> OnApplyAdsRemover; 
     
     public ProductInfo AdsRemover { get; set; }
@@ -114,33 +113,17 @@ public class ShopViewModel
         if (productInfo.Price == 0)
         {
             // Free Product
-            if (dailyProductInfo.NeedAds)
+            framePath = itemName switch
             {
-                framePath = "UI/Shop/DailyProducts/CardFrameSquire";
-            }
-            else
-            {
-                if (productInfo.Compositions.Exists(c => c.ProductType == ProductType.Spinel))
-                {
-                    framePath = itemName switch
-                    {
-                        "Spinel50" => "UI/Shop/DailyProducts/Spinel50",
-                        "Spinel30" => "UI/Shop/DailyProducts/Spinel30",
-                        "Spinel20" => "UI/Shop/DailyProducts/Spinel20",
-                        _ => "UI/Shop/DailyProducts/Spinel10"
-                    };
-                }
-                else
-                {
-                    framePath = itemName switch
-                    {
-                        "Gold1000" => "UI/Shop/DailyProducts/Gold1000",
-                        "Gold500" => "UI/Shop/DailyProducts/Gold500",
-                        "Gold200" => "UI/Shop/DailyProducts/Gold200",
-                        _ => "UI/Shop/DailyProducts/Gold100"
-                    };
-                }
-            }
+                "Spinel50" => "UI/Shop/DailyProducts/Spinel50",
+                "Spinel30" => "UI/Shop/DailyProducts/Spinel30",
+                "Spinel20" => "UI/Shop/DailyProducts/Spinel20",
+                "Spinel10" => "UI/Shop/DailyProducts/Spinel10",
+                "Gold1000" => "UI/Shop/DailyProducts/Gold1000",
+                "Gold500" => "UI/Shop/DailyProducts/Gold500",
+                "Gold200" => "UI/Shop/DailyProducts/Gold200",
+                _ => "UI/Shop/DailyProducts/Gold100"
+            };
         }
         else
         {
@@ -173,7 +156,7 @@ public class ShopViewModel
         _paymentService.BuyDailyProductAsync(SelectedProduct.ProductCode);
     }
     
-    public async Task<bool> RevealDailyProduct(DailyProductInfo dailyProduct)
+    public async Task<int> RevealDailyProduct(DailyProductInfo dailyProduct)
     {
         var packet = new RevealDailyProductPacketRequired
         {
@@ -183,14 +166,15 @@ public class ShopViewModel
         
         var result = await _webService.SendWebRequestAsync<RevealDailyProductPacketResponse>(
             "Ads/RevealDailyProduct", UnityWebRequest.kHttpVerbPUT, packet);
-
+        
         if (result.RevealDailyProductOk)
         {
-            DailyProducts = result.DailyProductInfos.OrderBy(dpi => dpi.Slot).ToList();
-            await Util.InvokeAll(OnResetDailyProductUI);
+            var slot = result.DailyProductInfo.Slot;
+            DailyProducts[slot] = result.DailyProductInfo;
+            return slot;
         }
-        
-        return result.RevealDailyProductOk;
+
+        return -1;
     }
     
     public async Task<bool> RefreshDailyProducts()
@@ -207,7 +191,6 @@ public class ShopViewModel
         {
             DailyProducts = res.DailyProducts.OrderBy(pi => pi.Slot).ToList();
             LastDailyProductRefreshTime = DateTime.UtcNow;
-            await Util.InvokeAll(OnResetDailyProductUI);
         }
 
         return res.RefreshDailyProductOk;

@@ -151,8 +151,8 @@ public class UI_Login : UI_Scene
 
     private void RestoreButton()
     {
-        GetButton((int)Buttons.GoogleButton).gameObject.SetActive(true);
-        GetButton((int)Buttons.AppleButton).gameObject.SetActive(true);
+        GetButton((int)Buttons.GoogleButton).interactable = true;
+        GetButton((int)Buttons.AppleButton).interactable = true;
     }
     
     private void OnDestroy()

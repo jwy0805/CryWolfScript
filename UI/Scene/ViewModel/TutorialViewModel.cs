@@ -219,8 +219,6 @@ public class TutorialViewModel : IDisposable
     
     public void StepTutorialByClickingUI(bool hold = true)
     {
-        SendHoldPacket(hold);
-        
         if (Util.Faction == Faction.Wolf)
         {
             Managers.UI.ClosePopupUI<UI_TutorialBattleWolfPopup>();

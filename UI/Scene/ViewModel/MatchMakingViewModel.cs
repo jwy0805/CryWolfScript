@@ -24,9 +24,9 @@ public class MatchMakingViewModel
         _tokenService = tokenService;
     }
 
-    public async Task ConnectSocketServer()
+    public async Task<bool> ConnectSocketServer()
     {
-        await Managers.Network.ConnectGameSession();
+        return await Managers.Network.ConnectGameSession();
     }
     
     public async Task StartMatchMaking()
@@ -70,7 +70,6 @@ public class MatchMakingViewModel
     
     public async Task TestMatchMaking()
     {
-        Debug.Log("Start Test");
         var packet = new ChangeActTestPacketRequired
         {
             AccessToken = _tokenService.GetAccessToken(),

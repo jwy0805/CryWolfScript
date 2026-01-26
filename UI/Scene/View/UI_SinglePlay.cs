@@ -183,7 +183,6 @@ public class UI_SinglePlay : UI_Scene
     public void StartSinglePlay(int sessionId)
     {
         _ = _singlePlayVm.StartSinglePlay(sessionId);
-        Debug.Log("start single play");
     }
     
     private void OnBackClicked()
@@ -199,6 +198,6 @@ public class UI_SinglePlay : UI_Scene
     
     private async Task OnStartClicked(PointerEventData data)
     {
-        await _singlePlayVm.ConnectGameSession();
+        await Managers.Network.ConnectGameSession();
     }
 }

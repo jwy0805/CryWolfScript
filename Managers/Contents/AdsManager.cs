@@ -35,10 +35,27 @@ public class AdsManager
     private NotifyState _notifyState = NotifyState.None;
     private UI_NotifyPopup _activeNotifyPopup;
     
+    private DateTime _showRequestStartedUtc;
+    private int _loadFailCount;
+    private const int ShowTimeoutSeconds = 10;
+    
     public event Func<DailyProductInfo, Task> OnRewardedRevealDailyProduct;
     public event Func<Task> OnRewardedRefreshDailyProducts;
 
     public DailyProductInfo RevealedDailyProduct { get; set; }
+    public bool IsRewardReady() => _rewardedAd != null && _rewardedAd.IsAdReady();
+    
+    public void RequestRewardedPreload()
+    {
+        if (!_levelPlayInitialized) { InitLevelPlay(); return; }
+        CreateAndWireRewarded();
+        _rewardedAd?.LoadAd();
+    }
+
+    public void ShowLoadingOnly()
+    {
+        _ = ShowAdLoadingNotifyAsync();
+    }
     
 #if UNITY_EDITOR
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -189,10 +206,6 @@ public class AdsManager
         Debug.Log("LevelPlay Initialization Completed.");
         _levelPlayInitialized = true;
         
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-        LevelPlay.LaunchTestSuite();
-#endif
-        
         CreateAndWireRewarded();
         _rewardedAd.LoadAd();
     }
@@ -229,28 +242,33 @@ public class AdsManager
         switch (placementName)
         {
             case "Check_Daily_Product":
-                Debug.Log("[Ads] Editor simulated rewarded ad for Check_Daily_Product.");
                 _ = InvokeSafeAsync(OnRewardedRevealDailyProduct, RevealedDailyProduct);
                 break;
             case "Refresh_Daily_Products":
-                Debug.Log("[Ads] Editor simulated rewarded ad for Refresh_Daily_Products.");
                 _ = InvokeSafeAsync(OnRewardedRefreshDailyProducts);
                 break;
-            default:
-                Debug.Log("[Ads] Editor simulated rewarded ad with no specific placement.");
-                break;
         }
-
+        
         return;
 #endif
         _userRequestedShow = true;
         _lastRequestedPlacement = placementName ?? string.Empty;
+
+        if (_showRequestStartedUtc == default)
+            _showRequestStartedUtc = DateTime.UtcNow;
+        
+        if (!_levelPlayInitialized)
+        {
+            InitLevelPlay();                    
+            _ = ShowAdLoadingNotifyAsync();     
+            return;
+        }
         
         if (_rewardedAd == null)
         {
-            Debug.LogWarning("[Ads] Rewarded ad is not initialized.");
-            _userRequestedShow = false;
-            _ = ShowAdUnavailableAsync();
+            CreateAndWireRewarded();
+            _rewardedAd?.LoadAd();
+            _ = ShowAdLoadingNotifyAsync();
             return;
         }
 
@@ -284,34 +302,53 @@ public class AdsManager
     
     private void OnRewardedLoaded(LevelPlayAdInfo adInfo)
     {
+        CloseNotifyIfAny();
+        _loadFailCount = 0;
+        
         if (!_userRequestedShow) return;
 
         var placement = _lastRequestedPlacement ?? string.Empty;
         var capped = !string.IsNullOrEmpty(placement) && LevelPlayRewardedAd.IsPlacementCapped(placement);
-
         if (capped)
         {
-            _userRequestedShow = false;
-            CloseNotifyIfAny();
+            ResetShowRequest();
             _ = ShowAdUnavailableAsync();
             return;
         }
 
         if (_rewardedAd != null && _rewardedAd.IsAdReady())
         {
-            _userRequestedShow = false;
-            CloseNotifyIfAny();
+            ResetShowRequest();
             ShowRewardInternal(placement);
         }
     }
 
+    private void ResetShowRequest()
+    {
+        _userRequestedShow = false;
+        _showRequestStartedUtc = default;
+        _loadFailCount = 0;
+    }
+    
     private void OnRewardedLoadFailed(LevelPlayAdError adError)
     {
         Debug.LogError($"[Ads] Rewarded ad failed to load: {adError}");
-        
+        _loadFailCount++;
+
         if (_userRequestedShow)
         {
-            _userRequestedShow = false;
+            var elapsed = (DateTime.UtcNow - _showRequestStartedUtc).TotalSeconds;
+            if (elapsed < ShowTimeoutSeconds)
+            {
+                _ = ShowAdLoadingNotifyAsync();
+
+                // 재시도
+                var delay = Mathf.Min(12f, 2f * _loadFailCount);
+                Managers.Instance.StartCoroutine(RetryLoadAdCoroutine(delay));
+                return;
+            }
+
+            ResetShowRequest();
             CloseNotifyIfAny();
             _ = ShowAdUnavailableAsync();
         }

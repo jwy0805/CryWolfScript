@@ -17,6 +17,7 @@ public class UI_FriendlyMatch : UI_Scene
     private FriendlyMatchViewModel _friendlyMatchVm;
     private MatchMakingViewModel _matchMakingVm;
     private DeckViewModel _deckVm;
+    private Coroutine _countDownRoutine;
 
     private Dictionary<string, GameObject> _deckButtonDict;
     
@@ -332,9 +333,22 @@ public class UI_FriendlyMatch : UI_Scene
         GetButton((int)Buttons.SwitchButton).gameObject.SetActive(false);
         GetButton((int)Buttons.BackButton).interactable = false;
         GetButton((int)Buttons.StartButton).interactable = false;
-        StartCoroutine(CountDown());
+        if (_countDownRoutine != null) StopCoroutine(_countDownRoutine);
+        _countDownRoutine = StartCoroutine(CountDown());
         
-        await Managers.Network.ConnectGameSession();
+        var connected = await Managers.Network.ConnectGameSession();
+        if (connected) return;
+
+        if (_countDownRoutine != null)
+        {
+            StopCoroutine(_countDownRoutine);
+            _countDownRoutine = null;
+        }
+
+        GetText((int)Texts.MatchMakingCountDownText).gameObject.SetActive(false);
+        GetButton((int)Buttons.SwitchButton).gameObject.SetActive(true);
+        GetButton((int)Buttons.BackButton).interactable = true;
+        GetButton((int)Buttons.StartButton).interactable = true;
     }
     
     private IEnumerator CountDown(int seconds = 6)
@@ -349,6 +363,7 @@ public class UI_FriendlyMatch : UI_Scene
         }
         
         _matchMakingVm.EnterGame();
+        _countDownRoutine = null;
     }
     
     private void OnDestroy()

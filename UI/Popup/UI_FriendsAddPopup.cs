@@ -242,6 +242,8 @@ public class UI_FriendsAddPopup : UI_Popup
             if (response.FriendRequestOk == false) return;
         
             var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+            await Managers.Localization.UpdateWarningPopupText(popup, "warning_friend_request_sent");
+            
             var newFriendInfo = new FriendUserInfo
             {
                 UserName = friendInfo.UserName,
@@ -250,8 +252,7 @@ public class UI_FriendsAddPopup : UI_Popup
                 RankPoint = friendInfo.RankPoint,
                 FriendStatus = response.FriendStatus
             };
-        
-            popup.GetComponentInChildren<TextMeshProUGUI>().text = "Friend request sent.";
+            
             BindFriendRequestButton(go, newFriendInfo);
         }
         catch (Exception e)

@@ -90,8 +90,9 @@ public class MainLobbyViewModel : IDisposable
     public async Task InitFriendAlert()
     {
         var friendTuple = await LoadPendingFriends();
-        if (friendTuple.Item1.Count > 0)
+        if (friendTuple.Item2.Count > 0)
         {
+            Debug.Log($"Friend list loaded: {string.Join(", ", friendTuple.Item1)}");
             OnFriendRequestNotificationReceived?.Invoke();
         }
     }

@@ -43,14 +43,21 @@ public class UI_FriendsListPopup : UI_Popup
         _lobbyVm = lobbyViewModel;
     }
     
-    protected override void Init()
+    protected override async void Init()
     {
-        base.Init();
+        try
+        {
+            base.Init();
         
-        BindObjects();
-        InitEvents();
-        InitButtonEvents();
-        InitUI();
+            BindObjects();
+            InitEvents();
+            InitButtonEvents();
+            await InitUIAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.Log(e);
+        }
     }
 
     private void InitEvents()
@@ -80,7 +87,7 @@ public class UI_FriendsListPopup : UI_Popup
         GetButton((int)Buttons.ExitButton).gameObject.BindEvent(ClosePopup);
     }
 
-    protected override async void InitUI()
+    protected override async Task InitUIAsync()
     {
         try
         {

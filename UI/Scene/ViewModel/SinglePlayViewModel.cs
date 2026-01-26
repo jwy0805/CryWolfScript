@@ -51,13 +51,7 @@ public class SinglePlayViewModel : IDisposable
         StageEnemyInfos = response.StageEnemyInfos;
         StageRewardInfos = response.StageRewardInfos;
     }
-
-    public async Task ConnectGameSession()
-    {
-        var sessionTask = Managers.Network.ConnectGameSession();
-        await sessionTask;
-    }
-
+    
     public async Task StartSinglePlay(int sessionId)
     {
         var changePacket = new ChangeActPacketSingleRequired
