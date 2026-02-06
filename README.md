@@ -4,11 +4,10 @@ Player choose a faction (defense-oriented Sheep or offense-oriented Wolf), build
 
 ## Real-time 1v1 PvP Strategy client (deck-based RTS defense/offense) featuring UI flows, packet-driven networking, and a maintainable project structure.
 > This README is intentionally focused on **code navigation and reviewability** (not player installation).
-> For a full product write-up,
 <br />
-see the resume: https://www.notion.so/WooYoung-Jeong-2f42f5b151de80d39cd2ea9900bfe6f3?source=copy_link
-<br />
-see the portfolio: https://www.notion.so/Cry-Wolf-Portfolio-2f52f5b151de80529d24c00c87a685fa?source=copy_link
+For a full product write-up,
+- see the resume: https://www.notion.so/WooYoung-Jeong-2f42f5b151de80d39cd2ea9900bfe6f3?source=copy_link
+- see the portfolio: https://www.notion.so/Cry-Wolf-Portfolio-2f52f5b151de80529d24c00c87a685fa?source=copy_link
 
 ## Product Proof (Live)
 - iOS (App Store): https://apps.apple.com/kr/app/id6745862935  
