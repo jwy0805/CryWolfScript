@@ -4,7 +4,7 @@
 
 ### Product Proof (Live)
 - iOS (App Store): https://apps.apple.com/kr/app/id6745862935  
-- Android (Google Play): https://play.google.com/store/apps/detailsid=com.hamonstudio.crywolf&hl=ko
+- Android (Google Play): https://play.google.com/store/apps/details?id=com.hamonstudio.crywolf&hl=ko
 
 ### Introductions
 - Cry Wolf Game Play Demo:
@@ -24,3 +24,30 @@
 ## Game overview
 Cry Wolf is a live mobile real-time PvP stretegy game combining RTS and idle-style automation.
 Player choose a faction (defence-oriented Sheep or offense-oriented Wolf), build a 6-card deck, and win through resource management and unit evolution timing.
+
+## Architecture at a glance
+```mermaid
+flowchart LR
+  subgraph Presentation[UI / Presentation]
+    Scenes[Scenes]
+    UI[UI]
+  end
+
+  subgraph Flow[Flow / Coordination]
+    Controllers[Controllers]
+  end
+
+  subgraph Services[Services / Shared State]
+    Managers[Managers]
+    Contents[Contents]
+  end
+
+  subgraph Network[Networking]
+    Web[Web]
+    ServerCore[ServerCore]
+    Packet[Packet]
+  end
+
+  Scenes --> UI --> Controllers --> Managers
+  Managers --> Web --> ServerCore --> Packet
+  Packet --> ServerCore --> Web --> Managers --> UI
