@@ -11,6 +11,7 @@ using Zenject;
 
 public class UI_PlayerProfilePopup : UI_Popup
 {
+    private IUserService _userService;
     private IWebService _webService;
     private ITokenService _tokenService;
     private MainLobbyViewModel _lobbyVm;
@@ -50,8 +51,13 @@ public class UI_PlayerProfilePopup : UI_Popup
     }
 
     [Inject]
-    public void Construct(IWebService webService, ITokenService tokenService, MainLobbyViewModel lobbyVm)
+    public void Construct(
+        IUserService userService, 
+        IWebService webService, 
+        ITokenService tokenService,
+        MainLobbyViewModel lobbyVm)
     {
+        _userService = userService;
         _webService = webService;
         _tokenService = tokenService;
         _lobbyVm = lobbyVm;
@@ -99,7 +105,7 @@ public class UI_PlayerProfilePopup : UI_Popup
             GetText((int)Texts.WinRateText).text = PlayerUserInfo.WinRate.ToString();
             
             var pencilButton = GetButton((int)Buttons.PencilButton).gameObject;
-            pencilButton.SetActive(User.Instance.IsGuest == false);
+            pencilButton.SetActive(_userService.User.IsGuest == false);
         }
         catch (Exception e)
         {
@@ -131,7 +137,7 @@ public class UI_PlayerProfilePopup : UI_Popup
         flag.sprite = await Managers.Resource.LoadAsync<Sprite>(flagPath);
         
         var pencilButton = GetButton((int)Buttons.PencilButton).gameObject;
-        if (User.Instance.UserInfo.NameInitialized)
+        if (_userService.User.UserInfo.NameInitialized)
         {
             pencilButton.SetActive(false);
         }
@@ -143,8 +149,8 @@ public class UI_PlayerProfilePopup : UI_Popup
 
     private void UpdateUsername()
     {
-        var userName = User.Instance.UserInfo.UserName;
-        var userTag = User.Instance.UserInfo.UserTag;
+        var userName = _userService.User.UserInfo.UserName;
+        var userTag = _userService.User.UserInfo.UserTag;
         GetText((int)Texts.UsernameText).text = $"{userName} #{userTag}";
     }
     

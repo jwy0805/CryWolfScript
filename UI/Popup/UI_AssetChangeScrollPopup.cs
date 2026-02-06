@@ -12,6 +12,7 @@ using Zenject;
 
 public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
 {
+    private IUserService _userService;
     private DeckViewModel _deckVm;
     
     private bool _changing;
@@ -48,8 +49,9 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
     }
     
     [Inject]
-    public void Construct(DeckViewModel deckViewModel)
+    public void Construct(IUserService userService, DeckViewModel deckViewModel)
     {
+        _userService = userService;
         _deckVm = deckViewModel;
     }
 
@@ -130,11 +132,11 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
         var assets = typeof(TEnum).ToString() switch
         {
             "Google.Protobuf.Protocol.SheepId" =>
-                User.Instance.OwnedSheepList.Select(osi => osi.SheepInfo).Cast<IAsset>().ToList(),
+                _userService.User.OwnedSheepList.Select(osi => osi.SheepInfo).Cast<IAsset>().ToList(),
             "Google.Protobuf.Protocol.EnchantId" =>
-                User.Instance.OwnedEnchantList.Select(oei => oei.EnchantInfo).Cast<IAsset>().ToList(),
+                _userService.User.OwnedEnchantList.Select(oei => oei.EnchantInfo).Cast<IAsset>().ToList(),
             "Google.Protobuf.Protocol.CharacterId" =>
-                User.Instance.OwnedCharacterList.Select(oci => oci.CharacterInfo).Cast<IAsset>().ToList(),
+                _userService.User.OwnedCharacterList.Select(oci => oci.CharacterInfo).Cast<IAsset>().ToList(),
             _ => new List<IAsset>()
         };
 

@@ -64,7 +64,7 @@ public class CraftingViewModel
     public void LoadMaterials(UnitId unitId)
     {
         CraftingMaterials = Managers.Data.CraftingMaterialDict[(int)unitId].Materials.ToList();
-        SetMaterialsOnCraftPanel?.Invoke(CraftingMaterials, User.Instance.OwnedMaterialList);
+        SetMaterialsOnCraftPanel?.Invoke(CraftingMaterials, _userService.User.OwnedMaterialList);
     }
 
     public async Task CraftCard()
@@ -130,7 +130,7 @@ public class CraftingViewModel
     
     private void UpdateOwnedMaterials(List<OwnedMaterialInfo> materials)
     {
-        var ownedMaterialList = User.Instance.OwnedMaterialList;
+        var ownedMaterialList = _userService.User.OwnedMaterialList;
 
         foreach (var material in materials)
         {
@@ -151,7 +151,7 @@ public class CraftingViewModel
 
     private void UpdateOwnedUnits(List<UnitInfo> unitInfos)
     {
-        var ownedUnitList = User.Instance.OwnedUnitList;
+        var ownedUnitList = _userService.User.OwnedUnitList;
         
         foreach (var unitInfo in unitInfos)    
         {
@@ -165,7 +165,7 @@ public class CraftingViewModel
                 if (matchingOwnedUnit.Count <= 0)
                 {
                     ownedUnitList.Remove(matchingOwnedUnit);
-                    User.Instance.NotOwnedUnitList.Add(matchingOwnedUnit.UnitInfo);
+                    _userService.User.NotOwnedUnitList.Add(matchingOwnedUnit.UnitInfo);
                 }
             }
         }
@@ -176,7 +176,7 @@ public class CraftingViewModel
         switch (card.AssetType)
         {
             case Asset.Unit:
-                var unit = User.Instance.OwnedUnitList.FirstOrDefault(info => info.UnitInfo.Id == card.Id);
+                var unit = _userService.User.OwnedUnitList.FirstOrDefault(info => info.UnitInfo.Id == card.Id);
                 
                 if (unit != null)
                 {
@@ -184,7 +184,7 @@ public class CraftingViewModel
                 }
                 else
                 {
-                    User.Instance.OwnedUnitList.Add(new OwnedUnitInfo
+                    _userService.User.OwnedUnitList.Add(new OwnedUnitInfo
                     {
                         UnitInfo = Managers.Data.UnitInfoDict[card.Id],
                         Count = CraftingCount
@@ -193,7 +193,7 @@ public class CraftingViewModel
                 break;
             
             case Asset.Enchant:
-                var enchant = User.Instance.OwnedEnchantList.FirstOrDefault(info => info.EnchantInfo.Id == card.Id);
+                var enchant = _userService.User.OwnedEnchantList.FirstOrDefault(info => info.EnchantInfo.Id == card.Id);
                 
                 if (enchant != null)
                 {
@@ -201,7 +201,7 @@ public class CraftingViewModel
                 }
                 else
                 {
-                    User.Instance.OwnedEnchantList.Add(new OwnedEnchantInfo
+                    _userService.User.OwnedEnchantList.Add(new OwnedEnchantInfo
                     {
                         EnchantInfo = Managers.Data.EnchantInfoDict[card.Id],
                         Count = CraftingCount
@@ -210,7 +210,7 @@ public class CraftingViewModel
                 break;
                 
             case Asset.Sheep:
-                var sheep = User.Instance.OwnedSheepList.FirstOrDefault(info => info.SheepInfo.Id == card.Id);
+                var sheep = _userService.User.OwnedSheepList.FirstOrDefault(info => info.SheepInfo.Id == card.Id);
                 
                 if (sheep != null)
                 {
@@ -218,7 +218,7 @@ public class CraftingViewModel
                 }
                 else
                 {
-                    User.Instance.OwnedSheepList.Add(new OwnedSheepInfo
+                    _userService.User.OwnedSheepList.Add(new OwnedSheepInfo
                     {
                         SheepInfo = Managers.Data.SheepInfoDict[card.Id],
                         Count = CraftingCount
@@ -227,7 +227,7 @@ public class CraftingViewModel
                 break;
             
             case Asset.Character:
-                var character = User.Instance.OwnedCharacterList.FirstOrDefault(info => info.CharacterInfo.Id == card.Id);
+                var character = _userService.User.OwnedCharacterList.FirstOrDefault(info => info.CharacterInfo.Id == card.Id);
                 
                 if (character != null)
                 {
@@ -235,7 +235,7 @@ public class CraftingViewModel
                 }
                 else
                 {
-                    User.Instance.OwnedCharacterList.Add(new OwnedCharacterInfo
+                    _userService.User.OwnedCharacterList.Add(new OwnedCharacterInfo
                     {
                         CharacterInfo = Managers.Data.CharacterInfoDict[card.Id],
                         Count = CraftingCount
@@ -248,7 +248,7 @@ public class CraftingViewModel
     private void AddAssetsByReinforcing(UnitInfo unitInfo)
     {
         var newUnitId = unitInfo.Id + 1;
-        var newUnit = User.Instance.OwnedUnitList.FirstOrDefault(info => info.UnitInfo.Id == newUnitId);
+        var newUnit = _userService.User.OwnedUnitList.FirstOrDefault(info => info.UnitInfo.Id == newUnitId);
         
         if (newUnit != null)
         {
@@ -256,7 +256,7 @@ public class CraftingViewModel
         }
         else
         {
-            User.Instance.OwnedUnitList.Add(new OwnedUnitInfo
+            _userService.User.OwnedUnitList.Add(new OwnedUnitInfo
             {
                 UnitInfo = Managers.Data.UnitInfoDict[newUnitId],
                 Count = 1
@@ -280,8 +280,8 @@ public class CraftingViewModel
 
     public bool IsUnitInDecks(UnitInfo unitInfo)
     {
-        var instance = User.Instance;
-        var units = instance.AllDeckSheep.Concat(instance.AllDeckWolf)
+        var user = _userService.User;
+        var units = user.AllDeckSheep.Concat(user.AllDeckWolf)
             .SelectMany(deck => deck.UnitsOnDeck)
             .GroupBy(unit => unit.Id)
             .Select(group => new OwnedUnitInfo
@@ -297,8 +297,8 @@ public class CraftingViewModel
     // 1. Cannot use the only card if the card is already in the deck.
     public bool VerityCardByCondition1(UnitInfo unitInfo)
     {
-        var instance = User.Instance;
-        var units = instance.AllDeckSheep.Concat(instance.AllDeckWolf)
+        var user = _userService.User;
+        var units = user.AllDeckSheep.Concat(user.AllDeckWolf)
             .SelectMany(deck => deck.UnitsOnDeck)
             .GroupBy(unit => unit.Id)
             .Select(group => new OwnedUnitInfo
@@ -311,7 +311,7 @@ public class CraftingViewModel
 
         if (isUnitInDecks)
         {
-            return instance.OwnedUnitList.First(info => info.UnitInfo.Id == unitInfo.Id).Count > 1;
+            return user.OwnedUnitList.First(info => info.UnitInfo.Id == unitInfo.Id).Count > 1;
         }
 
         return true;
@@ -320,10 +320,10 @@ public class CraftingViewModel
     // 2. There must be at least 6 cards of each different species and at least 4 cards are level 3.
     public bool VerifyCardByCondition2(UnitInfo unitInfo)
     {
-        var instance = User.Instance;
-        var sheepUnits = instance.OwnedUnitList
+        var user = _userService.User;
+        var sheepUnits = user.OwnedUnitList
             .Where(info => info.UnitInfo.Faction == Faction.Sheep).ToList();
-        var wolfUnits = instance.OwnedUnitList
+        var wolfUnits = user.OwnedUnitList
             .Where(info => info.UnitInfo.Faction == Faction.Wolf).ToList();
         
         return VerifyFactionCondition(new List<OwnedUnitInfo>(sheepUnits), unitInfo)
@@ -333,7 +333,7 @@ public class CraftingViewModel
     // 3. The user must have more than 0 card.
     public bool VerifyCardByCondition3(UnitInfo unitInfo)
     {
-        var realCount = User.Instance.OwnedUnitList.First(info => info.UnitInfo.Id == unitInfo.Id).Count;
+        var realCount = _userService.User.OwnedUnitList.First(info => info.UnitInfo.Id == unitInfo.Id).Count;
         var virtualCount = ReinforceMaterialUnits.Count(info => info.Id == unitInfo.Id);
         
         return realCount - virtualCount > 0;

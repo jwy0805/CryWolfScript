@@ -16,6 +16,8 @@ public class UserService : IUserService
 
     public event Action<Faction> InitDeckButton;
     
+    public User User { get; }
+
     public UserTutorialInfo TutorialInfo { get; set; }
     
     [Inject]
@@ -23,12 +25,13 @@ public class UserService : IUserService
     {
         _tokenService = tokenService;
         _webService = webService;
+        User = new User();
     }
     
     public void LoadOwnedUnit(List<OwnedUnitInfo> ownedUnitsFromServer)
     {
-        User.Instance.OwnedUnitList.Clear();
-        User.Instance.NotOwnedUnitList.Clear();
+        User.OwnedUnitList.Clear();
+        User.NotOwnedUnitList.Clear();
 
         var ownedById = ownedUnitsFromServer
             .Where(x => x?.UnitInfo != null)
@@ -40,19 +43,19 @@ public class UserService : IUserService
             {
                 // 서버가 준 UnitInfo 대신, 클라 UnitInfo로 교체(참조 일관성)
                 owned.UnitInfo = info;
-                User.Instance.OwnedUnitList.Add(owned);
+                User.OwnedUnitList.Add(owned);
             }
             else
             {
-                User.Instance.NotOwnedUnitList.Add(info);
+                User.NotOwnedUnitList.Add(info);
             }
         }
     }
 
     public void LoadOwnedSheep(List<OwnedSheepInfo> ownedSheepFromServer)
     {
-        User.Instance.OwnedSheepList.Clear();
-        User.Instance.NotOwnedSheepList.Clear();
+        User.OwnedSheepList.Clear();
+        User.NotOwnedSheepList.Clear();
 
         var ownedById = ownedSheepFromServer
             .Where(x => x?.SheepInfo != null)
@@ -63,19 +66,19 @@ public class UserService : IUserService
             if (ownedById.TryGetValue(master.Id, out var owned))
             {
                 owned.SheepInfo = master;
-                User.Instance.OwnedSheepList.Add(owned);
+                User.OwnedSheepList.Add(owned);
             }
             else
             {
-                User.Instance.NotOwnedSheepList.Add(master);
+                User.NotOwnedSheepList.Add(master);
             }
         }
     }
 
     public void LoadOwnedEnchant(List<OwnedEnchantInfo> ownedEnchantsFromServer)
     {
-        User.Instance.OwnedEnchantList.Clear();
-        User.Instance.NotOwnedEnchantList.Clear();
+        User.OwnedEnchantList.Clear();
+        User.NotOwnedEnchantList.Clear();
 
         var ownedById = ownedEnchantsFromServer
             .Where(x => x?.EnchantInfo != null)
@@ -86,19 +89,19 @@ public class UserService : IUserService
             if (ownedById.TryGetValue(master.Id, out var owned))
             {
                 owned.EnchantInfo = master;
-                User.Instance.OwnedEnchantList.Add(owned);
+                User.OwnedEnchantList.Add(owned);
             }
             else
             {
-                User.Instance.NotOwnedEnchantList.Add(master);
+                User.NotOwnedEnchantList.Add(master);
             }
         }
     }
 
     public void LoadOwnedCharacter(List<OwnedCharacterInfo> ownedCharactersFromServer)
     {
-        User.Instance.OwnedCharacterList.Clear();
-        User.Instance.NotOwnedCharacterList.Clear();
+        User.OwnedCharacterList.Clear();
+        User.NotOwnedCharacterList.Clear();
 
         var ownedById = ownedCharactersFromServer
             .Where(x => x?.CharacterInfo != null)
@@ -109,28 +112,28 @@ public class UserService : IUserService
             if (ownedById.TryGetValue(master.Id, out var owned))
             {
                 owned.CharacterInfo = master;
-                User.Instance.OwnedCharacterList.Add(owned);
+                User.OwnedCharacterList.Add(owned);
             }
             else
             {
-                User.Instance.NotOwnedCharacterList.Add(master);
+                User.NotOwnedCharacterList.Add(master);
             }
         }
     }
     
     public void LoadOwnedMaterial(List<OwnedMaterialInfo> materials)
     {
-        User.Instance.OwnedMaterialList.Clear();
+        User.OwnedMaterialList.Clear();
 
         foreach (var material in materials)
         {
-            User.Instance.OwnedMaterialList.Add(material);
+            User.OwnedMaterialList.Add(material);
         }
     }
     
     public void LoadBattleSetting(BattleSettingInfo battleSettingInfo)
     {
-        User.Instance.BattleSetting = battleSettingInfo;
+        User.BattleSetting = battleSettingInfo;
     }
     
     public void LoadDeck(DeckInfo deckInfo)
@@ -149,11 +152,11 @@ public class UserService : IUserService
         
         if (deck.Faction == Faction.Sheep)
         {
-            User.Instance.AllDeckSheep.Add(deck);
+            User.AllDeckSheep.Add(deck);
         }
         else
         {
-            User.Instance.AllDeckWolf.Add(deck);
+            User.AllDeckWolf.Add(deck);
         }
     }
     
@@ -172,22 +175,22 @@ public class UserService : IUserService
 
         if (deck.Faction == Faction.Sheep)
         {
-            User.Instance.DeckSheep = deck;
+            User.DeckSheep = deck;
         }
         else
         {
-            User.Instance.DeckWolf = deck;
+            User.DeckWolf = deck;
         }
     }
 
     public void BindDeck()
     {
-        User.Instance.DeckSheep = User.Instance.AllDeckSheep.Any(deck => deck.LastPicked) 
-            ? User.Instance.AllDeckSheep.First(deck => deck.LastPicked) 
-            : User.Instance.AllDeckSheep.First();
-        User.Instance.DeckWolf = User.Instance.AllDeckWolf.Any(deck => deck.LastPicked) 
-            ? User.Instance.AllDeckWolf.First(deck => deck.LastPicked) 
-            : User.Instance.AllDeckWolf.First();
+        User.DeckSheep = User.AllDeckSheep.Any(deck => deck.LastPicked) 
+            ? User.AllDeckSheep.First(deck => deck.LastPicked) 
+            : User.AllDeckSheep.First();
+        User.DeckWolf = User.AllDeckWolf.Any(deck => deck.LastPicked) 
+            ? User.AllDeckWolf.First(deck => deck.LastPicked) 
+            : User.AllDeckWolf.First();
         
         InitDeckButton?.Invoke(Util.Faction);
     }
@@ -200,9 +203,9 @@ public class UserService : IUserService
         if (res.LoadUserInfoOk == false) return;
         
         TutorialInfo = res.UserTutorialInfo;
-        User.Instance.ExpTable = res.ExpTable;
-        User.Instance.UserInfo = res.UserInfo;
-        User.Instance.SubscribeAdsRemover = res.UserInfo.Subscriptions
+        User.ExpTable = res.ExpTable;
+        User.UserInfo = res.UserInfo;
+        User.SubscribeAdsRemover = res.UserInfo.Subscriptions
             .FirstOrDefault(si => si.SubscriptionType == SubscriptionType.AdsRemover) != null;
     }
 
@@ -215,8 +218,8 @@ public class UserService : IUserService
         await task;
         
         TutorialInfo = task.Result.UserTutorialInfo;
-        User.Instance.ExpTable = task.Result.ExpTable;
-        User.Instance.UserInfo = task.Result.UserInfo;
+        User.ExpTable = task.Result.ExpTable;
+        User.UserInfo = task.Result.UserInfo;
         
         _tokenService.SaveAccessToken(task.Result.AccessToken);
         _tokenService.SaveRefreshToken(task.Result.RefreshToken);

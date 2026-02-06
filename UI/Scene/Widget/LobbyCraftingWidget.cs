@@ -11,6 +11,7 @@ using UnityEngine.UI;
 
 public class LobbyCraftingWidget
 {
+    private readonly IUserService _userService;
     private readonly CraftingViewModel _craftingVm;
     private readonly CollectionViewModel _collectionVm;
     private readonly LobbyUtilWidget _utilWidget;
@@ -47,6 +48,7 @@ public class LobbyCraftingWidget
     public bool IsCraftingPanelOpen { get; set; }
     
     public LobbyCraftingWidget(
+        IUserService userService,
         CraftingViewModel craftingVm,
         CollectionViewModel collectionVm,
         LobbyUtilWidget utilWidget,
@@ -57,6 +59,7 @@ public class LobbyCraftingWidget
         Action<IEnumerator> openCraftingPanelRoutine,
         Action<PointerEventData> onCardClicked)
     {
+        _userService = userService;
         _craftingVm = craftingVm;
         _collectionVm = collectionVm;
         _utilWidget = utilWidget;
@@ -146,7 +149,7 @@ public class LobbyCraftingWidget
         switch (type)
         {
             case Asset.Unit:
-                var notOwnedUnits = User.Instance.NotOwnedUnitList.Select(info => info.Id).ToList();
+                var notOwnedUnits = _userService.User.NotOwnedUnitList.Select(info => info.Id).ToList();
                 var unitLevel = _collectionVm.GetLevelFromUiObject((UnitId)card.Id);
                 _craftingButton.interactable = unitLevel == 1;
 
@@ -315,7 +318,7 @@ public class LobbyCraftingWidget
     
     private void CheckAndSetColorOnMaterialFrame(OwnedMaterialInfo material, GameObject craftingFrame)
     {
-        var ownedCount = User.Instance.OwnedMaterialList
+        var ownedCount = _userService.User.OwnedMaterialList
             .FirstOrDefault(info => info.MaterialInfo.Id == material.MaterialInfo.Id)?.Count ?? 0;
         var countTextObject = Util.FindChild(craftingFrame, "CountText", true);
         var countText = countTextObject.GetComponent<TextMeshProUGUI>();
@@ -330,7 +333,7 @@ public class LobbyCraftingWidget
         {
             default:
             case Define.ArrangeMode.All:
-                units = User.Instance.OwnedUnitList
+                units = _userService.User.OwnedUnitList
                     .Select(unit => new OwnedUnitInfo
                     {
                         UnitInfo = unit.UnitInfo,
@@ -340,7 +343,7 @@ public class LobbyCraftingWidget
                     .ThenBy(info => info.UnitInfo.Id).ToList();
                 break;
             case Define.ArrangeMode.Summary:
-                units = User.Instance.OwnedUnitList
+                units = _userService.User.OwnedUnitList
                     .GroupBy(info => info.UnitInfo.Species)
                     .Select(group => group.OrderByDescending(info => info.UnitInfo.Level).First())
                     .Select(unit => new OwnedUnitInfo
@@ -352,7 +355,7 @@ public class LobbyCraftingWidget
                     .ThenBy(info => info.UnitInfo.Id).ToList();
                 break;
             case Define.ArrangeMode.Class:
-                units = User.Instance.OwnedUnitList
+                units = _userService.User.OwnedUnitList
                     .OrderByDescending(info => info.UnitInfo.Class)
                     .ThenBy(info => info.UnitInfo.Id)
                     .Select(unit => new OwnedUnitInfo
@@ -362,7 +365,7 @@ public class LobbyCraftingWidget
                     }).ToList();
                 break;
             case Define.ArrangeMode.Count:
-                units = User.Instance.OwnedUnitList
+                units = _userService.User.OwnedUnitList
                     .OrderByDescending(info => info.Count)
                     .ThenBy(info => info.UnitInfo.Class)
                     .ThenBy(info => info.UnitInfo.Id)
@@ -524,14 +527,14 @@ public class LobbyCraftingWidget
     {
         if (_craftingVm.CraftingCount >= 100) return;
         _craftingVm.CraftingCount++;
-        UpdateCraftingMaterials(User.Instance.OwnedMaterialList);        
+        UpdateCraftingMaterials(_userService.User.OwnedMaterialList);        
     }
     
     public void OnCraftLowerArrowClicked(PointerEventData data)
     {
         if (_craftingVm.CraftingCount <= 1) return;
         _craftingVm.CraftingCount--;
-        UpdateCraftingMaterials(User.Instance.OwnedMaterialList);
+        UpdateCraftingMaterials(_userService.User.OwnedMaterialList);
     }
 
     public async void OnReinforceMaterialClicked(PointerEventData data)

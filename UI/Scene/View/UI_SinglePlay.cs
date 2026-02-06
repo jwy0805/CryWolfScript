@@ -12,6 +12,7 @@ using Zenject;
 
 public class UI_SinglePlay : UI_Scene
 {
+    private IUserService _userService;
     private SinglePlayViewModel _singlePlayVm;
     private DeckViewModel _deckVm;
 
@@ -50,8 +51,9 @@ public class UI_SinglePlay : UI_Scene
     }
     
     [Inject]
-    public void Construct(SinglePlayViewModel singlePlayVm, DeckViewModel deckVm)
+    public void Construct(IUserService userService, SinglePlayViewModel singlePlayVm, DeckViewModel deckVm)
     {
+        _userService = userService;
         _singlePlayVm = singlePlayVm;
         _deckVm = deckVm;
     }
@@ -107,8 +109,8 @@ public class UI_SinglePlay : UI_Scene
         var userNameText = GetText((int)Texts.UserNameText);
         var rankPointText = GetText((int)Texts.RankPointText);
 
-        userNameText.text = User.Instance.UserInfo.UserName;
-        rankPointText.text = User.Instance.UserInfo.RankPoint.ToString();
+        userNameText.text = _userService.User.UserInfo.UserName;
+        rankPointText.text = _userService.User.UserInfo.RankPoint.ToString();
         await Managers.Localization.UpdateFont(userNameText);
         
         foreach (var unit in deck.UnitsOnDeck)

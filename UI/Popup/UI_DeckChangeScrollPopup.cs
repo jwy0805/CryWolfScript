@@ -17,6 +17,7 @@ using Vector2 = UnityEngine.Vector2;
 
 public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
 {
+    private IUserService _userService;
     private DeckViewModel _deckVm;
     
     private Card[] _deck;
@@ -77,8 +78,9 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
     #endregion
     
     [Inject]
-    public void Construct(DeckViewModel deckViewModel)
+    public void Construct(IUserService userService, DeckViewModel deckViewModel)
     {
+        _userService = userService;
         _deckVm = deckViewModel;
     }
     
@@ -162,7 +164,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         var parent = Util.FindChild(gameObject, "Content", true).transform;
         foreach (Transform child in parent) Managers.Resource.Destroy(child.gameObject);
         
-        var collection = User.Instance.OwnedUnitList
+        var collection = _userService.User.OwnedUnitList
             .Where(info => info.UnitInfo.Faction == Util.Faction).ToList();
         var deck = _deckVm.GetDeck(Util.Faction);
         var units = collection

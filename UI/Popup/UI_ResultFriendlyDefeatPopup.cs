@@ -9,6 +9,7 @@ using Zenject;
 
 public class UI_ResultFriendlyDefeatPopup : UI_Popup
 {
+    private IUserService _userService;
     private ISignalRClient _signalRClient;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
@@ -30,8 +31,9 @@ public class UI_ResultFriendlyDefeatPopup : UI_Popup
     }
 
     [Inject]
-    public void Construct(ISignalRClient signalRClient)
+    public void Construct(IUserService userService, ISignalRClient signalRClient)
     {
+        _userService = userService;
         _signalRClient = signalRClient;
     }
     
@@ -69,7 +71,7 @@ public class UI_ResultFriendlyDefeatPopup : UI_Popup
     private async Task StopGame()
     {
         Managers.Network.Disconnect();
-        var tuple = await _signalRClient.ReEntryFriendlyMatch(User.Instance.UserInfo.UserTag);
+        var tuple = await _signalRClient.ReEntryFriendlyMatch(_userService.User.UserInfo.UserTag);
         // Managers.Network.IsFriendlyMatchHost = tuple.Item1;
         Managers.Game.ReEntryResponse = tuple.Item2;
         Managers.Game.ReEntry = true;

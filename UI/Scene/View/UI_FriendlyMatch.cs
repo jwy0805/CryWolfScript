@@ -12,6 +12,7 @@ using Zenject;
 
 public class UI_FriendlyMatch : UI_Scene
 {
+    private IUserService _userService;
     private ISignalRClient _signalRClient;
     private ITokenService _tokenService;
     private FriendlyMatchViewModel _friendlyMatchVm;
@@ -57,12 +58,14 @@ public class UI_FriendlyMatch : UI_Scene
     
     [Inject]
     public void Construct(
+        IUserService userService,
         ISignalRClient signalRClient,
         ITokenService tokenService,
         FriendlyMatchViewModel friendlyMatchVm,
         MatchMakingViewModel matchMakingVm,
         DeckViewModel deckVm)
     {
+        _userService = userService;
         _signalRClient = signalRClient;
         _tokenService = tokenService;
         _friendlyMatchVm = friendlyMatchVm;
@@ -130,7 +133,7 @@ public class UI_FriendlyMatch : UI_Scene
     protected override async Task InitUIAsync()
     {
         IsHost = Managers.Network.IsFriendlyMatchHost;
-        GetButton((int)Buttons.StartButton).gameObject.SetActive(false);
+        GetButton((int)Buttons.StartButton).gameObject.SetActive(IsHost);
 
         if (IsHost)
         {
@@ -166,8 +169,8 @@ public class UI_FriendlyMatch : UI_Scene
         var userNameText = GetText((int)Texts.UserNameText);
         var rankPointText = GetText((int)Texts.RankPointText);
         
-        userNameText.text = User.Instance.UserInfo.UserName;
-        rankPointText.text = User.Instance.UserInfo.RankPoint.ToString();
+        userNameText.text = _userService.User.UserInfo.UserName;
+        rankPointText.text = _userService.User.UserInfo.RankPoint.ToString();
         
         await SetDeckUI(faction);
     }
@@ -179,8 +182,8 @@ public class UI_FriendlyMatch : UI_Scene
             var deck = _deckVm.GetDeck(faction);
             var deckImage = GetImage((int)Images.Deck).transform;
             var deckNumber = faction == Faction.Sheep 
-                ? User.Instance.DeckSheep.DeckNumber 
-                : User.Instance.DeckWolf.DeckNumber;
+                ? _userService.User.DeckSheep.DeckNumber 
+                : _userService.User.DeckWolf.DeckNumber;
         
             Util.DestroyAllChildren(deckImage.transform);
 
@@ -259,11 +262,11 @@ public class UI_FriendlyMatch : UI_Scene
         
         if (Util.Faction == Faction.Sheep)
         {
-            User.Instance.DeckSheep = deck;
+            _userService.User.DeckSheep = deck;
         }
         else
         {
-            User.Instance.DeckWolf = deck;
+            _userService.User.DeckWolf = deck;
         }
         
         var myDeck = GetImage((int)Images.Deck).transform;
@@ -324,7 +327,7 @@ public class UI_FriendlyMatch : UI_Scene
     private async Task OnStartClicked()
     {
         GetButton((int)Buttons.StartButton).interactable = false;
-        await _signalRClient.StartFriendlyMatch(User.Instance.UserInfo.UserTag);
+        await _signalRClient.StartFriendlyMatch(_userService.User.UserInfo.UserTag);
         GetButton((int)Buttons.StartButton).interactable = true;
     }
 

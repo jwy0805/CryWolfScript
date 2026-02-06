@@ -11,6 +11,7 @@ using Zenject;
 
 public class MainLobbyViewModel : IDisposable
 {
+    private readonly IUserService _userService;
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
     private readonly ISignalRClient _signalRClient;
@@ -56,8 +57,13 @@ public class MainLobbyViewModel : IDisposable
     }
 
     [Inject]
-    public MainLobbyViewModel(IWebService webService, ITokenService tokenService, ISignalRClient signalRClient)
+    public MainLobbyViewModel(
+        IUserService userService, 
+        IWebService webService, 
+        ITokenService tokenService, 
+        ISignalRClient signalRClient)
     {
+        _userService = userService;
         _webService = webService;
         _tokenService = tokenService;
         _signalRClient = signalRClient;
@@ -398,7 +404,7 @@ public class MainLobbyViewModel : IDisposable
 
     public void UpdateUsername(string username)
     {
-        User.Instance.UserInfo.UserName = username;
+        _userService.User.UserInfo.UserName = username;
         OnUpdateUsername?.Invoke();
     }
     

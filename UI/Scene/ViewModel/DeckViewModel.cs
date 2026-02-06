@@ -45,8 +45,8 @@ public class DeckViewModel
         var deckResponse = deckTask.Result;
         if (deckResponse.GetDeckOk == false) return;
 
-        User.Instance.AllDeckSheep.Clear();
-        User.Instance.AllDeckWolf.Clear();
+        _userService.User.AllDeckSheep.Clear();
+        _userService.User.AllDeckWolf.Clear();
         
         foreach (var deckInfo in deckResponse.DeckList)
         {
@@ -66,7 +66,7 @@ public class DeckViewModel
 
     public async Task UpdateBattleSetting(Card oldCard, Card newCard)
     {
-        var battleSetting = User.Instance.BattleSetting;
+        var battleSetting = _userService.User.BattleSetting;
         var type = oldCard.AssetType;
         
         switch (type)
@@ -97,7 +97,7 @@ public class DeckViewModel
     
     public Deck GetDeck(Faction faction)
     {
-        return faction == Faction.Sheep ? User.Instance.DeckSheep : User.Instance.DeckWolf;
+        return faction == Faction.Sheep ? _userService.User.DeckSheep : _userService.User.DeckWolf;
     }
     
     public async Task UpdateDeck(Card oldCard, Card newCard)
@@ -109,16 +109,16 @@ public class DeckViewModel
         var unitIdToBeDeleted = deck.UnitsOnDeck[index].Id;
         var unitIdToBeUpdated = newCard.Id;
 
-        deck.UnitsOnDeck[index] = User.Instance.OwnedUnitList
+        deck.UnitsOnDeck[index] = _userService.User.OwnedUnitList
             .Select(info => info.UnitInfo)
             .FirstOrDefault(info => info.Id == newCard.Id);
         if (Util.Faction == Faction.Sheep)
         {
-            User.Instance.DeckSheep = deck;
+            _userService.User.DeckSheep = deck;
         }
         else
         {
-            User.Instance.DeckWolf = deck;
+            _userService.User.DeckWolf = deck;
         }
         
         deck.UnitsOnDeck = deck.UnitsOnDeck.OrderBy(unit => unit.Class).ToArray();
@@ -137,7 +137,7 @@ public class DeckViewModel
 
     public async Task SelectDeck(int buttonNum, Faction faction)
     {
-        var deckList = Util.Faction == Faction.Sheep ? User.Instance.AllDeckSheep : User.Instance.AllDeckWolf;
+        var deckList = Util.Faction == Faction.Sheep ? _userService.User.AllDeckSheep : _userService.User.AllDeckWolf;
         var deck = deckList.First(deck => deck.DeckNumber == buttonNum);
 
         foreach (var d in deckList) d.LastPicked = false;
@@ -155,11 +155,11 @@ public class DeckViewModel
         
         if (Util.Faction == Faction.Sheep)
         {
-            User.Instance.DeckSheep = deck;
+            _userService.User.DeckSheep = deck;
         }
         else
         {
-            User.Instance.DeckWolf = deck;
+            _userService.User.DeckWolf = deck;
         }
         
         OnDeckSwitched?.Invoke(faction);
@@ -167,17 +167,17 @@ public class DeckViewModel
     
     public void SwitchDeck(Faction faction)
     {
-        var deckList = faction == Faction.Sheep ? User.Instance.AllDeckSheep : User.Instance.AllDeckWolf;
+        var deckList = faction == Faction.Sheep ? _userService.User.AllDeckSheep : _userService.User.AllDeckWolf;
         var deck = deckList.FirstOrDefault(d => d.LastPicked) 
                    ?? deckList.First(d => d.DeckNumber == 1);
         
         if (faction == Faction.Sheep)
         {
-            User.Instance.DeckSheep = deck;
+            _userService.User.DeckSheep = deck;
         }
         else
         {
-            User.Instance.DeckWolf = deck;
+            _userService.User.DeckWolf = deck;
         }
         
         OnDeckSwitched?.Invoke(faction);

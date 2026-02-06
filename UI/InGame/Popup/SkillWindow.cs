@@ -41,6 +41,7 @@ public class SkillWindow : UI_Popup, ISkillWindow
         SkillWindowUpgradeGoldText,
     }
     
+    private IUserService _userService;
     private GameViewModel _gameVm;
     private TutorialViewModel _tutorialVm;
     
@@ -48,8 +49,9 @@ public class SkillWindow : UI_Popup, ISkillWindow
     private Button[] _skillButtons;
     
     [Inject]
-    public void Construct(GameViewModel gameViewModel, TutorialViewModel tutorialViewModel)
+    public void Construct(IUserService userService, GameViewModel gameViewModel, TutorialViewModel tutorialViewModel)
     {
+        _userService = userService;
         _gameVm = gameViewModel;
         _tutorialVm = tutorialViewModel;
     }
@@ -200,8 +202,8 @@ public class SkillWindow : UI_Popup, ISkillWindow
         else
         {
             var unitIds = Util.Faction == Faction.Sheep
-                ? User.Instance.DeckSheep.UnitsOnDeck.Select(info => info.Id).ToArray()
-                : User.Instance.DeckWolf.UnitsOnDeck.Select(info => info.Id).ToArray();
+                ? _userService.User.DeckSheep.UnitsOnDeck.Select(info => info.Id).ToArray()
+                : _userService.User.DeckWolf.UnitsOnDeck.Select(info => info.Id).ToArray();
             var availableUnits = new List<int>();
             availableUnits.AddRange(
                 unitIds.SelectMany(id =>

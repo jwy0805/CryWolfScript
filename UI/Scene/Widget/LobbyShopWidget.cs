@@ -13,6 +13,7 @@ using Object = UnityEngine.Object;
 
 public class LobbyShopWidget
 {
+    private readonly IUserService _userService;
     private readonly ShopViewModel _shopVm;
     private readonly IPaymentService _paymentService;
     
@@ -31,8 +32,12 @@ public class LobbyShopWidget
     
     private readonly Func<Task> _initUserInfo;
     
-    public LobbyShopWidget(ShopViewModel shopVm, IPaymentService paymentService, Func<Task> initUserInfo)
+    public LobbyShopWidget(IUserService userService, 
+        ShopViewModel shopVm,
+        IPaymentService paymentService, 
+        Func<Task> initUserInfo)
     {
+        _userService = userService;
         _shopVm = shopVm;
         _paymentService = paymentService;
         _initUserInfo = initUserInfo;
@@ -313,7 +318,7 @@ public class LobbyShopWidget
         if (!go.TryGetComponent<ProductSimple>(out var product)) product = go.AddComponent<ProductSimple>();
         var priceText = Util.FindChild(_adsRemover.gameObject, "TextPrice", true, true);
         
-        _adsRemover.Applied = User.Instance.SubscribeAdsRemover;
+        _adsRemover.Applied = _userService.User.SubscribeAdsRemover;
         priceText.GetComponent<TextMeshProUGUI>().text = _shopVm.AdsRemover.Price.ToString();
         product.ProductInfo = _shopVm.AdsRemover;
         product.Init();
@@ -474,7 +479,7 @@ public class LobbyShopWidget
 
     private async Task ApplyAdsRemoverUI()
     {
-        User.Instance.SubscribeAdsRemover = true;
+        _userService.User.SubscribeAdsRemover = true;
         await InitAdsRemover();
     }
     
@@ -528,7 +533,7 @@ public class LobbyShopWidget
     
     private async Task OnAdsRemoverClicked(PointerEventData data)
     {
-        if (User.Instance.SubscribeAdsRemover) return;
+        if (_userService.User.SubscribeAdsRemover) return;
         await OnProductClicked(data);
     }
     
@@ -537,7 +542,7 @@ public class LobbyShopWidget
         var product = data.pointerPress.gameObject.GetComponent<GameProduct>();
         if (product == null || product.IsDragging) return;
         
-        if (User.Instance.SubscribeAdsRemover)
+        if (_userService.User.SubscribeAdsRemover)
         {
             await RevealDailyProduct(dailyProductInfo);
         }
@@ -558,7 +563,7 @@ public class LobbyShopWidget
 
     private async Task OnRefreshDailyProductsClicked(PointerEventData data)
     {
-        if (User.Instance.SubscribeAdsRemover)
+        if (_userService.User.SubscribeAdsRemover)
         {
             await RefreshDailyProducts();
         }

@@ -29,7 +29,6 @@ using Assets.SimpleSignIn.Google.Scripts;
 
 public class LoginViewModel : IInitializable, IDisposable
 {
-    // External service interfaces (Dependency Injection)
     private readonly IUserService _userService;
     private readonly IWebService _webService;
     private readonly ITokenService _tokenService;
@@ -50,8 +49,8 @@ public class LoginViewModel : IInitializable, IDisposable
     
     public string UserAccount
     {
-        get => User.Instance.UserInfo.UserAccount;
-        set => User.Instance.UserInfo.UserAccount = value;
+        get => _userService.User.UserInfo.UserAccount;
+        set => _userService.User.UserInfo.UserAccount = value;
     }
     
     public string Password { get; set; }
@@ -357,7 +356,7 @@ public class LoginViewModel : IInitializable, IDisposable
             var response = task.Result;
             if (response.LoginOk)
             {
-                User.Instance.IsGuest = true;
+                _userService.User.IsGuest = true;
                 HandleSignInSuccess(response.AccessToken, response.RefreshToken);
             }
             else

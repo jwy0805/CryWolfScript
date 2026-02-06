@@ -154,10 +154,11 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     {
         _utilWidget = new LobbyUtilWidget();
 
-        _deckWidget = new LobbyDeckWidget(_deckVm, OnCardClicked, OnDeckTabClicked);
+        _deckWidget = new LobbyDeckWidget(_userService, _deckVm, OnCardClicked, OnDeckTabClicked);
         _collectionWidget = new LobbyCollectionWidget(
-            _collectionVm, _utilWidget, OnCardClicked, mode => SelectMode = mode);
+            _userService, _collectionVm, _utilWidget, OnCardClicked, mode => SelectMode = mode);
         _craftingWidget = new LobbyCraftingWidget(
+            _userService,
             _craftingVm,
             _collectionVm,
             _utilWidget,
@@ -167,7 +168,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             mode => SelectMode = mode,
             routine => StartCoroutine(routine)
             ,OnCardClicked);
-        _shopWidget = new LobbyShopWidget(_shopVm, _paymentService, InitUserInfo);
+        _shopWidget = new LobbyShopWidget(_userService, _shopVm, _paymentService, InitUserInfo);
         _tutorialWidget = new LobbyTutorialWidget(_tutorialVm, GameObject.FindGameObjectsWithTag("Camera"));
     }
     
@@ -285,7 +286,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     
     private void UpdateUsername()
     {
-        GetText((int)Texts.UsernameText).text = User.Instance.UserInfo.UserName;
+        GetText((int)Texts.UsernameText).text = _userService.User.UserInfo.UserName;
     }
     
     private IEnumerator OnSwipeOneStep(int index)
@@ -536,7 +537,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             await _tutorialWidget.ProcessTutorial(_userService.TutorialInfo);
         }
         
-        if (User.Instance.IsGuest && !User.Instance.GuestPopupShown)
+        if (_userService.User.IsGuest && !_userService.User.GuestPopupShown)
         {
             var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
             const string titleKey = "warning_text";
@@ -546,7 +547,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             void Close()
             {
-                if (User.Instance.IsGuest) User.Instance.GuestPopupShown = true;
+                if (_userService.User.IsGuest) _userService.User.GuestPopupShown = true;
                 tcs.TrySetResult(true);
                 Managers.UI.ClosePopupUI(popup);
             }
@@ -566,7 +567,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             _shopWidget.InitShop(),
             _lobbyVm.InitFriendAlert(),
             _lobbyVm.InitMailAlert(),
-            _lobbyVm.ConnectSignalR(User.Instance.UserInfo.UserTag)
+            _lobbyVm.ConnectSignalR(_userService.User.UserInfo.UserTag)
         );
     }
 
@@ -599,7 +600,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     
     private void BindUserInfo()
     {
-        var userInfo = User.Instance.UserInfo;
+        var userInfo = _userService.User.UserInfo;
         var exp = userInfo.Exp;
         var expMax = userInfo.ExpToLevelUp;
 
@@ -737,7 +738,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     private async Task OnProfileClicked(PointerEventData data)
     {
         var popup = await Managers.UI.ShowPopupUI<UI_PlayerProfilePopup>();
-        popup.PlayerUserInfo = User.Instance.UserInfo;
+        popup.PlayerUserInfo = _userService.User.UserInfo;
     }
     
     private async Task OnSettingsClicked(PointerEventData data)

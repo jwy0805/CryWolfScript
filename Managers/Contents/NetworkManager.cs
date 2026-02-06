@@ -65,7 +65,6 @@ public class NetworkManager
             {
                 if (GameObject.FindWithTag("UI").TryGetComponent(out UI_MatchMaking uiMatchMaking))
                 {
-                    Debug.Log("ui matchmaking");
                     uiMatchMaking.StartMatchMaking(_sessionId);
                     return;
                 }
@@ -198,9 +197,9 @@ public class NetworkManager
         Debug.Log($"Connecting to {ipAddress} with SessionId: {_sessionId}");
         
         var sessionIdTask = WaitForSessionIdAsync();
-        var endPointLocal = new IPEndPoint(ipAddress, port);
+        var endPoint = new IPEndPoint(ipAddress, port);
         _session = new ServerSession();
-        new Connector().Connect(endPointLocal, () => _session, test);
+        new Connector().Connect(endPoint, () => _session, test);
 
         const int timeoutMilliseconds = 5000;
         var completedTask = await Task.WhenAny(sessionIdTask, Task.Delay(timeoutMilliseconds));

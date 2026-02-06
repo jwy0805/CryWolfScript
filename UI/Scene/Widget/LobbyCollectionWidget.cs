@@ -9,6 +9,7 @@ using UnityEngine.UI;
 
 public class LobbyCollectionWidget
 {
+    private readonly IUserService _userService;
     private readonly CollectionViewModel _collectionVm;
     private readonly LobbyUtilWidget _utilWidget;
     private readonly Action<PointerEventData> _onCardClicked;
@@ -30,11 +31,13 @@ public class LobbyCollectionWidget
     public Define.ArrangeMode ArrangeMode { private get; set; }
     
     public LobbyCollectionWidget(
+        IUserService userService,
         CollectionViewModel collectionVm,
         LobbyUtilWidget utilWidget,
         Action<PointerEventData> onCardClicked,
         Action<Define.SelectMode> setSelectMode)
     {
+        _userService = userService;
         _collectionVm = collectionVm;
         _utilWidget = utilWidget;
         _onCardClicked = onCardClicked;
@@ -115,7 +118,7 @@ public class LobbyCollectionWidget
 
     public async Task SetCollectionUIDetails(Faction faction)
     {
-        var user = User.Instance;
+        var user = _userService.User;
         var ownedUnits = _utilWidget.OrderOwnedUnits(user.OwnedUnitList, ArrangeMode);
         var ownedSheep = _utilWidget.OrderOwnedSheep(user.OwnedSheepList, ArrangeMode);
         var ownedEnchants = _utilWidget.OrderOwnedEnchants(user.OwnedEnchantList, ArrangeMode);

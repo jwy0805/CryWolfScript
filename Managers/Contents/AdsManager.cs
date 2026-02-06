@@ -118,7 +118,7 @@ public class AdsManager
     public void FetchAdvertisingUserId()
     {
         var idfa = Device.advertisingIdentifier;
-        _advertisingUserId = string.IsNullOrEmpty(idfa) ? User.Instance.UserInfo.UserAccount : idfa;
+        _advertisingUserId = string.IsNullOrEmpty(idfa) ? ServiceResolver.UserService.User.UserInfo.UserAccount : idfa;
         if (string.IsNullOrEmpty(_advertisingUserId)) _advertisingUserId = SystemInfo.deviceUniqueIdentifier;
     }
     
@@ -127,7 +127,7 @@ public class AdsManager
 
     public void FetchAdvertisingUserId()
     {
-        var userId = User.Instance.UserInfo.UserAccount;
+        var userId = ServiceResolver.UserService.User.UserInfo.UserAccount;
         _advertisingUserId = string.IsNullOrEmpty(userId) ? SystemInfo.deviceUniqueIdentifier : userId;
     }
 #endif
@@ -144,7 +144,7 @@ public class AdsManager
         
         ApplyRegulationFlags();
         var userIdfa = string.IsNullOrEmpty(_advertisingUserId)
-            ? User.Instance.UserInfo.UserAccount
+            ? ServiceResolver.UserService.User.UserInfo.UserAccount
             : _advertisingUserId;
         if (string.IsNullOrEmpty(userIdfa)) userIdfa = SystemInfo.deviceUniqueIdentifier;
         

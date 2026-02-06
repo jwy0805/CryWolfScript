@@ -19,7 +19,7 @@ using Object = UnityEngine.Object;
  * Version : 1.011
  */
 
-public class Util
+public static class Util
 {
     public static Faction Faction { get; set; } = Faction.Sheep;
     

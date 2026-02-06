@@ -11,6 +11,7 @@ using Zenject;
 
 public class UI_MatchMaking : UI_Scene
 {
+    private IUserService _userService;
     private MatchMakingViewModel _matchMakingVm;
     private DeckViewModel _deckVm;
     
@@ -46,8 +47,9 @@ public class UI_MatchMaking : UI_Scene
     }
     
     [Inject]
-    public void Construct(MatchMakingViewModel matchMakingVm, DeckViewModel deckVm)
+    public void Construct(IUserService userService, MatchMakingViewModel matchMakingVm, DeckViewModel deckVm)
     {
+        _userService = userService;
         _matchMakingVm = matchMakingVm;
         _deckVm = deckVm;
     }
@@ -105,8 +107,8 @@ public class UI_MatchMaking : UI_Scene
         var rankPointText = GetText((int)Texts.RankPointText);
         
         await Managers.Localization.UpdateFont(userNameText);
-        userNameText.text = User.Instance.UserInfo.UserName;
-        rankPointText.text = User.Instance.UserInfo.RankPoint.ToString();
+        userNameText.text = _userService.User.UserInfo.UserName;
+        rankPointText.text = _userService.User.UserInfo.RankPoint.ToString();
         
         foreach (var unit in deck.UnitsOnDeck)
         {

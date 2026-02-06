@@ -108,24 +108,18 @@ public class Managers : MonoBehaviour
         {
             if (Game is { IsTutorial: true })
             {
-                var tutorialVm = ResolveTutorialViewModel();
+                var tutorialVm = ServiceResolver.ResolveTutorialViewModel();
                 tutorialVm?.OnInterruptTutorial(Game.TutorialType);
             }
         }
     }
-
+    
     private void OnApplicationQuit()
     {
         if (Game is { IsTutorial: true })
         {
-            var tutorialVm = ResolveTutorialViewModel();
+            var tutorialVm = ServiceResolver.ResolveTutorialViewModel();
             tutorialVm?.OnInterruptTutorial(Game.TutorialType);
         }
-    }
-    
-    private TutorialViewModel ResolveTutorialViewModel()
-    {
-        var sceneContext = FindAnyObjectByType<Zenject.SceneContext>();
-        return sceneContext != null ? sceneContext.Container.Resolve<TutorialViewModel>() : null;
     }
 }

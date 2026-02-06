@@ -150,26 +150,23 @@ public class ResourceManager
         return go;
     }
 
-    public async Task<GameObject> InstantiateAsyncFromContainer(string key, Transform parent = null)
+    public async Task<GameObject> InstantiateZenjectAsync(string key, Transform parent = null)
     {
-        GameObject original = await LoadAsync<GameObject>($"Prefabs/{key}", "prefab");
-        if (original == null)
+        var prefab = await LoadAsync<GameObject>($"Prefabs/{key}", "prefab");
+        if (prefab == null)
         {
-            Debug.Log($"Failed to load Prefab : {key}");
+            Debug.LogError($"Failed to load Prefab : {key}");
             return null;
         }
-        
-        var installer = new ServiceInstaller();
 
-        // Register services that are needed for the entire project
-        var projectContext = ProjectContext.Instance.Container;
-        installer.CreateFactoryOnProjectContext(projectContext);
-        
-        // Register services that are needed for the scene (especially view models)
-        var sceneContext = Object.FindAnyObjectByType<SceneContext>().Container;
-        installer.CreateFactory(key, sceneContext);
-        
-        return sceneContext.InstantiatePrefab(original, parent);    
+        var sceneContext = Object.FindAnyObjectByType<SceneContext>();
+        if (sceneContext == null)
+        {
+            Debug.LogError($"SceneContext not found. '{key}' requires Scene bindings.");
+            return null;
+        }
+
+        return sceneContext.Container.InstantiatePrefab(prefab, parent);
     }
     
     public void Destroy(GameObject go, float time)

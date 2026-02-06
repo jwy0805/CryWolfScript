@@ -136,7 +136,7 @@ public class UI_CardClickPopup : UI_Popup
 
     private void ActiveUnitSelectButton()
     {
-        var user = User.Instance;
+        var user = _userService.User;
         var faction = Util.Faction;
         var isOwned = false;
         var interactable = false;
@@ -146,7 +146,7 @@ public class UI_CardClickPopup : UI_Popup
             case Asset.Unit:
                 var deck = faction == Faction.Sheep ? user.DeckSheep.UnitsOnDeck : user.DeckWolf.UnitsOnDeck;
                 var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == SelectedCard.Id);
-                isOwned = User.Instance.OwnedUnitList.Exists(info => info.UnitInfo.Id == SelectedCard.Id);
+                isOwned = user.OwnedUnitList.Exists(info => info.UnitInfo.Id == SelectedCard.Id);
                 interactable = (index == -1 || FromDeck) && isOwned;
                 break;
             case Asset.Sheep:
@@ -211,22 +211,22 @@ public class UI_CardClickPopup : UI_Popup
 
     private async Task OnSelectClicked()
     {
-        var deck = Util.Faction == Faction.Sheep 
-            ? User.Instance.DeckSheep.UnitsOnDeck 
-            : User.Instance.DeckWolf.UnitsOnDeck;
+        var deck = Util.Faction == Faction.Sheep ?
+            _userService.User.DeckSheep.UnitsOnDeck :
+            _userService.User.DeckWolf.UnitsOnDeck;
         var index = Array.FindIndex(deck, unitInfo => unitInfo.Id == SelectedCard.Id);
         // var isOwned = User.Instance.OwnedUnitList.Exists(info => info.UnitInfo.Id == SelectedCard.Id);
         // var interactable = (index == -1 || FromDeck) && isOwned;
         var isOwned = SelectedCard.AssetType switch
         {
             Asset.Unit =>
-                User.Instance.OwnedUnitList.Exists(info => info.UnitInfo.Id == SelectedCard.Id),
+                _userService.User.OwnedUnitList.Exists(info => info.UnitInfo.Id == SelectedCard.Id),
             Asset.Sheep =>
-                User.Instance.OwnedSheepList.Exists(info => info.SheepInfo.Id == SelectedCard.Id),
+                _userService.User.OwnedSheepList.Exists(info => info.SheepInfo.Id == SelectedCard.Id),
             Asset.Enchant => 
-                User.Instance.OwnedEnchantList.Exists(info => info.EnchantInfo.Id == SelectedCard.Id),
+                _userService.User.OwnedEnchantList.Exists(info => info.EnchantInfo.Id == SelectedCard.Id),
             Asset.Character =>
-                User.Instance.OwnedCharacterList.Exists(info => info.CharacterInfo.Id == SelectedCard.Id),
+                _userService.User.OwnedCharacterList.Exists(info => info.CharacterInfo.Id == SelectedCard.Id),
             _ => false
         };
         if (isOwned == false) return;
@@ -247,7 +247,6 @@ public class UI_CardClickPopup : UI_Popup
         else
         {
             var popup = await Managers.UI.ShowPopupUI<UI_AssetChangeScrollPopup>();
-            Debug.Log("sss");
             popup.SelectedCard = SelectedCard;
         }
     }

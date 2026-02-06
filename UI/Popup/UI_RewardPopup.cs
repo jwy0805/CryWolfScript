@@ -16,6 +16,8 @@ using Random = System.Random;
 
 public class UI_RewardPopup : UI_Popup
 {
+    private IUserService _userService;
+    
     private Transform _levelPanel;
     private RectTransform _rewardTitle;
     private Slider _expSlider;
@@ -71,6 +73,12 @@ public class UI_RewardPopup : UI_Popup
 
     #endregion
     
+    [Inject]
+    public void Construct(IUserService userService)
+    {
+        _userService = userService;
+    }
+    
     protected override async void Init()
     {
         try
@@ -114,9 +122,9 @@ public class UI_RewardPopup : UI_Popup
         _gainedExp = Rewards
             .FirstOrDefault(reward => reward.ProductType == Google.Protobuf.Protocol.ProductType.Exp)?.Count ?? 0;
 
-        _currentLevel = User.Instance.UserInfo.Level;
-        _currentExp = User.Instance.UserInfo.Exp;
-        _currentMaxExp = User.Instance.ExpTable[_currentLevel];
+        _currentLevel = _userService.User.UserInfo.Level;
+        _currentExp = _userService.User.UserInfo.Exp;
+        _currentMaxExp = _userService.User.ExpTable[_currentLevel];
         
         _rewardScrollView = GetImage((int)Images.RewardScrollView).gameObject;
         
@@ -170,12 +178,12 @@ public class UI_RewardPopup : UI_Popup
         // Level up
         if (_willLevelUp)
         {
-            var newMaxExp = User.Instance.ExpTable[_currentLevel];
+            var newMaxExp = _userService.User.ExpTable[_currentLevel];
 
             _sequence.AppendCallback(() =>
             {
                 _currentLevel++;
-                User.Instance.UserInfo.Level = _currentLevel;
+                _userService.User.UserInfo.Level = _currentLevel;
                 _levelText.text = _currentLevel.ToString();
                 _currentExp = startExp + _gainedExp - _currentMaxExp; // 넘어온 exp
                 _expPlusText.text = $"+{_currentExp}";

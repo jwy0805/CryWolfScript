@@ -8,6 +8,7 @@ using UnityEngine.EventSystems;
 
 public class LobbyDeckWidget
 {
+    private readonly IUserService _userService;
     private readonly DeckViewModel _deckVm;
     
     private Dictionary<string, GameObject> _deckButtonDict;
@@ -23,10 +24,12 @@ public class LobbyDeckWidget
     private bool _viewsBound = false;
     
     public LobbyDeckWidget(
+        IUserService userService,
         DeckViewModel deckVm,
         Action<PointerEventData> onCardClicked,
         Action<PointerEventData> onDeckTabClicked)
     {
+        _userService = userService;
         _deckVm = deckVm;
         _onCardClicked = onCardClicked;
         _onDeckTabClicked = onDeckTabClicked;
@@ -79,8 +82,8 @@ public class LobbyDeckWidget
         var deckButtons = _deckButtonDict.Values.ToList();
         var lobbyDeckButtons = _lobbyDeckButtonDict.Values.ToList();
         var deckNumber = faction == Faction.Sheep 
-            ? User.Instance.DeckSheep.DeckNumber 
-            : User.Instance.DeckWolf.DeckNumber;
+            ? _userService.User.DeckSheep.DeckNumber 
+            : _userService.User.DeckWolf.DeckNumber;
         
         for (var i = 0; i < deckButtons.Count; i++)
         {
@@ -127,8 +130,8 @@ public class LobbyDeckWidget
         
         // Set Asset Frame
         IAsset asset = faction == Faction.Sheep 
-            ? User.Instance.BattleSetting.SheepInfo 
-            : User.Instance.BattleSetting.EnchantInfo;
+            ? _userService.User.BattleSetting.SheepInfo 
+            : _userService.User.BattleSetting.EnchantInfo;
 
         if (faction == Faction.Sheep)
         {
@@ -140,7 +143,7 @@ public class LobbyDeckWidget
         }
         
         // Set Character Frame
-        var character = User.Instance.BattleSetting.CharacterInfo;
+        var character = _userService.User.BattleSetting.CharacterInfo;
         await Managers.Resource.GetCardResources<CharacterId>(character, _assetParent, _onCardClicked);
     }
     

@@ -18,6 +18,7 @@ public interface IUserService
     void BindDeck();
     Task LoadTestUserInfo(int userId);
     event Action<Faction> InitDeckButton;
+    User User { get; }
     UserTutorialInfo TutorialInfo { get; set; }
 }
 

@@ -106,7 +106,7 @@ public class UIManager
                 }
                 
                 var key = $"UI/Scene/{name}";
-                var sceneUI = await Managers.Resource.InstantiateAsyncFromContainer(key, Root.transform);
+                var sceneUI = await Managers.Resource.InstantiateZenjectAsync(key, Root.transform);
                 sceneUI.GetComponent<UI_Scene>().Clear();
             }
         }

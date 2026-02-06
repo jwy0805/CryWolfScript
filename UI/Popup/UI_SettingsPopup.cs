@@ -11,6 +11,7 @@ using Zenject;
 
 public class UI_SettingsPopup : UI_Popup
 {
+    private IUserService _userService;
     private IWebService _webService;
     private ITokenService _tokenService;
     
@@ -55,8 +56,9 @@ public class UI_SettingsPopup : UI_Popup
     }
 
     [Inject]
-    public void Construct(IWebService webService, ITokenService tokenService)
+    public void Construct(IUserService userService, IWebService webService, ITokenService tokenService)
     {
+        _userService = userService;
         _webService = webService;
         _tokenService = tokenService;
     }
@@ -212,7 +214,7 @@ public class UI_SettingsPopup : UI_Popup
         if (task.LogoutOk)
         {
             _tokenService.ClearTokens();
-            User.Instance.Clear();
+            _userService.User.Clear();
             
             Managers.UI.ClosePopupUI();
             Managers.Scene.LoadScene(Define.Scene.Login);
@@ -242,7 +244,7 @@ public class UI_SettingsPopup : UI_Popup
             if (task.Result.DeleteOk)
             {
                 _tokenService.ClearTokens();
-                User.Instance.Clear();
+                _userService.User.Clear();
                 Managers.Clear();
                 Managers.Scene.LoadScene(Define.Scene.Login);
             }

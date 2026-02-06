@@ -7,16 +7,12 @@ using Zenject;
 
 public class FriendlyMatchViewModel : IDisposable
 {
-    private IWebService _webService;
-    private ITokenService _tokenService;
-    private ISignalRClient _signalRClient;
-    
-    public int SessionId { get; set; }
+    private readonly ITokenService _tokenService;
+    private readonly ISignalRClient _signalRClient;
     
     [Inject]
-    public FriendlyMatchViewModel(IWebService webService, ITokenService tokenService, ISignalRClient signalRClient)
+    public FriendlyMatchViewModel(ITokenService tokenService, ISignalRClient signalRClient)
     {
-        _webService = webService;
         _tokenService = tokenService;
         _signalRClient = signalRClient;
     }

@@ -61,7 +61,7 @@ public class UI_Login : UI_Scene
 
     private void Update()
     {
-#if UNITY_IOS && !UNITY_EDITOR
+#if UNITY_IOS && !UNITY_EDITORz
         _loginViewModel.UpdateAppleAuthManager();
 #endif
     }

@@ -4,26 +4,25 @@ using Google.Protobuf.Protocol;
 
 public interface IAsset
 {
-    public int Id { get; set; }
-    public UnitClass Class { get; set; }
+    public int Id { get; }
+    public UnitClass Class { get; }
 }
 
 public class User
 {
-    public static User Instance { get; } = new();
     public UserInfo UserInfo { get; set; } = new();
-    public List<OwnedUnitInfo> OwnedUnitList { get; set; } = new();
-    public List<UnitInfo> NotOwnedUnitList { get; set; } = new();
-    public List<OwnedSheepInfo> OwnedSheepList { get; set; } = new();
-    public List<SheepInfo> NotOwnedSheepList { get; set; } = new();
-    public List<OwnedEnchantInfo> OwnedEnchantList { get; set; } = new();
-    public List<EnchantInfo> NotOwnedEnchantList { get; set; } = new();
-    public List<OwnedCharacterInfo> OwnedCharacterList { get; set; } = new();
-    public List<CharacterInfo> NotOwnedCharacterList { get; set; } = new();
+    public List<OwnedUnitInfo> OwnedUnitList { get; } = new();
+    public List<UnitInfo> NotOwnedUnitList { get; } = new();
+    public List<OwnedSheepInfo> OwnedSheepList { get; } = new();
+    public List<SheepInfo> NotOwnedSheepList { get; } = new();
+    public List<OwnedEnchantInfo> OwnedEnchantList { get; } = new();
+    public List<EnchantInfo> NotOwnedEnchantList { get; } = new();
+    public List<OwnedCharacterInfo> OwnedCharacterList { get; } = new();
+    public List<CharacterInfo> NotOwnedCharacterList { get; } = new();
     public BattleSettingInfo BattleSetting { get; set; } = new();
-    public List<Deck> AllDeckSheep { get; set; } = new();
-    public List<Deck> AllDeckWolf { get; set; }= new();
-    public List<OwnedMaterialInfo> OwnedMaterialList { get; set; } = new();
+    public List<Deck> AllDeckSheep { get; } = new();
+    public List<Deck> AllDeckWolf { get; }= new();
+    public List<OwnedMaterialInfo> OwnedMaterialList { get; } = new();
     public Deck DeckSheep { get; set; } = new();
     public Deck DeckWolf { get; set; } = new();
     public bool SubscribeAdsRemover { get; set; }

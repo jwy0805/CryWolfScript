@@ -42,9 +42,10 @@ public class UI_GameSingleWay : UI_Game
 
     #endregion
     
+    private IUserService _userService;
     private GameViewModel _gameVm;
     private TutorialViewModel _tutorialVm;
-    private SignalRClient _signalRClient;
+    private ISignalRClient _signalRClient;
     
     private Camera _tutorialCamera;
     private GameObject _log;
@@ -55,8 +56,13 @@ public class UI_GameSingleWay : UI_Game
     public Faction Faction { get; set; }
     
     [Inject]
-    public void Construct(GameViewModel gameViewModel, TutorialViewModel tutorialViewModel, SignalRClient signalRClient)
+    public void Construct(
+        IUserService userService,
+        GameViewModel gameViewModel,
+        TutorialViewModel tutorialViewModel,
+        ISignalRClient signalRClient)
     {
+        _userService = userService;
         _gameVm = gameViewModel;
         _tutorialVm = tutorialViewModel;
         _signalRClient = signalRClient;
@@ -135,11 +141,11 @@ public class UI_GameSingleWay : UI_Game
     // Set the selected units in the main lobby to the log bar
     private async Task<GameObject> SetLog()
     {   
-        var deck = Util.Faction == Faction.Sheep ? User.Instance.DeckSheep : User.Instance.DeckWolf;
+        var deck = Util.Faction == Faction.Sheep ? _userService.User.DeckSheep : _userService.User.DeckWolf;
         for (var i = 0; i < deck.UnitsOnDeck.Length ; i++)
         {
             var parent = _dictPortrait[$"UnitPanel{i}"].transform;
-            var prefab = await Managers.Resource.InstantiateAsyncFromContainer(
+            var prefab = await Managers.Resource.InstantiateZenjectAsync(
                 "UI/InGame/SkillPanel/Portrait", parent);
             var costText = Util.FindChild(parent.gameObject, "UnitCostText", true);
             var level = deck.UnitsOnDeck[i].Level;

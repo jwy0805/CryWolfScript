@@ -9,6 +9,7 @@ using Zenject;
 
 public class UI_RewardSubscriptionPopup : UI_Popup
 {
+    private IUserService _userService;
     private ShopViewModel _shopVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
@@ -27,8 +28,9 @@ public class UI_RewardSubscriptionPopup : UI_Popup
     }
 
     [Inject]
-    public void Construct(ShopViewModel shopVm) 
+    public void Construct(IUserService userService, ShopViewModel shopVm) 
     {
+        _userService = userService;
         _shopVm = shopVm;
     }
     
@@ -82,7 +84,7 @@ public class UI_RewardSubscriptionPopup : UI_Popup
                 break;
         }
 
-        User.Instance.SubscribeAdsRemover = true;
+        _userService.User.SubscribeAdsRemover = true;
     }
 
     private async Task ResetAdsRemover()
