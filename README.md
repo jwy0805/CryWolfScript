@@ -1,4 +1,6 @@
 # CryWolfScript — Production Unity Client for the Live Mobile PvP Game "Cry Wolf"
+Cry Wolf is a live mobile real-time PvP strategy game combining RTS and idle-style automation.
+Player choose a faction (defense-oriented Sheep or offense-oriented Wolf), build a 6-card deck, and win through resource management and unit evolution timing.
 
 ## Real-time 1v1 PvP Strategy client (deck-based RTS defense/offense) featuring UI flows, packet-driven networking, and a maintainable project structure.
 
@@ -11,8 +13,8 @@
 
 ## Introductions
 ### Video
-- Cry Wolf Game Play Demo:
-- Cry Wolf Lobby Demo:
+- Cry Wolf Game Play Demo: https://www.youtube.com/watch?v=wo-Iq5miz38
+- Cry Wolf Lobby Demo: 
 ### ScreenShots
 - In-Game
 <img width="210" height="380" alt="Image" src="https://github.com/user-attachments/assets/9060a177-9146-4d3e-b7b2-c3ab709fd96f" />
@@ -46,11 +48,8 @@
 > If you only have 5 minutes, follow these entry points.
 
 ## Repository Map
+- `UI/` — views and UI update logic
 
-
-## Game overview
-Cry Wolf is a live mobile real-time PvP strategy game combining RTS and idle-style automation.
-Player choose a faction (defense-oriented Sheep or offense-oriented Wolf), build a 6-card deck, and win through resource management and unit evolution timing.
 
 ## Architecture at a glance
 ```mermaid
