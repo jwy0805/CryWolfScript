@@ -17,22 +17,31 @@
 - In-Game
 <img width="210" height="380" alt="Image" src="https://github.com/user-attachments/assets/9060a177-9146-4d3e-b7b2-c3ab709fd96f" />
 <img width="210" height="380" alt="Image" src="https://github.com/user-attachments/assets/1f80099f-3634-42c1-b4dc-6ce9aad641cc" />
+<br />
 - Lobby
+<br />
 <img width="180" height="380" alt="Image" src="https://github.com/user-attachments/assets/7b877155-c75e-4c25-990d-9969ced6231b" />
+<br />
 - Single Play
+<br />
+<img width="180" height="380" alt="Image" src="https://github.com/user-attachments/assets/6f541fd3-5653-4fcc-9961-10a66e8291fe" />
+<br />
 - Shop, Collection
+<br />
+<img width="180" height="380" alt="Image" src="https://github.com/user-attachments/assets/0d94dfd4-322d-4a8d-84b3-35a1bf014670" />
 <img width="180" height="380" alt="Image" src="https://github.com/user-attachments/assets/94798c2d-f131-4a4d-a1fe-bcbaf86d9522" />
 <img width="180" height="380" alt="Image" src="https://github.com/user-attachments/assets/cfd990f6-a635-4370-87f3-ee99e4ec136f" />
 <img width="180" height="380" alt="Image" src="https://github.com/user-attachments/assets/826cfedd-2593-43de-85bf-363cb0c66ace" />
+<br />
 - Match Making
+<br />
 - etc.
+<br />
 <img width="180" height="380" alt="Image" src="https://github.com/user-attachments/assets/10dcf078-fe9f-4c29-82c1-efba7d464cb6" />
 <img width="180" height="380" alt="Image" src="https://github.com/user-attachments/assets/d25d2e4d-9296-40a2-9b66-9e1304afe132" />
 <img width="180" height="380" alt="Image" src="https://github.com/user-attachments/assets/dd54a4ac-c686-4cfd-8635-aeace4d9792f" />
 <img width="180" height="380" alt="Image" src="https://github.com/user-attachments/assets/42f3d509-7ae0-4ec0-b386-7155b0f44a95" />
 <img width="180" height="380" alt="Image" src="https://github.com/user-attachments/assets/6d981ee7-b239-4293-afa7-6d9db42806b9" />
-<img width="180" height="380" alt="Image" src="https://github.com/user-attachments/assets/0d94dfd4-322d-4a8d-84b3-35a1bf014670" />
-<img width="180" height="380" alt="Image" src="https://github.com/user-attachments/assets/6f541fd3-5653-4fcc-9961-10a66e8291fe" />
 
 ## Skills
 - Unity C#
