@@ -3,7 +3,6 @@ Cry Wolf is a live mobile real-time PvP strategy game combining RTS and idle-sty
 Player choose a faction (defense-oriented Sheep or offense-oriented Wolf), build a 6-card deck, and win through resource management and unit evolution timing.
 
 ## Real-time 1v1 PvP Strategy client (deck-based RTS defense/offense) featuring UI flows, packet-driven networking, and a maintainable project structure.
-
 > This README is intentionally focused on **code navigation and reviewability** (not player installation).
 > For a full product write-up, see the portfolio: https://www.notion.so/Cry-Wolf-Portfolio-2f52f5b151de80529d24c00c87a685fa?source=copy_link
 
@@ -48,8 +47,17 @@ Player choose a faction (defense-oriented Sheep or offense-oriented Wolf), build
 > If you only have 5 minutes, follow these entry points.
 
 ## Repository Map
-- `UI/` — views and UI update logic
+- `UI/` — presentation layer & view binding; for responsibility boundaries(MVVM-inspired), check `UI/Scene/`.
+- `Controllers/` - game object controllers, client-server synchronization
+- `Managers/` - flow orchestration, shared services/state, integrate Ads/IAP flow(single source of truth)
+- `Scene/` - scene entry points and wiring
+- `Packet/` - protocol/packet definitions and handlers
+- `Contents/` - Objects used by lobby, shop, collection, deck
 
+## Supporting modules
+- `ServerCore/` - network transport abstraction + packet encode/decode
+- `Utils/` - shared utilities
+- `Web/` - DTO, DataModels for API Server
 
 ## Architecture at a glance
 ```mermaid
