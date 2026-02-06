@@ -51,7 +51,7 @@ For a full product write-up,
 ## Start Here (Review Guide)
 > If you only have 5 minutes, follow these entry points.
 
-## Repository Map
+### Repository Map
 - `UI/` — presentation layer & view binding; for responsibility boundaries(MVVM-inspired), check `UI/Scene/`.
 - `Controllers/` - game object controllers, client-server synchronization
 - `Managers/` - flow orchestration, shared services/state, integrate Ads/IAP flow(single source of truth)
@@ -59,7 +59,7 @@ For a full product write-up,
 - `Packet/` - protocol/packet definitions and handlers
 - `Contents/` - Objects used by lobby, shop, collection, deck
 
-## Supporting modules
+### Supporting modules
 - `ServerCore/` - network transport abstraction + packet encode/decode
 - `Utils/` - shared utilities
 - `Web/` - DTO, DataModels for API Server
