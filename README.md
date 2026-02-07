@@ -44,10 +44,6 @@ For a full product write-up,
 <img width="180" height="380" alt="Image" src="https://github.com/user-attachments/assets/42f3d509-7ae0-4ec0-b386-7155b0f44a95" />
 <img width="180" height="380" alt="Image" src="https://github.com/user-attachments/assets/6d981ee7-b239-4293-afa7-6d9db42806b9" />
 
-## Skills
-- Unity C#
-- MVVM-inspired UI architecture(Zenject), Addressables, IAP/Ads integration
-
 ## Start Here (Review Guide)
 > If you only have 5 minutes, follow these entry points.
 
