@@ -18,7 +18,7 @@ For a full product write-up,
 ## Introductions
 ### Video
 - Cry Wolf Game Play Demo: https://www.youtube.com/watch?v=wo-Iq5miz38
-- Cry Wolf Lobby Demo: 
+- Cry Wolf Lobby Demo: https://youtu.be/kG6koO1skSE
 ### ScreenShots
 - In-Game
 <img width="210" height="380" alt="Image" src="https://github.com/user-attachments/assets/9060a177-9146-4d3e-b7b2-c3ab709fd96f" />
