@@ -26,6 +26,7 @@ public class AdsManager
     private LevelPlayRewardedAd _rewardedAd;
     
     private readonly SemaphoreSlim _attGate = new(1,1);
+    private string _showingPlacement = string.Empty;
     private string _advertisingUserId = string.Empty;
     private bool _levelPlayInitialized;
     private bool _userRequestedShow;
@@ -294,6 +295,7 @@ public class AdsManager
 
     private void ShowRewardInternal(string placementName)
     {
+        _showingPlacement = placementName;
         if (string.IsNullOrEmpty(placementName))
             _rewardedAd.ShowAd();
         else
@@ -372,6 +374,7 @@ public class AdsManager
     {
         Debug.LogError($"[Ads] Rewarded ad failed to display: {adError}");
 
+        _showingPlacement = string.Empty;
         _rewardedAd?.LoadAd();
 
         if (_userRequestedShow)
@@ -385,6 +388,7 @@ public class AdsManager
     private void OnRewardedClosed(LevelPlayAdInfo adInfo)
     {
         // 광고가 닫힌 후 다음 노출 대비 로드
+        _showingPlacement = string.Empty;
         _rewardedAd?.LoadAd();
     }
 
@@ -397,12 +401,12 @@ public class AdsManager
     {
         
     }
-
+    
     private void OnRewardedRewarded(LevelPlayAdInfo adInfo, LevelPlayReward reward)
     {
-        Debug.Log($"[Ads] Rewarded: placement={adInfo.PlacementName}, reward={reward?.Name}:{reward?.Amount}");
-
-        switch (adInfo.PlacementName)
+        var placement = _showingPlacement;
+        
+        switch (placement)
         {
             case "Check_Daily_Product":
                 _ = InvokeSafeAsync(OnRewardedRevealDailyProduct, RevealedDailyProduct);

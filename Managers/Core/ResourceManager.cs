@@ -72,7 +72,7 @@ public class ResourceManager
     }
     
 #if UNITY_EDITOR
-    /* ───── Editor 전용: .prefab / .png / .asset 등 확장자 자동 추적 ───── */
+    // Editor 전용: .prefab / .png / .asset 등 확장자 자동 추적
     private static string FindInMovedFolder<T>(string key) where T : Object
     {
         // "Prefabs/UI/Menu/StartButton" → dir="Prefabs/UI/Menu", name="StartButton"
