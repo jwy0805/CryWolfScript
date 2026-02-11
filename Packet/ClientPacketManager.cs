@@ -87,8 +87,8 @@ class PacketManager
 		_handler.Add((ushort)MessageId.SDie, PacketHandler.S_DieHandler);		
 		_onRecv.Add((ushort)MessageId.SConnected, MakePacket<S_Connected>);
 		_handler.Add((ushort)MessageId.SConnected, PacketHandler.S_ConnectedHandler);		
-		_onRecv.Add((ushort)MessageId.SGetSpawnableBounds, MakePacket<S_GetSpawnableBounds>);
-		_handler.Add((ushort)MessageId.SGetSpawnableBounds, PacketHandler.S_GetSpawnableBoundsHandler);		
+		_onRecv.Add((ushort)MessageId.SSetLinePos, MakePacket<S_SetLinePos>);
+		_handler.Add((ushort)MessageId.SSetLinePos, PacketHandler.S_SetLinePosHandler);		
 		_onRecv.Add((ushort)MessageId.STime, MakePacket<S_Time>);
 		_handler.Add((ushort)MessageId.STime, PacketHandler.S_TimeHandler);		
 		_onRecv.Add((ushort)MessageId.SSetTextUI, MakePacket<S_SetTextUI>);

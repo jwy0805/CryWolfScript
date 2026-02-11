@@ -72,7 +72,7 @@ public class UI_UpgradePopupNoCost : UI_Popup
     private void OnAcceptClicked(PointerEventData data)
     {
         _gameVm.UpgradeBaseSkill();
-        _gameVm.SetBaseSkillCostRequired();
+        _gameVm.UpdateBaseSkillCostRequired();
     }
     
     private void OnDenyClicked(PointerEventData data)

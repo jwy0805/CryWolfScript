@@ -1,42 +1,56 @@
 using System;
 using System.Collections.Generic;
 
+public enum GameEventKey
+{
+    // GameViewModel
+    UpdateUnitDeleteCost,
+    UpdateUnitRepairCost,
+    UpdateBaseSkillCost,
+    UpdateLinePos,
+    SendWarning,
+    
+    // TutorialViewModel
+    RunTutorialTag,
+    ReceiveTutorialReward,
+}
+
 public class EventManager
 {
-    private readonly Dictionary<string, Action<object>> _eventDictionary = new();
+    private readonly Dictionary<GameEventKey, Action<object>> _eventDictionary = new();
 
-    public void StartListening(string eventName, Action<object> listener)
+    public void StartListening(GameEventKey key, Action<object> listener)
     {
-        if (_eventDictionary.TryGetValue(eventName, out var thisEvent))
+        if (_eventDictionary.TryGetValue(key, out var thisEvent))
         {
             thisEvent += listener;
-            _eventDictionary[eventName] = thisEvent;
+            _eventDictionary[key] = thisEvent;
         }
         else
         {
             thisEvent += listener;
-            _eventDictionary.Add(eventName, thisEvent);
+            _eventDictionary.Add(key, thisEvent);
         }
     }
     
-    public void StopListening(string eventName, Action<object> listener)
+    public void StopListening(GameEventKey key, Action<object> listener)
     {
-        if (_eventDictionary.TryGetValue(eventName, out var thisEvent) == false) return;
+        if (_eventDictionary.TryGetValue(key, out var thisEvent) == false) return;
         
         thisEvent -= listener;
         if (thisEvent == null)
         {
-            _eventDictionary.Remove(eventName);
+            _eventDictionary.Remove(key);
         }
         else
         {
-            _eventDictionary[eventName] = thisEvent;
+            _eventDictionary[key] = thisEvent;
         }
     }
 
-    public void TriggerEvent(string eventName, object eventData = null)
+    public void TriggerEvent(GameEventKey key, object eventData = null)
     {
-        if (_eventDictionary.TryGetValue(eventName, out var thisEvent))
+        if (_eventDictionary.TryGetValue(key, out var thisEvent))
         {
             thisEvent.Invoke(eventData);
         }

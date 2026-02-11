@@ -74,7 +74,7 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
         {
             base.Init();
             _gameVm.BaseSkillWindow = this;
-            _gameVm.SetBaseSkillCostRequired();
+            _gameVm.UpdateBaseSkillCostRequired();
 
             BindObjects();
             await InitUIAsync();

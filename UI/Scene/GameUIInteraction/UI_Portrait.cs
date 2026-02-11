@@ -14,7 +14,7 @@ public interface IPortrait
     UnitId UnitId { get; set; }
     bool CanSpawn { get; set; }
     Task EnsureRingsAsync(int token, float attackRange, float skillRange);
-    void ShowSpawnableBounds(float minZ, float maxZ);
+    Task ShowSpawnableBounds(Role unitRole);
     void DestroyRing();
     void HideSpawnableBounds();
 }
@@ -162,10 +162,11 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
         _originalPos = tf.position;
         _lastSentPos = Vector3.positiveInfinity;
         
-        // spawnable bounds
-        Managers.Network.Send(new C_GetSpawnableBounds { Faction = Util.Faction });
         // Tutorial
         _tutorialVm?.PortraitDragStartHandler();
+        
+        var unitRole = Managers.Data.UnitDict[(int)_unitId].UnitRole;
+        _ = ShowSpawnableBounds(unitRole);
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -346,32 +347,21 @@ public class UI_Portrait : MonoBehaviour, IPortrait, IBeginDragHandler, IDragHan
             _skillRangeRing = null;
         }
     }
-    
-    public async void ShowSpawnableBounds(float minZ, float maxZ)
+
+    public async Task ShowSpawnableBounds(Role unitRole)
     {
-        try
-        {
-            _spawnableBounds = await Managers.Resource.Instantiate("WorldObjects/SpawnableBounds");
-            _spawnableBounds.transform.position = new Vector3(0, 6.01f, minZ + (maxZ - minZ) / 2);
-            _spawnableBounds.transform.localScale = new Vector3(220, (maxZ - minZ) * 10);
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning(e);
-        }
+        _spawnableBounds = await Managers.Resource.Instantiate("WorldObjects/SpawnableBounds");
+        var spawnableBounds = _spawnableBounds.GetComponent<UI_SpawnableBounds>();
+        spawnableBounds.UnitRole = unitRole;
+        spawnableBounds.LinePos = _gameVm.LinePos;
     }
 
     private void AdjustSpawnableBounds()
     {
-        var fence = Managers.Object.Find(go => go.CompareTag("Fence"));
-        var fencePos = fence != null ? fence.transform.position : _fencePos;
-        if (fencePos.z - _fencePos.z > 1f)
-        {
-            if (_spawnableBounds == null) return;
-            var pos = _spawnableBounds.transform.position;
-            _spawnableBounds.transform.position = new Vector3(pos.x, pos.y, pos.z + _fenceMoveValue);
-            _fencePos = fencePos;
-        }
+        if (_spawnableBounds == null) return;
+        var spawnableBounds = _spawnableBounds.GetComponent<UI_SpawnableBounds>();
+        if (Mathf.Approximately(spawnableBounds.LinePos, _gameVm.LinePos)) return;
+        spawnableBounds.LinePos = _gameVm.LinePos;
     }
 
     public void HideSpawnableBounds()

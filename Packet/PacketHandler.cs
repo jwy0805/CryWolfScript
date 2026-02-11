@@ -52,14 +52,7 @@ public class PacketHandler
     
     public static void S_RunTutorialTagHandler(PacketSession session, IMessage packet)
     {
-        var stepPacket = (S_RunTutorialTag)packet;
-        var sceneContext = UnityEngine.Object.FindAnyObjectByType<SceneContext>();
-        if (sceneContext == null) return;
-        
-        var tutorialVm = sceneContext.Container.Resolve<TutorialViewModel>();
-        if (tutorialVm == null) return;
-        
-        _ = tutorialVm.ShowTutorialPopup(stepPacket.IsInterrupted, stepPacket.TutorialTag);
+        Managers.Event.TriggerEvent(GameEventKey.RunTutorialTag, packet);
     }
     
     public static void S_SpawnHandler(PacketSession session, IMessage packet)
@@ -401,9 +394,9 @@ public class PacketHandler
         
     }
 
-    public static void S_GetSpawnableBoundsHandler(PacketSession session, IMessage packet)
+    public static void S_SetLinePosHandler(PacketSession session, IMessage packet)
     {
-        Managers.Event.TriggerEvent("ShowBounds", packet);
+        Managers.Event.TriggerEvent(GameEventKey.UpdateLinePos, packet);
     }
     
     public static void S_TimeHandler(PacketSession session, IMessage packet)
@@ -505,35 +498,22 @@ public class PacketHandler
     
     public static void S_SetUnitDeleteCostHandler(PacketSession session, IMessage packet)
     {
-        Managers.Event.TriggerEvent("UpdateUnitDeleteCost", packet);
+        Managers.Event.TriggerEvent(GameEventKey.UpdateUnitDeleteCost, packet);
     }
     
     public static void S_SetUnitRepairCostHandler(PacketSession session, IMessage packet)
     {
-        Managers.Event.TriggerEvent("UpdateUnitRepairCost", packet);
+        Managers.Event.TriggerEvent(GameEventKey.UpdateUnitRepairCost, packet);
     }
     
     public static void S_SetBaseSkillCostHandler(PacketSession session, IMessage packet)
     {
-        Managers.Event.TriggerEvent("SetBaseSkillCost", packet);
+        Managers.Event.TriggerEvent(GameEventKey.UpdateBaseSkillCost, packet);
     }
     
-    public static async void S_SendWarningInGameHandler(PacketSession session, IMessage packet)
+    public static void S_SendWarningInGameHandler(PacketSession session, IMessage packet)
     {
-        try
-        {
-            var popupPacket = (S_SendWarningInGame)packet;
-            var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
-            await Managers.Localization.UpdateWarningPopupText(popup, popupPacket.MessageKey);
-        
-            var sceneContext = UnityEngine.Object.FindAnyObjectByType<SceneContext>();
-            var gameViewModel = sceneContext.Container.TryResolve<GameViewModel>();
-            gameViewModel?.WarningHandler(popupPacket.MessageKey);
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning(e);
-        }
+        Managers.Event.TriggerEvent(GameEventKey.SendWarning, packet);
     }
 
     public static async void S_ShowRankResultPopupHandler(PacketSession session, IMessage packet)
@@ -612,23 +592,13 @@ public class PacketHandler
         }
         catch (Exception e)
         {
-            
             Debug.LogWarning(e);
         }
     }
     
     public static void S_SendTutorialRewardHandler(PacketSession session, IMessage packet)
     {
-        var rewardPacket = (S_SendTutorialReward)packet;
-        var sceneContext = UnityEngine.Object.FindAnyObjectByType<SceneContext>();
-        if (sceneContext == null) return;
-        
-        var tutorialVm = sceneContext.Container.Resolve<TutorialViewModel>();
-        if (tutorialVm == null) return;
-
-        var tag = Util.Faction == Faction.Wolf ? "BattleWolf.ClosingStatement" : "BattleSheep.ClosingStatement";
-        tutorialVm.SetTutorialReward(rewardPacket.RewardUnitId);
-        _ = tutorialVm.ShowTutorialPopup(false, tag);
+        Managers.Event.TriggerEvent(GameEventKey.ReceiveTutorialReward, packet);
     }
     
     public static async void S_MatchMakingSuccessHandler(PacketSession session, IMessage packet)

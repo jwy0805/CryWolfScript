@@ -72,6 +72,9 @@ public class TutorialViewModel : IDisposable
         _userService = userService;
         _webService = webService;
         _tokenService = tokenService;
+        
+        Managers.Event.StartListening(GameEventKey.RunTutorialTag, RunTutorialTagHandler);
+        Managers.Event.StartListening(GameEventKey.ReceiveTutorialReward, ReceiveTutorialRewardHandler);
     }
     
     public void InitTutorialMain(Vector3 npc1Position, Vector3 camera1Position, Vector3 npc2Position, Vector3 camera2Position)
@@ -194,6 +197,20 @@ public class TutorialViewModel : IDisposable
         Managers.Network.Send(holdPacket);
     }
 
+    private void RunTutorialTagHandler(object eventData)
+    {
+        var packet = (S_RunTutorialTag)eventData;
+        _ = ShowTutorialPopup(packet.IsInterrupted, packet.TutorialTag);
+    }
+
+    private void ReceiveTutorialRewardHandler(object eventData)
+    {
+        var packet = (S_SendTutorialReward)eventData;
+        var tag = Util.Faction == Faction.Wolf ? "BattleWolf.ClosingStatement" : "BattleSheep.ClosingStatement";
+        SetTutorialReward(packet.RewardUnitId);
+        _ = ShowTutorialPopup(false, tag);
+    }   
+    
     public void PortraitDragStartHandler()
     {
         if (!CurrentTag.Contains("Drag")) return;
@@ -454,5 +471,7 @@ public class TutorialViewModel : IDisposable
     public void Dispose()
     {
         ClearDictionary();
+        Managers.Event.StopListening(GameEventKey.RunTutorialTag, RunTutorialTagHandler);
+        Managers.Event.StopListening(GameEventKey.ReceiveTutorialReward, ReceiveTutorialRewardHandler);
     }
 }

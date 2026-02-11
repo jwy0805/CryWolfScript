@@ -44,12 +44,15 @@ public class GameViewModel : IDisposable
     public IPortrait CurrentSelectedPortrait { get; set; }
     public ISkillButton CurrentSelectedSkillButton { get; set; }
 
+    public float LinePos { get; set; } = GameData.InitFenceZ;
+
     public GameViewModel()
     {
-        Managers.Event.StartListening("ShowBounds", OnReceiveBounds);
-        Managers.Event.StartListening("UpdateUnitDeleteCost", UpdateUnitDeleteCostResponse);
-        Managers.Event.StartListening("UpdateUnitRepairCost", UpdateUnitRepairCostResponse);
-        Managers.Event.StartListening("SetBaseSkillCost", SetBaseSkillCostResponse);
+        Managers.Event.StartListening(GameEventKey.UpdateUnitDeleteCost, UpdateUnitDeleteCostResponse);
+        Managers.Event.StartListening(GameEventKey.UpdateUnitRepairCost, UpdateUnitRepairCostResponse);
+        Managers.Event.StartListening(GameEventKey.UpdateBaseSkillCost, UpdateBaseSkillCostResponse);
+        Managers.Event.StartListening(GameEventKey.UpdateLinePos, UpdateLinePosHandler);
+        Managers.Event.StartListening(GameEventKey.SendWarning, SendWarningHandler);
     }
     
     public int GetLevelFromUiObject(UnitId unitId)
@@ -165,24 +168,42 @@ public class GameViewModel : IDisposable
         UnitControlWindow?.UpdateRepairAllCostText(packet.CostAll);
     }
     
-    public void SetBaseSkillCostRequired()
+    public void UpdateBaseSkillCostRequired()
     {
         var packet = new C_SetBaseSkillCost { Faction = Util.Faction };
         Managers.Network.Send(packet);
     }
     
-    private void SetBaseSkillCostResponse(object eventData)
+    private void UpdateBaseSkillCostResponse(object eventData)
     {
         var packet = (S_SetBaseSkillCost)eventData;
         BaseSkillWindow?.UpdateBaseSkillCost(packet);
     }
-
-    private void OnReceiveBounds(object eventData)
+    
+    private void UpdateLinePosHandler(object eventData)
     {
-        var packet = (S_GetSpawnableBounds)eventData;
-        CurrentSelectedPortrait?.ShowSpawnableBounds(packet.MinZ, packet.MaxZ);
+        var packet = (S_SetLinePos)eventData;
+        LinePos = packet.LinePos;
     }
 
+    private void SendWarningHandler(object eventData)
+    {
+        var packet = (S_SendWarningInGame)eventData;
+        _ = WarningHandler(packet.MessageKey);
+    }
+    
+    private async Task WarningHandler(string messageKey)
+    {
+        if (UnitControlWindow != null && messageKey == "warning_in_game_needs_to_evolve")
+        {
+            await OnUnitSkillClicked();
+            return;
+        }
+        
+        var popup = await Managers.UI.ShowPopupUI<UI_WarningPopup>();
+        await Managers.Localization.UpdateWarningPopupText(popup, messageKey);
+    }
+    
     public void HideMarker()
     {
         CurrentSelectedPortrait?.DestroyRing();
@@ -314,21 +335,6 @@ public class GameViewModel : IDisposable
         await Managers.UI.ShowPopupUiInGame<SkillWindow>();
     }
 
-    public async void WarningHandler(string warningMessageKey)
-    {
-        try
-        {
-            if (UnitControlWindow != null && warningMessageKey == "warning_in_game_needs_to_evolve")
-            {
-                await OnUnitSkillClicked();
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning(e);
-        }
-    }
-
     public void Dispose()
     {
         Dispose(true);
@@ -339,10 +345,11 @@ public class GameViewModel : IDisposable
     {
         if (!disposing) return;
         
-        Managers.Event.StopListening("ShowBounds", OnReceiveBounds);
-        Managers.Event.StopListening("UpdateUnitDeleteCost", UpdateUnitDeleteCostResponse);
-        Managers.Event.StopListening("UpdateUnitRepairCost", UpdateUnitRepairCostResponse);
-        Managers.Event.StopListening("SetBaseSkillCost", SetBaseSkillCostResponse);
+        Managers.Event.StopListening(GameEventKey.UpdateUnitDeleteCost, UpdateUnitDeleteCostResponse);
+        Managers.Event.StopListening(GameEventKey.UpdateUnitRepairCost, UpdateUnitRepairCostResponse);
+        Managers.Event.StopListening(GameEventKey.UpdateBaseSkillCost, UpdateBaseSkillCostResponse);
+        Managers.Event.StopListening(GameEventKey.UpdateLinePos, UpdateLinePosHandler);
+        Managers.Event.StopListening(GameEventKey.SendWarning, SendWarningHandler);
         
         SelectedObjectIds = null;
         SkillsUpgraded = null;

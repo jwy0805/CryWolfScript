@@ -14,6 +14,7 @@ public class GameManager
     private readonly Dictionary<UnitId, GameObject> _units = new();
     
     public Action<int> OnSpawnEvent;
+    
     public bool GameResult { get; set; }
 
     public bool IsTutorial { get; set; } = false;
