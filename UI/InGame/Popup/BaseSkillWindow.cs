@@ -56,14 +56,16 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
     
     #endregion
     
+    private IUIFactory _uiFactory;
     private GameViewModel _gameVm;
     private TutorialViewModel _tutorialVm;
 
     private readonly Dictionary<string, GameObject> _buttonDict = new();
     
     [Inject]
-    public void Construct(GameViewModel gameViewModel, TutorialViewModel tutorialViewModel)
+    public void Construct(IUIFactory uiFactory, GameViewModel gameViewModel, TutorialViewModel tutorialViewModel)
     {
+        _uiFactory = uiFactory;
         _gameVm = gameViewModel;
         _tutorialVm = tutorialViewModel;
     }
@@ -156,14 +158,14 @@ public class BaseSkillWindow : UI_Popup, IBaseSkillWindow
         Managers.UI.ClosePopupUI<UI_UpgradePopupNoCost>();
         foreach (var skillButton in _buttonDict.Values)
         {
-            Managers.Resource.GetFrameFromCardButton(skillButton.GetComponent<UI_Skill>()).color = Color.green;
+            _uiFactory.GetFrameFromCardButton(skillButton.GetComponent<UI_Skill>()).color = Color.green;
         }
 
         var selectedSkillButton = data.pointerPress.GetComponent<UI_Skill>();
         if (selectedSkillButton == null) return;
         
         _gameVm.CurrentSelectedSkillButton = selectedSkillButton;
-        Managers.Resource.GetFrameFromCardButton(_gameVm.CurrentSelectedSkillButton).color = Color.cyan;
+        _uiFactory.GetFrameFromCardButton(_gameVm.CurrentSelectedSkillButton).color = Color.cyan;
         
         var skillName = _gameVm.CurrentSelectedSkillButton.Name.Replace("Button", "");
         var camp = Util.Faction.ToString();

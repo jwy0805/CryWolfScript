@@ -12,6 +12,7 @@ using UnityEngine.UI;
 public class LobbyCraftingWidget
 {
     private readonly IUserService _userService;
+    private readonly ICardFactory _cardFactory;
     private readonly CraftingViewModel _craftingVm;
     private readonly CollectionViewModel _collectionVm;
     private readonly LobbyUtilWidget _utilWidget;
@@ -49,6 +50,7 @@ public class LobbyCraftingWidget
     
     public LobbyCraftingWidget(
         IUserService userService,
+        ICardFactory cardFactory,
         CraftingViewModel craftingVm,
         CollectionViewModel collectionVm,
         LobbyUtilWidget utilWidget,
@@ -60,6 +62,7 @@ public class LobbyCraftingWidget
         Action<PointerEventData> onCardClicked)
     {
         _userService = userService;
+        _cardFactory = cardFactory;
         _craftingVm = craftingVm;
         _collectionVm = collectionVm;
         _utilWidget = utilWidget;
@@ -184,9 +187,9 @@ public class LobbyCraftingWidget
         
         _ = _selectedCardForCrafting.AssetType switch
         {
-            Asset.Unit => Managers.Resource.GetCardResources<UnitId>(_selectedCardForCrafting, _craftCardPanel),
-            Asset.Sheep => Managers.Resource.GetCardResources<SheepId>(_selectedCardForCrafting, _craftCardPanel),
-            Asset.Enchant => Managers.Resource.GetCardResources<EnchantId>(_selectedCardForCrafting, _craftCardPanel),
+            Asset.Unit => _cardFactory.GetCardResources<UnitId>(_selectedCardForCrafting, _craftCardPanel),
+            Asset.Sheep => _cardFactory.GetCardResources<SheepId>(_selectedCardForCrafting, _craftCardPanel),
+            Asset.Enchant => _cardFactory.GetCardResources<EnchantId>(_selectedCardForCrafting, _craftCardPanel),
             _ => null
         };    
         
@@ -208,7 +211,7 @@ public class LobbyCraftingWidget
             var craftingFrame = 
                 await Managers.Resource.Instantiate("UI/Lobby/Deck/CraftingMaterialFrame", _materialPanel);
             var itemPanel = 
-                await Managers.Resource.GetMaterialResources(material.MaterialInfo, craftingFrame.transform);
+                await _cardFactory.GetMaterialResources(material.MaterialInfo, craftingFrame.transform);
             var itemPanelRect = itemPanel.GetComponent<RectTransform>();
             var countTextObject = Util.FindChild(craftingFrame, "CountText", true);
             var countText = countTextObject.GetComponent<TextMeshProUGUI>();
@@ -245,8 +248,8 @@ public class LobbyCraftingWidget
 
         var selectedUnit = Managers.Data.UnitInfoDict[_selectedCardForCrafting.Id];
         var resultUnit = Managers.Data.UnitInfoDict[_selectedCardForCrafting.Id + 1];
-        var cardFrame = await Managers.Resource.GetCardResources<UnitId>(selectedUnit, cardParent);
-        var resultFrame = await Managers.Resource.GetCardResources<UnitId>(resultUnit, resultParent);
+        var cardFrame = await _cardFactory.GetCardResources<UnitId>(selectedUnit, cardParent);
+        var resultFrame = await _cardFactory.GetCardResources<UnitId>(resultUnit, resultParent);
         var cardFrameRect = cardFrame.GetComponent<RectTransform>();
         var resultFrameRect = resultFrame.GetComponent<RectTransform>();
         var cardNumberText = _reinforceCardNumberText;
@@ -383,7 +386,7 @@ public class LobbyCraftingWidget
         foreach (var unit in units)
         {
             var cardFrame = 
-                await Managers.Resource.GetCardResources<UnitId>(
+                await _cardFactory.GetCardResources<UnitId>(
                     unit.UnitInfo, _unitHoldingCardPanel, _onCardClicked);
             _utilWidget.GetCountText(cardFrame.transform, unit.Count);
             if (_craftingVm.IsUnitInDecks(unit.UnitInfo)) await GetInDeckText(cardFrame.transform);
@@ -462,10 +465,10 @@ public class LobbyCraftingWidget
             Util.DestroyAllChildren(parent);
             var cardFrame = card.AssetType switch
             {
-                Asset.Unit => await Managers.Resource.GetCardResources<UnitId>(card, parent),
-                Asset.Sheep => await Managers.Resource.GetCardResources<SheepId>(card, parent),
-                Asset.Enchant => await Managers.Resource.GetCardResources<EnchantId>(card, parent),
-                Asset.Character => await Managers.Resource.GetCardResources<CharacterId>(card, parent),
+                Asset.Unit => await _cardFactory.GetCardResources<UnitId>(card, parent),
+                Asset.Sheep => await _cardFactory.GetCardResources<SheepId>(card, parent),
+                Asset.Enchant => await _cardFactory.GetCardResources<EnchantId>(card, parent),
+                Asset.Character => await _cardFactory.GetCardResources<CharacterId>(card, parent),
                 _ => null
             };
         

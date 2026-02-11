@@ -11,6 +11,7 @@ using Zenject;
 
 public class UI_SinglePlayMapPopup : UI_Popup
 {
+    private ICardFactory _cardFactory;
     private SinglePlayViewModel _singlePlayVm;
 
     private GameObject _map;
@@ -20,8 +21,9 @@ public class UI_SinglePlayMapPopup : UI_Popup
     public Faction Faction { get; set; }
     
     [Inject]
-    public void Construct(SinglePlayViewModel singlePlayVm)
+    public void Construct(ICardFactory cardFactory, SinglePlayViewModel singlePlayVm)
     {
+        _cardFactory = cardFactory; 
         _singlePlayVm = singlePlayVm;
     }
     
@@ -116,7 +118,7 @@ public class UI_SinglePlayMapPopup : UI_Popup
         
         foreach (var unitInfo in unitInfos)
         {
-            var cardObject = await Managers.Resource.GetCardResources<UnitId>(unitInfo, deckPanel);
+            var cardObject = await _cardFactory.GetCardResources<UnitId>(unitInfo, deckPanel);
             cardObject.GetComponent<Card>().SetLocalScale(1, false);
         }
 

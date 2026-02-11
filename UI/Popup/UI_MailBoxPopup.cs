@@ -12,6 +12,7 @@ using Zenject;
 
 public class UI_MailBoxPopup : UI_Popup
 {
+    private IUIFactory _uiFactory;
     private MainLobbyViewModel _lobbyVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
@@ -37,8 +38,9 @@ public class UI_MailBoxPopup : UI_Popup
     }
 
     [Inject]
-    public void Construct(MainLobbyViewModel lobbyViewModel)
+    public void Construct(IUIFactory uiFactory, MainLobbyViewModel lobbyViewModel)
     {
+        _uiFactory = uiFactory;
         _lobbyVm = lobbyViewModel;
     }
 
@@ -143,7 +145,7 @@ public class UI_MailBoxPopup : UI_Popup
                 mailInfoInvitation.MailInfo = mailInfo;
                 break;
             case MailType.Product:
-                mailFrame = await Managers.Resource.GetProductMailFrame(mailInfo, frameParent);
+                mailFrame = await _uiFactory.GetProductMailFrame(mailInfo, frameParent);
                 var mailInfoProduct = mailFrame.GetOrAddComponent<MailInfoProduct>();
                 mailInfoProduct.MailInfo = mailInfo;
                 await SetMailIcon(mailFrame, mailInfo);

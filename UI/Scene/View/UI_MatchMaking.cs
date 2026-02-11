@@ -12,6 +12,7 @@ using Zenject;
 public class UI_MatchMaking : UI_Scene
 {
     private IUserService _userService;
+    private ICardFactory _cardFactory;
     private MatchMakingViewModel _matchMakingVm;
     private DeckViewModel _deckVm;
     
@@ -47,9 +48,14 @@ public class UI_MatchMaking : UI_Scene
     }
     
     [Inject]
-    public void Construct(IUserService userService, MatchMakingViewModel matchMakingVm, DeckViewModel deckVm)
+    public void Construct(
+        IUserService userService,
+        ICardFactory cardFactory, 
+        MatchMakingViewModel matchMakingVm,
+        DeckViewModel deckVm)
     {
         _userService = userService;
+        _cardFactory = cardFactory;
         _matchMakingVm = matchMakingVm;
         _deckVm = deckVm;
     }
@@ -112,7 +118,7 @@ public class UI_MatchMaking : UI_Scene
         
         foreach (var unit in deck.UnitsOnDeck)
         {
-            await Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform);
+            await _cardFactory.GetCardResources<UnitId>(unit, deckImage.transform);
         }
     }
     
@@ -137,7 +143,7 @@ public class UI_MatchMaking : UI_Scene
         {
             Managers.Data.UnitInfoDict.TryGetValue(unitId, out var unitInfo);
             if (unitInfo == null) continue;
-            await Managers.Resource.GetCardResources<UnitId>(unitInfo, deckImage.transform);
+            await _cardFactory.GetCardResources<UnitId>(unitInfo, deckImage.transform);
         }
 
         StartCoroutine(CountDown());

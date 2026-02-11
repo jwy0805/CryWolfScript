@@ -10,6 +10,7 @@ using Zenject;
 public class UI_FriendsAddPopup : UI_Popup
 {
     private ITokenService _tokenService;
+    private IUIFactory _uiFactory;
     private MainLobbyViewModel _lobbyVm;
     
     private List<FriendUserInfo> _pendingFriends;
@@ -41,9 +42,10 @@ public class UI_FriendsAddPopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(ITokenService tokenService, MainLobbyViewModel lobbyViewModel)
+    public void Construct(ITokenService tokenService, IUIFactory uiFactory, MainLobbyViewModel lobbyViewModel)
     {
         _tokenService = tokenService;
+        _uiFactory = uiFactory;
         _lobbyVm = lobbyViewModel;
     }
 
@@ -107,7 +109,7 @@ public class UI_FriendsAddPopup : UI_Popup
         
         foreach (var friendInfo in sendingList)
         {
-            var frame = await Managers.Resource.GetFriendRequestFrame(friendInfo, parent);
+            var frame = await _uiFactory.GetFriendRequestFrame(friendInfo, parent);
             var layoutElement = frame.GetOrAddComponent<LayoutElement>();
             layoutElement.preferredHeight = 200f;
             
@@ -119,7 +121,7 @@ public class UI_FriendsAddPopup : UI_Popup
 
         foreach (var friendInfo in pendingList)
         {
-            var frame = await Managers.Resource.GetFriendRequestFrame(friendInfo, parent);
+            var frame = await _uiFactory.GetFriendRequestFrame(friendInfo, parent);
             var layoutElement = frame.GetOrAddComponent<LayoutElement>();
             layoutElement.preferredHeight = 200f;
             Util.FindChild(frame, "AcceptButton", true).SetActive(false);
@@ -136,7 +138,7 @@ public class UI_FriendsAddPopup : UI_Popup
         
         foreach (var friendInfo in userInfoList)
         {
-            var frame = await Managers.Resource.GetFriendFrame(friendInfo, parent);
+            var frame = await _uiFactory.GetFriendFrame(friendInfo, parent);
             BindFriendRequestButton(frame, friendInfo);
         }
     }

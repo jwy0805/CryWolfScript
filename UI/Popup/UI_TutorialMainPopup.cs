@@ -24,6 +24,7 @@ public class UI_TutorialMainPopup : UI_Popup, ITutorialHelper
 {
     private IWebService _webService;
     private ITokenService _tokenService;
+    private IUIFactory _uiFactory;
     private TutorialViewModel _tutorialVm;
     
     private TutorialNpcInfo _tutorialNpcInfo1;
@@ -77,10 +78,15 @@ public class UI_TutorialMainPopup : UI_Popup, ITutorialHelper
     }
     
     [Inject]
-    public void Construct(IWebService webService, ITokenService tokenService, TutorialViewModel tutorialViewModel)
+    public void Construct(
+        IWebService webService, 
+        ITokenService tokenService, 
+        IUIFactory uiFactory,
+        TutorialViewModel tutorialViewModel)
     {
         _webService = webService;
         _tokenService = tokenService;
+        _uiFactory = uiFactory;
         _tutorialVm = tutorialViewModel;
     }
     
@@ -136,9 +142,9 @@ public class UI_TutorialMainPopup : UI_Popup, ITutorialHelper
         _wolfRawImage = backgroundLeft.GetComponentInChildren<RawImage>();
         _sheepRawImage = backgroundRight.GetComponentInChildren<RawImage>();
         _videoRawImage = selectPanel.GetComponentInChildren<RawImage>();
-        _wolfRenderTexture = Managers.Resource.CreateRenderTexture("wolfTexture");
-        _sheepRenderTexture = Managers.Resource.CreateRenderTexture("sheepTexture");
-        _videoRenderTexture = Managers.Resource.CreateRenderTexture("videoTexture");
+        _wolfRenderTexture = _uiFactory.CreateRenderTexture("wolfTexture");
+        _sheepRenderTexture = _uiFactory.CreateRenderTexture("sheepTexture");
+        _videoRenderTexture = _uiFactory.CreateRenderTexture("videoTexture");
         _tutorialCamera1 = GameObject.Find("TutorialCamera1").GetComponent<Camera>();
         _tutorialCamera2 = GameObject.Find("TutorialCamera2").GetComponent<Camera>();
         

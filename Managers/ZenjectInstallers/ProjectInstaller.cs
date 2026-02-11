@@ -10,6 +10,10 @@ public class ProjectInstaller : MonoInstaller<ProjectInstaller>
         Container.Bind<ITokenService>().To<TokenService>().AsSingle();
         Container.Bind<IPaymentService>().To<PaymentService>().AsSingle();
         Container.Bind<ISecretService>().To<SecretService>().AsSingle();
+        
+        Container.Bind<ICardFactory>().To<CardFactory>().AsSingle();
+        Container.Bind<IUIFactory>().To<UIFactory>().AsSingle();
+        
         Container.BindInterfacesAndSelfTo<SignalRClient>().AsSingle();
     }
 }

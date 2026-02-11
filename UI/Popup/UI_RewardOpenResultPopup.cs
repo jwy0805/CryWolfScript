@@ -11,6 +11,7 @@ using Zenject;
 
 public class UI_RewardOpenResultPopup : UI_Popup
 {
+    private ICardFactory _cardFactory;
     private MainLobbyViewModel _lobbyVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
@@ -38,8 +39,9 @@ public class UI_RewardOpenResultPopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(MainLobbyViewModel lobbyViewModel)
+    public void Construct(ICardFactory cardFactory, MainLobbyViewModel lobbyViewModel)
     {
+        _cardFactory = cardFactory;
         _lobbyVm = lobbyViewModel;
     }
     
@@ -153,7 +155,7 @@ public class UI_RewardOpenResultPopup : UI_Popup
             case ProductType.Unit:
                 if (Managers.Data.UnitInfoDict.TryGetValue(info.CompositionId, out var unitInfo))
                 {
-                    cardObject = await Managers.Resource.GetCardResources<UnitId>(unitInfo, parent);
+                    cardObject = await _cardFactory.GetCardResources<UnitId>(unitInfo, parent);
                     var countText = Util.FindChild(cardObject, "CountText", true);
                     countText.GetComponent<TextMeshProUGUI>().text = info.Count.ToString();
                 }
@@ -161,31 +163,31 @@ public class UI_RewardOpenResultPopup : UI_Popup
             case ProductType.Enchant:
                 if (Managers.Data.EnchantInfoDict.TryGetValue(info.CompositionId, out var enchantInfo))
                 {
-                    cardObject = await Managers.Resource.GetCardResources<EnchantId>(enchantInfo, parent);  
-                                     var countText = Util.FindChild(cardObject, "CountText", true);
+                    cardObject = await _cardFactory.GetCardResources<EnchantId>(enchantInfo, parent);  
+                    var countText = Util.FindChild(cardObject, "CountText", true);
                     countText.GetComponent<TextMeshProUGUI>().text = info.Count.ToString();
                 }
                 break;
             case ProductType.Sheep:
                 if (Managers.Data.SheepInfoDict.TryGetValue(info.CompositionId, out var sheepInfo))
                 {
-                    cardObject = await Managers.Resource.GetCardResources<SheepId>(sheepInfo, parent);
-                                     var countText = Util.FindChild(cardObject, "CountText", true);
+                    cardObject = await _cardFactory.GetCardResources<SheepId>(sheepInfo, parent);
+                    var countText = Util.FindChild(cardObject, "CountText", true);
                     countText.GetComponent<TextMeshProUGUI>().text = info.Count.ToString();
                 }
                 break;
             case ProductType.Character:
                 if (Managers.Data.CharacterInfoDict.TryGetValue(info.CompositionId, out var characterInfo))
                 {
-                    cardObject = await Managers.Resource.GetCardResources<CharacterId>(characterInfo, parent);
-                                     var countText = Util.FindChild(cardObject, "CountText", true);
+                    cardObject = await _cardFactory.GetCardResources<CharacterId>(characterInfo, parent);
+                    var countText = Util.FindChild(cardObject, "CountText", true);
                     countText.GetComponent<TextMeshProUGUI>().text = info.Count.ToString();
                 }
                 break;
             case ProductType.Material:
                 if (Managers.Data.MaterialInfoDict.TryGetValue(info.CompositionId, out var materialInfo))
                 {
-                    cardObject = await Managers.Resource.GetMaterialResources(materialInfo, parent);
+                    cardObject = await _cardFactory.GetMaterialResources(materialInfo, parent);
                     var countText = Util.FindChild(cardObject, "CountText", true);
                     countText.GetComponent<TextMeshProUGUI>().text = info.Count.ToString();
                 }

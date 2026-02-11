@@ -10,6 +10,7 @@ using Zenject;
 
 public class UI_ChangeFactionPopup : UI_Popup
 {
+    private IUIFactory _uiFactory;
     private TutorialViewModel _tutorialVm;
 
     private Camera _tutorialCamera;
@@ -42,8 +43,9 @@ public class UI_ChangeFactionPopup : UI_Popup
     }
 
     [Inject]
-    public void Construct(TutorialViewModel tutorialViewModel)
+    public void Construct(IUIFactory uiFactory, TutorialViewModel tutorialViewModel)
     {
+        _uiFactory = uiFactory;
         _tutorialVm = tutorialViewModel;
     }
     
@@ -108,7 +110,7 @@ public class UI_ChangeFactionPopup : UI_Popup
         var leftPanel = GetImage((int)Images.LeftPanel);
         
         _rawImage = leftPanel.GetComponentInChildren<RawImage>();
-        _renderTexture = Managers.Resource.CreateRenderTexture("texture");
+        _renderTexture = _uiFactory.CreateRenderTexture("texture");
         _tutorialCamera = GameObject.Find("TutorialCamera1").GetComponent<Camera>();
 
         if (_tutorialCamera == null)

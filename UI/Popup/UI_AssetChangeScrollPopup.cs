@@ -13,6 +13,7 @@ using Zenject;
 public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
 {
     private IUserService _userService;
+    private ICardFactory _cardFactory;
     private DeckViewModel _deckVm;
     
     private bool _changing;
@@ -49,9 +50,10 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
     }
     
     [Inject]
-    public void Construct(IUserService userService, DeckViewModel deckViewModel)
+    public void Construct(IUserService userService, ICardFactory cardFactory, DeckViewModel deckViewModel)
     {
         _userService = userService;
+        _cardFactory = cardFactory;
         _deckVm = deckViewModel;
     }
 
@@ -111,7 +113,7 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
         var parent = _assetPanel.transform;
         foreach (Transform child in parent) Managers.Resource.Destroy(child.gameObject);
         
-        var cardFrame = await Managers.Resource.GetCardResources<TEnum>(SelectedCard, parent, data =>
+        var cardFrame = await _cardFactory.GetCardResources<TEnum>(SelectedCard, parent, data =>
         {
             SelectedCard = data.pointerPress.GetComponent<Card>();
             Changing = true;
@@ -144,7 +146,7 @@ public class UI_AssetChangeScrollPopup : UI_Popup, IPointerClickHandler
 
         foreach (var asset in assets)
         {
-            var cardFrame = await Managers.Resource.GetCardResourcesF<TEnum>(asset, parent, async data => 
+            var cardFrame = await _cardFactory.GetCardResourcesF<TEnum>(asset, parent, async data => 
             {
                 if (data.pointerPress.TryGetComponent(out Card card) == false) return;
 

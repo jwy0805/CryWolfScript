@@ -27,6 +27,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     private IUserService _userService;
     private ITokenService _tokenService;
     private IPaymentService _paymentService;
+    private ICardFactory _cardFactory;
+    private IUIFactory _uiFactory;
     private MainLobbyViewModel _lobbyVm;
     private DeckViewModel _deckVm;
     private CollectionViewModel _collectionVm;
@@ -118,6 +120,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         IUserService userService,
         ITokenService tokenService,
         IPaymentService paymentService,
+        ICardFactory cardFactory,
+        IUIFactory uiFactory,
         MainLobbyViewModel viewModel,
         DeckViewModel deckViewModel,
         CollectionViewModel collectionViewModel,
@@ -128,6 +132,8 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         _userService = userService;
         _tokenService = tokenService;
         _paymentService = paymentService;
+        _cardFactory = cardFactory;
+        _uiFactory = uiFactory;
         _lobbyVm = viewModel;
         _deckVm = deckViewModel;
         _collectionVm = collectionViewModel;
@@ -154,11 +160,13 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
     {
         _utilWidget = new LobbyUtilWidget();
 
-        _deckWidget = new LobbyDeckWidget(_userService, _deckVm, OnCardClicked, OnDeckTabClicked);
+        _deckWidget = new LobbyDeckWidget(_userService, _cardFactory, _deckVm, OnCardClicked, OnDeckTabClicked);
         _collectionWidget = new LobbyCollectionWidget(
-            _userService, _collectionVm, _utilWidget, OnCardClicked, mode => SelectMode = mode);
+            _userService, _cardFactory, _collectionVm, _utilWidget, OnCardClicked, 
+            mode => SelectMode = mode);
         _craftingWidget = new LobbyCraftingWidget(
             _userService,
+            _cardFactory,
             _craftingVm,
             _collectionVm,
             _utilWidget,
@@ -168,7 +176,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
             mode => SelectMode = mode,
             routine => StartCoroutine(routine)
             ,OnCardClicked);
-        _shopWidget = new LobbyShopWidget(_userService, _shopVm, _paymentService, InitUserInfo);
+        _shopWidget = new LobbyShopWidget(_userService, _cardFactory, _shopVm, _paymentService, InitUserInfo);
         _tutorialWidget = new LobbyTutorialWidget(_tutorialVm, GameObject.FindGameObjectsWithTag("Camera"));
     }
     
@@ -280,7 +288,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
         
         foreach (var noticeInfo in notices)
         {
-            await Managers.Resource.GetNoticeFrame(noticeInfo, parent);
+            await _uiFactory.GetNoticeFrame(noticeInfo, parent);
         }
     }
     
@@ -879,7 +887,7 @@ public partial class UI_MainLobby : UI_Scene, IPointerClickHandler
                 _craftingVm.AddNewUnitMaterial(unitInfo);
             
                 var parent = GetImage((int)Images.MaterialPanel).transform;
-                var cardFrame = await Managers.Resource.GetCardResources<UnitId>(
+                var cardFrame = await _cardFactory.GetCardResources<UnitId>(
                     unitInfo, parent, _craftingWidget.OnReinforceMaterialClicked);
             
                 Util.FindChild(cardFrame, "Role").SetActive(false);

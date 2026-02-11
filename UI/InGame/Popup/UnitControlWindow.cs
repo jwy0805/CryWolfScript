@@ -20,6 +20,7 @@ public interface IUnitControlWindow
 
 public class UnitControlWindow : UI_Popup, IUnitControlWindow
 {
+    private IUIFactory _uiFactory;
     private GameViewModel _gameVm;
 
     private int _hp;
@@ -97,8 +98,9 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
     #endregion
     
     [Inject]
-    public void Construct(GameViewModel gameViewModel)
+    public void Construct(IUIFactory uiFactory, GameViewModel gameViewModel)
     {
+        _uiFactory = uiFactory;
         _gameVm = gameViewModel;
     }
 
@@ -153,7 +155,7 @@ public class UnitControlWindow : UI_Popup, IUnitControlWindow
         {
             var unitPortraitFrame = GetImage((int)Images.UnitPortraitFrame);
             _portraitRawImage = unitPortraitFrame.GetComponentInChildren<RawImage>();
-            _portraitRenderTexture = Managers.Resource.CreateRenderTexture("portraitTexture");
+            _portraitRenderTexture = _uiFactory.CreateRenderTexture("portraitTexture");
             
             _portraitRawImage.texture = _portraitRenderTexture;
             _portraitCamera.targetTexture = _portraitRenderTexture;

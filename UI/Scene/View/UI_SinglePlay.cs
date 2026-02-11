@@ -13,6 +13,7 @@ using Zenject;
 public class UI_SinglePlay : UI_Scene
 {
     private IUserService _userService;
+    private ICardFactory _cardFactory;
     private SinglePlayViewModel _singlePlayVm;
     private DeckViewModel _deckVm;
 
@@ -51,9 +52,14 @@ public class UI_SinglePlay : UI_Scene
     }
     
     [Inject]
-    public void Construct(IUserService userService, SinglePlayViewModel singlePlayVm, DeckViewModel deckVm)
+    public void Construct(
+        IUserService userService, 
+        ICardFactory cardFactory,
+        SinglePlayViewModel singlePlayVm,
+        DeckViewModel deckVm)
     {
         _userService = userService;
+        _cardFactory = cardFactory;
         _singlePlayVm = singlePlayVm;
         _deckVm = deckVm;
     }
@@ -115,7 +121,7 @@ public class UI_SinglePlay : UI_Scene
         
         foreach (var unit in deck.UnitsOnDeck)
         {
-            await Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform);
+            await _cardFactory.GetCardResources<UnitId>(unit, deckImage.transform);
         }
     }
 

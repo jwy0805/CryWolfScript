@@ -10,6 +10,7 @@ using UnityEngine.UI;
 public class LobbyCollectionWidget
 {
     private readonly IUserService _userService;
+    private readonly ICardFactory _cardFactory;
     private readonly CollectionViewModel _collectionVm;
     private readonly LobbyUtilWidget _utilWidget;
     private readonly Action<PointerEventData> _onCardClicked;
@@ -32,12 +33,14 @@ public class LobbyCollectionWidget
     
     public LobbyCollectionWidget(
         IUserService userService,
+        ICardFactory cardFactory,
         CollectionViewModel collectionVm,
         LobbyUtilWidget utilWidget,
         Action<PointerEventData> onCardClicked,
         Action<Define.SelectMode> setSelectMode)
     {
         _userService = userService;
+        _cardFactory = cardFactory;
         _collectionVm = collectionVm;
         _utilWidget = utilWidget;
         _onCardClicked = onCardClicked;
@@ -143,14 +146,14 @@ public class LobbyCollectionWidget
         Debug.Log($"{ownedUnits.Count} owned units, {notOwnedUnits.Count} not owned units");
         foreach (var unit in ownedUnits)
         {
-            var cardFrame = await Managers.Resource.GetCardResources<UnitId>(
+            var cardFrame = await _cardFactory.GetCardResources<UnitId>(
                 unit.UnitInfo, _unitCollection, _onCardClicked);
             _utilWidget.GetCountText(cardFrame.transform, unit.Count);
         }
 
         foreach (var unit in notOwnedUnits)
         {
-            var cardFrame = await Managers.Resource.GetCardResources<UnitId>(
+            var cardFrame = await _cardFactory.GetCardResources<UnitId>(
                 unit, _unitNoCollection, _onCardClicked);
             var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
             var path = $"Sprites/Portrait/{((UnitId)unit.Id).ToString()}_gray";
@@ -163,14 +166,14 @@ public class LobbyCollectionWidget
         {
             foreach (var sheep in ownedSheep)
             {
-                var cardFrame = await Managers.Resource.GetCardResources<SheepId>(
+                var cardFrame = await _cardFactory.GetCardResources<SheepId>(
                     sheep.SheepInfo, _assetCollection, _onCardClicked);
                 _utilWidget.GetCountText(cardFrame.transform, sheep.Count);
             }
 
             foreach (var sheep in notOwnedSheep)
             {
-                var cardFrame = await Managers.Resource.GetCardResources<SheepId>(
+                var cardFrame = await _cardFactory.GetCardResources<SheepId>(
                     sheep, _assetNoCollection, _onCardClicked);
                 var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
                 var path = $"Sprites/Portrait/{((SheepId)sheep.Id).ToString()}_gray";
@@ -182,14 +185,14 @@ public class LobbyCollectionWidget
         {
             foreach (var enchant in ownedEnchants)
             {
-                var cardFrame = await Managers.Resource.GetCardResources<EnchantId>(
+                var cardFrame = await _cardFactory.GetCardResources<EnchantId>(
                     enchant.EnchantInfo, _assetCollection, _onCardClicked);
                 _utilWidget.GetCountText(cardFrame.transform, enchant.Count);
             }
 
             foreach (var enchant in notOwnedEnchants)
             {
-                var cardFrame = await Managers.Resource.GetCardResources<EnchantId>(
+                var cardFrame = await _cardFactory.GetCardResources<EnchantId>(
                     enchant, _assetNoCollection, _onCardClicked);
                 var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
                 var path = $"Sprites/Portrait/{((EnchantId)enchant.Id).ToString()}_gray";
@@ -201,14 +204,14 @@ public class LobbyCollectionWidget
         // Characters
         foreach (var character in ownedCharacters)
         {
-            var cardFrame = await Managers.Resource.GetCardResources<CharacterId>(
+            var cardFrame = await _cardFactory.GetCardResources<CharacterId>(
                 character.CharacterInfo, _characterCollection, _onCardClicked);
             _utilWidget.GetCountText(cardFrame.transform, character.Count);
         }
 
         foreach (var character in notOwnedCharacters)
         {
-            var cardFrame = await Managers.Resource.GetCardResources<CharacterId>(
+            var cardFrame = await _cardFactory.GetCardResources<CharacterId>(
                 character, _characterNoCollection, _onCardClicked);
             var cardUnit = Util.FindChild(cardFrame, "CardUnit", true);
             var path = $"Sprites/Portrait/{((CharacterId)character.Id).ToString()}_gray";
@@ -219,8 +222,7 @@ public class LobbyCollectionWidget
         // Materials
         foreach (var material in ownedMaterials)
         {
-            var cardFrame =
-                await Managers.Resource.GetMaterialResources(material.MaterialInfo, _materialCollection);
+            var cardFrame = await _cardFactory.GetMaterialResources(material.MaterialInfo, _materialCollection);
             _utilWidget.GetCountText(cardFrame.transform, material.Count);
         }
         

@@ -13,6 +13,7 @@ using Zenject;
 
 public class UI_RewardSelectPopup : UI_Popup
 {
+    private ICardFactory _cardFactory;
     private MainLobbyViewModel _lobbyVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
@@ -37,8 +38,9 @@ public class UI_RewardSelectPopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(MainLobbyViewModel lobbyViewModel)
+    public void Construct(ICardFactory cardFactory, MainLobbyViewModel lobbyViewModel)
     {
+        _cardFactory = cardFactory;
         _lobbyVm = lobbyViewModel;
     }
     
@@ -96,25 +98,25 @@ public class UI_RewardSelectPopup : UI_Popup
                 case ProductType.Unit:
                     if (Managers.Data.UnitInfoDict.TryGetValue(compositionInfo.CompositionId, out var unitInfo))
                     {
-                        card = await Managers.Resource.GetCardResources<UnitId>(unitInfo, rewardPanel.transform);
+                        card = await _cardFactory.GetCardResources<UnitId>(unitInfo, rewardPanel.transform);
                     }
                     break;
                 case ProductType.Enchant:
                     if (Managers.Data.EnchantInfoDict.TryGetValue(compositionInfo.CompositionId, out var enchantInfo))
                     {
-                        card = await Managers.Resource.GetCardResources<EnchantId>(enchantInfo, rewardPanel.transform);   
+                        card = await _cardFactory.GetCardResources<EnchantId>(enchantInfo, rewardPanel.transform);   
                     }
                     break;
                 case ProductType.Sheep:
                     if (Managers.Data.SheepInfoDict.TryGetValue(compositionInfo.CompositionId, out var sheepInfo))
                     {
-                        card = await Managers.Resource.GetCardResources<SheepId>(sheepInfo, rewardPanel.transform);
+                        card = await _cardFactory.GetCardResources<SheepId>(sheepInfo, rewardPanel.transform);
                     }
                     break;
                 case ProductType.Character:
                     if (Managers.Data.CharacterInfoDict.TryGetValue(compositionInfo.CompositionId, out var characterInfo))
                     {
-                        card = await Managers.Resource.GetCardResources<CharacterId>(characterInfo, rewardPanel.transform);
+                        card = await _cardFactory.GetCardResources<CharacterId>(characterInfo, rewardPanel.transform);
                     }
                     break;
                 default: return;

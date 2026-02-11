@@ -19,6 +19,8 @@ using DG.Tweening;
 
 public class UI_UnitInfoPopup : UI_Popup
 {
+    ICardFactory _cardFactory;
+    
     private bool _isAnimating;
     private bool _showDetails;
     private Button _selectedButton;
@@ -159,6 +161,12 @@ public class UI_UnitInfoPopup : UI_Popup
     }
     
     #endregion
+
+    [Inject]
+    public void Construct(ICardFactory cardFactory)
+    {
+        _cardFactory = cardFactory;
+    }
     
     protected override async void Init()
     {
@@ -258,7 +266,7 @@ public class UI_UnitInfoPopup : UI_Popup
         SetObjectSize(GetImage((int)Images.CardPanel).gameObject, 0.8f, 1.28f);
         
         var parent = GetImage((int)Images.CardPanel).transform;
-        var cardFrame = await Managers.Resource.GetCardResources<UnitId>(asset, parent);
+        var cardFrame = await _cardFactory.GetCardResources<UnitId>(asset, parent);
         var rect = cardFrame.GetComponent<RectTransform>();
         
         Util.FindChild(cardFrame, "Role", true).SetActive(false);

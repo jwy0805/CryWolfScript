@@ -18,6 +18,7 @@ using Image = UnityEngine.UI.Image;
 public class UI_CardClickPopup : UI_Popup
 {
     private IUserService _userService;
+    private ICardFactory _cardFactory;
     private CraftingViewModel _craftingVm;
     private LobbyUtilWidget _utilWidget;
     
@@ -53,9 +54,10 @@ public class UI_CardClickPopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(IUserService userService, CraftingViewModel craftingViewModel)
+    public void Construct(IUserService userService, ICardFactory cardFactory, CraftingViewModel craftingViewModel)
     {
         _userService = userService;
+        _cardFactory = cardFactory;
         _craftingVm = craftingViewModel;
     }
     
@@ -188,7 +190,7 @@ public class UI_CardClickPopup : UI_Popup
     private async Task SetCardInPopup<TEnum>() where TEnum : struct, Enum
     {
         var parent = GetImage((int)Images.CardPanel).transform;
-        var cardFrame = await Managers.Resource.GetCardResources<TEnum>(SelectedCard, parent, ClosePopup, true);
+        var cardFrame = await _cardFactory.GetCardResources<TEnum>(SelectedCard, parent, ClosePopup, true);
         var cardFrameRect = cardFrame.GetComponent<RectTransform>();
         cardFrameRect.sizeDelta = new Vector2(200, 320);
         cardFrameRect.anchorMin = new Vector2(0.5f, 0.5f);

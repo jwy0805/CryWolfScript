@@ -6,9 +6,12 @@ using Google.Protobuf.Protocol;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Zenject;
 
 public class UI_AssetInfoPopup : UI_Popup
 {
+    private ICardFactory _cardFactory;
+    
     private readonly Dictionary<string, GameObject> _textDict = new();
     
     public Card SelectedCard {get; set;}
@@ -34,6 +37,12 @@ public class UI_AssetInfoPopup : UI_Popup
         EquipText,
     }
 
+    [Inject]
+    public void Construct(ICardFactory cardFactory)
+    {
+        _cardFactory = cardFactory;
+    }
+    
     protected override async void Init()
     {
         try
@@ -86,7 +95,7 @@ public class UI_AssetInfoPopup : UI_Popup
                 assetInfoKey = $"sheep_info_{((SheepId)SelectedCard.Id).ToString()}";
                 if (Managers.Data.SheepInfoDict.TryGetValue(SelectedCard.Id, out var sheepInfo))
                 {
-                    card = await Managers.Resource.GetCardResources<SheepId>(sheepInfo, frameRect);
+                    card = await _cardFactory.GetCardResources<SheepId>(sheepInfo, frameRect);
                 }
                 break;
             
@@ -97,7 +106,7 @@ public class UI_AssetInfoPopup : UI_Popup
                 assetInfoKey = $"enchant_info_{((EnchantId)SelectedCard.Id).ToString()}";
                 if (Managers.Data.EnchantInfoDict.TryGetValue(SelectedCard.Id, out var enchantInfo))
                 {
-                    card = await Managers.Resource.GetCardResources<EnchantId>(enchantInfo, frameRect);
+                    card = await _cardFactory.GetCardResources<EnchantId>(enchantInfo, frameRect);
                 }
                 break;
             
@@ -108,7 +117,7 @@ public class UI_AssetInfoPopup : UI_Popup
                 assetInfoKey = $"character_info_{((CharacterId)SelectedCard.Id).ToString()}";
                 if (Managers.Data.CharacterInfoDict.TryGetValue(SelectedCard.Id, out var characterInfo))
                 {
-                    card = await Managers.Resource.GetCardResources<CharacterId>(characterInfo, frameRect);
+                    card = await _cardFactory.GetCardResources<CharacterId>(characterInfo, frameRect);
                 }
                 break;
         }

@@ -13,6 +13,7 @@ using Zenject;
 
 public class UI_TutorialBattleWolfPopup : UI_Popup
 {
+    private IUIFactory _uiFactory;
     private TutorialViewModel _tutorialVm;
 
     private GameObject _tutorialNpc;
@@ -61,8 +62,9 @@ public class UI_TutorialBattleWolfPopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(TutorialViewModel tutorialViewModel)
+    public void Construct(IUIFactory uiFactory, TutorialViewModel tutorialViewModel)
     {
+        _uiFactory = uiFactory;
         _tutorialVm = tutorialViewModel;
     }
     
@@ -172,7 +174,7 @@ public class UI_TutorialBattleWolfPopup : UI_Popup
         }
         
         _rawImage = GetImage((int)Images.BackgroundLeft).GetComponentInChildren<RawImage>();
-        _renderTexture = Managers.Resource.CreateRenderTexture("TutorialRenderTexture");
+        _renderTexture = _uiFactory.CreateRenderTexture("TutorialRenderTexture");
 
         if (_rawImage == null)
         {
@@ -331,7 +333,7 @@ public class UI_TutorialBattleWolfPopup : UI_Popup
     {
         if (!Managers.Data.TutorialDict.TryGetValue(TutorialType.BattleWolf, out var tutorialData)) return;
         if (!tutorialData.StepsDict.TryGetValue(tutorialTag, out var step)) return;
-        if (IsInterrupted == false)
+        if (!IsInterrupted)
         {
             _tutorialVm.CurrentTag = tutorialTag;
             _tutorialVm.NextTag = step.Next;   

@@ -42,6 +42,7 @@ public class SkillWindow : UI_Popup, ISkillWindow
     }
     
     private IUserService _userService;
+    private IUIFactory _uiFactory;
     private GameViewModel _gameVm;
     private TutorialViewModel _tutorialVm;
     
@@ -49,7 +50,10 @@ public class SkillWindow : UI_Popup, ISkillWindow
     private Button[] _skillButtons;
     
     [Inject]
-    public void Construct(IUserService userService, GameViewModel gameViewModel, TutorialViewModel tutorialViewModel)
+    public void Construct(IUserService userService,
+        IUIFactory uiFactory,
+        GameViewModel gameViewModel,
+        TutorialViewModel tutorialViewModel)
     {
         _userService = userService;
         _gameVm = gameViewModel;
@@ -157,14 +161,14 @@ public class SkillWindow : UI_Popup, ISkillWindow
         Managers.UI.ClosePopupUI<UI_UpgradePopup>();
         foreach (var skillButton in _skillButtons)
         {
-            Managers.Resource.GetFrameFromCardButton(skillButton.GetComponent<UI_Skill>()).color = Color.green;
+            _uiFactory.GetFrameFromCardButton(skillButton.GetComponent<UI_Skill>()).color = Color.green;
         }
 
         var selectedSkillButton = data.pointerPress.GetComponent<UI_Skill>();
         if (selectedSkillButton == null) return;
         
         _gameVm.CurrentSelectedSkillButton = selectedSkillButton;
-        Managers.Resource.GetFrameFromCardButton(_gameVm.CurrentSelectedSkillButton).color = Color.cyan;
+        _uiFactory.GetFrameFromCardButton(_gameVm.CurrentSelectedSkillButton).color = Color.cyan;
         
         await _gameVm.ShowUpgradePopup();
     }

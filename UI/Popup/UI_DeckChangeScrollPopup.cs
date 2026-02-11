@@ -18,6 +18,7 @@ using Vector2 = UnityEngine.Vector2;
 public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
 {
     private IUserService _userService;
+    private ICardFactory _cardFactory;
     private DeckViewModel _deckVm;
     
     private Card[] _deck;
@@ -78,9 +79,10 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
     #endregion
     
     [Inject]
-    public void Construct(IUserService userService, DeckViewModel deckViewModel)
+    public void Construct(IUserService userService, ICardFactory cardFactory, DeckViewModel deckViewModel)
     {
         _userService = userService;
+        _cardFactory = cardFactory;
         _deckVm = deckViewModel;
     }
     
@@ -152,7 +154,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         var deck = _deckVm.GetDeck(Util.Faction).UnitsOnDeck;
         foreach (var unit in deck)
         {
-            var cardFrame = await Managers.Resource.GetCardResources<UnitId>(unit, parent, OnDeckCardClicked);
+            var cardFrame = await _cardFactory.GetCardResources<UnitId>(unit, parent, OnDeckCardClicked);
             cardFrame.TryGetComponent(out RectTransform rectTransform);
         }
         
@@ -173,7 +175,7 @@ public class UI_DeckChangeScrollPopup : UI_Popup, IPointerClickHandler
         foreach (var unit in units)
         {
             var cardFrame = 
-                await Managers.Resource.GetCardResourcesF<UnitId>(unit.UnitInfo, parent, OnCollectionCardClicked);
+                await _cardFactory.GetCardResourcesF<UnitId>(unit.UnitInfo, parent, OnCollectionCardClicked);
             cardFrame.TryGetComponent(out RectTransform rectTransform);
             rectTransform.anchorMax = Vector2.one;
             rectTransform.anchorMin = Vector2.zero;

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Google.Protobuf.Protocol;
 using JetBrains.Annotations;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public interface IUserService
 {
@@ -107,4 +110,37 @@ public interface IPaymentService
 public interface ITutorialHelper
 {
     Task RunTutorialTag(string tag);
+}
+
+public interface ICardFactory
+{
+    Task<GameObject> GetCardResourcesF<TEnum>(
+        IAsset asset, 
+        Transform parent, 
+        Func<PointerEventData, Task> action = null, 
+        bool activateText = false) where TEnum : struct, Enum;
+    Task<GameObject> GetCardResources<TEnum>(
+        IAsset asset, 
+        Transform parent, 
+        Action<PointerEventData> action = null, 
+        bool activateText = false) where TEnum : struct, Enum;
+    Task<GameObject> GetMaterialResources(
+        IAsset asset, 
+        Transform parent, 
+        Action<PointerEventData> action = null);
+    Task<GameObject> GetItemFrameGold(int count, Transform parent);
+    Task<GameObject> GetItemFrameSpinel(int count, Transform parent);
+    string GetGoldPrefabPath(int count);
+    string GetSpinelPrefabPath(int count);
+}
+
+public interface IUIFactory
+{
+    Image GetFrameFromCardButton(ISkillButton button);
+    Task<GameObject> GetFriendFrame(FriendUserInfo friendInfo, Transform parent, Action<PointerEventData> action = null);
+    Task<GameObject> GetFriendInviteFrame(FriendUserInfo friendInfo, Transform parent, Action<PointerEventData> action = null);
+    Task<GameObject> GetFriendRequestFrame(FriendUserInfo friendInfo, Transform parent, Action<PointerEventData> action = null);
+    Task<GameObject> GetProductMailFrame(MailInfo mailInfo, Transform parent);
+    Task<GameObject> GetNoticeFrame(NoticeInfo noticeInfo, Transform parent);
+    RenderTexture CreateRenderTexture(string textureName);
 }

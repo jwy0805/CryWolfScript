@@ -11,8 +11,8 @@ using Zenject;
 
 public class UI_FriendsListPopup : UI_Popup
 {
+    private IUIFactory _uiFactory;
     private MainLobbyViewModel _lobbyVm;
-    private Friend _selectedFriend;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
     
@@ -38,8 +38,9 @@ public class UI_FriendsListPopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(MainLobbyViewModel lobbyViewModel)
+    public void Construct(IUIFactory uiFactory, MainLobbyViewModel lobbyViewModel)
     {
+        _uiFactory = uiFactory;
         _lobbyVm = lobbyViewModel;
     }
     
@@ -113,7 +114,7 @@ public class UI_FriendsListPopup : UI_Popup
                 foreach (var friendInfo in friendList)
                 {
                     friendInfo.FriendStatus = FriendStatus.Accepted;
-                    var friendFrame = await Managers.Resource.GetFriendFrame(friendInfo, parent, OnSelectFriend);
+                    var friendFrame = await _uiFactory.GetFriendFrame(friendInfo, parent, OnSelectFriend);
                     BindFriendRequestButton(friendFrame, friendInfo);
                 }
             }
@@ -160,7 +161,6 @@ public class UI_FriendsListPopup : UI_Popup
     {
         data.pointerPress.gameObject.TryGetComponent(out Friend friend);
         if (friend == null) return;
-        _selectedFriend = friend;
     }
     
     private async Task OnFriendsAddClicked(PointerEventData data)

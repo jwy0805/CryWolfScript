@@ -17,6 +17,7 @@ using Random = System.Random;
 public class UI_RewardPopup : UI_Popup
 {
     private IUserService _userService;
+    private ICardFactory _cardFactory;
     
     private Transform _levelPanel;
     private RectTransform _rewardTitle;
@@ -74,8 +75,9 @@ public class UI_RewardPopup : UI_Popup
     #endregion
     
     [Inject]
-    public void Construct(IUserService userService)
+    public void Construct(ICardFactory cardFactory, IUserService userService)
     {
+        _cardFactory = cardFactory;
         _userService = userService;
     }
     
@@ -327,38 +329,38 @@ public class UI_RewardPopup : UI_Popup
             case Google.Protobuf.Protocol.ProductType.Unit:
                 if (Managers.Data.UnitInfoDict.TryGetValue(reward.ItemId, out var unitInfo))
                 {
-                    card = await Managers.Resource.GetCardResources<UnitId>(unitInfo, parent);
+                    card = await _cardFactory.GetCardResources<UnitId>(unitInfo, parent);
                 }
                 break;
             case Google.Protobuf.Protocol.ProductType.Enchant:
                 if (Managers.Data.EnchantInfoDict.TryGetValue(reward.ItemId, out var enchantInfo))
                 {
-                    card = await Managers.Resource.GetCardResources<EnchantId>(enchantInfo, parent);
+                    card = await _cardFactory.GetCardResources<EnchantId>(enchantInfo, parent);
                 }
                 break;
             case Google.Protobuf.Protocol.ProductType.Sheep:
                 if (Managers.Data.SheepInfoDict.TryGetValue(reward.ItemId, out var sheepInfo))
                 {
-                    card = await Managers.Resource.GetCardResources<SheepId>(sheepInfo, parent);
+                    card = await _cardFactory.GetCardResources<SheepId>(sheepInfo, parent);
                 }
                 break;
             case Google.Protobuf.Protocol.ProductType.Character:
                 if (Managers.Data.CharacterInfoDict.TryGetValue(reward.ItemId, out var characterInfo))
                 {
-                    card = await Managers.Resource.GetCardResources<CharacterId>(characterInfo, parent);
+                    card = await _cardFactory.GetCardResources<CharacterId>(characterInfo, parent);
                 }
                 break;
             case Google.Protobuf.Protocol.ProductType.Material:
                 if (Managers.Data.MaterialInfoDict.TryGetValue(reward.ItemId, out var materialInfo))
                 {
-                    card = await Managers.Resource.GetMaterialResources(materialInfo, parent);
+                    card = await _cardFactory.GetMaterialResources(materialInfo, parent);
                 }
                 break;
             case Google.Protobuf.Protocol.ProductType.Gold:
-                card = await Managers.Resource.GetItemFrameGold(reward.Count, parent);
+                card = await _cardFactory.GetItemFrameGold(reward.Count, parent);
                 break;
             case Google.Protobuf.Protocol.ProductType.Spinel:
-                card = await Managers.Resource.GetItemFrameSpinel(reward.Count, parent);
+                card = await _cardFactory.GetItemFrameSpinel(reward.Count, parent);
                 break;
             case Google.Protobuf.Protocol.ProductType.Container:
                 var rewardName = ((ProductId)reward.ItemId).ToString();

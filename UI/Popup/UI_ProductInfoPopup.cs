@@ -15,8 +15,9 @@ using Image = UnityEngine.UI.Image;
 
 public class UI_ProductInfoPopup : UI_Popup
 {
-    private ShopViewModel _shopVm;
     private IUserService _userService;
+    private ICardFactory _cardFactory;
+    private ShopViewModel _shopVm;
     
     private GameObject _frame;
     private Image _icon;
@@ -46,9 +47,10 @@ public class UI_ProductInfoPopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(IUserService userService, ShopViewModel shopViewModel)
+    public void Construct(IUserService userService, ICardFactory cardFactory, ShopViewModel shopViewModel)
     {
         _userService = userService;
+        _cardFactory = cardFactory;
         _shopVm = shopViewModel;
     }
     
@@ -169,7 +171,7 @@ public class UI_ProductInfoPopup : UI_Popup
                 
                 case ProductType.Material:
                     Managers.Data.MaterialInfoDict.TryGetValue(composition.CompositionId, out var material);
-                    product = await Managers.Resource.GetMaterialResources(material, productFrame.transform);                  
+                    product = await _cardFactory.GetMaterialResources(material, productFrame.transform);                  
                     break;
                     
                 case ProductType.Enchant:
@@ -178,13 +180,7 @@ public class UI_ProductInfoPopup : UI_Popup
                 case ProductType.Spinel:
                 case ProductType.Gold:
                 default:
-                    path = composition.Count switch
-                    {
-                        >= 50000 => "UI/Shop/NormalizedProducts/GoldVault",
-                        >= 25000 => "UI/Shop/NormalizedProducts/GoldBasket",
-                        >= 2500 => "UI/Shop/NormalizedProducts/GoldPouch",
-                        _ => "UI/Shop/NormalizedProducts/GoldPile"
-                    };
+                    path = _cardFactory.GetGoldPrefabPath(composition.Count);
                     product = await Managers.Resource.Instantiate(path, productFrame.transform);
                     break;
             }

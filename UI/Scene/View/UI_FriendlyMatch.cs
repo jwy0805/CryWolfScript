@@ -13,6 +13,7 @@ using Zenject;
 public class UI_FriendlyMatch : UI_Scene
 {
     private IUserService _userService;
+    private ICardFactory _cardFactory;
     private ISignalRClient _signalRClient;
     private ITokenService _tokenService;
     private FriendlyMatchViewModel _friendlyMatchVm;
@@ -59,6 +60,7 @@ public class UI_FriendlyMatch : UI_Scene
     [Inject]
     public void Construct(
         IUserService userService,
+        ICardFactory cardFactory,
         ISignalRClient signalRClient,
         ITokenService tokenService,
         FriendlyMatchViewModel friendlyMatchVm,
@@ -66,6 +68,7 @@ public class UI_FriendlyMatch : UI_Scene
         DeckViewModel deckVm)
     {
         _userService = userService;
+        _cardFactory = cardFactory;
         _signalRClient = signalRClient;
         _tokenService = tokenService;
         _friendlyMatchVm = friendlyMatchVm;
@@ -189,7 +192,7 @@ public class UI_FriendlyMatch : UI_Scene
 
             foreach (var unit in deck.UnitsOnDeck)
             {
-                await Managers.Resource.GetCardResources<UnitId>(unit, deckImage.transform);
+                await _cardFactory.GetCardResources<UnitId>(unit, deckImage.transform);
             }
 
             for (var i = 1; i <= 5; i++)
@@ -240,7 +243,7 @@ public class UI_FriendlyMatch : UI_Scene
 
         foreach (var unit in deckInfo.UnitInfo)         
         {
-            await Managers.Resource.GetCardResources<UnitId>(unit, enemyDeck);
+            await _cardFactory.GetCardResources<UnitId>(unit, enemyDeck);
         }
     }
     
@@ -275,7 +278,7 @@ public class UI_FriendlyMatch : UI_Scene
         
         foreach (var unit in myDeckInfo.UnitInfo ?? Array.Empty<UnitInfo>())
         {
-            await Managers.Resource.GetCardResources<UnitId>(unit, myDeck);
+            await _cardFactory.GetCardResources<UnitId>(unit, myDeck);
         }
 
         if (enemyDeckInfo?.UnitInfo?.Length > 0)

@@ -11,6 +11,7 @@ using Zenject;
 
 public class UI_CraftSuccessPopup : UI_Popup
 {
+    private ICardFactory _cardFactory;
     private CraftingViewModel _craftingVm;
     private CollectionViewModel _collectionVm;
     
@@ -33,8 +34,9 @@ public class UI_CraftSuccessPopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(CraftingViewModel craftingVm, CollectionViewModel collectionVm)
+    public void Construct(ICardFactory cardFactory, CraftingViewModel craftingVm, CollectionViewModel collectionVm)
     {
+        _cardFactory = cardFactory;
         _craftingVm = craftingVm;
         _collectionVm = collectionVm;
     }
@@ -76,10 +78,10 @@ public class UI_CraftSuccessPopup : UI_Popup
         var parent = GetImage((int)Images.CardPanel).transform;
         var cardFrame = _craftingVm.CardToBeCrafted.AssetType switch
         {
-            Asset.Unit => await Managers.Resource.GetCardResources<UnitId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
-            Asset.Sheep => await Managers.Resource.GetCardResources<SheepId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
-            Asset.Enchant => await Managers.Resource.GetCardResources<EnchantId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
-            Asset.Character => await Managers.Resource.GetCardResources<CharacterId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
+            Asset.Unit => await _cardFactory.GetCardResources<UnitId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
+            Asset.Sheep => await _cardFactory.GetCardResources<SheepId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
+            Asset.Enchant => await _cardFactory.GetCardResources<EnchantId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
+            Asset.Character => await _cardFactory.GetCardResources<CharacterId>(_craftingVm.CardToBeCrafted, parent, ClosePopup),
             _ => null
         };
         

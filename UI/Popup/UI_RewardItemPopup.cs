@@ -11,6 +11,7 @@ using Zenject;
 
 public class UI_RewardItemPopup : UI_Popup
 {
+    private ICardFactory _cardFactory;
     private MainLobbyViewModel _lobbyVm;
     private ShopViewModel _shopVm;
     private CollectionViewModel _collectionVm;
@@ -36,8 +37,12 @@ public class UI_RewardItemPopup : UI_Popup
     }
 
     [Inject]
-    public void Construct(MainLobbyViewModel lobbyVm, ShopViewModel shopVm, CollectionViewModel collectionVm)
+    public void Construct(ICardFactory cardFactory, 
+        MainLobbyViewModel lobbyVm,
+        ShopViewModel shopVm, 
+        CollectionViewModel collectionVm)
     {
+        _cardFactory = cardFactory;
         _lobbyVm = lobbyVm;
         _shopVm = shopVm;
         _collectionVm = collectionVm;
@@ -151,40 +156,40 @@ public class UI_RewardItemPopup : UI_Popup
             case ProductType.Unit:
                 if (Managers.Data.UnitInfoDict.TryGetValue(info.CompositionId, out var unitInfo))
                 {
-                    cardObject = await Managers.Resource.GetCardResources<UnitId>(unitInfo, parent);
+                    cardObject = await _cardFactory.GetCardResources<UnitId>(unitInfo, parent);
                 }
                 break;
             case ProductType.Enchant:
                 if (Managers.Data.EnchantInfoDict.TryGetValue(info.CompositionId, out var enchantInfo))
                 {
-                    cardObject =await Managers.Resource.GetCardResources<EnchantId>(enchantInfo, parent);   
+                    cardObject =await _cardFactory.GetCardResources<EnchantId>(enchantInfo, parent);   
                 }
                 break;
             case ProductType.Sheep:
                 if (Managers.Data.SheepInfoDict.TryGetValue(info.CompositionId, out var sheepInfo))
                 {
-                    cardObject =await Managers.Resource.GetCardResources<SheepId>(sheepInfo, parent);
+                    cardObject =await _cardFactory.GetCardResources<SheepId>(sheepInfo, parent);
                 }
                 break;
             case ProductType.Character:
                 if (Managers.Data.CharacterInfoDict.TryGetValue(info.CompositionId, out var characterInfo))
                 {
-                    cardObject =await Managers.Resource.GetCardResources<CharacterId>(characterInfo, parent);
+                    cardObject =await _cardFactory.GetCardResources<CharacterId>(characterInfo, parent);
                 }
                 break;
             case ProductType.Material:
                 if (Managers.Data.MaterialInfoDict.TryGetValue(info.CompositionId, out var materialInfo))
                 {
-                    cardObject = await Managers.Resource.GetMaterialResources(materialInfo, parent);
+                    cardObject = await _cardFactory.GetMaterialResources(materialInfo, parent);
                     var countText = Util.FindChild(cardObject, "CountText", true);
                     countText.GetComponent<TextMeshProUGUI>().text = info.Count.ToString();
                 }
                 break;
             case ProductType.Gold:
-                cardObject = await Managers.Resource.GetItemFrameGold(info.Count, parent);
+                cardObject = await _cardFactory.GetItemFrameGold(info.Count, parent);
                 break;
             case ProductType.Spinel:
-                cardObject = await Managers.Resource.GetItemFrameSpinel(info.Count, parent);
+                cardObject = await _cardFactory.GetItemFrameSpinel(info.Count, parent);
                 break;
             case ProductType.Container:
             default:

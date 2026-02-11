@@ -35,12 +35,12 @@ public class UI_Loading : UI_Scene
         {
             base.Init();
 
-            Managers.Localization.InitLanguage(Application.systemLanguage.ToString());
             await Addressables.InitializeAsync().Task;
             await Addressables.LoadAssetAsync<TMP_Settings>("Externals/TextMesh Pro/Resources/TMP Settings.asset").Task;
             Managers.Resource.InitAddressables = true;
             
             BindObjects();
+            Managers.Localization.InitLanguage(Application.systemLanguage.ToString());
             await InitUIAsync();
 
             Managers.Resource.InitAddressables = true;

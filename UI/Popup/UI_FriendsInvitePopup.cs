@@ -13,6 +13,7 @@ using Zenject;
 public class UI_FriendsInvitePopup : UI_Popup
 {
     private ITokenService _tokenService;
+    private IUIFactory _uiFactory;
     private ISignalRClient _signalRClient;
     private MainLobbyViewModel _lobbyVm;
     private FriendlyMatchViewModel _friendVm;
@@ -46,11 +47,13 @@ public class UI_FriendsInvitePopup : UI_Popup
     [Inject]
     public void Construct(
         ITokenService tokenService, 
+        IUIFactory uiFactory,
         ISignalRClient signalRClient, 
         MainLobbyViewModel lobbyViewModel,
         FriendlyMatchViewModel friendViewModel)
     {
         _tokenService = tokenService;
+        _uiFactory = uiFactory;
         _signalRClient = signalRClient;
         _lobbyVm = lobbyViewModel;
         _friendVm = friendViewModel;
@@ -112,13 +115,13 @@ public class UI_FriendsInvitePopup : UI_Popup
 
         foreach (var friend in invitable)
         {
-            var friendFrame = await Managers.Resource.GetFriendInviteFrame(friend, parent);
+            var friendFrame = await _uiFactory.GetFriendInviteFrame(friend, parent);
             BindFriendInviteButton(friendFrame, friend, true);
         }
         
         foreach (var friend in others)
         {
-            var friendFrame = await Managers.Resource.GetFriendInviteFrame(friend, parent);
+            var friendFrame = await _uiFactory.GetFriendInviteFrame(friend, parent);
             BindFriendInviteButton(friendFrame, friend, false);
         }
     }

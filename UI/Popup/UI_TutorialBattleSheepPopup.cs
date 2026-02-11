@@ -13,6 +13,7 @@ using Zenject;
 public class UI_TutorialBattleSheepPopup : UI_Popup
 {
     private IUserService _userService;
+    private IUIFactory _uiFactory;
     private TutorialViewModel _tutorialVm;
 
     private GameObject _tutorialNpc;
@@ -62,9 +63,10 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(IUserService userService, TutorialViewModel tutorialViewModel)
+    public void Construct(IUserService userService, IUIFactory uiFactory, TutorialViewModel tutorialViewModel)
     {
         _userService = userService;
+        _uiFactory = uiFactory;
         _tutorialVm = tutorialViewModel;
     }
     
@@ -176,7 +178,7 @@ public class UI_TutorialBattleSheepPopup : UI_Popup
         }
         
         _rawImage = GetImage((int)Images.BackgroundLeft).GetComponentInChildren<RawImage>();
-        _renderTexture = Managers.Resource.CreateRenderTexture("TutorialRenderTexture");
+        _renderTexture = _uiFactory.CreateRenderTexture("TutorialRenderTexture");
 
         if (_rawImage == null)
         {

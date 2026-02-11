@@ -15,6 +15,7 @@ using Zenject;
 
 public class UI_ReinforcePopup : UI_Popup
 {
+    private ICardFactory _cardFactory;
     private CraftingViewModel _craftingVm;
     private CollectionViewModel _collectionVm;
     
@@ -47,8 +48,9 @@ public class UI_ReinforcePopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(CraftingViewModel craftingVm, CollectionViewModel collectionVm)
+    public void Construct(ICardFactory cardFactory, CraftingViewModel craftingVm, CollectionViewModel collectionVm)
     {
+        _cardFactory = cardFactory;
         _craftingVm = craftingVm;
         _collectionVm = collectionVm;
     }
@@ -98,7 +100,7 @@ public class UI_ReinforcePopup : UI_Popup
         {
             float angle = i * Mathf.PI * 2 / unitCounts;
             Vector3 pos = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle)) * _radius;
-            var cardFrame = await Managers.Resource.GetCardResources<UnitId>(materialUnits[i], parent);
+            var cardFrame = await _cardFactory.GetCardResources<UnitId>(materialUnits[i], parent);
             var cardRect = cardFrame.GetComponent<RectTransform>();
             
             _cardRects.Add(cardRect);
@@ -172,7 +174,7 @@ public class UI_ReinforcePopup : UI_Popup
             return;
         }
         
-        var cardFrame = await Managers.Resource.GetCardResources<UnitId>(newUnitInfo, _cardPanelRect, ClosePopup);
+        var cardFrame = await _cardFactory.GetCardResources<UnitId>(newUnitInfo, _cardPanelRect, ClosePopup);
         var cardFrameRect = cardFrame.GetComponent<RectTransform>();
         var textButton = GetButton((int)Buttons.TextButton).gameObject;
         

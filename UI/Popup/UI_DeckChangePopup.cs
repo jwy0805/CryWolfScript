@@ -14,8 +14,9 @@ using Zenject;
 
 public class UI_DeckChangePopup : UI_Popup
 {
-    private DeckViewModel _deckVm;
     private IUserService _userService;
+    private ICardFactory _cardFactory;
+    private DeckViewModel _deckVm;
     
     private readonly Dictionary<string, GameObject> _textDict = new();
     
@@ -42,9 +43,10 @@ public class UI_DeckChangePopup : UI_Popup
     }
     
     [Inject]
-    public void Construct(IUserService userService, DeckViewModel deckViewModel)
+    public void Construct(IUserService userService, ICardFactory cardFactory, DeckViewModel deckViewModel)
     {
         _userService = userService;
+        _cardFactory = cardFactory;
         _deckVm = deckViewModel;
     }
     
@@ -94,7 +96,7 @@ public class UI_DeckChangePopup : UI_Popup
         var deck = _deckVm.GetDeck(Util.Faction);
         foreach (var unit in deck.UnitsOnDeck)
         {
-            var cardFrame = Managers.Resource.GetCardResourcesF<UnitId>(unit, parent, async data =>
+            var cardFrame = _cardFactory.GetCardResourcesF<UnitId>(unit, parent, async data =>
             {
                 // 실제 덱이 수정되고, DeckChangeScrollPopup으로 넘어감
                 if (!data.pointerPress.TryGetComponent(out Card card)) return;
@@ -107,7 +109,7 @@ public class UI_DeckChangePopup : UI_Popup
     private async Task SetCardInPopup()
     {
         var parent = GetImage((int)Images.CardPanel).transform;
-        var cardFrame = await Managers.Resource.GetCardResources<UnitId>(SelectedCard, parent);
+        var cardFrame = await _cardFactory.GetCardResources<UnitId>(SelectedCard, parent);
         cardFrame.TryGetComponent(out RectTransform rectTransform);
         rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
         rectTransform.anchorMin = new Vector2(0.5f, 0.5f);

@@ -9,6 +9,7 @@ using UnityEngine.EventSystems;
 public class LobbyDeckWidget
 {
     private readonly IUserService _userService;
+    private readonly ICardFactory _cardFactory;
     private readonly DeckViewModel _deckVm;
     
     private Dictionary<string, GameObject> _deckButtonDict;
@@ -25,11 +26,13 @@ public class LobbyDeckWidget
     
     public LobbyDeckWidget(
         IUserService userService,
+        ICardFactory cardFactory,
         DeckViewModel deckVm,
         Action<PointerEventData> onCardClicked,
         Action<PointerEventData> onDeckTabClicked)
     {
         _userService = userService;
+        _cardFactory = cardFactory;
         _deckVm = deckVm;
         _onCardClicked = onCardClicked;
         _onDeckTabClicked = onDeckTabClicked;
@@ -116,8 +119,8 @@ public class LobbyDeckWidget
         
         foreach (var unit in deck.UnitsOnDeck)
         {
-            await Managers.Resource.GetCardResources<UnitId>(unit, _deckParent, _onCardClicked);
-            await Managers.Resource.GetCardResources<UnitId>(unit, _lobbyDeckParent, _onDeckTabClicked);
+            await _cardFactory.GetCardResources<UnitId>(unit, _deckParent, _onCardClicked);
+            await _cardFactory.GetCardResources<UnitId>(unit, _lobbyDeckParent, _onDeckTabClicked);
         }
 
         for (var i = 1; i <= _deckButtonDict.Count; i++)
@@ -135,16 +138,16 @@ public class LobbyDeckWidget
 
         if (faction == Faction.Sheep)
         {
-            await Managers.Resource.GetCardResources<SheepId>(asset, _assetParent, _onCardClicked);
+            await _cardFactory.GetCardResources<SheepId>(asset, _assetParent, _onCardClicked);
         }
         else
         {
-            await Managers.Resource.GetCardResources<EnchantId>(asset, _assetParent, _onCardClicked);
+            await _cardFactory.GetCardResources<EnchantId>(asset, _assetParent, _onCardClicked);
         }
         
         // Set Character Frame
         var character = _userService.User.BattleSetting.CharacterInfo;
-        await Managers.Resource.GetCardResources<CharacterId>(character, _assetParent, _onCardClicked);
+        await _cardFactory.GetCardResources<CharacterId>(character, _assetParent, _onCardClicked);
     }
     
     public async Task OnDeckButtonClicked(PointerEventData data)

@@ -14,6 +14,7 @@ using Object = UnityEngine.Object;
 public class LobbyShopWidget
 {
     private readonly IUserService _userService;
+    private readonly ICardFactory _cardFactory;
     private readonly ShopViewModel _shopVm;
     private readonly IPaymentService _paymentService;
     
@@ -32,12 +33,15 @@ public class LobbyShopWidget
     
     private readonly Func<Task> _initUserInfo;
     
-    public LobbyShopWidget(IUserService userService, 
+    public LobbyShopWidget(
+        IUserService userService, 
+        ICardFactory cardFactory,
         ShopViewModel shopVm,
         IPaymentService paymentService, 
         Func<Task> initUserInfo)
     {
         _userService = userService;
+        _cardFactory = cardFactory;
         _shopVm = shopVm;
         _paymentService = paymentService;
         _initUserInfo = initUserInfo;
@@ -368,7 +372,7 @@ public class LobbyShopWidget
         {
             var unitId = productInfo.Compositions.First().CompositionId;
             var unit = Managers.Data.UnitInfoDict[unitId];
-            iconObject = await Managers.Resource.GetCardResources<UnitId>(unit, frame.transform);
+            iconObject = await _cardFactory.GetCardResources<UnitId>(unit, frame.transform);
             iconObject.transform.SetSiblingIndex(3);
             
             var iconRect = iconObject.GetComponent<RectTransform>();
@@ -584,7 +588,7 @@ public class LobbyShopWidget
         var parent = Util.FindChild(popup.gameObject, "Frame", true).transform;
         var size = popup.GetComponent<RectTransform>().sizeDelta.x * 0.42f;
         
-        popup.FrameObject = await Managers.Resource.GetMaterialResources(info, parent);
+        popup.FrameObject = await _cardFactory.GetMaterialResources(info, parent);
         popup.FrameSize = new Vector2(size, size);
         _shopVm.SelectedProduct = package.ProductInfo;
     }
