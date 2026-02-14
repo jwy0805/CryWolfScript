@@ -97,14 +97,6 @@ public class UIManager
             }
             else
             {
-                if (Managers.Resource.InitAddressables == false)
-                {
-                    Managers.Localization.InitLanguage(Application.systemLanguage.ToString());
-                    await Addressables.InitializeAsync().Task;
-                    await Addressables.LoadAssetAsync<TMP_Settings>("Externals/TextMesh Pro/Resources/TMP Settings.asset").Task;
-                    Managers.Resource.InitAddressables = true;
-                }
-                
                 var key = $"UI/Scene/{name}";
                 var sceneUI = await Managers.Resource.InstantiateZenjectAsync(key, Root.transform);
                 sceneUI.GetComponent<UI_Scene>().Clear();

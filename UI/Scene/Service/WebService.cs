@@ -13,7 +13,7 @@ using Zenject;
 public class WebService : IWebService
 {
     private readonly ITokenService _tokenService;
-
+    
     [Inject]
     public WebService(ITokenService tokenService)
     {
@@ -139,6 +139,115 @@ public class WebService : IWebService
             Debug.LogError($"[WebService] JSON deserialize error: {e}\n{text}");
             return default;
         }
+    }
+    
+    public async Task<T> GetAsync<T>(string path, Dictionary<string, string> query = null, Dictionary<string, string> headers = null)
+    {
+        return await GetInternalAsync<T>(path, query, headers, true);      
+    }
+
+    private async Task<T> GetInternalAsync<T>(
+        string path,
+        Dictionary<string, string> query,
+        Dictionary<string, string> headers,
+        bool allowRetry)
+    {
+        var baseUrl = $"{Managers.Network.BaseUrl}/api/{path}";
+        var sendUrl = BuildUrl(baseUrl, query);
+        
+        using var uwr = new UnityWebRequest(sendUrl, UnityWebRequest.kHttpVerbGET);
+        uwr.downloadHandler = new DownloadHandlerBuffer();
+
+        if (headers != null)
+        {
+            foreach (var pair in headers)
+            {
+                if (string.IsNullOrWhiteSpace(pair.Key)) continue;
+                uwr.SetRequestHeader(pair.Key, pair.Value ?? string.Empty);
+            }
+        }
+        
+        var accessToken = _tokenService.GetAccessToken();
+        if (!string.IsNullOrEmpty(accessToken))
+        {
+            uwr.SetRequestHeader("Authorization", $"Bearer {accessToken}");
+        }
+        
+        var operation = uwr.SendWebRequest();
+        while (!operation.isDone)
+        {
+            await Task.Yield();
+        }
+        
+        if (uwr.result is UnityWebRequest.Result.ConnectionError or UnityWebRequest.Result.DataProcessingError)
+        {
+            Debug.LogWarning($"[WebService] network/data error while sending GET request: {uwr.error} : {uwr.downloadHandler.text}, URL: {sendUrl}");
+            return default;
+        }
+
+        if (uwr.result == UnityWebRequest.Result.ProtocolError)
+        {
+            Debug.LogWarning($"[WebService] GET HTTP error: {uwr.responseCode} {uwr.error} : {uwr.downloadHandler.text}, URL: {sendUrl}");
+
+            if (uwr.responseCode == 401 && allowRetry && _tokenService != null)
+            {
+                var refreshToken = _tokenService.GetRefreshToken();
+                if (!string.IsNullOrEmpty(refreshToken))
+                {
+                    var refreshed = await TryRefreshTokenAsync(refreshToken);
+                    if (refreshed)
+                    {
+                        return await GetInternalAsync<T>(path, query, headers, false);
+                    }
+                }
+                
+                _tokenService.ClearTokens();
+            }
+            
+            return default;
+        }
+        
+        var text = uwr.downloadHandler.text;
+        if (string.IsNullOrWhiteSpace(text)) return default;
+        
+        try
+        {
+            return JsonConvert.DeserializeObject<T>(text);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[WebService] GET JSON deserialize error: {e}\n{text}");
+            return default;
+        }
+    }
+
+    private string BuildUrl(string baseUrl, Dictionary<string, string> query)
+    {
+        if (query == null || query.Count == 0) return baseUrl;
+        
+        var sb = new StringBuilder();
+        sb.Append(baseUrl);
+        sb.Append(baseUrl.Contains("?") ? "&" : "?");
+        
+        bool first = true;
+        foreach (var pair in query)
+        {
+            if (string.IsNullOrWhiteSpace(pair.Key)) continue;
+            if (!first) sb.Append("&");
+            first = false;
+            
+            var key = UnityWebRequest.EscapeURL(pair.Key);
+            var value = UnityWebRequest.EscapeURL(pair.Value ?? string.Empty);
+            sb.Append(key).Append("=").Append(value);
+        }
+
+        var url = sb.ToString();
+        if (url.EndsWith("?") || url.EndsWith("&"))
+        {
+            url = url[..^1];
+        }
+
+        return url;
     }
 
     private async Task<bool> TryRefreshTokenAsync(string refreshToken)

@@ -169,8 +169,7 @@ public class NetworkManager
                 break;
             
             case Env.Dev:
-                // host = "hamonstudio.net";
-                host = "crywolf-tcpbalancer-5dadfff82e2ee15a.elb.ap-northeast-2.amazonaws.com";
+                host = "tcp.hamonstudio.net";
                 port = 7780;
                 ipHost = await Dns.GetHostEntryAsync(host);
                 ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
@@ -178,7 +177,7 @@ public class NetworkManager
             
             case Env.Stage:
             case Env.Prod:
-                host = "crywolf-tcpbalancer-5dadfff82e2ee15a.elb.ap-northeast-2.amazonaws.com";
+                host = "tcp.hamonstudio.net";
                 port = 7780;
                 ipHost = await Dns.GetHostEntryAsync(host);
                 ipAddress = ipHost.AddressList.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);

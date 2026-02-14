@@ -34,6 +34,7 @@ public class Managers : MonoBehaviour
     
     #region Core
 
+    private readonly AppVersionManager _appVersion = new();
     private readonly CoroutineManager _coroutine = new();
     private readonly DataManager _data = new();
     private readonly InputManager _input = new();
@@ -45,6 +46,7 @@ public class Managers : MonoBehaviour
     private readonly SceneManagerEx _scene = new();
     private readonly UIManager _ui = new();
 
+    public static AppVersionManager AppVersion => Instance._appVersion;
     public static CoroutineManager Coroutine => Instance._coroutine;
     public static DataManager Data => Instance._data;
     public static InputManager Input => Instance._input;

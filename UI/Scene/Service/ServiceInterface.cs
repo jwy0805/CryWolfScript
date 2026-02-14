@@ -29,6 +29,7 @@ public interface IWebService
 { 
     Task<T> SendWebRequestAsync<T>(string url, string method, object obj);
     void SendWebRequest(string url, string method, object obj);
+    Task<T> GetAsync<T>(string path, Dictionary<string, string> query = null, Dictionary<string, string> headers = null);
 }
 
 public interface ITokenService

@@ -8,14 +8,17 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
+using Zenject;
 
 public class UI_Loading : UI_Scene
 {
+    private IWebService _webService;
     private TextMeshProUGUI _text;
     
     private readonly List<object> _fastFollowLabels = new()
     {
-        "LoadPoolLobby"
+        "Init",
+        "Game",
     };
     
     private enum Texts
@@ -24,6 +27,12 @@ public class UI_Loading : UI_Scene
         ResourcesCountText
     }
 
+    [Inject]
+    public void Construct(IWebService webService)
+    {
+        _webService = webService;
+    }
+    
     private void Awake()
     {
         Managers.UI.RegisterLoadingScene(this);
@@ -35,24 +44,31 @@ public class UI_Loading : UI_Scene
         {
             base.Init();
 
-            await Addressables.InitializeAsync().Task;
-            await Addressables.LoadAssetAsync<TMP_Settings>("Externals/TextMesh Pro/Resources/TMP Settings.asset").Task;
-            Managers.Resource.InitAddressables = true;
-            
             BindObjects();
+
+            await Managers.Resource.InitializeAddressablesAsync();
+            await Managers.Resource.EnsureTMPSettingsLoadedAsync();
+            
             Managers.Localization.InitLanguage(Application.systemLanguage.ToString());
             await InitUIAsync();
 
-            Managers.Resource.InitAddressables = true;
-            Debug.Log("[Manager] Addressables initialized.");
-            var found = Addressables.ResourceLocators.Any(l =>
-                l.Locate("Prefabs/UI/Scene/UI_Loading.prefab", typeof(GameObject), out _));
-            Debug.Log($"UI_Loading present in catalog? {found}");
+            // Version check before loading resources to avoid unnecessary loading if an update is required.
+            var appCheck = await Managers.AppVersion.CheckAsync();
+            if (appCheck != null)
+            {
+                if (appCheck.Force)
+                {
+                    await LoadForceUpdatePopupAsync(appCheck.StoreUrl);
+                    return;
+                }
 
-            var locHandle = Addressables.LoadResourceLocationsAsync(_fastFollowLabels, Addressables.MergeMode.Union);
-            await locHandle.Task;
-            var locations = locHandle.Result;
-            var totalCount = locations.Count;
+                if (appCheck.NeedUpdate)
+                {
+                    await LoadOptionalUpdatePopupAsync(appCheck.StoreUrl);
+                }
+            }
+            
+            var totalCount = await Managers.Resource.GetWarmLoadCountAsync(_fastFollowLabels);
             if (totalCount == 0)
             {
                 Debug.LogWarning("[PAD] No Fast-Follow resources found.");
@@ -60,18 +76,13 @@ public class UI_Loading : UI_Scene
                 return;
             }
 
-            var loadedCount = 0;
-            var loadHandle = Addressables.LoadAssetsAsync<object>(
-                _fastFollowLabels, asset =>
-                {
-                    loadedCount++;
-                    GetText((int)Texts.ResourcesCountText).text = $"({loadedCount}/{totalCount})";
-                }, 
-                Addressables.MergeMode.Union);
-            
-            await loadHandle.Task;
-            
-            if (loadHandle.Status is AsyncOperationStatus.Succeeded)
+            var ok = await Managers.Resource.WarmLoadLabelsAsync(_fastFollowLabels, (loaded, total) =>
+            {
+                if (total <= 0) total = totalCount;
+                GetText((int)Texts.LoadingResourcesText).text = $"({loaded}/{total})";
+            });
+
+            if (ok)
             {
                 Debug.Log("[PAD] Fast-Follow assets warm-loaded.");
                 Managers.Scene.LoadScene(Define.Scene.Login);
@@ -97,5 +108,28 @@ public class UI_Loading : UI_Scene
         var text = GetText((int)Texts.LoadingResourcesText);
         await Managers.Localization.BindLocalizedText(text, "loading_resources_text");
         Debug.Log("[Manager] UI_Loading initialized.");
+    }
+    
+    private async Task LoadForceUpdatePopupAsync(string storeUrl)
+    {
+        var popup = await Managers.UI.ShowPopupUI<UI_NotifyPopup>();
+        await Managers.Localization.UpdateNotifyPopupText(popup, "notify_must_update_message");
+        popup.SetYesCallback(() =>
+        {
+            Application.OpenURL(storeUrl);
+            Application.Quit();
+        });
+    }
+    
+    private async Task LoadOptionalUpdatePopupAsync(string storeUrl)
+    {
+        var popup = await Managers.UI.ShowPopupUI<UI_NotifySelectPopup>();
+        await Managers.Localization.UpdateNotifySelectPopupText(popup, "notify_need_update_message");
+        popup.NoButtonTextKey = "later_text";
+        popup.SetYesCallback(() =>
+        {
+            Application.OpenURL(storeUrl);
+        });
+        popup.SetNoCallBack(Managers.UI.ClosePopupUI);
     }
 }

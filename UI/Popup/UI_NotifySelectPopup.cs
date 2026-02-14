@@ -17,6 +17,7 @@ public class UI_NotifySelectPopup : UI_Popup
     public string MessageText { get; set; }
     public TMP_FontAsset MessageFont { get; set; }
     public int MessageFontSize { get; set; }
+    public string NoButtonTextKey { get; set; } = "no_text";
     public int ButtonFontSize { get; set; }
 
     private enum Buttons
@@ -82,7 +83,7 @@ public class UI_NotifySelectPopup : UI_Popup
         }
 
         var noText = GetText((int)Texts.NoText);
-        noText.text = await Managers.Localization.BindLocalizedText(noText, "no_text");
+        noText.text = await Managers.Localization.BindLocalizedText(noText, NoButtonTextKey);
         if (ButtonFontSize != 0)
         {
             GetText((int)Texts.NoText).fontSize = ButtonFontSize;

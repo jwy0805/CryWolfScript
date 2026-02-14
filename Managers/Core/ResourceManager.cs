@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Docker.DotNet.Models;
+using JetBrains.Annotations;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -19,15 +22,6 @@ public class ResourceManager
     private bool _tmpSettingsLoaded = false;
 
     private readonly Dictionary<string, AsyncOperationHandle> _warmLoadHandles = new();
-    
-    public bool InitAddressables { get; set; }
-
-    private bool ExistsInAddressables(string key)
-    {
-        return Addressables.ResourceLocators.Any(loc => loc.Keys.Contains(key));
-    }
-
-    
     
     /// <summary>
     /// Asynchronously Loading according to Addressables -> Pool -> Resources.
@@ -220,5 +214,146 @@ public class ResourceManager
         }
         
         Object.Destroy(go, time * Time.deltaTime);
+    }
+    
+    private bool ExistsInAddressables(string key)
+    {
+        return Addressables.ResourceLocators.Any(loc => loc.Keys.Contains(key));
+    }
+
+    public async Task InitializeAddressablesAsync()
+    {
+        if (_addressablesInitialized) return;
+
+        var initHandle = Addressables.InitializeAsync();
+        await initHandle.Task;
+        if (initHandle.Status != AsyncOperationStatus.Succeeded) throw new Exception($"Addressables initialization failed: {initHandle.Status}");
+        
+        Addressables.Release(initHandle);
+        _addressablesInitialized = true;
+    }
+
+    public async Task EnsureTMPSettingsLoadedAsync()
+    {
+        if (!_tmpSettingsLoaded) return;
+
+        await InitializeAddressablesAsync();
+        
+        var handle = Addressables.LoadAssetAsync<TMP_Settings>("Externals/TextMesh Pro/Resources/TMP Settings.asset");
+        await handle.Task;
+        
+        if (handle.Status != AsyncOperationStatus.Succeeded)
+        {
+            Debug.LogError($"Failed to load TMP Settings: {handle.Status}");
+            Addressables.Release(handle); 
+        }
+
+        _tmpSettingsLoaded = true;
+    }
+
+    public async Task<int> GetWarmLoadCountAsync(IReadOnlyList<object> labels)
+    {
+        await InitializeAddressablesAsync();
+
+        var locHandle = Addressables.LoadResourceLocationsAsync(labels, Addressables.MergeMode.Union);
+        await locHandle.Task;
+        
+        if (locHandle.Status != AsyncOperationStatus.Succeeded)
+        {
+            Debug.LogError($"Failed to load resource locations for labels: {string.Join(", ", labels)}");
+            Addressables.Release(locHandle);
+            return 0;
+        }
+        
+        int count = locHandle.Result.Count;
+        Addressables.Release(locHandle);
+        return count;
+    }
+
+    public async Task<bool> WarmLoadLabelsAsync(
+        IReadOnlyList<object> labels,
+        Action<int, int> onProgress = null,
+        bool keepAlive = true)
+    {
+        await InitializeAddressablesAsync();
+
+        string key = string.Join(",", labels.Select(obj => obj.ToString()));
+        // 이미 로드된 경우
+        if (keepAlive && _warmLoadHandles.TryGetValue(key, out var cached) &&
+            cached.IsValid() &&
+            cached.IsDone &&
+            cached.Status == AsyncOperationStatus.Succeeded)
+        {
+            onProgress?.Invoke(1, 1);
+            return true;
+        }
+
+        var locHandle = Addressables.LoadResourceLocationsAsync(labels, Addressables.MergeMode.Union);
+        await locHandle.Task;
+
+        if (locHandle.Status != AsyncOperationStatus.Succeeded || locHandle.Result == null)
+        {
+            Addressables.Release(locHandle);
+            return false;
+        }
+
+        int totalCount = locHandle.Result.Count;
+        Addressables.Release(locHandle);
+
+        if (totalCount <= 0)
+        {
+            onProgress?.Invoke(0, 0);
+            return true;
+        }
+        
+        // Warm Load
+        int loadedCount = 0;
+        onProgress?.Invoke(loadedCount, totalCount);
+        var loadHandle = Addressables.LoadAssetsAsync<Object>(labels, _ =>
+        {
+            loadedCount++;
+            onProgress?.Invoke(loadedCount, totalCount);
+        }, Addressables.MergeMode.Union, true);
+
+        if (keepAlive)
+        {
+            _warmLoadHandles[key] = loadHandle;
+        }
+
+        await loadHandle.Task;
+
+        bool ok = loadHandle.Status == AsyncOperationStatus.Succeeded;
+        if (!keepAlive)
+        {
+            Addressables.Release(loadHandle);
+        }
+
+        return ok;
+    }
+
+    public void ReleaseWarmLoad(string labelsKeys)
+    {
+        if (_warmLoadHandles.TryGetValue(labelsKeys, out var handle))
+        {
+            if (handle.IsValid())
+            {
+                Addressables.Release(handle);
+            }
+            
+            _warmLoadHandles.Remove(labelsKeys);
+        } 
+    }
+    
+    public void ReleaseAllWarmLoads()
+    {
+        foreach (var handle in _warmLoadHandles.Values)
+        {
+            if (handle.IsValid())
+            {
+                Addressables.Release(handle);
+            }
+        }
+        
+        _warmLoadHandles.Clear();
     }
 }
